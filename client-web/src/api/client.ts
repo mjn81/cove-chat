@@ -1,6 +1,7 @@
 // client.ts — Fully improved API client
 
 import { logger } from '@/utils/logger';
+import { isWails } from '@/utils/wails';
 import axios, { AxiosError } from 'axios';
 
 // ─────────────────────────────────────────────
@@ -69,22 +70,48 @@ export class NetworkError extends Error {
 // ─────────────────────────────────────────────
 // Axios Instance
 // ─────────────────────────────────────────────
+// Reads a cookie value by name (used for the CSRF double-submit header —
+// that cookie is deliberately not httpOnly so JS can read it back).
+function getCookie(name: string): string | null {
+	if (typeof document === 'undefined') return null;
+	const match = document.cookie.match(
+		new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'),
+	);
+	return match ? decodeURIComponent(match[1]) : null;
+}
+
+const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete']);
+
 export const apiClient = axios.create({
 	baseURL: BASE_URL,
-	withCredentials: false,
+	// The web client authenticates via an httpOnly session cookie; the
+	// desktop (Wails) client authenticates via a Bearer token below, since
+	// its webview doesn't reliably persist httpOnly cookies.
+	withCredentials: true,
 	timeout: 3600000, // 1 hour for long uploads/downloads
 });
 
 apiClient.interceptors.request.use((config) => {
-	// Proactively send Bearer token if available in localStorage
-	// This ensures compatibility with Safari and other environments where cookies might be blocked
-	try {
-		const token = localStorage.getItem('nodetalk_token');
-		if (token) {
-			config.headers.set('Authorization', `Bearer ${token}`);
+	if (isWails()) {
+		try {
+			const token = localStorage.getItem('nodetalk_token');
+			if (token) {
+				config.headers.set('Authorization', `Bearer ${token}`);
+			}
+		} catch {
+			// Ignore access errors
 		}
-	} catch {
-		// Ignore access errors
+	} else {
+		// CSRF double-submit: echo the readable CSRF cookie back as a header
+		// on state-changing requests. The session cookie itself is httpOnly
+		// and travels automatically.
+		const method = (config.method || 'get').toLowerCase();
+		if (MUTATING_METHODS.has(method)) {
+			const csrf = getCookie('nodetalk_csrf');
+			if (csrf) {
+				config.headers.set('X-CSRF-Token', csrf);
+			}
+		}
 	}
 	return config;
 });
@@ -277,11 +304,13 @@ export async function apiUploadFile(
 	thumbCipher?: string,
 	thumbNonce?: string,
 	onUploadProgress?: (progressEvent: any) => void,
+	channelId?: string,
 ) {
 	const formData = new FormData();
 	formData.append('file', file, `upload.${mimeType.split('/')[1] ?? 'bin'}`);
 	if (thumbCipher) formData.append('thumb_ciphertext', thumbCipher);
 	if (thumbNonce) formData.append('thumb_nonce', thumbNonce);
+	if (channelId) formData.append('channel_id', channelId);
 
 	return apiClient.post('/api/files', formData, {
 		headers: {

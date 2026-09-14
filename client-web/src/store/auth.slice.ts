@@ -4,9 +4,31 @@ import { persist } from 'zustand/middleware';
 
 import { apiLogin, apiRegister, apiLogout, apiMe, apiUpdateProfile, apiDeleteAccount } from '@/api/client';
 import type { AuthUser } from '@/types/api';
+import { isWails } from '@/utils/wails';
 
 import { connectWS, disconnectWS } from './ws.manager';
 import { useChannelStore } from './channels.slice';
+
+// The web client authenticates via an httpOnly session cookie and never
+// touches the token itself. The desktop (Wails) client still needs it in
+// localStorage, since its webview doesn't reliably persist httpOnly cookies.
+function persistDesktopToken(token: string | undefined) {
+	if (!isWails() || !token) return;
+	try {
+		localStorage.setItem('nodetalk_token', token);
+	} catch {
+		// Ignore access errors
+	}
+}
+
+function clearDesktopToken() {
+	if (!isWails()) return;
+	try {
+		localStorage.removeItem('nodetalk_token');
+	} catch {
+		// Ignore access errors
+	}
+}
 
 export interface AuthSlice {
 	user: AuthUser | null;
@@ -60,11 +82,10 @@ export const useAuthStore = create<AuthSlice>()(
 			login: async (u, p) => {
 				const user = await apiLogin(u, p);
 				set({ user });
-				
-				// Persist token separately for easy extraction in interceptors/ws
-				if (user.token) {
-					localStorage.setItem('nodetalk_token', user.token);
-				}
+
+				// Desktop only: the token is otherwise carried by the httpOnly
+				// session cookie the backend just set, invisible to this code.
+				persistDesktopToken(user.token);
 
 				connectWS(user.token);
 				useChannelStore.getState().refreshChannels();
@@ -80,7 +101,7 @@ export const useAuthStore = create<AuthSlice>()(
 
 				disconnectWS();
 				useChannelStore.getState().resetChannels();
-				localStorage.removeItem('nodetalk_token');
+				clearDesktopToken();
 
 				set({ user: null });
 			},
@@ -105,8 +126,13 @@ export const useAuthStore = create<AuthSlice>()(
 		}),
 		{
 			name: 'auth',
+			// Never persist the raw session token: the web client relies solely
+			// on the httpOnly cookie, and the desktop client keeps its own copy
+			// via persistDesktopToken. Keeping it here too just gives an extra
+			// place a leaked-localStorage attack (or a stale logout) could read
+			// a valid session from.
 			partialize: (s) => ({
-				user: s.user,
+				user: s.user ? { ...s.user, token: undefined } : null,
 			}),
 		},
 	),

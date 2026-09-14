@@ -74,6 +74,8 @@ let worker: {
 } | null = null;
 let directSocket: WebSocket | null = null;
 
+let unloadListenerRegistered = false;
+
 export function wsConnect(token?: string): void {
 	if (!worker) {
 		// SharedWorker is great for multiple tabs, but Wails/Safari often don't support it
@@ -100,6 +102,17 @@ export function wsConnect(token?: string): void {
 					},
 				};
 				console.info('[ws] using SharedWorker');
+
+				// Tell the worker to stop tracking this tab's port when it closes
+				// or navigates away — without this the worker (which outlives any
+				// single tab) keeps a permanent, never-removed reference to every
+				// tab ever opened, and keeps trying to message the dead ones.
+				if (!unloadListenerRegistered && typeof window !== 'undefined') {
+					unloadListenerRegistered = true;
+					window.addEventListener('pagehide', () => {
+						sw.port.postMessage({ cmd: 'LEAVE', payload: null });
+					});
+				}
 			} catch (err) {
 				console.warn(
 					'[ws] SharedWorker failed, falling back to direct connection',
@@ -117,6 +130,14 @@ export function wsConnect(token?: string): void {
 }
 
 function getFullWsUrl(explicitToken?: string): string {
+	// Web client: the session travels via the httpOnly cookie automatically
+	// included in the WS handshake — no token needed in the URL.
+	if (!isWails()) {
+		return `${getWsUrl()}/ws`;
+	}
+
+	// Desktop (Wails) client: its webview doesn't reliably persist httpOnly
+	// cookies, so continue authenticating via a token in the URL.
 	let token = explicitToken || '';
 	if (!token) {
 		try {

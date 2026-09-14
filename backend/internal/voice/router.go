@@ -92,6 +92,12 @@ func (r *Router) HandleConn(conn *net.UDPConn) {
 }
 
 func (r *Router) processPacket(conn *net.UDPConn, addr *net.UDPAddr, data []byte) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("voice: recovered from panic while processing packet from %v: %v", addr, rec)
+		}
+	}()
+
 	packetType := data[0]
 	payload := data[1:]
 
@@ -117,7 +123,11 @@ func (r *Router) handleRegister(addr *net.UDPAddr, token string) {
 	token = strings.TrimRight(token, "\x00")
 	session, err := r.sessions.Validate(token)
 	if err != nil {
-		log.Printf("voice: REGISTRATION FAILED for %v: %v (token: %s...)", addr, err, token[:10])
+		preview := token
+		if len(preview) > 10 {
+			preview = preview[:10]
+		}
+		log.Printf("voice: REGISTRATION FAILED for %v: %v (token: %s...)", addr, err, preview)
 		return
 	}
 

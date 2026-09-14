@@ -96,7 +96,9 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 						new Blob([processed.ciphertext as any], { type: processed.mimeType }),
 						processed.mimeType,
 						processed.thumbnailCipher ? bytesToBase64(processed.thumbnailCipher) : undefined,
-						processed.thumbnailNonce ? bytesToBase64(processed.thumbnailNonce) : undefined
+						processed.thumbnailNonce ? bytesToBase64(processed.thumbnailNonce) : undefined,
+						undefined,
+						targetId,
 					);
 
 					const newMeta = JSON.stringify({

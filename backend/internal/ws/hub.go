@@ -59,37 +59,44 @@ func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte) *Hub {
 }
 
 // run is the Hub's main event loop — dispatches inbound envelopes to the
-// correct channel members.
+// correct channel members, one at a time and in the order they were
+// submitted. This guarantees clients observe messages, edits, and deletes
+// for a given channel in the order they were sent — fanning each envelope
+// out in its own goroutine (as before) let goroutine scheduling and
+// per-envelope DB latency reorder deliveries, so a fast edit could reach
+// clients before the original message.
 func (h *Hub) run() {
 	for env := range h.broadcast {
-		// Spawn a goroutine for the broadcaster fan-out so we don't block the main loop
-		// while fetching members or iterating through large lists.
-		go func(e *envelope) {
-			members, err := h.store.GetChannelMembers(e.channelID)
-			if err != nil {
-				return
-			}
-			h.mu.RLock()
-			defer h.mu.RUnlock()
-			for _, m := range members {
-				if clients, ok := h.clients[m.UserID]; ok {
-					for _, c := range clients {
-						select {
-						case c.send <- e:
-						default:
-							// Optionally handle buffer full
-						}
-					}
+		h.dispatch(env)
+	}
+}
+
+// dispatch delivers one envelope to every member of its channel.
+func (h *Hub) dispatch(e *envelope) {
+	members, err := h.store.GetChannelMembers(e.channelID)
+	if err != nil {
+		log.Printf("ws: dropping envelope for channel %s: failed to load members: %v", e.channelID, err)
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, m := range members {
+		if clients, ok := h.clients[m.UserID]; ok {
+			for _, c := range clients {
+				select {
+				case c.send <- e:
+				default:
+					log.Printf("ws: send buffer full for user %s, dropping envelope", m.UserID)
 				}
 			}
-		}(env)
+		}
 	}
 }
 
 // ServeHTTP upgrades an HTTP request to a WebSocket connection.
 // Authentication is via the `nodetalk_session` cookie or a `token` query parameter.
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token, err := auth.BearerToken(r)
+	token, _, err := auth.ResolveToken(r)
 	if err != nil {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return

@@ -65,6 +65,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
 		return
 	}
+	csrfToken, err := auth.GenerateCSRFToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
+		return
+	}
+	// Set cookies for the web client. The desktop (Wails) client ignores
+	// these and continues to use the `token` field below via the
+	// Authorization header, since its webview doesn't reliably persist
+	// httpOnly cookies.
+	auth.SetSessionCookies(w, token, csrfToken, h.TokenTTL, !h.IsDev)
 
 	writeJSON(w, http.StatusOK, LoginResponse{
 		ID:               u.ID,
@@ -86,12 +96,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 //	@Success     200 {object} StatusResponse
 //	@Router      /api/logout [post]
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	token, _ := auth.BearerToken(r)
+	token, _, _ := auth.ResolveToken(r)
 	session := auth.SessionFromContext(r.Context())
 	if session != nil {
 		_ = h.Store.SetPresence(session.UserID, "offline")
 	}
 	h.Sessions.Delete(token)
+	auth.ClearSessionCookies(w, !h.IsDev)
 
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "logged out"})
 }

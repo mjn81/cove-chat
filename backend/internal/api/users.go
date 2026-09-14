@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 	"nodetalk/backend/internal/auth"
 	"nodetalk/backend/internal/crypto"
 )
@@ -45,22 +44,15 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 //	@Router      /api/users/me [delete]
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
-	token, _ := auth.BearerToken(r)
+	token, _, _ := auth.ResolveToken(r)
 
 	if err := h.Store.DeleteUser(session.UserID); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete account")
 		return
 	}
-	
+
 	h.Sessions.Delete(token)
-	http.SetCookie(w, &http.Cookie{
-		Name:     "nodetalk_session",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0),
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
+	auth.ClearSessionCookies(w, !h.IsDev)
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "account deleted"})
 }
 

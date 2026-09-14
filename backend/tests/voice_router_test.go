@@ -104,3 +104,57 @@ func TestVoiceRouter_ChannelSession(t *testing.T) {
 		t.Error("C2 received audio after leaving channel")
 	}
 }
+
+// TestVoiceRouter_ShortRegisterTokenDoesNotCrash guards against a
+// slice-out-of-range panic: a Register packet whose token payload is
+// shorter than the 10-byte log preview used to slice it (e.g. a single
+// garbage byte) previously panicked the UDP read loop, which — since Go
+// crashes the whole process on an unrecovered panic in any goroutine —
+// took down the entire server (HTTP API, WS hub, and voice router) from a
+// single malformed packet. The router must log the failed validation and
+// keep serving other clients instead.
+func TestVoiceRouter_ShortRegisterTokenDoesNotCrash(t *testing.T) {
+	sessions := auth.NewSessionStore(1 * time.Hour)
+	router := voice.NewRouter(sessions, nil)
+
+	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0}
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	defer conn.Close()
+
+	serverAddr := conn.LocalAddr().(*net.UDPAddr)
+	go router.HandleConn(conn)
+
+	attacker, err := net.DialUDP("udp", nil, serverAddr)
+	if err != nil {
+		t.Fatalf("dial failed: %v", err)
+	}
+	defer attacker.Close()
+
+	// A Register packet with a 1-byte (invalid, too-short-to-slice) token.
+	attacker.Write([]byte{voice.PacketTypeRegister, 'x'})
+	time.Sleep(20 * time.Millisecond)
+
+	// The router must still be alive and able to serve a legitimate client.
+	user1ID := "user1-36-chars-uuid-mock-id-value!!!"
+	token1, _ := sessions.Create(user1ID, "user1")
+
+	victim, err := net.DialUDP("udp", nil, serverAddr)
+	if err != nil {
+		t.Fatalf("dial failed: %v", err)
+	}
+	defer victim.Close()
+
+	victim.Write(append([]byte{voice.PacketTypeRegister}, []byte(token1)...))
+	time.Sleep(20 * time.Millisecond)
+
+	addrOf, err := router.GetUserAddr(user1ID)
+	if err != nil {
+		t.Fatalf("router did not survive malformed packet: registration failed: %v", err)
+	}
+	if addrOf == nil {
+		t.Fatal("registered address is nil")
+	}
+}

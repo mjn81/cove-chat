@@ -110,6 +110,7 @@ type Presence struct {
 type File struct {
 	ID          string    `json:"id"`
 	OwnerID     string    `json:"owner_id"`
+	ChannelID   string    `json:"channel_id"`
 	SizeBytes   int64     `json:"size"`
 	MIMEType    string    `json:"mime"`             // e.g. "audio/webm", "image/png"
 	StoragePath string    `json:"storage_path"`

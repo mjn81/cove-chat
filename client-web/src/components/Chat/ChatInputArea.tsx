@@ -122,6 +122,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						);
 						updateFileStatus(f.id, 'uploading', percent);
 					},
+					channel.id,
 				);
 
 				const fileMetadata = JSON.stringify({

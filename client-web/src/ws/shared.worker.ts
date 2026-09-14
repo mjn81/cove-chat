@@ -2,13 +2,15 @@
 
 /// <reference lib="webworker" />
 
+import { createPortRegistry } from './portRegistry';
+
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 1000;
 const MAX_DELAY = 30_000;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-const ports: MessagePort[] = [];
+const portRegistry = createPortRegistry<MessagePort>();
 let wsUrl: string = 'ws://localhost:8080/ws';
 
 // Listen for connections from new tabs.
@@ -16,7 +18,7 @@ let wsUrl: string = 'ws://localhost:8080/ws';
 const _self: any = self;
 _self.onconnect = (e: MessageEvent) => {
 	const port = e.ports[0];
-	ports.push(port);
+	portRegistry.add(port);
 
 	port.onmessage = (ev) => {
 		const { cmd, payload } = ev.data;
@@ -35,6 +37,14 @@ _self.onconnect = (e: MessageEvent) => {
 				if (socket?.readyState === WebSocket.OPEN) {
 					socket.send(JSON.stringify(payload));
 				}
+				break;
+			}
+			case 'LEAVE': {
+				// This tab is closing/navigating away — stop tracking its port so
+				// broadcasts don't keep targeting it and the registry doesn't grow
+				// forever across the SharedWorker's lifetime (it outlives any
+				// single tab).
+				portRegistry.remove(port);
 				break;
 			}
 		}
@@ -125,11 +135,5 @@ function stopHeartbeat() {
 
 // Broadcasts an event to all connected UI tabs
 function broadcast(msg: unknown) {
-	for (const port of ports) {
-		try {
-			port.postMessage(msg);
-		} catch {
-			// If a port is dead but not removed
-		}
-	}
+	portRegistry.broadcast(msg);
 }

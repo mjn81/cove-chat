@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,15 @@ import (
 	"net/http"
 	"sync"
 	"time"
+)
+
+// Cookie names and header used for the web client's httpOnly-cookie session.
+// The desktop (Wails) client continues to use the Authorization header
+// instead, since Wails' webview does not reliably persist httpOnly cookies.
+const (
+	SessionCookieName = "nodetalk_session"
+	CSRFCookieName    = "nodetalk_csrf"
+	CSRFHeaderName    = "X-CSRF-Token"
 )
 
 // Session represents an authenticated server-side session stored in memory.
@@ -101,6 +111,7 @@ func (ss *SessionStore) sweepExpired() {
 // ---- HTTP Helpers ---------------------------------------------------------- //
 
 // BearerToken extracts the token from the `Authorization: Bearer <token>` header or query parameter.
+// This is the desktop/API client path — it never reads the session cookie.
 func BearerToken(r *http.Request) (string, error) {
 	h := r.Header.Get("Authorization")
 	if len(h) >= 8 && h[:7] == "Bearer " {
@@ -113,11 +124,104 @@ func BearerToken(r *http.Request) (string, error) {
 	return "", errors.New("auth: missing or malformed token")
 }
 
+// ResolveToken extracts the session token from an incoming request, preferring
+// the Authorization header / query parameter (desktop/API clients) and
+// falling back to the httpOnly session cookie (web client). viaCookie reports
+// whether the cookie was the source, which callers use to decide whether
+// CSRF protection applies (bearer-token requests can't be forged cross-site
+// the way ambient cookies can).
+func ResolveToken(r *http.Request) (token string, viaCookie bool, err error) {
+	if t, berr := BearerToken(r); berr == nil {
+		return t, false, nil
+	}
+	if c, cerr := r.Cookie(SessionCookieName); cerr == nil && c.Value != "" {
+		return c.Value, true, nil
+	}
+	return "", false, errors.New("auth: missing or malformed token")
+}
+
+// isMutatingMethod reports whether an HTTP method can change server state,
+// and therefore needs CSRF protection when authenticated via ambient cookie.
+func isMutatingMethod(method string) bool {
+	switch method {
+	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		return true
+	default:
+		return false
+	}
+}
+
+// validCSRF implements the double-submit-cookie check: the client must echo
+// the (non-httpOnly, JS-readable) CSRF cookie value back as a header. A
+// cross-site attacker can trigger the cookie-bearing request but cannot read
+// the cookie value to put it in the header, since that's blocked by the
+// browser's same-origin policy.
+func validCSRF(r *http.Request) bool {
+	cookie, err := r.Cookie(CSRFCookieName)
+	if err != nil || cookie.Value == "" {
+		return false
+	}
+	header := r.Header.Get(CSRFHeaderName)
+	if header == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(header)) == 1
+}
+
+// GenerateCSRFToken creates a new random CSRF token to pair with a session.
+func GenerateCSRFToken() (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", fmt.Errorf("auth: csrf token generation failed: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(raw), nil
+}
+
+// SetSessionCookies writes the httpOnly session cookie and the readable CSRF
+// cookie for the web client. secure should be true whenever the server is
+// reachable over HTTPS (i.e. !devMode).
+func SetSessionCookies(w http.ResponseWriter, token, csrfToken string, ttl time.Duration, secure bool) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int(ttl.Seconds()),
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     CSRFCookieName,
+		Value:    csrfToken,
+		Path:     "/",
+		MaxAge:   int(ttl.Seconds()),
+		HttpOnly: false,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+// ClearSessionCookies expires both auth cookies (logout / account deletion).
+func ClearSessionCookies(w http.ResponseWriter, secure bool) {
+	for _, name := range []string{SessionCookieName, CSRFCookieName} {
+		http.SetCookie(w, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			Expires:  time.Unix(0, 0),
+			MaxAge:   -1,
+			HttpOnly: name == SessionCookieName,
+			Secure:   secure,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+}
+
 // Require is an HTTP middleware that enforces session authentication.
 // On success, the session is written to the request context via the sessionKey.
 func (ss *SessionStore) Require(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, err := BearerToken(r)
+		token, viaCookie, err := ResolveToken(r)
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, "unauthorized")
 			return
@@ -126,6 +230,12 @@ func (ss *SessionStore) Require(next http.Handler) http.Handler {
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, "unauthorized")
 			return
+		}
+		if viaCookie && isMutatingMethod(r.Method) {
+			if !validCSRF(r) {
+				writeError(w, http.StatusForbidden, "csrf validation failed")
+				return
+			}
 		}
 		// Attach session into context for downstream handlers.
 		ctx := withSession(r.Context(), session)

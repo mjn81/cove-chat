@@ -54,6 +54,7 @@ func main() {
 		log.Fatalf("FATAL: config load failed: %v", err)
 	}
 	log.Printf("NodeTalk starting on %s:%d", cfg.Server.Domain, cfg.Server.HTTPPort)
+	middleware.TrustProxyHeaders = cfg.Server.TrustProxyHeaders
 
 	// ── 2. Derive KEK ─────────────────────────────────────────────────────
 	kek := crypto.DeriveKEK(cfg.Security.MasterPassword)
@@ -126,7 +127,7 @@ func main() {
 	addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      middleware.Logger(rootMux),
+		Handler:      middleware.Recover(middleware.Logger(rootMux)),
 		ReadTimeout:  1 * time.Hour,
 		WriteTimeout: 1 * time.Hour,
 		IdleTimeout:  120 * time.Second,

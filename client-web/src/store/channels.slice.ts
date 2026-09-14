@@ -18,17 +18,28 @@ export interface ChannelSlice {
 	resetChannels: () => void;
 }
 
+// Guards against out-of-order responses: refreshChannels() can be triggered
+// repeatedly in quick succession (e.g. two channel_key WS events close
+// together). Without sequencing, whichever request happens to resolve LAST
+// always wins, even if it was the older, now-stale one — silently reverting
+// the channel list to outdated data. Each call captures the sequence number
+// current when it started; a response is only applied if no newer call has
+// started since.
+let refreshSeq = 0;
+
 export const useChannelStore = create<ChannelSlice>((set) => ({
 	channels: [],
 	activeChannel: null,
 	isChannelsLoading: false,
 
 	refreshChannels: async () => {
+		const seq = ++refreshSeq;
 		const hasChannels = useChannelStore.getState().channels.length > 0;
 		if (!hasChannels) set({ isChannelsLoading: true });
 
 		try {
 			const list = await apiListChannels();
+			if (seq !== refreshSeq) return; // A newer refresh has since started — drop this stale result.
 			set((state) => {
 				const active = state.activeChannel;
 				let nextActive = active;
@@ -41,7 +52,7 @@ export const useChannelStore = create<ChannelSlice>((set) => ({
 				return { channels: list, activeChannel: nextActive };
 			});
 		} finally {
-			set({ isChannelsLoading: false });
+			if (seq === refreshSeq) set({ isChannelsLoading: false });
 		}
 	},
 

@@ -1,4 +1,4 @@
-.PHONY: help build run dev wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: help build run dev dev-back dev-front front/dev front/install front/build wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -19,8 +19,10 @@ tidy: ## go mod tidy
 build: ## Build standalone web server binary
 	cd backend && $(GO) build -o ../$(BIN) ./cmd/server
 
-run: ## Run standalone web server (go run)
+dev-back: ## Run standalone backend in dev mode (go run)
 	cd backend && GO_ENV=development NODE_ENV=development $(GO) run ./cmd/server
+
+run: dev-back ## Run standalone backend (alias for dev-back)
 
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
@@ -35,8 +37,10 @@ swagger: ## Regenerate Swagger docs (requires swag in GOBIN)
 front/install: ## npm install
 	$(NPM) --prefix client-web install
 
-front/dev: ## Vite dev server
+dev-front: ## Run frontend dev server (Vite)
 	$(NPM) --prefix client-web run dev
+
+front/dev: dev-front ## Vite dev server (alias for dev-front)
 
 front/build: ## Build production bundle into client-web/dist/
 	$(NPM) --prefix client-web run build
@@ -101,8 +105,8 @@ docker/push: docker/build ## Push images to Docker Hub (usage: make docker/push 
 	docker push $(DOCKER_USER)/nodetalk-webclient:latest
 
 ## ── Combined ─────────────────────────────────────────────────────────────────
-dev: ## Run standalone backend + Vite concurrently (web mode)
-	@$(MAKE) -j2 run front/dev
+dev: ## Run backend + frontend concurrently (web mode)
+	@$(MAKE) -j2 dev-back dev-front
 
 clean: ## Remove build artifacts and temp data
 	rm -f $(BIN)

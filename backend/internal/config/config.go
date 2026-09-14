@@ -24,6 +24,11 @@ type ServerConfig struct {
 	MaxFileSizeMB  int    `toml:"max_file_size_mb"`
 	Dev            bool   `toml:"dev"`
 	FrontendOrigin string `toml:"frontend_origin"`
+	// TrustProxyHeaders enables reading the client IP from CF-Connecting-IP /
+	// X-Real-IP / X-Forwarded-For. Only enable this when the server sits
+	// behind a reverse proxy that overwrites these headers itself — otherwise
+	// any client can spoof its own rate-limit/log IP by setting them directly.
+	TrustProxyHeaders bool `toml:"trust_proxy_headers"`
 }
 
 type SecurityConfig struct {
@@ -66,8 +71,9 @@ func Load() (*Config, error) {
 			HTTPPort:       8080,
 			UDPPort:        9090,
 			MaxFileSizeMB:  100, // Default 100MB
-			Dev:            false,
-			FrontendOrigin: "http://localhost:5173",
+			Dev:               false,
+			FrontendOrigin:    "http://localhost:5173",
+			TrustProxyHeaders: false,
 		},
 		Security: SecurityConfig{
 			MasterPassword:   "",

@@ -316,7 +316,15 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 //	@Success     200 {object} StatusResponse
 //	@Router      /api/channels/{id}/members [post]
 func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
 	ch := ChannelFromContext(r.Context())
+
+	actorUC, err := h.Store.GetUserChannel(session.UserID, ch.ID)
+	if err != nil || actorUC.Role < models.RoleAdmin {
+		writeError(w, http.StatusForbidden, "insufficient permissions to add members")
+		return
+	}
+
 	var body AddMembersRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON body")
@@ -326,9 +334,9 @@ func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "user_ids required")
 		return
 	}
-	
+
 	for _, uid := range body.UserIDs {
-		if err := h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember); err == nil {
+		if err := h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember); err == nil && h.Hub != nil {
 			h.Hub.BroadcastMemberJoined(ch.ID, uid)
 		}
 	}
