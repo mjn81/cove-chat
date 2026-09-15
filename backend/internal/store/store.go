@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"nodetalk/backend/internal/crypto"
 	"nodetalk/backend/internal/db"
+	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/models"
 )
 
@@ -131,28 +132,41 @@ func (s *Store) SearchUsers(query string) ([]*models.User, error) {
 func (s *Store) DeleteUser(userID string) error {
 	// 1. Remove from Group Channels (keep DMs)
 	channels, err := s.ListUserChannels(userID)
-	if err == nil {
+	if err != nil {
+		logger.Warnf("store: DeleteUser(%s): failed to list channels, group memberships may be left behind: %v", userID, err)
+	} else {
 		for _, ch := range channels {
-			members, _ := s.GetChannelMembers(ch.ID)
+			members, merr := s.GetChannelMembers(ch.ID)
+			if merr != nil {
+				logger.Warnf("store: DeleteUser(%s): failed to load members of channel %s: %v", userID, ch.ID, merr)
+				continue
+			}
 			if !ch.IsDM(len(members)) {
-				_ = s.RemoveMemberFromChannel(ch.ID, userID, models.StatusLeft)
+				if rerr := s.RemoveMemberFromChannel(ch.ID, userID, models.StatusLeft); rerr != nil {
+					logger.Warnf("store: DeleteUser(%s): failed to remove membership in channel %s: %v", userID, ch.ID, rerr)
+				}
 			}
 		}
 	}
 
 	// 2. Clear presence
-	_ = s.db.DeletePresence(userID)
+	if err := s.db.DeletePresence(userID); err != nil {
+		logger.Warnf("store: DeleteUser(%s): failed to clear presence: %v", userID, err)
+	}
 
 	// 3. Anonymize user record
 	u, err := s.db.GetUser(userID)
-	if err == nil {
-		u.Username = "Deleted Account"
-		u.Status = "deleted"
-		u.PwdHash = nil
-		u.AvatarID = ""
-		u.CustomMsg = ""
-		u.PublicKey = nil
-		_ = s.db.SetUser(u)
+	if err != nil {
+		return fmt.Errorf("store: DeleteUser(%s): failed to load user record for anonymization: %w", userID, err)
+	}
+	u.Username = "Deleted Account"
+	u.Status = "deleted"
+	u.PwdHash = nil
+	u.AvatarID = ""
+	u.CustomMsg = ""
+	u.PublicKey = nil
+	if err := s.db.SetUser(u); err != nil {
+		return fmt.Errorf("store: DeleteUser(%s): failed to persist anonymized user record: %w", userID, err)
 	}
 	return nil
 }
@@ -295,14 +309,20 @@ func (s *Store) UpdateChannel(ch *models.Channel) error {
 func (s *Store) DeleteChannel(id string) error {
 	// 1. Remove all UserChannel associations
 	members, err := s.GetChannelMembers(id)
-	if err == nil {
+	if err != nil {
+		logger.Warnf("store: DeleteChannel(%s): failed to list members, some UserChannel records may be left behind: %v", id, err)
+	} else {
 		for _, m := range members {
-			_ = s.db.DeleteUserChannel(m.UserID, id)
+			if derr := s.db.DeleteUserChannel(m.UserID, id); derr != nil {
+				logger.Warnf("store: DeleteChannel(%s): failed to remove membership for user %s: %v", id, m.UserID, derr)
+			}
 		}
 	}
 
 	// 2. Delete all messages
-	_ = s.db.DeleteChannelMessages(id)
+	if err := s.db.DeleteChannelMessages(id); err != nil {
+		logger.Warnf("store: DeleteChannel(%s): failed to delete messages: %v", id, err)
+	}
 
 	// 3. Delete the channel record
 	return s.db.DeleteChannel(id)

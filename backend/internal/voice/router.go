@@ -2,9 +2,9 @@ package voice
 
 import (
 	"errors"
-	"log"
 	"net"
 	"nodetalk/backend/internal/auth"
+	"nodetalk/backend/internal/logger"
 	"strings"
 	"sync"
 )
@@ -56,7 +56,7 @@ func (r *Router) notifyVoiceUpdate(channelID string, targetedUserID string) {
 	}
 	r.mu.RUnlock()
 	
-	log.Printf("voice: BROADCASTING state for channel %s. Participants: [%s]", channelID, strings.Join(users, ", "))
+	logger.Infof("voice: BROADCASTING state for channel %s. Participants: [%s]", channelID, strings.Join(users, ", "))
 	
 	r.notifier.BroadcastVoiceState(channelID, users)
 	if targetedUserID != "" {
@@ -70,7 +70,10 @@ func (r *Router) HandleConn(conn *net.UDPConn) {
 		buf := make([]byte, 8192) // Increased buffer size
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			log.Printf("voice: UDP read error: %v", err)
+			if errors.Is(err, net.ErrClosed) || strings.Contains(err.Error(), "use of closed network connection") {
+				return
+			}
+			logger.Errorf("voice: UDP read error: %v", err)
 			return
 		}
 
@@ -85,7 +88,7 @@ func (r *Router) HandleConn(conn *net.UDPConn) {
 		if packetType == PacketTypeAudio {
 			go r.processPacket(conn, addr, buf[:n])
 		} else {
-			log.Printf("voice: received control packet type %d from %v (len %d)", packetType, addr, n)
+			logger.Debugf("voice: received control packet type %d from %v (len %d)", packetType, addr, n)
 			r.processPacket(conn, addr, buf[:n])
 		}
 	}
@@ -94,7 +97,7 @@ func (r *Router) HandleConn(conn *net.UDPConn) {
 func (r *Router) processPacket(conn *net.UDPConn, addr *net.UDPAddr, data []byte) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Printf("voice: recovered from panic while processing packet from %v: %v", addr, rec)
+			logger.Errorf("voice: recovered from panic while processing packet from %v: %v", addr, rec)
 		}
 	}()
 
@@ -103,19 +106,19 @@ func (r *Router) processPacket(conn *net.UDPConn, addr *net.UDPAddr, data []byte
 
 	switch packetType {
 	case PacketTypeRegister:
-		log.Printf("voice: handling Register from %v", addr)
+		logger.Infof("voice: handling Register from %v", addr)
 		r.handleRegister(addr, string(payload))
 	case PacketTypeJoin:
-		log.Printf("voice: handling Join from %v, payload: %s", addr, string(payload))
+		logger.Infof("voice: handling Join from %v, payload: %s", addr, string(payload))
 		r.handleJoin(addr, string(payload))
 	case PacketTypeLeave:
-		log.Printf("voice: handling Leave from %v", addr)
+		logger.Infof("voice: handling Leave from %v", addr)
 		r.handleLeave(addr, string(payload))
 	case PacketTypeAudio:
-		log.Printf("voice: handling Audio from %v (len %d)", addr, len(data))
+		logger.Debugf("voice: handling Audio from %v (len %d)", addr, len(data))
 		r.handleAudio(conn, addr, payload)
 	default:
-		log.Printf("voice: received UNKNOWN packet type %d from %v (len %d)", packetType, addr, len(data))
+		logger.Warnf("voice: received UNKNOWN packet type %d from %v (len %d)", packetType, addr, len(data))
 	}
 }
 
@@ -127,7 +130,7 @@ func (r *Router) handleRegister(addr *net.UDPAddr, token string) {
 		if len(preview) > 10 {
 			preview = preview[:10]
 		}
-		log.Printf("voice: REGISTRATION FAILED for %v: %v (token: %s...)", addr, err, preview)
+		logger.Warnf("voice: REGISTRATION FAILED for %v: %v (token: %s...)", addr, err, preview)
 		return
 	}
 
@@ -141,7 +144,7 @@ func (r *Router) handleRegister(addr *net.UDPAddr, token string) {
 
 	r.addrMap[session.UserID] = addr
 	r.userMap[addr.String()] = session.UserID
-	log.Printf("voice: SUCCESSFUL REGISTRATION - User: %s, Port: %s", session.UserID, addr.String())
+	logger.Infof("voice: SUCCESSFUL REGISTRATION - User: %s, Port: %s", session.UserID, addr.String())
 }
 
 func (r *Router) handleJoin(addr *net.UDPAddr, channelID string) {
@@ -150,7 +153,7 @@ func (r *Router) handleJoin(addr *net.UDPAddr, channelID string) {
 	userID, ok := r.userMap[addr.String()]
 	r.mu.RUnlock()
 	if !ok {
-		log.Printf("voice: join ignored for unregistered addr %v", addr)
+		logger.Warnf("voice: join ignored for unregistered addr %v", addr)
 		return
 	}
 
@@ -161,7 +164,7 @@ func (r *Router) handleJoin(addr *net.UDPAddr, channelID string) {
 	}
 	r.active[channelID][userID] = true
 	r.mu.Unlock()
-	log.Printf("voice: user %s joined channel session %s", userID, channelID)
+	logger.Infof("voice: user %s joined channel session %s", userID, channelID)
 	r.notifyVoiceUpdate(channelID, userID)
 }
 
@@ -181,13 +184,13 @@ func (r *Router) handleLeave(addr *net.UDPAddr, channelID string) {
 		}
 	}
 	r.mu.Unlock()
-	log.Printf("voice: user %s (addr: %s) left channel %s", userID, addr.String(), channelID)
+	logger.Infof("voice: user %s (addr: %s) left channel %s", userID, addr.String(), channelID)
 	r.notifyVoiceUpdate(channelID, "")
 }
 
 func (r *Router) handleAudio(conn *net.UDPConn, fromAddr *net.UDPAddr, payload []byte) {
 	if len(payload) < IDLength {
-		log.Printf("voice: audio packet too short from %v: %d bytes", fromAddr, len(payload))
+		logger.Warnf("voice: audio packet too short from %v: %d bytes", fromAddr, len(payload))
 		return
 	}
 

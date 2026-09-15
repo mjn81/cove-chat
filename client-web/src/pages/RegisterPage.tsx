@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Eye, EyeOff } from 'lucide-react';
 import { apiRegister, BASE_URL } from '@/api/client';
 import {
 	Card,
@@ -21,6 +22,7 @@ export default function RegisterPage() {
 
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
+	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
@@ -108,17 +110,32 @@ export default function RegisterPage() {
 								{t('auth.password')}
 								<span className="text-destructive ml-1">*</span>
 							</Label>
-							<Input
-								id="reg-password"
-								type="password"
-								className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
-								value={password}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setPassword(e.target.value)
-								}
-								autoComplete="new-password"
-								required
-							/>
+							<div className="relative">
+								<Input
+									id="reg-password"
+									type={showPassword ? 'text' : 'password'}
+									className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+									value={password}
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+										setPassword(e.target.value)
+									}
+									autoComplete="new-password"
+									required
+								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword((prev) => !prev)}
+									className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground focus:outline-none flex items-center justify-center transition-colors"
+									aria-label={showPassword ? 'Hide password' : 'Show password'}
+									tabIndex={-1}
+								>
+									{showPassword ? (
+										<EyeOff className="h-4 w-4" />
+									) : (
+										<Eye className="h-4 w-4" />
+									)}
+								</button>
+							</div>
 						</div>
 						<Button
 							type="submit"

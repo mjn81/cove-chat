@@ -153,3 +153,28 @@
   height: 100vh; /* Fallback */
   height: 100dvh;
 }
+
+/* Modern Animated Spinner */
+.spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2.5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: nt-spin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  vertical-align: middle;
+}
+
+.spinner.small {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+@keyframes nt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     image: nodetalk-server:latest
     ports:
-      - "8080:8080"
+      - "4000:4000"
       - "9090:9090/udp"
     volumes:
       - ./backend/data:/app/data
@@ -20,7 +20,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=http://localhost:4000
     depends_on:
       - backend
     restart: unless-stopped

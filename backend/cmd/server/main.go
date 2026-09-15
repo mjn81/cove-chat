@@ -11,7 +11,7 @@
 //	@license.name MIT
 //	@license.url  https://opensource.org/licenses/MIT
 //
-//	@host     localhost:8080
+//	@host		localhost:4000
 //	@BasePath /
 //
 //	@securityDefinitions.apikey BearerAuth
@@ -24,7 +24,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -40,6 +39,7 @@ import (
 	"nodetalk/backend/internal/config"
 	"nodetalk/backend/internal/crypto"
 	"nodetalk/backend/internal/db"
+	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/middleware"
 	"nodetalk/backend/internal/storage"
 	"nodetalk/backend/internal/store"
@@ -51,9 +51,8 @@ func main() {
 	// ── 1. Load config ────────────────────────────────────────────────────
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("FATAL: config load failed: %v", err)
+		logger.Fatalf("Config load failed: %v", err)
 	}
-	log.Printf("NodeTalk starting on %s:%d", cfg.Server.Domain, cfg.Server.HTTPPort)
 	middleware.TrustProxyHeaders = cfg.Server.TrustProxyHeaders
 
 	// ── 2. Derive KEK ─────────────────────────────────────────────────────
@@ -63,26 +62,30 @@ func main() {
 	metaPath := cfg.Database.Path + "/meta"
 	dek, err := db.BootstrapDEK(metaPath, kek)
 	if err != nil {
-		log.Fatalf("FATAL: DEK bootstrap failed: %v", err)
+		logger.Fatalf("DEK bootstrap failed: %v", err)
 	}
 
 	// ── 4. Open BadgerDB ──────────────────────────────────────────────────
 	mainPath := cfg.Database.Path + "/main"
 	database, err := db.Open(mainPath, dek)
 	if err != nil {
-		log.Fatalf("FATAL: database open failed: %v", err)
+		logger.Fatalf("Database open failed: %v", err)
 	}
 	defer func() {
-		if err := database.Close(); err != nil {
-			log.Printf("WARNING: database close error: %v", err)
-		}
+		_ = database.Close()
 	}()
 
+	stopGC := make(chan struct{})
 	go func() {
 		t := time.NewTicker(5 * time.Minute)
 		defer t.Stop()
-		for range t.C {
-			_ = database.RunGC()
+		for {
+			select {
+			case <-stopGC:
+				return
+			case <-t.C:
+				_ = database.RunGC()
+			}
 		}
 	}()
 
@@ -95,7 +98,7 @@ func main() {
 	var blobStorage storage.BlobStorage
 	if cfg.Storage.S3 != nil && cfg.Storage.S3.Enabled {
 		// TODO: Implement S3Storage
-		log.Println("ws: S3 storage requested but not yet implemented, falling back to FileSystem")
+		logger.Warn("ws: S3 storage requested but not yet implemented, falling back to FileSystem")
 		blobStorage = &storage.FileSystemStorage{BaseDir: cfg.Storage.UploadDir}
 	} else {
 		blobStorage = &storage.FileSystemStorage{BaseDir: cfg.Storage.UploadDir}
@@ -134,43 +137,98 @@ func main() {
 	}
 
 	// ── 8. UDP voice router ────────────────────────────────────────────────
+	var udpConn *net.UDPConn
 	if cfg.Server.UDPPort > 0 {
 		voiceRouter := voice.NewRouter(sessions, hub)
-		go startUDPRouter(cfg.Server.UDPPort, voiceRouter)
+		var err error
+		udpConn, err = startUDPRouter(cfg.Server.UDPPort, voiceRouter)
+		if err != nil {
+			logger.Warnf("UDP voice router failed to start: %v", err)
+		}
 	}
 
 	// ── 9. Graceful shutdown ───────────────────────────────────────────────
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	quit := make(chan os.Signal, 2)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	host := cfg.Server.Domain
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+	logger.PrintBanner(logger.BannerConfig{
+		AppName:   "NodeTalk Server",
+		Version:   "NodeTalk v0.9.0",
+		Host:      host,
+		Port:      cfg.Server.HTTPPort,
+		BoundHost: "0.0.0.0",
+		BoundPort: cfg.Server.HTTPPort,
+		Handlers:  23,
+		Processes: 1,
+		Prefork:   "Disabled",
+		PID:       os.Getpid(),
+	})
 
 	go func() {
-		log.Printf("HTTP listening on %s  |  Swagger: http://localhost%s/api/docs/", addr, addr)
+		logger.Infof("HTTP server listening on %s  |  Swagger: http://localhost%s/api/docs/", addr, addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("FATAL: HTTP server error: %v", err)
+			logger.Fatalf("HTTP server error: %v", err)
 		}
 	}()
 
-	<-quit
-	log.Println("Shutting down…")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("HTTP server forced shutdown: %v", err)
+	sig := <-quit
+	logger.Infof("Received %v, shutting down gracefully…", sig)
+
+	// In case user presses Ctrl+C again, force immediate exit while ensuring DB lock is released
+	go func() {
+		<-quit
+		logger.Warn("Force shutdown requested, exiting immediately…")
+		_ = database.Close()
+		os.Exit(1)
+	}()
+
+	// 1. Stop background GC ticker
+	close(stopGC)
+
+	// 2. Close UDP voice listener immediately (releases UDP port)
+	if udpConn != nil {
+		_ = udpConn.Close()
 	}
-	log.Println("NodeTalk stopped.")
+
+	// 3. Disconnect WebSocket clients so HTTP server can finish shutdown immediately
+	hub.Close()
+
+	// 4. Shutdown HTTP server with 3-second timeout (releases TCP port)
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelShutdown()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Warnf("HTTP server shutdown timed out: %v, forcing close", err)
+		_ = srv.Close()
+	}
+
+	// 5. Explicitly close BadgerDB to flush data and release directory lock
+	if err := database.Close(); err != nil {
+		logger.Warnf("Database close error: %v", err)
+	}
+
+	logger.Info("NodeTalk stopped.")
 }
 
 // startUDPRouter opens a raw UDP socket for desktop voice routing.
 // The server routes opaque audio packets — it never decodes them.
-func startUDPRouter(port int, router *voice.Router) {
+func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
 	addr := &net.UDPAddr{Port: port}
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Printf("WARNING: UDP router failed on port %d: %v", port, err)
-		return
+		logger.Warnf("UDP router failed on port %d: %v", port, err)
+		return nil, err
 	}
-	defer conn.Close()
-	log.Printf("UDP voice router on :%d", port)
+	logger.Infof("UDP voice router on :%d", port)
 
-	router.HandleConn(conn)
+	go func() {
+		defer conn.Close()
+		router.HandleConn(conn)
+	}()
+
+	return conn, nil
 }

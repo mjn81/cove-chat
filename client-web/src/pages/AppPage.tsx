@@ -15,6 +15,7 @@ import { requestNotificationPermission } from '@/utils/notifications';
 import { apiJoinChannel } from '@/api/client';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VoiceChatController } from '@/components/Voice/VoiceChatController';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function AppPage() {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
@@ -137,7 +138,9 @@ export default function AppPage() {
 					/>
 				)}
 
-				<VoiceChatController />
+				<ErrorBoundary label="voice chat">
+					<VoiceChatController />
+				</ErrorBoundary>
 			</div>
 		);
 	}
@@ -180,7 +183,9 @@ export default function AppPage() {
 				{renderRightSidebar()}
 			</ResizablePanel>
 		</ResizablePanelGroup>
-		<VoiceChatController />
+		<ErrorBoundary label="voice chat">
+			<VoiceChatController />
+		</ErrorBoundary>
 	</>
 	);
 }

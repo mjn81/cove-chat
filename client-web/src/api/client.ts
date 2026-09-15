@@ -15,7 +15,7 @@ const getBaseUrl = () => {
 		return envUrl.replace(/\/$/, '');
 	}
 
-	// In production builds, we don't want to fallback to localhost:8080
+	// In production builds, we don't want to fallback to localhost:4000
 	// unless specifically requested via environment variables.
 	if (import.meta.env.PROD) {
 		return envUrl ? envUrl.replace(/\/$/, '') : '';
@@ -24,11 +24,19 @@ const getBaseUrl = () => {
 	if (typeof window !== 'undefined') {
 		const host = window.location.hostname;
 		if (host === '[::1]' || host === '127.0.0.1' || host === 'localhost') {
+			let port = '4000';
+			if (envUrl) {
+				try {
+					port = new URL(envUrl).port || '4000';
+				} catch {
+					// fallback to 4000
+				}
+			}
 			// Use 127.0.0.1 explicitly to avoid IPv6/IPv4 cookie mismatches
-			return `http://127.0.0.1:8080`;
+			return `http://127.0.0.1:${port}`;
 		}
 	}
-	return (envUrl ?? 'http://127.0.0.1:8080').replace(/\/$/, '');
+	return (envUrl ?? 'http://127.0.0.1:4000').replace(/\/$/, '');
 };
 
 export let BASE_URL = getBaseUrl();
@@ -148,27 +156,35 @@ import type {
 	ExploreChannel,
 	Message,
 	Presence,
+	UploadedFile,
 	User,
 } from '@/types/api';
+
+// ─────────────────────────────────────────────
+// Typed request helper
+// ─────────────────────────────────────────────
+// The response interceptor above rewrites every response to `res.data` at
+// runtime, but axios's own types don't know that — every apiClient call
+// statically returns Promise<AxiosResponse<T>> even though it actually
+// resolves to T directly. Every wrapper below used to carry its own
+// `as unknown as Promise<T>` to paper over this mismatch (~20 near-identical
+// casts). This is the one place that bridges the gap now — callers below
+// get real Promise<T> typing without each needing its own unsafe cast.
+function request<T>(axiosCall: Promise<unknown>): Promise<T> {
+	return axiosCall as unknown as Promise<T>;
+}
 
 // ─────────────────────────────────────────────
 // Auth API
 // ─────────────────────────────────────────────
 export async function apiRegister(username: string, password: string) {
-	return apiClient.post<{ id: string; username: string }>('/api/register', {
-		username,
-		password,
-	}) as unknown as Promise<{ id: string; username: string }>;
+	return request<{ id: string; username: string }>(
+		apiClient.post('/api/register', { username, password }),
+	);
 }
 
-export async function apiLogin(
-	username: string,
-	password: string,
-): Promise<AuthUser> {
-	return apiClient.post('/api/login', {
-		username,
-		password,
-	}) as unknown as Promise<AuthUser>;
+export async function apiLogin(username: string, password: string) {
+	return request<AuthUser>(apiClient.post('/api/login', { username, password }));
 }
 
 export async function apiLogout() {
@@ -176,7 +192,7 @@ export async function apiLogout() {
 }
 
 export async function apiMe() {
-	return apiClient.get<AuthUser>('/api/me') as unknown as Promise<AuthUser>;
+	return request<AuthUser>(apiClient.get('/api/me'));
 }
 
 export async function apiUpdateProfile(data: {
@@ -187,10 +203,7 @@ export async function apiUpdateProfile(data: {
 	password?: string;
 	old_password?: string;
 }) {
-	return apiClient.patch<AuthUser>(
-		'/api/users/me',
-		data,
-	) as unknown as Promise<AuthUser>;
+	return request<AuthUser>(apiClient.patch('/api/users/me', data));
 }
 
 export async function apiDeleteAccount() {
@@ -201,17 +214,13 @@ export async function apiDeleteAccount() {
 // Channels
 // ─────────────────────────────────────────────
 export async function apiListChannels() {
-	return apiClient
-		.get<Channel[]>('/api/channels')
-		.then((r) => (r as unknown as Channel[]) || []);
+	return request<Channel[]>(apiClient.get('/api/channels')).then((r) => r || []);
 }
 
 export async function apiExploreChannels(query: string) {
-	return apiClient
-		.get<
-			ExploreChannel[]
-		>(`/api/channels/explore?q=${encodeURIComponent(query)}`)
-		.then((r) => (r as unknown as ExploreChannel[]) || []);
+	return request<ExploreChannel[]>(
+		apiClient.get(`/api/channels/explore?q=${encodeURIComponent(query)}`),
+	).then((r) => r || []);
 }
 
 export async function apiCreateChannel(
@@ -219,23 +228,21 @@ export async function apiCreateChannel(
 	memberIds: string[],
 	isPrivate: boolean,
 ) {
-	return apiClient.post<Channel>('/api/channels', {
-		name,
-		members: memberIds,
-		is_private: isPrivate,
-	}) as unknown as Promise<Channel>;
+	return request<Channel>(
+		apiClient.post('/api/channels', {
+			name,
+			members: memberIds,
+			is_private: isPrivate,
+		}),
+	);
 }
 
 export async function apiGetChannel(id: string) {
-	return apiClient.get<Channel>(
-		`/api/channels/${id}`,
-	) as unknown as Promise<Channel>;
+	return request<Channel>(apiClient.get(`/api/channels/${id}`));
 }
 
 export async function apiJoinChannel(link: string) {
-	return apiClient.post<Channel>(
-		`/api/join/${link}`,
-	) as unknown as Promise<Channel>;
+	return request<Channel>(apiClient.post(`/api/join/${link}`));
 }
 
 export async function apiAddMember(channelId: string, userIds: string[]) {
@@ -248,10 +255,7 @@ export async function apiUpdateChannel(
 	id: string,
 	data: { name?: string; is_private?: boolean },
 ) {
-	return apiClient.patch<Channel>(
-		`/api/channels/${id}`,
-		data,
-	) as unknown as Promise<Channel>;
+	return request<Channel>(apiClient.patch(`/api/channels/${id}`, data));
 }
 
 export async function apiDeleteChannel(id: string) {
@@ -273,15 +277,15 @@ export async function apiUpdateMemberRole(
 }
 
 export async function apiGetChannelMembers(channelId: string) {
-	return apiClient
-		.get<User[]>(`/api/channels/${channelId}/members`)
-		.then((r) => (r as unknown as User[]) || []);
+	return request<User[]>(
+		apiClient.get(`/api/channels/${channelId}/members`),
+	).then((r) => r || []);
 }
 
 export async function apiSearchUsers(query: string) {
-	return apiClient
-		.get<User[]>(`/api/users?q=${encodeURIComponent(query)}`)
-		.then((r) => (r as unknown as User[]) || []);
+	return request<User[]>(
+		apiClient.get(`/api/users?q=${encodeURIComponent(query)}`),
+	).then((r) => r || []);
 }
 
 // ─────────────────────────────────────────────
@@ -290,9 +294,9 @@ export async function apiSearchUsers(query: string) {
 export async function apiListMessages(id: string, limit = 50, before?: string) {
 	const query = new URLSearchParams({ limit: limit.toString() });
 	if (before) query.append('before', before);
-	return apiClient
-		.get<Message[]>(`/api/channels/${id}/messages?${query.toString()}`)
-		.then((r) => (r as unknown as Message[]) || []);
+	return request<Message[]>(
+		apiClient.get(`/api/channels/${id}/messages?${query.toString()}`),
+	).then((r) => r || []);
 }
 
 // ─────────────────────────────────────────────
@@ -312,36 +316,38 @@ export async function apiUploadFile(
 	if (thumbNonce) formData.append('thumb_nonce', thumbNonce);
 	if (channelId) formData.append('channel_id', channelId);
 
-	return apiClient.post('/api/files', formData, {
-		headers: {
-			'Content-Type': 'multipart/form-data',
-		},
-		onUploadProgress,
-	});
+	return request<UploadedFile>(
+		apiClient.post('/api/files', formData, {
+			headers: {
+				'Content-Type': 'multipart/form-data',
+			},
+			onUploadProgress,
+		}),
+	);
 }
 
 export async function apiGetFile(
 	fileId: string,
 	onDownloadProgress?: (progressEvent: any) => void,
-): Promise<ArrayBuffer> {
-	return apiClient.get(`/api/files/${fileId}`, {
-		responseType: 'arraybuffer',
-		onDownloadProgress,
-	}) as Promise<ArrayBuffer>;
+) {
+	return request<ArrayBuffer>(
+		apiClient.get(`/api/files/${fileId}`, {
+			responseType: 'arraybuffer',
+			onDownloadProgress,
+		}),
+	);
 }
 
 // ─────────────────────────────────────────────
 // Presence
 // ─────────────────────────────────────────────
 export async function apiGetPresence(userId: string) {
-	return apiClient.get<Presence>(
-		`/api/users/${userId}/presence`,
-	) as unknown as Promise<Presence>;
+	return request<Presence>(apiClient.get(`/api/users/${userId}/presence`));
 }
 
 export async function apiGetVersion() {
-	return apiClient.get<{ version: string }>('/api/version').catch((err) => {
-		logger.error('Version fetch error', err);
-		throw err;
-	}) as unknown as Promise<{ version: string }>;
+	// No extra .catch here (unlike an earlier version of this function) —
+	// the response interceptor above already logs every API error centrally,
+	// so adding one here just double-logged version-check failures.
+	return request<{ version: string }>(apiClient.get('/api/version'));
 }

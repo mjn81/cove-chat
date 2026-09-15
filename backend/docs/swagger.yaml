@@ -177,7 +177,7 @@ definitions:
       last_seen:
         type: string
     type: object
-host: localhost:8080
+host: localhost:4000
 info:
   contact:
     name: NodeTalk Support

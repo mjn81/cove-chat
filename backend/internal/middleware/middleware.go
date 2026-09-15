@@ -3,12 +3,13 @@ package middleware
 import (
 	"bufio"
 	"errors"
-	"log"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"nodetalk/backend/internal/logger"
 
 	"golang.org/x/time/rate"
 )
@@ -44,7 +45,7 @@ func Recover(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.Printf("panic recovered: %s %s | %v", r.Method, r.URL.Path, rec)
+				logger.Errorf("panic recovered: %s %s | %v", r.Method, r.URL.Path, rec)
 				http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
 			}
 		}()
@@ -68,7 +69,7 @@ func Logger(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		duration := time.Since(start)
-		log.Printf(
+		logger.Infof(
 			"[%s] %s %s | %d | %v",
 			r.Method,
 			r.URL.Path,
@@ -230,13 +231,13 @@ func CORS(next http.Handler, isDev bool, allowedOrigins string) http.Handler {
 			// Dev convenience for an unconfigured origin: allow the request,
 			// but without credentials, since it wasn't explicitly trusted.
 			if allowedOrigins != "" {
-				log.Printf("CORS: Origin mismatch. Got %q, expected one of %q. Falling back to echoing origin (no credentials) in Dev mode.", origin, allowedOrigins)
+				logger.Warnf("CORS: Origin mismatch. Got %q, expected one of %q. Falling back to echoing origin (no credentials) in Dev mode.", origin, allowedOrigins)
 			}
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 		case origin != "":
 			// Production mismatch logging
-			log.Printf("CORS: REJECTED origin %q. Not in allowed list: %q", origin, allowedOrigins)
+			logger.Warnf("CORS: REJECTED origin %q. Not in allowed list: %q", origin, allowedOrigins)
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

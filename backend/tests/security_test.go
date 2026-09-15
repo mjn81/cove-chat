@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -157,6 +158,64 @@ func TestLogin_SetsSessionAndCSRFCookies(t *testing.T) {
 	}
 	if !sawCSRF {
 		t.Error("login response did not set nodetalk_csrf cookie")
+	}
+}
+
+// TestLogin_AlwaysUsesSameSiteLax_RegardlessOfOrigin locks in a corrected
+// design decision. An earlier version of this fix issued SameSite=None for
+// requests from a recognized Wails origin, reasoning that the desktop
+// webview's frontend origin differs from the API origin, so SameSite=Lax
+// cookies (sent only on top-level navigations) would never reach the API on
+// a normal fetch/XHR call. That reasoning about SameSite=Lax was correct,
+// but the fix was still wrong: the CSRF cookie (non-httpOnly, meant to be
+// read via document.cookie and echoed back as a header) is scoped to the
+// API's own origin — a page running on a DIFFERENT origin (wails://…,
+// localhost:34115) can never read it via document.cookie, regardless of
+// SameSite. That's basic cookie-scoping (RFC 6265), not a SameSite
+// question, and no SameSite value fixes it. So a cross-origin client could
+// never complete this cookie+CSRF-double-submit flow no matter what — the
+// SameSite=None branch was real but functionally dead code, and widened the
+// cookie's exposure for no benefit. Every login must get the strictly safer
+// SameSite=Lax; the desktop (Wails) client is architecturally stuck on
+// Bearer-token auth for as long as it's served from a different origin than
+// the API (fixing that for real would mean reverse-proxying /api under the
+// Wails asset-server origin, not a cookie-attribute tweak).
+func TestLogin_AlwaysUsesSameSiteLax_RegardlessOfOrigin(t *testing.T) {
+	for _, origin := range []string{"http://localhost:5173", "wails://wails.localhost", "http://localhost:34115"} {
+		t.Run(origin, func(t *testing.T) {
+			srv := testServer(t)
+			defer srv.Close()
+
+			client := cookieClient(t)
+			username := "samesiteuser_" + strings.NewReplacer(":", "_", "/", "_", ".", "_").Replace(origin)
+			regBody := jsonBody(t, api.RegisterRequest{Username: username, Password: "password123"})
+			regReq, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/register", regBody)
+			regReq.Header.Set("Content-Type", "application/json")
+			client.Do(regReq)
+
+			loginBody := jsonBody(t, api.LoginRequest{Username: username, Password: "password123"})
+			loginReq, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/login", loginBody)
+			loginReq.Header.Set("Content-Type", "application/json")
+			loginReq.Header.Set("Origin", origin)
+			resp, err := client.Do(loginReq)
+			if err != nil {
+				t.Fatalf("login: %v", err)
+			}
+			defer resp.Body.Close()
+
+			var sawSession bool
+			for _, c := range resp.Cookies() {
+				if c.Name == "nodetalk_session" {
+					sawSession = true
+					if c.SameSite != http.SameSiteLaxMode {
+						t.Errorf("nodetalk_session SameSite = %v, want SameSiteLaxMode for origin %q", c.SameSite, origin)
+					}
+				}
+			}
+			if !sawSession {
+				t.Fatal("login response did not set nodetalk_session cookie")
+			}
+		})
 	}
 }
 
@@ -455,5 +514,33 @@ func TestUploadFile_ChannelScoped_NonMemberForbidden(t *testing.T) {
 	resp := mustDo(t, req)
 	if resp.StatusCode != http.StatusForbidden {
 		t.Errorf("non-member upload status = %d, want 403", resp.StatusCode)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Error-propagation regression tests
+// ─────────────────────────────────────────────────────────────
+
+// TestDeleteUser_ReturnsErrorWhenAnonymizationFails guards a real behavior
+// fix: DeleteUser previously always returned nil regardless of whether the
+// final anonymization write succeeded, so a failed account deletion could
+// be reported to the caller as a success while the account was left
+// completely untouched.
+func TestDeleteUser_ReturnsErrorWhenAnonymizationFails(t *testing.T) {
+	dir := t.TempDir()
+	kek := crypto.DeriveKEK("test-master-password")
+	dek, err := db.BootstrapDEK(dir+"/meta", kek)
+	if err != nil {
+		t.Fatalf("BootstrapDEK: %v", err)
+	}
+	database, err := db.Open(dir+"/main", dek)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { database.Close() })
+	s := store.New(database)
+
+	if err := s.DeleteUser("nonexistent-user-id"); err == nil {
+		t.Fatal("expected DeleteUser to return an error for a user that doesn't exist, got nil")
 	}
 }

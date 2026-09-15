@@ -55,6 +55,7 @@ export interface Presence {
 export interface UploadedFile {
 	id: string;
 	owner_id: string;
+	channel_id?: string;
 	size: number;
 	mime: string;
 	thumb_ciphertext?: string;

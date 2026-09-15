@@ -6,20 +6,64 @@ import { isWails } from '@/utils/wails';
 import { onWS } from '@/ws';
 
 export const VoiceChatController: React.FC = () => {
-	const { 
-		activeChannelId, isActive, isMuted, isDeafened, speakingUsers,
-		leaveVoice, _setInternalState, addLog
-	} = useVoiceStore();
+	// Individual field selectors instead of a blanket `useVoiceStore()`
+	// destructure: the latter subscribes to the ENTIRE store, so this
+	// component re-rendered on every store mutation — including `logs`
+	// (written on every boot step and error) and `userVolumes`/`userMutes`
+	// (already selected separately below) — not just the fields it actually
+	// renders with. That mattered most during an active call, where the
+	// component also holds the MediaStream/AudioContext refs driving
+	// real-time audio.
+	const activeChannelId = useVoiceStore(state => state.activeChannelId);
+	const isActive = useVoiceStore(state => state.isActive);
+	const isMuted = useVoiceStore(state => state.isMuted);
+	const isDeafened = useVoiceStore(state => state.isDeafened);
+	const speakingUsers = useVoiceStore(state => state.speakingUsers);
+	const leaveVoice = useVoiceStore(state => state.leaveVoice);
+	const _setInternalState = useVoiceStore(state => state._setInternalState);
+	const addLog = useVoiceStore(state => state.addLog);
 	const { user } = useAuthStore();
 	const token = user?.token || localStorage.getItem('nodetalk_token') || '';
 	const channels = useChannelStore(state => state.channels);
-	
+
 	const { preferredMicId } = useAppStore();
-	
+
 	const streamRef = useRef<MediaStream | null>(null);
 	const audioContextRef = useRef<AudioContext | null>(null);
 	const remotePlayersRef = useRef<Map<string, { node: ScriptProcessorNode, gainNode: GainNode, queue: Float32Array[] }>>(new Map());
 	const remoteGainRef = useRef<GainNode | null>(null);
+	// Per-user "stop showing speaking indicator" fade-out timers. Previously
+	// stored as ad-hoc `window` globals keyed by user id — never cleared on
+	// unmount/stop, so rapid join/leave cycles leaked timers indefinitely and
+	// bypassed React's lifecycle guarantees entirely.
+	const speakingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+	const markSpeaking = (userId: string) => {
+		const currentSpeakers = new Set(useVoiceStore.getState().speakingUsers);
+		if (!currentSpeakers.has(userId)) {
+			currentSpeakers.add(userId);
+			_setInternalState({ speakingUsers: currentSpeakers });
+		}
+	};
+
+	const clearSpeakingTimeout = (userId: string) => {
+		const existing = speakingTimeoutsRef.current.get(userId);
+		if (existing) {
+			clearTimeout(existing);
+			speakingTimeoutsRef.current.delete(userId);
+		}
+	};
+
+	const scheduleSpeakingClear = (userId: string, delayMs: number) => {
+		clearSpeakingTimeout(userId);
+		const id = setTimeout(() => {
+			const next = new Set(useVoiceStore.getState().speakingUsers);
+			next.delete(userId);
+			_setInternalState({ speakingUsers: next });
+			speakingTimeoutsRef.current.delete(userId);
+		}, delayMs);
+		speakingTimeoutsRef.current.set(userId, id);
+	};
 
 	const activeChannel = channels.find(c => c.id === activeChannelId);
 
@@ -81,8 +125,8 @@ export const VoiceChatController: React.FC = () => {
 				if (wails?.GetServerURL) {
 					serverUrl = await wails.GetServerURL();
 				} else {
-					addLog('WARNING: GetServerURL missing, using fallback localhost:8080');
-					serverUrl = 'http://localhost:8080';
+					addLog('WARNING: GetServerURL missing, using fallback localhost:4000');
+					serverUrl = 'http://localhost:4000';
 				}
 				addLog(`STEP 3: URL = ${serverUrl}`);
 				
@@ -156,20 +200,8 @@ export const VoiceChatController: React.FC = () => {
 
 					const currentMuted = useVoiceStore.getState().isMuted;
 					if (average > 20 && !currentMuted) { // Higher threshold, check mute
-						const currentSpeakers = new Set(useVoiceStore.getState().speakingUsers);
-						if (!currentSpeakers.has(user.id)) {
-							currentSpeakers.add(user.id);
-							_setInternalState({ speakingUsers: currentSpeakers });
-						}
-						
-						const timeoutId = (window as any)[`voice_timeout_${user.id}`];
-						if (timeoutId) clearTimeout(timeoutId);
-						(window as any)[`voice_timeout_${user.id}`] = setTimeout(() => {
-							const next = new Set(useVoiceStore.getState().speakingUsers);
-							next.delete(user.id);
-							_setInternalState({ speakingUsers: next });
-							delete (window as any)[`voice_timeout_${user.id}`];
-						}, 200); // Fast fade-out (200ms)
+						markSpeaking(user.id);
+						scheduleSpeakingClear(user.id, 200); // Fast fade-out (200ms)
 					} else if (currentMuted) {
 						// If muted, force clear speaking state immediately
 						const currentSpeakers = useVoiceStore.getState().speakingUsers;
@@ -177,8 +209,7 @@ export const VoiceChatController: React.FC = () => {
 							const next = new Set(currentSpeakers);
 							next.delete(user.id);
 							_setInternalState({ speakingUsers: next });
-							const timeoutId = (window as any)[`voice_timeout_${user.id}`];
-							if (timeoutId) clearTimeout(timeoutId);
+							clearSpeakingTimeout(user.id);
 						}
 					}
 					requestAnimationFrame(updateUI);
@@ -234,18 +265,8 @@ export const VoiceChatController: React.FC = () => {
 						}
 						
 						// Update local UI
-						const currentSpeakers = new Set(useVoiceStore.getState().speakingUsers);
-						if (!currentSpeakers.has(user.id)) {
-							currentSpeakers.add(user.id);
-							_setInternalState({ speakingUsers: currentSpeakers });
-						}
-						const tid = (window as any)[`voice_timeout_${user.id}`];
-						if (tid) clearTimeout(tid);
-						(window as any)[`voice_timeout_${user.id}`] = setTimeout(() => {
-							const next = new Set(useVoiceStore.getState().speakingUsers);
-							next.delete(user.id);
-							_setInternalState({ speakingUsers: next });
-						}, 200);
+						markSpeaking(user.id);
+						scheduleSpeakingClear(user.id, 200);
 					}
 				};
 
@@ -261,6 +282,8 @@ export const VoiceChatController: React.FC = () => {
 
 		const stop = () => {
 			addLog(`STOP: Stopping voice chat... (isActive=${isActive}, mounted=${isMounted})`);
+			speakingTimeoutsRef.current.forEach((id) => clearTimeout(id));
+			speakingTimeoutsRef.current.clear();
 			if (streamRef.current) {
 				streamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
 				streamRef.current = null;
@@ -373,18 +396,8 @@ export const VoiceChatController: React.FC = () => {
 				}
 
 				// Update speaking indicator
-				const currentSpeakers = new Set(useVoiceStore.getState().speakingUsers);
-				if (!currentSpeakers.has(senderID)) {
-					currentSpeakers.add(senderID);
-					_setInternalState({ speakingUsers: currentSpeakers });
-				}
-				const timeoutId = (window as any)[`voice_timeout_${senderID}`];
-				if (timeoutId) clearTimeout(timeoutId);
-				(window as any)[`voice_timeout_${senderID}`] = setTimeout(() => {
-					const next = new Set(useVoiceStore.getState().speakingUsers);
-					next.delete(senderID);
-					_setInternalState({ speakingUsers: next });
-				}, 300);
+				markSpeaking(senderID);
+				scheduleSpeakingClear(senderID, 300);
 
 				// Playback via ScriptProcessor for smooth streaming
 				let player = remotePlayersRef.current.get(senderID);

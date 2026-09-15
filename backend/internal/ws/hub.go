@@ -3,12 +3,12 @@ package ws
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"nodetalk/backend/internal/auth"
+	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/models"
 	"nodetalk/backend/internal/store"
 
@@ -26,6 +26,7 @@ type Hub struct {
 	kek      []byte
 
 	broadcast chan *envelope
+	closed    bool
 }
 
 // Client represents a connected WebSocket peer.
@@ -58,6 +59,26 @@ func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte) *Hub {
 	return h
 }
 
+// Close gracefully disconnects all active WebSocket clients.
+func (h *Hub) Close() {
+	h.mu.Lock()
+	if h.closed {
+		h.mu.Unlock()
+		return
+	}
+	h.closed = true
+	var allClients []*Client
+	for _, clientList := range h.clients {
+		allClients = append(allClients, clientList...)
+	}
+	h.clients = make(map[string][]*Client)
+	h.mu.Unlock()
+
+	for _, c := range allClients {
+		_ = c.conn.Close(websocket.StatusGoingAway, "server shutting down")
+	}
+}
+
 // run is the Hub's main event loop — dispatches inbound envelopes to the
 // correct channel members, one at a time and in the order they were
 // submitted. This guarantees clients observe messages, edits, and deletes
@@ -75,7 +96,7 @@ func (h *Hub) run() {
 func (h *Hub) dispatch(e *envelope) {
 	members, err := h.store.GetChannelMembers(e.channelID)
 	if err != nil {
-		log.Printf("ws: dropping envelope for channel %s: failed to load members: %v", e.channelID, err)
+		logger.Warnf("ws: dropping envelope for channel %s: failed to load members: %v", e.channelID, err)
 		return
 	}
 	h.mu.RLock()
@@ -86,7 +107,7 @@ func (h *Hub) dispatch(e *envelope) {
 				select {
 				case c.send <- e:
 				default:
-					log.Printf("ws: send buffer full for user %s, dropping envelope", m.UserID)
+					logger.Warnf("ws: send buffer full for user %s, dropping envelope", m.UserID)
 				}
 			}
 		}
@@ -112,7 +133,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		InsecureSkipVerify: true,
 	})
 	if err != nil {
-		log.Printf("ws: upgrade failed for user %s: %v", session.UserID, err)
+		logger.Warnf("ws: upgrade failed for user %s: %v", session.UserID, err)
 		return
 	}
 	// Set a generous read limit for file/voice payloads (5 MB).
@@ -220,7 +241,7 @@ func (c *Client) readPump(ctx context.Context) {
 			break
 		}
 		if err := c.handleMessage(ctx, &raw); err != nil {
-			log.Printf("ws: handle error for %s: %v", c.UserID, err)
+			logger.Warnf("ws: handle error for %s: %v", c.UserID, err)
 		}
 	}
 }
@@ -229,7 +250,7 @@ func (c *Client) readPump(ctx context.Context) {
 func (h *Hub) BroadcastChannelCreated(ch *models.Channel) {
 	rawKey, err := h.store.DecryptChannelKey(ch, h.kek)
 	if err != nil {
-		log.Printf("ws: cannot decrypt key for new channel %s: %v", ch.ID, err)
+		logger.Errorf("ws: cannot decrypt key for new channel %s: %v", ch.ID, err)
 		return
 	}
 	payload, _ := json.Marshal(map[string]any{
@@ -267,7 +288,7 @@ func (h *Hub) SendChannelKey(channelID, userID string) {
 
 	rawKey, err := h.store.DecryptChannelKey(ch, h.kek)
 	if err != nil {
-		log.Printf("ws: cannot decrypt key for channel %s: %v", channelID, err)
+		logger.Errorf("ws: cannot decrypt key for channel %s: %v", channelID, err)
 		return
 	}
 

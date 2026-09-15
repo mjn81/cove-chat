@@ -36,7 +36,7 @@ COPY --from=builder /app/nodetalk-server .
 RUN mkdir -p /app/data
 
 # Expose HTTP and UDP ports
-EXPOSE 8080 9090/udp
+EXPOSE 4000 9090/udp
 
 # Command to run the application
 CMD ["./nodetalk-server"]

@@ -5,7 +5,7 @@
 # The public domain name of this node. Used for inter-node federation.
 domain = "localhost"
 # HTTP API and WebSocket port.
-http_port = 8080
+http_port = 4000
 # Raw UDP port for voice routing (Wails desktop client only).
 udp_port = 9090
 # The origin(s) allowed to access the API via CORS. Comma-separated.

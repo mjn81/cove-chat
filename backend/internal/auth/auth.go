@@ -180,6 +180,22 @@ func GenerateCSRFToken() (string, error) {
 // SetSessionCookies writes the httpOnly session cookie and the readable CSRF
 // cookie for the web client. secure should be true whenever the server is
 // reachable over HTTPS (i.e. !devMode).
+//
+// Always SameSite=Lax. An earlier version of this function issued
+// SameSite=None for requests from a recognized Wails-desktop origin, on the
+// reasoning that Wails' webview serves the frontend from a different origin
+// than this API, so a Lax cookie (sent only on top-level navigations) would
+// never ride along on a normal fetch/XHR call. That's true, but it doesn't
+// help: the CSRF cookie is non-httpOnly specifically so client JS can read
+// it via document.cookie and echo it back as a header, and document.cookie
+// only ever exposes cookies scoped to the CURRENT page's own origin — a page
+// running on a different origin (wails://…, localhost:34115) can never read
+// it, regardless of SameSite. That's basic cookie scoping (RFC 6265), not a
+// SameSite question, so no SameSite value makes this cookie+CSRF scheme work
+// for a cross-origin client. The desktop client is architecturally stuck on
+// Bearer-token auth for as long as it's served from a different origin than
+// the API — fixing that for real means reverse-proxying /api under the
+// Wails asset-server's own origin, not a cookie-attribute tweak.
 func SetSessionCookies(w http.ResponseWriter, token, csrfToken string, ttl time.Duration, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,

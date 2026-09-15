@@ -78,6 +78,9 @@
     "encrypted": "[رمزگذاری‌شده]",
     "decryption_failed": "[رمزگشایی ناموفق بود]"
   },
+  "common": {
+    "save": "ذخیره"
+  },
   "settings": {
     "title": "تنظیمات کاربر",
     "my_account": "حساب من",
@@ -86,6 +89,18 @@
     "notifications": "اعلان‌ها",
     "voice_video": "صدا و ویدیو",
     "logout": "خروج",
+    "profile_information": "اطلاعات پروفایل",
+    "username": "نام کاربری",
+    "about_me": "درباره من",
+    "edit": "ویرایش",
+    "account_removal": "حذف حساب",
+    "delete_description": "حذف حساب شما دائمی است و قابل بازگشت نیست. تمام اطلاعات شما، از جمله پیام‌ها و مخاطبین، ناشناس یا حذف خواهند شد.",
+    "delete_account": "حذف حساب",
+    "delete_confirm": "بله، حساب حذف شود",
+    "password_change": "تغییر رمز عبور",
+    "new_password": "رمز عبور جدید",
+    "update_password": "تغییر رمز عبور",
+    "cancel": "انصراف",
     "theme": "تم",
     "dark": "تاریک",
     "light": "روشن",

@@ -78,6 +78,9 @@
     "encrypted": "[مشفّر]",
     "decryption_failed": "[فشل فك التشفير]"
   },
+  "common": {
+    "save": "حفظ"
+  },
   "settings": {
     "title": "إعدادات المستخدم",
     "my_account": "حسابي",
@@ -86,6 +89,18 @@
     "notifications": "الإشعارات",
     "voice_video": "الصوت والفيديو",
     "logout": "تسجيل الخروج",
+    "profile_information": "معلومات الملف الشخصي",
+    "username": "اسم المستخدم",
+    "about_me": "نبذة عني",
+    "edit": "تعديل",
+    "account_removal": "حذف الحساب",
+    "delete_description": "حذف حسابك نهائي ولا يمكن التراجع عنه. سيتم إخفاء هوية جميع بياناتك أو حذفها، بما في ذلك الرسائل وجهات الاتصال.",
+    "delete_account": "حذف الحساب",
+    "delete_confirm": "نعم، احذف الحساب",
+    "password_change": "تغيير كلمة المرور",
+    "new_password": "كلمة المرور الجديدة",
+    "update_password": "تغيير كلمة المرور",
+    "cancel": "إلغاء",
     "theme": "الموضوع",
     "dark": "داكن",
     "light": "فاتح",

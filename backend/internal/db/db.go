@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -12,7 +13,9 @@ import (
 
 // DB wraps a BadgerDB instance with NodeTalk-specific key-value helpers.
 type DB struct {
-	bdb *badger.DB
+	bdb      *badger.DB
+	once     sync.Once
+	closeErr error
 }
 
 // Sentinel errors for common not-found cases.
@@ -38,8 +41,12 @@ func Open(path string, dek []byte) (*DB, error) {
 }
 
 // Close cleanly shuts down BadgerDB, flushing pending writes.
+// Safe to call multiple times (idempotent).
 func (d *DB) Close() error {
-	return d.bdb.Close()
+	d.once.Do(func() {
+		d.closeErr = d.bdb.Close()
+	})
+	return d.closeErr
 }
 
 // RunGC triggers a manual value-log garbage collection cycle.

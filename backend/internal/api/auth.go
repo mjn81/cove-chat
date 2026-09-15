@@ -72,8 +72,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	// Set cookies for the web client. The desktop (Wails) client ignores
 	// these and continues to use the `token` field below via the
-	// Authorization header, since its webview doesn't reliably persist
-	// httpOnly cookies.
+	// Authorization header — see auth.SetSessionCookies for why this
+	// cookie+CSRF scheme is architecturally unusable cross-origin, not just
+	// a stopgap.
 	auth.SetSessionCookies(w, token, csrfToken, h.TokenTTL, !h.IsDev)
 
 	writeJSON(w, http.StatusOK, LoginResponse{

@@ -68,7 +68,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Domain:         "localhost",
-			HTTPPort:       8080,
+			HTTPPort:       4000,
 			UDPPort:        9090,
 			MaxFileSizeMB:  100, // Default 100MB
 			Dev:               false,
@@ -158,9 +158,12 @@ func printPasswordWarning(pwd string) {
 	fmt.Println()
 }
 
-// persist writes the current configuration back to the TOML file.
+// persist writes the current configuration back to the TOML file. The file
+// contains the master password in plaintext, so it's created with 0600
+// (owner read/write only) rather than relying on the process umask, which
+// on a permissively-configured host could leave it world-readable.
 func (c *Config) persist(path string) error {
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}

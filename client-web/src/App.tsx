@@ -7,15 +7,7 @@ import AppPage      from './pages/AppPage';
 import ServerSelectionPage from './pages/ServerSelectionPage';
 import { setApiBaseUrl } from './api/client';
 import { isWails } from './utils/wails';
-
-/** Full-screen spinner while session is being restored from localStorage */
-function LoadingScreen() {
-  return (
-    <div className="loading-screen flex items-center justify-center h-screen w-full bg-background">
-      <span className="spinner" style={{ width: 36, height: 36 }} />
-    </div>
-  );
-}
+import LoadingScreen from './components/ui/LoadingScreen';
 
 /** Redirect to /login when unauthenticated */
 function RequireAuth({ children }: { children: React.ReactNode }) {

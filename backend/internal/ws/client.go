@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
+	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/models"
 	"nodetalk/backend/internal/store"
 
@@ -46,13 +46,13 @@ func (h *Hub) unregister(c *Client) {
 func (c *Client) writeChannelKeys(ctx context.Context, s *store.Store, kek []byte) {
 	channels, err := s.ListUserChannels(c.UserID)
 	if err != nil {
-		log.Printf("ws: writeChannelKeys list error for %s: %v", c.UserID, err)
+		logger.Errorf("ws: writeChannelKeys list error for %s: %v", c.UserID, err)
 		return
 	}
 	for _, ch := range channels {
 		rawKey, err := s.DecryptChannelKey(ch, kek)
 		if err != nil {
-			log.Printf("ws: cannot decrypt key for channel %s: %v", ch.ID, err)
+			logger.Errorf("ws: cannot decrypt key for channel %s: %v", ch.ID, err)
 			continue
 		}
 		payload, _ := json.Marshal(map[string]any{

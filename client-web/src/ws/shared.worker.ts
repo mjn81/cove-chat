@@ -3,15 +3,35 @@
 /// <reference lib="webworker" />
 
 import { createPortRegistry } from './portRegistry';
-
-let socket: WebSocket | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let reconnectDelay = 1000;
-const MAX_DELAY = 30_000;
-let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+import { createSocketManager } from './socketManager';
 
 const portRegistry = createPortRegistry<MessagePort>();
-let wsUrl: string = 'ws://localhost:8080/ws';
+
+const socketManager = createSocketManager({
+	onOpen: () => {
+		console.info('[SharedWorker] connected');
+		broadcast({ type: 'WS_OPEN' });
+	},
+	onMessage: (raw) => {
+		try {
+			const msg = JSON.parse(raw);
+			broadcast({ type: 'WS_MESSAGE', payload: msg });
+		} catch (e) {
+			console.warn('[SharedWorker] unparseable message', e);
+		}
+	},
+	onClose: (code) => {
+		broadcast({ type: 'WS_CLOSE', code });
+		if (code === 1000 || code === 1001) {
+			console.info('[SharedWorker] closed normally');
+		} else {
+			console.warn(`[SharedWorker] closed (${code}), reconnecting...`);
+		}
+	},
+	onError: (err) => {
+		console.error('[SharedWorker] websocket error', err);
+	},
+});
 
 // Listen for connections from new tabs.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,18 +45,15 @@ _self.onconnect = (e: MessageEvent) => {
 
 		switch (cmd) {
 			case 'CONNECT': {
-				wsUrl = payload.url;
-				connect();
+				socketManager.connect(payload.url);
 				break;
 			}
 			case 'DISCONNECT': {
-				disconnect();
+				socketManager.disconnect();
 				break;
 			}
 			case 'SEND': {
-				if (socket?.readyState === WebSocket.OPEN) {
-					socket.send(JSON.stringify(payload));
-				}
+				socketManager.send(payload);
 				break;
 			}
 			case 'LEAVE': {
@@ -52,86 +69,12 @@ _self.onconnect = (e: MessageEvent) => {
 
 	port.start();
 
-	// Immediately inform the new port if we are already connected
-	if (socket?.readyState === WebSocket.OPEN) {
+	// Immediately inform the new port if we are already connected, so a tab
+	// opened after the connection was established doesn't wait silently.
+	if (socketManager.isOpen()) {
 		port.postMessage({ type: 'WS_OPEN' });
 	}
 };
-
-function connect() {
-	if (socket) {
-		if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-			if (socket.url === wsUrl) return;
-			// If URL changed (e.g. new token), close old and start new
-			socket.close(1000, 'URL changed');
-		}
-	}
-
-	console.info('[SharedWorker] connecting to', wsUrl);
-	socket = new WebSocket(wsUrl);
-
-	socket.onopen = () => {
-		console.info('[SharedWorker] connected');
-		reconnectDelay = 1000;
-		broadcast({ type: 'WS_OPEN' });
-		startHeartbeat();
-	};
-
-	socket.onmessage = (event) => {
-		try {
-			const msg = JSON.parse(event.data);
-			broadcast({ type: 'WS_MESSAGE', payload: msg });
-		} catch (e) {
-			console.warn('[SharedWorker] unparseable message', e);
-		}
-	};
-
-	socket.onclose = (ev) => {
-		stopHeartbeat();
-		broadcast({ type: 'WS_CLOSE', code: ev.code });
-		
-		if (ev.code === 1000 || ev.code === 1001) {
-			console.info('[SharedWorker] closed normally');
-			return;
-		}
-
-		console.warn(`[SharedWorker] closed (${ev.code}), reconnecting in ${reconnectDelay}ms...`);
-		scheduleReconnect();
-	};
-
-	socket.onerror = (err) => {
-		console.error('[SharedWorker] websocket error', err);
-	};
-}
-
-function disconnect() {
-	if (reconnectTimer) clearTimeout(reconnectTimer);
-	stopHeartbeat();
-	socket?.close(1000, 'User logout');
-	socket = null;
-}
-
-function scheduleReconnect() {
-	if (reconnectTimer) clearTimeout(reconnectTimer);
-	reconnectTimer = setTimeout(() => {
-		reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_DELAY);
-		connect();
-	}, reconnectDelay);
-}
-
-function startHeartbeat() {
-	stopHeartbeat();
-	heartbeatTimer = setInterval(() => {
-		if (socket?.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify({ type: 'ping', payload: null }));
-		}
-	}, 25_000);
-}
-
-function stopHeartbeat() {
-	if (heartbeatTimer) clearInterval(heartbeatTimer);
-	heartbeatTimer = null;
-}
 
 // Broadcasts an event to all connected UI tabs
 function broadcast(msg: unknown) {

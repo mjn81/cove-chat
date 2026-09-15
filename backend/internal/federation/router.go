@@ -12,8 +12,8 @@ package federation
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"nodetalk/backend/internal/logger"
 	"strings"
 	"time"
 )
@@ -77,7 +77,7 @@ type FederatedMessage struct {
 //   - Implement node discovery via DNS SRV records (_nodetalk._tcp.domain).
 func (r *Router) Deliver(ctx context.Context, msg *FederatedMessage) error {
 	targetURL := fmt.Sprintf("https://%s/api/fed/inbound", msg.ToNode)
-	log.Printf("federation: [STUB] would deliver message to %s", targetURL)
+	logger.Infof("federation: [STUB] would deliver message to %s", targetURL)
 	// TODO: marshal msg, POST to targetURL with auth headers.
 	return fmt.Errorf("federation: not yet implemented — target: %s", targetURL)
 }

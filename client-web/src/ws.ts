@@ -2,12 +2,13 @@
 
 import type { Message } from '@/types/api';
 import { isWails } from '@/utils/wails';
+import { createSocketManager } from '@/ws/socketManager';
 
 import { BASE_URL } from '@/api/client';
 
 const getWsUrl = () => {
 	// Derive WS URL from the current API BASE_URL
-	// e.g. http://127.0.0.1:8080 -> ws://127.0.0.1:8080
+	// e.g. http://127.0.0.1:4000 -> ws://127.0.0.1:4000
 	//      https://chat.example.com -> wss://chat.example.com
 	const url = new URL(BASE_URL);
 	const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -72,7 +73,6 @@ let worker: {
 		start: () => void;
 	};
 } | null = null;
-let directSocket: WebSocket | null = null;
 
 let unloadListenerRegistered = false;
 
@@ -157,91 +157,44 @@ function getFullWsUrl(explicitToken?: string): string {
 
 function setupDirectConnection() {
 	console.info('[ws] using direct connection');
-	let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-	let reconnectDelay = 1000;
-	const MAX_RECONNECT_DELAY = 10000;
-	let lastUrl = '';
 
-	const stopHeartbeat = () => {
-		if (heartbeatTimer) clearInterval(heartbeatTimer);
-		heartbeatTimer = null;
-	};
-
-	const startHeartbeat = () => {
-		stopHeartbeat();
-		heartbeatTimer = setInterval(() => {
-			if (directSocket?.readyState === WebSocket.OPEN) {
-				directSocket.send(JSON.stringify({ type: 'ping', payload: null }));
-			}
-		}, 25000);
-	};
-
-	const connect = (url?: string) => {
-		// If already open or connecting, don't start a new one unless the URL changed
-		if (directSocket) {
-			if (
-				directSocket.readyState === WebSocket.OPEN ||
-				directSocket.readyState === WebSocket.CONNECTING
-			) {
-				if (!url || url === lastUrl) return;
-				// If URL changed (e.g. new token), close old and start new
-				directSocket.close(1000, 'URL changed');
-			}
-		}
-
-		lastUrl = url || getFullWsUrl();
-		console.info('[ws-direct] connecting to', lastUrl);
-		directSocket = new WebSocket(lastUrl);
-
-		directSocket.onopen = () => {
+	const socketManager = createSocketManager({
+		onOpen: () => {
 			console.info('[ws-direct] connected');
-			reconnectDelay = 1000; // Reset delay on success
 			handleWorkerMessage({ type: 'WS_OPEN' });
-			startHeartbeat();
-		};
-
-		directSocket.onmessage = (event) => {
+		},
+		onMessage: (raw) => {
 			try {
-				const msg = JSON.parse(event.data);
+				const msg = JSON.parse(raw);
 				handleWorkerMessage({ type: 'WS_MESSAGE', payload: msg });
 			} catch (e) {
 				console.warn('[ws-direct] unparseable message', e);
 			}
-		};
-
-		directSocket.onclose = (ev) => {
-			stopHeartbeat();
-			handleWorkerMessage({ type: 'WS_CLOSE', code: ev.code });
-
-			// Don't reconnect if it was a normal closure or if URL changed
-			if (ev.code === 1000 || ev.code === 1001) {
+		},
+		onClose: (code) => {
+			handleWorkerMessage({ type: 'WS_CLOSE', code });
+			if (code === 1000 || code === 1001) {
 				console.info('[ws-direct] closed normally');
-				return;
+			} else {
+				console.warn(`[ws-direct] closed (${code}), reconnecting...`);
 			}
-
-			console.warn(
-				`[ws-direct] closed (${ev.code}), reconnecting in ${reconnectDelay}ms...`,
-			);
-			setTimeout(() => {
-				reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT_DELAY);
-				connect(lastUrl);
-			}, reconnectDelay);
-		};
-	};
+		},
+		onError: (err) => {
+			// Previously missing entirely on this path (used by the desktop app
+			// and any browser without SharedWorker support) — connection errors
+			// (TLS/DNS/refused) were silently absorbed into the eventual
+			// onclose with no distinct diagnostic signal.
+			console.error('[ws-direct] websocket error', err);
+		},
+	});
 
 	worker = {
 		port: {
 			postMessage: (msg: any) => {
 				const { cmd, payload } = msg;
-				if (cmd === 'CONNECT') connect(payload?.url);
-				else if (cmd === 'DISCONNECT') {
-					directSocket?.close(1000, 'User logout');
-					directSocket = null;
-				} else if (cmd === 'SEND') {
-					if (directSocket?.readyState === WebSocket.OPEN) {
-						directSocket.send(JSON.stringify(payload));
-					}
-				}
+				if (cmd === 'CONNECT') socketManager.connect(payload?.url ?? getFullWsUrl());
+				else if (cmd === 'DISCONNECT') socketManager.disconnect();
+				else if (cmd === 'SEND') socketManager.send(payload);
 			},
 			start: () => {},
 		},
@@ -266,7 +219,6 @@ function sendToWorker(cmd: string, payload: any) {
 export function wsDisconnect(): void {
 	sendToWorker('DISCONNECT', null);
 	worker = null;
-	directSocket = null;
 	useCryptoStore.getState().clearKeys();
 }
 

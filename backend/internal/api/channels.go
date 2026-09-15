@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"nodetalk/backend/internal/auth"
+	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/models"
 )
 
@@ -70,7 +71,9 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	// For DMs, override RoleOwner back to RoleMember (user's request)
 	if isDM {
 		for _, uid := range memberSet {
-			_ = h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember)
+			if err := h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember); err != nil {
+				logger.Warnf("api: CreateChannel: failed to downgrade DM member %s to RoleMember in channel %s: %v", uid, ch.ID, err)
+			}
 		}
 	}
 

@@ -5,8 +5,10 @@ import en from './locales/en.json';
 import fa from './locales/fa.json';
 import ar from './locales/ar.json';
 
-// RTL languages — used to set document direction dynamically
-export const RTL_LANGUAGES = new Set(['fa', 'ar', 'he', 'ur']);
+// RTL languages — used to set document direction dynamically.
+// Farsi is deliberately NOT included: per product decision, switching to
+// Farsi should only swap translated text, not flip the whole layout to RTL.
+export const RTL_LANGUAGES = new Set(['ar', 'he', 'ur']);
 
 const resources = {
   en: { translation: en },
