@@ -38,6 +38,27 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 		return fmt.Errorf("not an active member of channel: %s", body.ChannelID)
 	}
 
+	// For DMs, check blocking and DM privacy permission
+	ch, chErr := c.hub.store.GetChannel(body.ChannelID)
+	if chErr == nil {
+		members, merr := c.hub.store.GetChannelMembers(body.ChannelID)
+		if merr == nil && ch.IsDM(len(members)) {
+			var otherUserID string
+			for _, m := range members {
+				if m.UserID != c.UserID {
+					otherUserID = m.UserID
+					break
+				}
+			}
+			if otherUserID != "" {
+				canSend, reason := c.hub.store.CanSendDM(c.UserID, otherUserID)
+				if !canSend {
+					return fmt.Errorf("cannot send direct message: %s", reason)
+				}
+			}
+		}
+	}
+
 	now := time.Now().UTC()
 	msg := &models.Message{
 		ID:          ksuid.New().String(),

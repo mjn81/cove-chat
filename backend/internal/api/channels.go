@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"nodetalk/backend/internal/auth"
 	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/models"
+	"strings"
+	"time"
 )
 
 // ============================
@@ -15,6 +16,7 @@ import (
 // ============================
 
 // CreateChannel godoc
+//
 //	@Summary     Create a channel or direct message
 //	@Tags        channels
 //	@Accept      json
@@ -62,10 +64,28 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Filter non-creator members by privacy setting
+	var allowedMembers []string
+	for _, uid := range memberSet {
+		if uid == session.UserID {
+			allowedMembers = append(allowedMembers, uid)
+			continue
+		}
+		if ok, _ := h.Store.CanAddToChannel(session.UserID, uid); ok {
+			allowedMembers = append(allowedMembers, uid)
+		}
+	}
+	memberSet = allowedMembers
+
 	ch, err := h.Store.CreateChannel(body.Name, session.UserID, body.IsPrivate, memberSet, h.KEK)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "channel creation failed")
 		return
+	}
+	if body.Description != "" || body.AvatarID != "" {
+		ch.Description = body.Description
+		ch.AvatarID = body.AvatarID
+		_ = h.Store.UpdateChannel(ch)
 	}
 
 	// For DMs, override RoleOwner back to RoleMember (user's request)
@@ -85,12 +105,12 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, h.toChannelResponse(ch, session.UserID))
 }
 
-//	@Summary     List channels for the current user
-//	@Tags        channels
-//	@Produce     json
-//	@Security    BearerAuth
-//	@Success     200 {array} models.Channel
-//	@Router      /api/channels [get]
+// @Summary     List channels for the current user
+// @Tags        channels
+// @Produce     json
+// @Security    BearerAuth
+// @Success     200 {array} models.Channel
+// @Router      /api/channels [get]
 func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 
@@ -99,7 +119,7 @@ func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not list channels")
 		return
 	}
-	
+
 	resp := make([]ChannelResponse, 0)
 	for _, ch := range channels {
 		resp = append(resp, h.toChannelResponse(ch, session.UserID))
@@ -108,6 +128,7 @@ func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExploreChannels godoc
+//
 //	@Summary     Search public channels
 //	@Tags        channels
 //	@Produce     json
@@ -130,13 +151,15 @@ func (h *Handler) ExploreChannels(w http.ResponseWriter, r *http.Request) {
 		if ch.IsPrivate {
 			continue // Hide private
 		}
-		
+
 		members, _ := h.Store.GetChannelMembers(ch.ID)
 
 		if search == "" || strings.Contains(strings.ToLower(ch.Name), searchQuery) {
 			filtered = append(filtered, ExploreChannelResponse{
 				ID:          ch.ID,
 				Name:        ch.Name,
+				Description: ch.Description,
+				AvatarID:    ch.AvatarID,
 				InviteLink:  ch.InviteLink,
 				MemberCount: len(members),
 				CreatedAt:   ch.CreatedAt,
@@ -148,6 +171,7 @@ func (h *Handler) ExploreChannels(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetChannel godoc
+//
 //	@Summary     Get a channel by ID
 //	@Tags        channels
 //	@Produce     json
@@ -162,6 +186,7 @@ func (h *Handler) GetChannel(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateChannel godoc
+//
 //	@Summary     Update channel settings
 //	@Tags        channels
 //	@Accept      json
@@ -196,6 +221,12 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 		}
 		ch.Name = newName
 	}
+	if body.Description != nil {
+		ch.Description = strings.TrimSpace(*body.Description)
+	}
+	if body.AvatarID != nil {
+		ch.AvatarID = *body.AvatarID
+	}
 	if body.IsPrivate != nil {
 		ch.IsPrivate = *body.IsPrivate
 	}
@@ -204,42 +235,89 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to update channel")
 		return
 	}
-	
+
 	if h.Hub != nil {
 		h.Hub.BroadcastChannelUpdated(ch)
 	}
-	
+
 	writeJSON(w, http.StatusOK, h.toChannelResponse(ch, session.UserID))
 }
 
 // DeleteChannel godoc
-//	@Summary     Delete a channel
+//
+//	@Summary     Delete or clear a channel/direct message
 //	@Tags        channels
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Param       id path string true "Channel ID"
+//	@Param       for_both query bool false "If true, permanently deletes for all participants (owner required for group channels)"
 //	@Success     200 {object} StatusResponse
 //	@Router      /api/channels/{id} [delete]
 func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	ch := ChannelFromContext(r.Context())
 
-	// Permission check: Owner only for deletion
+	// Fetch members before deletion for permission checks and WS broadcast
+	members, err := h.Store.GetChannelMembers(ch.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get channel members")
+		return
+	}
+
 	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
-	if err != nil || uc.Role < models.RoleOwner {
-		writeError(w, http.StatusForbidden, "only the owner can delete the channel")
+	if err != nil || uc.Status != models.StatusActive {
+		writeError(w, http.StatusForbidden, "not an active member of this channel")
 		return
 	}
 
-	if err := h.Store.DeleteChannel(ch.ID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete channel")
+	isDM := ch.IsDM(len(members))
+	forBoth := r.URL.Query().Get("for_both") == "true" || r.URL.Query().Get("for_everyone") == "true"
+
+	if !isDM {
+		// Group channels can only be deleted by the owner, and are always deleted for everyone
+		if uc.Role < models.RoleOwner {
+			writeError(w, http.StatusForbidden, "only the owner can delete the channel")
+			return
+		}
+		forBoth = true
+	}
+
+	if forBoth {
+		var memberIDs []string
+		for _, m := range members {
+			memberIDs = append(memberIDs, m.UserID)
+		}
+
+		if err := h.Store.DeleteChannel(ch.ID); err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to delete channel")
+			return
+		}
+
+		if h.Hub != nil {
+			h.Hub.BroadcastChannelDeleted(ch.ID, memberIDs)
+		}
+
+		writeJSON(w, http.StatusOK, StatusResponse{Status: "channel deleted for everyone"})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, StatusResponse{Status: "channel deleted"})
+	// Delete only for the requesting user (DM only)
+	now := time.Now().UTC()
+	if err := h.Store.ClearChannelForUser(session.UserID, ch.ID, now); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to clear channel")
+		return
+	}
+
+	// Notify only the requesting user's connected clients
+	if h.Hub != nil {
+		h.Hub.BroadcastChannelDeleted(ch.ID, []string{session.UserID})
+	}
+
+	writeJSON(w, http.StatusOK, StatusResponse{Status: "channel deleted for you"})
 }
 
 // JoinChannel godoc
+//
 //	@Summary     Join a channel via a unique invite link
 //	@Tags        channels
 //	@Produce     json
@@ -278,6 +356,7 @@ func (h *Handler) JoinChannel(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetChannelMembers godoc
+//
 //	@Summary     List members of a channel
 //	@Tags        channels
 //	@Produce     json
@@ -297,10 +376,10 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 	for _, m := range memberList {
 		if u, err := h.Store.GetUser(m.UserID); err == nil {
 			members = append(members, UserResponse{
-				ID: u.ID,
+				ID:       u.ID,
 				Username: u.Username,
-				Domain: u.Domain,
-				Status: u.Status,
+				Domain:   u.Domain,
+				Status:   u.Status,
 				AvatarID: u.AvatarID,
 			})
 		}
@@ -309,6 +388,7 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 // AddMembers godoc
+//
 //	@Summary     Add multiple members to a channel by username
 //	@Tags        channels
 //	@Accept      json
@@ -338,15 +418,35 @@ func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var added []string
+	var skipped []SkippedMember
+
 	for _, uid := range body.UserIDs {
-		if err := h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember); err == nil && h.Hub != nil {
-			h.Hub.BroadcastMemberJoined(ch.ID, uid)
+		canAdd, reason := h.Store.CanAddToChannel(session.UserID, uid)
+		if !canAdd {
+			skipped = append(skipped, SkippedMember{UserID: uid, Reason: reason})
+			continue
+		}
+		if err := h.Store.AddMemberToChannel(ch.ID, uid, models.RoleMember); err == nil {
+			added = append(added, uid)
+			if h.Hub != nil {
+				h.Hub.BroadcastMemberJoined(ch.ID, uid)
+			}
+		} else {
+			skipped = append(skipped, SkippedMember{UserID: uid, Reason: "failed to add to channel"})
 		}
 	}
-	writeJSON(w, http.StatusOK, StatusResponse{Status: "members added"})
+	if skipped == nil {
+		skipped = []SkippedMember{}
+	}
+	if added == nil {
+		added = []string{}
+	}
+	writeJSON(w, http.StatusOK, AddMembersResponse{Added: added, Skipped: skipped})
 }
 
 // RemoveMember godoc
+//
 //	@Summary     Remove a member from a channel
 //	@Tags        channels
 //	@Produce     json
@@ -356,9 +456,9 @@ func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
 //	@Success     200 {object} StatusResponse
 //	@Router      /api/channels/{id}/members/{uid} [delete]
 func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
-	session    := auth.SessionFromContext(r.Context())
-	ch         := ChannelFromContext(r.Context())
-	targetUID  := r.PathValue("uid")
+	session := auth.SessionFromContext(r.Context())
+	ch := ChannelFromContext(r.Context())
+	targetUID := r.PathValue("uid")
 
 	// Get actor's role
 	actorUC, err := h.Store.GetUserChannel(session.UserID, ch.ID)
@@ -449,6 +549,7 @@ func (h *Handler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 // --- Helpers & Middleware ---
 
 type apiContextKey int
+
 const channelCtxKey apiContextKey = 0
 
 func (h *Handler) RequireMember(next http.HandlerFunc) http.HandlerFunc {
@@ -483,13 +584,18 @@ func ChannelFromContext(ctx context.Context) *models.Channel {
 }
 
 func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelResponse {
+	lastMessageAt := ch.LastMessageAt
+	if lastMessageAt.IsZero() {
+		lastMessageAt = ch.CreatedAt
+	}
+
 	memberNames := make(map[string]string)
 	memberAvatars := make(map[string]string)
 	memberDomains := make(map[string]string)
 	memberStatuses := make(map[string]string)
 	memberRoles := make(map[string]int)
 	members, err := h.Store.GetChannelMembers(ch.ID)
-	
+
 	userRole := models.RoleMember
 	if uc, err := h.Store.GetUserChannel(userID, ch.ID); err == nil {
 		userRole = uc.Role
@@ -511,19 +617,27 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 	}
 
 	return ChannelResponse{
-		ID:             ch.ID,
-		Name:           ch.Name,
-		IsPrivate:      ch.IsPrivate,
-		InviteLink:     ch.InviteLink,
-		CreatorID:      ch.CreatorID,
-		UserRole:       userRole,
-		Members:        memberIDs,
-		MemberNames:    memberNames,
-		MemberAvatars:  memberAvatars,
-		MemberDomains:  memberDomains,
-		MemberStatuses: memberStatuses,
-		MemberRoles:    memberRoles,
-		CreatedAt:      ch.CreatedAt,
-		UnreadCount:    ch.UnreadCount,
+		ID:                    ch.ID,
+		Name:                  ch.Name,
+		Description:           ch.Description,
+		AvatarID:              ch.AvatarID,
+		IsPrivate:             ch.IsPrivate,
+		InviteLink:            ch.InviteLink,
+		CreatorID:             ch.CreatorID,
+		UserRole:              userRole,
+		Members:               memberIDs,
+		MemberNames:           memberNames,
+		MemberAvatars:         memberAvatars,
+		MemberDomains:         memberDomains,
+		MemberStatuses:        memberStatuses,
+		MemberRoles:           memberRoles,
+		CreatedAt:             ch.CreatedAt,
+		UnreadCount:           ch.UnreadCount,
+		LastMessageAt:         lastMessageAt,
+		LastMessageCiphertext: ch.LastMessageCiphertext,
+		LastMessageNonce:      ch.LastMessageNonce,
+		LastMessageType:       string(ch.LastMessageType),
+		LastMessageSenderID:   ch.LastMessageSenderID,
+		LastMessageID:         ch.LastMessageID,
 	}
 }

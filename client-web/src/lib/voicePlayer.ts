@@ -17,6 +17,8 @@ export interface VoiceTrack {
 	label?: string;
 }
 
+export type RepeatMode = 'none' | 'once' | 'all';
+
 export interface VoicePlayerState {
 	track: VoiceTrack | null;
 	isPlaying: boolean;
@@ -24,6 +26,8 @@ export interface VoicePlayerState {
 	currentTime: number;
 	duration: number;
 	speed: number;
+	volume: number;
+	repeatMode: RepeatMode;
 }
 
 type Listener = (state: VoicePlayerState) => void;
@@ -116,7 +120,8 @@ class VoicePlayerStore {
 
 	state: VoicePlayerState = {
 		track: null, isPlaying: false, isLoading: false,
-		currentTime: 0, duration: 0, speed: 1,
+		currentTime: 0, duration: 0, speed: 1, volume: 1,
+		repeatMode: 'none',
 	};
 
 	// ─── Store plumbing ─────────────────────────────────────────────────────
@@ -137,12 +142,25 @@ class VoicePlayerStore {
 			this.patch({ isPlaying: false, currentTime: this.audio.currentTime });
 		};
 		this.audio.onended = () => {
-			this.stopRaf();
-			this.patch({ isPlaying: false, currentTime: 0 });
+			if (this.state.repeatMode === 'all') {
+				this.audio.currentTime = 0;
+				this.audio.play().catch(console.error);
+				this.patch({ currentTime: 0, isPlaying: true });
+			} else if (this.state.repeatMode === 'once') {
+				this.patch({ repeatMode: 'none', currentTime: 0, isPlaying: true });
+				this.audio.currentTime = 0;
+				this.audio.play().catch(console.error);
+			} else {
+				this.stopRaf();
+				this.patch({ isPlaying: false, currentTime: 0 });
+			}
 		};
 		this.audio.onratechange = () => {
 			// Ensure UI is in sync if speed changed via native controls
 			this.patch({ speed: this.audio.playbackRate });
+		};
+		this.audio.onvolumechange = () => {
+			this.patch({ volume: this.audio.volume });
 		};
 	}
 
@@ -219,8 +237,23 @@ class VoicePlayerStore {
 			this.audio.playbackRate = this.state.speed;
 			
 			// Load and wait for enough data
-			await new Promise((resolve) => {
-				this.audio.oncanplay = resolve;
+			await new Promise<void>((resolve) => {
+				if (this.audio.readyState >= 2) {
+					resolve();
+					return;
+				}
+				const onReady = () => {
+					cleanup();
+					resolve();
+				};
+				const cleanup = () => {
+					this.audio.removeEventListener('canplay', onReady);
+					this.audio.removeEventListener('loadeddata', onReady);
+					this.audio.removeEventListener('error', onReady);
+				};
+				this.audio.addEventListener('canplay', onReady);
+				this.audio.addEventListener('loadeddata', onReady);
+				this.audio.addEventListener('error', onReady);
 				this.audio.load();
 			});
 
@@ -262,6 +295,23 @@ class VoicePlayerStore {
 		const s = Math.max(0.5, Math.min(4, speed));
 		this.audio.playbackRate = s;
 		this.patch({ speed: s });
+	}
+
+	setVolume(volume: number) {
+		const v = Math.max(0, Math.min(1, volume));
+		this.audio.volume = v;
+		this.patch({ volume: v });
+	}
+
+	cycleRepeat() {
+		const order: RepeatMode[] = ['none', 'once', 'all'];
+		const next = order[(order.indexOf(this.state.repeatMode) + 1) % order.length];
+		this.setRepeatMode(next);
+	}
+
+	setRepeatMode(mode: RepeatMode) {
+		this.audio.loop = mode === 'all';
+		this.patch({ repeatMode: mode });
 	}
 
 	close() {

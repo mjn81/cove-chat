@@ -138,8 +138,11 @@ const (
 	prefixUserChannel = "uc:"
 	prefixMessage     = "m:"
 	prefixPresence    = "p:"
-	prefixFile        = "f:"
-	keyDEK            = "sys:dek"
+	prefixFile               = "f:"
+	prefixSession            = "s:"
+	prefixRelationship       = "rel:"
+	prefixRelationshipInbox  = "reli:"
+	keyDEK                   = "sys:dek"
 )
 
 func userKey(id string) string        { return prefixUser + id }
@@ -150,6 +153,13 @@ func messageKey(cid string, ts time.Time) string {
 }
 func presenceKey(uid string) string { return prefixPresence + uid }
 func fileKey(id string) string      { return prefixFile + id }
+func sessionKey(token string) string { return prefixSession + token }
+func relationshipKey(fromID, toID string) string {
+	return prefixRelationship + fromID + ":" + toID
+}
+func relationshipInboxKey(toID, fromID string) string {
+	return prefixRelationshipInbox + toID + ":" + fromID
+}
 
 // ---- DEK Bootstrap -------------------------------------------------------- //
 

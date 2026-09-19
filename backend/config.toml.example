@@ -14,6 +14,12 @@ udp_port = 9090
 frontend_origin = "http://localhost:5173"
 # Maximum allowed file upload size in MB.
 max_file_size_mb = 100
+# Maximum allowed video message size in MB.
+max_video_size_mb = 50
+# Maximum video message duration in seconds.
+max_video_duration_sec = 60
+# Path to ffmpeg binary (for video transcoding).
+ffmpeg_path = "ffmpeg"
 # Enable development mode (extra logging, Swagger UI at /api/docs/).
 dev = false
 

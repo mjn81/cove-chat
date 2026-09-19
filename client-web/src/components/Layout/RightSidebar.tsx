@@ -3,7 +3,7 @@ import { logProfiler } from '@/utils/profiler';
 
 import { Avatar } from '@/components/Avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, LogOut, UserMinus, Shield, ChevronLeft } from 'lucide-react';
+import { Users, LogOut, UserMinus, Shield, ChevronLeft, User } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipContent,
@@ -13,6 +13,7 @@ import {
 import { useChannelStore, useAuthStore, useAppStore } from '@/store/store';
 import { apiLeaveChannel, apiUpdateMemberRole } from '@/api/client';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { UserProfileModal } from '@/components/UserProfileModal';
 import { isDirectMessage } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
@@ -47,6 +48,7 @@ export default function RightSidebar({
 	const user = useAuthStore((state) => state.user);
 	const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 	const [showKickConfirm, setShowKickConfirm] = useState<Member | null>(null);
+	const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	const setRightSidebarOpen = useAppStore((state) => state.setRightSidebarOpen);
@@ -162,7 +164,7 @@ export default function RightSidebar({
 			>
 				{/* Header - Styled to match ChatTopbar, adaptive to collapse */}
 				<div
-					className={`flex items-center h-12 border-b border-border shrink-0 shadow-sm bg-background transition-all ${isCollapsed ? 'justify-center w-full' : 'px-4 gap-3'}`}
+					className={`flex items-center h-12 border-b border-border shrink-0 bg-background transition-all ${isCollapsed ? 'justify-center w-full' : 'px-4 gap-3'}`}
 				>
 					<div
 						className={`flex items-center gap-3 min-w-0 ${isCollapsed ? 'justify-center w-full' : 'flex-1'}`}
@@ -200,6 +202,7 @@ export default function RightSidebar({
 							myRole={myRole}
 							onUpdateRole={handleUpdateRole}
 							onKick={setShowKickConfirm}
+							onViewProfile={setSelectedProfileUserId}
 							isCollapsed={isCollapsed}
 						/>
 						<Section
@@ -211,6 +214,7 @@ export default function RightSidebar({
 							myRole={myRole}
 							onUpdateRole={handleUpdateRole}
 							onKick={setShowKickConfirm}
+							onViewProfile={setSelectedProfileUserId}
 							isCollapsed={isCollapsed}
 						/>
 						<Section
@@ -222,6 +226,7 @@ export default function RightSidebar({
 							myRole={myRole}
 							onUpdateRole={handleUpdateRole}
 							onKick={setShowKickConfirm}
+							onViewProfile={setSelectedProfileUserId}
 							isCollapsed={isCollapsed}
 						/>
 						<Section
@@ -233,6 +238,7 @@ export default function RightSidebar({
 							myRole={myRole}
 							onUpdateRole={handleUpdateRole}
 							onKick={setShowKickConfirm}
+							onViewProfile={setSelectedProfileUserId}
 							isCollapsed={isCollapsed}
 						/>
 					</div>
@@ -295,6 +301,14 @@ export default function RightSidebar({
 					confirmText="Kick Member"
 					variant="danger"
 				/>
+
+				{selectedProfileUserId && (
+					<UserProfileModal
+						userId={selectedProfileUserId}
+						open={!!selectedProfileUserId}
+						onOpenChange={(open) => !open && setSelectedProfileUserId(null)}
+					/>
+				)}
 			</div>
 		</Profiler>
 	);
@@ -311,6 +325,7 @@ interface SectionProps {
 	myRole: number;
 	onUpdateRole: (id: string, role: number) => void;
 	onKick: (member: Member) => void;
+	onViewProfile: (userId: string) => void;
 	isCollapsed: boolean;
 }
 
@@ -352,6 +367,7 @@ interface MemberRowProps {
 	myRole: number;
 	onUpdateRole: (id: string, role: number) => void;
 	onKick: (member: Member) => void;
+	onViewProfile: (userId: string) => void;
 	isCollapsed: boolean;
 }
 
@@ -363,6 +379,7 @@ const MemberRow = memo(
 		myRole,
 		onUpdateRole,
 		onKick,
+		onViewProfile,
 		isCollapsed,
 	}: MemberRowProps) => {
 		const isMe = member.id === user?.id;
@@ -385,6 +402,7 @@ const MemberRow = memo(
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<div
+									onClick={() => onViewProfile(member.id)}
 									className={`flex items-center rounded-md cursor-pointer transition-all hover:bg-white/5 active:bg-white/10 group relative ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-1.5 mx-2'}`}
 								>
 									<div className="relative shrink-0">
@@ -427,40 +445,50 @@ const MemberRow = memo(
 						</Tooltip>
 					</TooltipProvider>
 				</ContextMenuTrigger>
-				{(canKick || canPromote || canDemote) && (
-					<ContextMenuContent className="w-48">
-						{canPromote && (
-							<ContextMenuItem
-								className="gap-2"
-								onClick={() => onUpdateRole(member.id, ChannelRole.ADMIN)}
-							>
-								<Shield size={16} className="text-blue-400" />
-								Promote to Admin
-							</ContextMenuItem>
-						)}
-						{canDemote && (
-							<ContextMenuItem
-								className="gap-2"
-								onClick={() => onUpdateRole(member.id, ChannelRole.MEMBER)}
-							>
-								<UserMinus size={16} className="text-muted-foreground" />
-								Demote to Member
-							</ContextMenuItem>
-						)}
-						{canKick && (
-							<>
-								{(canPromote || canDemote) && <ContextMenuSeparator />}
+				<ContextMenuContent className="w-48">
+					<ContextMenuItem
+						className="gap-2 cursor-pointer"
+						onClick={() => onViewProfile(member.id)}
+					>
+						<User size={16} />
+						View Profile
+					</ContextMenuItem>
+					{(canKick || canPromote || canDemote) && (
+						<>
+							<ContextMenuSeparator />
+							{canPromote && (
 								<ContextMenuItem
-									className="text-destructive focus:text-destructive focus:bg-destructive/10 font-bold gap-2"
-									onClick={() => onKick(member)}
+									className="gap-2 cursor-pointer"
+									onClick={() => onUpdateRole(member.id, ChannelRole.ADMIN)}
 								>
-									<UserMinus size={16} />
-									Kick Member
+									<Shield size={16} className="text-blue-400" />
+									Promote to Admin
 								</ContextMenuItem>
-							</>
-						)}
-					</ContextMenuContent>
-				)}
+							)}
+							{canDemote && (
+								<ContextMenuItem
+									className="gap-2 cursor-pointer"
+									onClick={() => onUpdateRole(member.id, ChannelRole.MEMBER)}
+								>
+									<UserMinus size={16} className="text-muted-foreground" />
+									Demote to Member
+								</ContextMenuItem>
+							)}
+							{canKick && (
+								<>
+									{(canPromote || canDemote) && <ContextMenuSeparator />}
+									<ContextMenuItem
+										className="text-destructive focus:text-destructive focus:bg-destructive/10 font-bold gap-2 cursor-pointer"
+										onClick={() => onKick(member)}
+									>
+										<UserMinus size={16} />
+										Kick Member
+									</ContextMenuItem>
+								</>
+							)}
+						</>
+					)}
+				</ContextMenuContent>
 			</ContextMenu>
 		);
 	},

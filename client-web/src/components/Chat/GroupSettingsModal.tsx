@@ -19,6 +19,8 @@ import {
 	UserPlus,
 	X,
 	Loader2,
+	Camera,
+	Users,
 } from 'lucide-react';
 import { type Channel, type User } from '@/types/api';
 import {
@@ -26,10 +28,14 @@ import {
 	apiDeleteChannel,
 	apiSearchUsers,
 	apiAddMember,
+	apiUploadFile,
+	getFileUrl,
 } from '@/api/client';
 import { useChannelStore } from '@/store/store';
-import { Avatar } from '../Avatar';
+import { Avatar, ChannelInitialsAvatar } from '../Avatar';
 import { ConfirmModal } from '../ConfirmModal';
+import { ImageEditor } from '../ImageEditor';
+import { FriendPickerModal } from '../FriendPickerModal';
 import { isAdmin as checkAdmin, isOwner as checkOwner } from '@/utils/role';
 
 interface GroupSettingsModalProps {
@@ -44,10 +50,17 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 	const refreshChannels = useChannelStore((state) => state.refreshChannels);
 	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 	const [name, setName] = useState(channel.name);
+	const [description, setDescription] = useState(channel.description || '');
+	const [avatarId, setAvatarId] = useState(channel.avatar_id || '');
 	const [isPrivate, setIsPrivate] = useState(channel.is_private);
 	const [loading, setLoading] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [showFriendPicker, setShowFriendPicker] = useState(false);
+	const [showCropModal, setShowCropModal] = useState(false);
+	const [cropFile, setCropFile] = useState<File | null>(null);
+	const [uploadingAvatar, setUploadingAvatar] = useState(false);
+	const [addMemberNotice, setAddMemberNotice] = useState<string | null>(null);
 
 	// Member Addition State
 	const [searchTerm, setSearchTerm] = useState('');
@@ -94,17 +107,51 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 		setSelectedUsers(selectedUsers.filter((u) => u.id !== userId));
 	};
 
+	const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
+
+	const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (file.size > 2 * 1024 * 1024) {
+			alert('Channel avatar must be under 2MB');
+			return;
+		}
+		setCropFile(file);
+		setShowCropModal(true);
+		e.target.value = '';
+	};
+
+	const handleSaveAvatarCrop = async (blob: Blob, mime: string) => {
+		setShowCropModal(false);
+		setUploadingAvatar(true);
+		try {
+			const ext = mime === 'image/svg+xml' ? 'svg' : mime.split('/')[1] || 'png';
+			const file = new File([blob], `channel_avatar.${ext}`, { type: mime });
+			const res = await apiUploadFile(file, mime);
+			setAvatarId(res.id);
+		} catch (err) {
+			console.error('Failed to upload channel avatar:', err);
+		} finally {
+			setUploadingAvatar(false);
+		}
+	};
+
 	const submitAddMembers = async () => {
 		if (selectedUsers.length === 0) return;
 		setIsAddingMembers(true);
+		setAddMemberNotice(null);
 		try {
-			await apiAddMember(
+			const res = await apiAddMember(
 				channel.id,
 				selectedUsers.map((u) => u.id),
 			);
 			await refreshChannels();
 			setSelectedUsers([]);
-			// Optionally show success or just stay open
+			if (res.skipped && res.skipped.length > 0) {
+				setAddMemberNotice(
+					`${res.skipped.length} user(s) could not be added: ${res.skipped.map((s) => s.reason).join(', ')}`,
+				);
+			}
 		} catch (err) {
 			console.error('Failed to add members:', err);
 		} finally {
@@ -120,6 +167,8 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 		try {
 			await apiUpdateChannel(channel.id, {
 				name: trimmedName,
+				description: description.trim(),
+				avatar_id: avatarId,
 				is_private: isPrivate,
 			});
 			await refreshChannels();
@@ -157,7 +206,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="bg-background text-foreground border-border max-w-lg rounded-xl overflow-y-auto max-h-[90vh]">
+			<DialogContent className="bg-background text-foreground border-border max-w-2xl md:max-w-3xl rounded-xl overflow-y-auto max-h-[90vh]">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-bold">
 						Channel Settings
@@ -168,6 +217,67 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 				</DialogHeader>
 
 				<div className="space-y-6 py-4">
+					{/* Channel Avatar & Basic Details */}
+					<div className="flex flex-col sm:flex-row items-center gap-5 p-3 rounded-lg bg-secondary/20 border border-border/40">
+						<div className="relative group shrink-0">
+							<div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center shadow-inner">
+								{avatarId ? (
+									<img
+										src={getFileUrl(avatarId)}
+										alt={name}
+										className="w-full h-full object-cover"
+									/>
+								) : (
+									<ChannelInitialsAvatar id={channel.id} name={name} size={80} />
+								)}
+							</div>
+
+							{isAdmin && (
+								<>
+									<input
+										ref={avatarInputRef}
+										type="file"
+										accept="image/*,.svg"
+										className="hidden"
+										onChange={handleAvatarFileSelect}
+									/>
+									<button
+										type="button"
+										onClick={() => avatarInputRef.current?.click()}
+										disabled={uploadingAvatar}
+										className="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[11px] font-medium backdrop-blur-[1px]"
+										title="Change channel avatar"
+									>
+										{uploadingAvatar ? (
+											<Loader2 size={18} className="animate-spin" />
+										) : (
+											<>
+												<Camera size={18} />
+												<span className="mt-0.5 text-[10px]">Change</span>
+											</>
+										)}
+									</button>
+								</>
+							)}
+						</div>
+
+						<div className="flex-1 text-center sm:text-left space-y-1">
+							<h3 className="font-semibold text-base">{name || 'Unnamed Channel'}</h3>
+							<p className="text-xs text-muted-foreground">
+								Max 2MB. SVG, PNG, JPG supported.
+							</p>
+							{avatarId && isAdmin && (
+								<button
+									type="button"
+									onClick={() => setAvatarId('')}
+									className="text-xs text-destructive hover:underline font-medium pt-1"
+								>
+									Remove Avatar
+								</button>
+							)}
+						</div>
+					</div>
+
 					{/* Group Name & Status */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="space-y-2">
@@ -183,6 +293,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 								onChange={(e) => setName(e.target.value)}
 								placeholder="Enter group name..."
 								className="bg-secondary/50 border-border focus:ring-primary h-10"
+								disabled={!isAdmin}
 							/>
 						</div>
 
@@ -195,6 +306,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 									variant={isPrivate ? 'default' : 'outline'}
 									className="flex-1 gap-2 h-10 text-xs"
 									onClick={() => setIsPrivate(true)}
+									disabled={!isAdmin}
 								>
 									<Lock size={14} /> Private
 								</Button>
@@ -202,11 +314,31 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 									variant={!isPrivate ? 'default' : 'outline'}
 									className="flex-1 gap-2 h-10 text-xs"
 									onClick={() => setIsPrivate(false)}
+									disabled={!isAdmin}
 								>
 									<Globe size={14} /> Public
 								</Button>
 							</div>
 						</div>
+					</div>
+
+					{/* Channel Description */}
+					<div className="space-y-2">
+						<Label
+							htmlFor="channel-description"
+							className="text-xs uppercase font-bold text-muted-foreground tracking-wider"
+						>
+							Description
+						</Label>
+						<textarea
+							id="channel-description"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							placeholder="What is this channel about?"
+							rows={3}
+							className="w-full rounded-md border border-border bg-secondary/50 p-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+							disabled={!isAdmin}
+						/>
 					</div>
 
 					{/* Add Members Section - Admin Only */}
@@ -215,6 +347,18 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 							<Label className="text-xs uppercase font-bold text-muted-foreground tracking-wider flex items-center gap-2">
 								<UserPlus size={14} /> Add Members
 							</Label>
+
+							{addMemberNotice && (
+								<div className="p-2.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center justify-between">
+									<span>{addMemberNotice}</span>
+									<button
+										onClick={() => setAddMemberNotice(null)}
+										className="p-1 hover:text-foreground"
+									>
+										<X size={13} />
+									</button>
+								</div>
+							)}
 
 							<div className="relative">
 								<div className="relative">
@@ -318,6 +462,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 									variant="outline"
 									className="h-9 w-9 shrink-0"
 									onClick={copyLink}
+									title="Copy link"
 								>
 									{copied ? (
 										<Check size={16} className="text-green-500" />
@@ -325,19 +470,28 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 										<Copy size={16} />
 									)}
 								</Button>
+								<Button
+									variant="outline"
+									className="h-9 gap-1.5 text-xs shrink-0"
+									onClick={() => setShowFriendPicker(true)}
+								>
+									<Users size={14} /> Send to Friends
+								</Button>
 							</div>
 						</div>
 					)}
 
 					{/* Actions */}
 					<div className="pt-4 flex flex-col gap-3">
-						<Button
-							onClick={handleSave}
-							disabled={loading || !name.trim()}
-							className="w-full font-bold h-11"
-						>
-							{loading ? 'Saving...' : 'Save Settings'}
-						</Button>
+						{isAdmin && (
+							<Button
+								onClick={handleSave}
+								disabled={loading || !name.trim()}
+								className="w-full font-bold h-11"
+							>
+								{loading ? 'Saving...' : 'Save Settings'}
+							</Button>
+						)}
 
 						{isOwner && (
 							<div className="pt-2">
@@ -364,6 +518,26 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 					</div>
 				</div>
 			</DialogContent>
+
+			{showFriendPicker && (
+				<FriendPickerModal
+					open={showFriendPicker}
+					onOpenChange={setShowFriendPicker}
+					channelId={channel.id}
+					channelName={channel.name}
+					inviteLink={fullInviteLink}
+				/>
+			)}
+
+			{showCropModal && (
+				<ImageEditor
+					open={showCropModal}
+					onOpenChange={setShowCropModal}
+					file={cropFile}
+					onSave={handleSaveAvatarCrop}
+					maxSizeMB={2}
+				/>
+			)}
 		</Dialog>
 	);
 };

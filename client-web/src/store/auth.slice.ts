@@ -2,12 +2,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { apiLogin, apiRegister, apiLogout, apiMe, apiUpdateProfile, apiDeleteAccount } from '@/api/client';
-import type { AuthUser } from '@/types/api';
+import { apiLogin, apiRegister, apiLogout, apiMe, apiUpdateProfile, apiDeleteAccount, apiGetMyRelationships, apiGetIncomingRequests, apiRelationshipAction } from '@/api/client';
+import type { AuthUser, RelationshipResponse, RelationshipAction } from '@/types/api';
 import { isWails } from '@/utils/wails';
 
 import { connectWS, disconnectWS } from './ws.manager';
 import { useChannelStore } from './channels.slice';
+import { evictStaleAvatars, prewarmAvatars } from '@/lib/avatarCache';
 
 // The web client authenticates via an httpOnly session cookie and never
 // touches the token itself. The desktop (Wails) client still needs it in
@@ -33,12 +34,29 @@ function clearDesktopToken() {
 export interface AuthSlice {
 	user: AuthUser | null;
 	isAuthLoading: boolean;
+	relationships: RelationshipResponse[];
+	incomingRequests: RelationshipResponse[];
 
 	initAuth: () => Promise<void>;
 	login: (u: string, p: string) => Promise<void>;
 	register: (u: string, p: string) => Promise<void>;
 	logout: () => Promise<void>;
-	updateUser: (data: { avatar_id?: string; username?: string; custom_msg?: string; status_preference?: string; password?: string; old_password?: string }) => Promise<void>;
+	fetchRelationships: () => Promise<void>;
+	fetchIncomingRequests: () => Promise<void>;
+	relationshipAction: (userId: string, action: RelationshipAction) => Promise<RelationshipResponse>;
+	updateUser: (data: {
+		avatar_id?: string;
+		avatar_ids?: string[];
+		banner_color?: string;
+		username?: string;
+		custom_msg?: string;
+		status_preference?: string;
+		password?: string;
+		old_password?: string;
+		allow_channel_adds?: string;
+		dm_permission?: string;
+		friend_request_permission?: string;
+	}) => Promise<void>;
 	updateStatus: (status: string) => void;
 	deleteAccount: () => Promise<void>;
 }
@@ -48,6 +66,8 @@ export const useAuthStore = create<AuthSlice>()(
 		(set, get) => ({
 			user: null,
 			isAuthLoading: true,
+			relationships: [],
+			incomingRequests: [],
 
 			initAuth: async () => {
 				const saved = get().user;
@@ -57,14 +77,31 @@ export const useAuthStore = create<AuthSlice>()(
 						// Verify session is still valid on server and get fresh data
 						const fresh = await apiMe();
 						set({ user: fresh, isAuthLoading: false });
+
+						// Check for avatar updates and invalidate any deleted avatars on reload
+						const savedAvatars = [
+							...(saved.avatar_ids || []),
+							...(saved.avatar_id ? [saved.avatar_id] : []),
+						];
+						const freshAvatars = [
+							...(fresh.avatar_ids || []),
+							...(fresh.avatar_id ? [fresh.avatar_id] : []),
+						];
+						// Evict any avatar that was present in saved state but is no longer in fresh state
+						evictStaleAvatars(freshAvatars, savedAvatars).catch(() => {});
+						// Pre-warm the cache for active avatars
+						prewarmAvatars(freshAvatars).catch(() => {});
+
 						connectWS(fresh.token);
 						useChannelStore.getState().refreshChannels();
+						get().fetchRelationships();
+						get().fetchIncomingRequests();
 					} catch (err: any) {
 						// Only clear session if it's a definitive 401 Unauthorized
 						// If it's a network error or 500, we keep the 'saved' user state
 						// so the app doesn't flick back to login incorrectly.
 						if (err?.status === 401) {
-							set({ user: null, isAuthLoading: false });
+							set({ user: null, isAuthLoading: false, relationships: [], incomingRequests: [] });
 							disconnectWS();
 						} else {
 							// Network error or server blip - stay "logged in" locally
@@ -72,6 +109,8 @@ export const useAuthStore = create<AuthSlice>()(
 							set({ isAuthLoading: false });
 							connectWS(saved.token);
 							useChannelStore.getState().refreshChannels().catch(() => {});
+							get().fetchRelationships();
+							get().fetchIncomingRequests();
 						}
 					}
 				} else {
@@ -89,6 +128,8 @@ export const useAuthStore = create<AuthSlice>()(
 
 				connectWS(user.token);
 				useChannelStore.getState().refreshChannels();
+				get().fetchRelationships();
+				get().fetchIncomingRequests();
 			},
 
 			register: async (u, p) => {
@@ -103,12 +144,59 @@ export const useAuthStore = create<AuthSlice>()(
 				useChannelStore.getState().resetChannels();
 				clearDesktopToken();
 
-				set({ user: null });
+				set({ user: null, relationships: [], incomingRequests: [] });
+			},
+
+			fetchRelationships: async () => {
+				try {
+					const rels = await apiGetMyRelationships();
+					set({ relationships: rels });
+				} catch (e) {
+					console.error('Failed to fetch relationships', e);
+				}
+			},
+
+			fetchIncomingRequests: async () => {
+				try {
+					const reqs = await apiGetIncomingRequests();
+					set({ incomingRequests: reqs });
+				} catch (e) {
+					console.error('Failed to fetch incoming requests', e);
+				}
+			},
+
+			relationshipAction: async (userId: string, action: RelationshipAction) => {
+				const res = await apiRelationshipAction(userId, action);
+				await Promise.all([get().fetchRelationships(), get().fetchIncomingRequests()]);
+				return res;
 			},
 
 			updateUser: async (data) => {
 				const fresh = await apiUpdateProfile(data);
-				set({ user: fresh });
+				set((state) => {
+					if (!state.user) return { user: fresh };
+					const updated = {
+						...state.user,
+						...fresh,
+					};
+					if ('avatar_id' in data) {
+						updated.avatar_id = data.avatar_id ?? '';
+					}
+					if ('avatar_ids' in data) {
+						updated.avatar_ids = data.avatar_ids ?? [];
+					}
+					return { user: updated };
+				});
+
+				// Keep every already-loaded channel's member_avatars snapshot for this
+				// user in sync, so the deterministic fallback shows immediately in chat
+				// bubbles, DM headers, sidebars, etc. instead of only after a reload.
+				if ('avatar_id' in data) {
+					const userId = get().user?.id;
+					if (userId) {
+						useChannelStore.getState().updateMemberAvatar(userId, data.avatar_id ?? '');
+					}
+				}
 			},
 			updateStatus: (status) => {
 				set((state) => {
@@ -121,16 +209,11 @@ export const useAuthStore = create<AuthSlice>()(
 				await apiDeleteAccount();
 				disconnectWS();
 				useChannelStore.getState().resetChannels();
-				set({ user: null });
+				set({ user: null, relationships: [], incomingRequests: [] });
 			},
 		}),
 		{
 			name: 'auth',
-			// Never persist the raw session token: the web client relies solely
-			// on the httpOnly cookie, and the desktop client keeps its own copy
-			// via persistDesktopToken. Keeping it here too just gives an extra
-			// place a leaked-localStorage attack (or a stale logout) could read
-			// a valid session from.
 			partialize: (s) => ({
 				user: s.user ? { ...s.user, token: undefined } : null,
 			}),

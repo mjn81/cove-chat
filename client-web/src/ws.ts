@@ -47,7 +47,10 @@ type WSEventType =
 	| 'presence'
 	| 'channel_key'
 	| 'channel_update'
+	| 'channel_delete'
 	| 'voice_update'
+	| 'relationship_update'
+	| 'video_ready'
 	| 'open'
 	| 'close';
 type WSListener = (payload: unknown) => void;
@@ -255,8 +258,17 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 		case 'channel_update':
 			emit('channel_update', msg.payload);
 			break;
+		case 'channel_delete':
+			emit('channel_delete', msg.payload);
+			break;
 		case 'voice_update':
 			emit('voice_update', msg.payload);
+			break;
+		case 'relationship_update':
+			emit('relationship_update', msg.payload);
+			break;
+		case 'video_ready':
+			emit('video_ready', msg.payload);
 			break;
 		default:
 			console.debug('[ws-worker] unknown message type', msg.type);
@@ -288,7 +300,7 @@ export function wsSendReadReceipt(channelId: string) {
 export async function wsSendMessage(
 	channelId: string,
 	text: string,
-	type: 'text' | 'file' | 'voice' = 'text',
+	type: 'text' | 'file' | 'voice' | 'video' = 'text',
 	compression: string = 'none',
 	replyToId?: string,
 ): Promise<boolean> {
@@ -386,8 +398,12 @@ export function wsDeleteMessage(channelId: string, messageId: string): boolean {
 }
 
 // ── Decryption Helper ────────────────────────────────────────────────────
-export async function decryptMessage(msg: Message): Promise<string> {
-	const key = useCryptoStore.getState().channelKeys.get(msg.channel_id);
+export async function decryptText(
+	channelId: string,
+	ciphertext: string,
+	nonce: string,
+): Promise<string> {
+	const key = useCryptoStore.getState().channelKeys.get(channelId);
 	if (!key) return '[encrypted]';
 
 	try {
@@ -401,10 +417,10 @@ export async function decryptMessage(msg: Message): Promise<string> {
 			false,
 			['decrypt'],
 		);
-		const nonce = base64ToBytes(msg.nonce);
-		const ct = base64ToBytes(msg.ciphertext);
+		const iv = base64ToBytes(nonce);
+		const ct = base64ToBytes(ciphertext);
 		const decrypted = await crypto.subtle.decrypt(
-			{ name: 'AES-GCM', iv: nonce as any },
+			{ name: 'AES-GCM', iv: iv as any },
 			cryptoKey,
 			ct as any,
 		);
@@ -412,4 +428,8 @@ export async function decryptMessage(msg: Message): Promise<string> {
 	} catch {
 		return '[decryption failed]';
 	}
+}
+
+export async function decryptMessage(msg: Message): Promise<string> {
+	return decryptText(msg.channel_id, msg.ciphertext, msg.nonce);
 }

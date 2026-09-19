@@ -31,5 +31,13 @@ export function useMessages(channelId: string) {
 		},
 		staleTime: 0,
 		refetchOnWindowFocus: true,
+		// The app already gets live updates over the WebSocket and drives its
+		// own reconnect logic off wsState (src/store/ws.manager.ts) — react-
+		// query's own browser-'online'-triggered refetch is redundant and,
+		// worse, replaces the cached page wholesale with the server's
+		// response, silently deleting any client-only optimistic "sending"/
+		// "failed" placeholders (src/utils/pendingMessages.ts) in the
+		// process.
+		refetchOnReconnect: false,
 	});
 }

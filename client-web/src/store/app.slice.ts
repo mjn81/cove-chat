@@ -6,6 +6,7 @@ export interface AppSlice {
 	appVersion: string;
 	wsState: 'connecting' | 'connected' | 'disconnected';
 	theme: 'dark' | 'light';
+	chatBackground: 'none' | 'animals' | 'space' | 'games' | 'sweets';
 
 	isLeftSidebarOpen: boolean;
 	isRightSidebarOpen: boolean;
@@ -21,6 +22,7 @@ export interface AppSlice {
 	fetchVersion: () => Promise<void>;
 	setWsState: (s: AppSlice['wsState']) => void;
 	setTheme: (theme: 'dark' | 'light') => void;
+	setChatBackground: (bg: AppSlice['chatBackground']) => void;
 	setLeftSidebarOpen: (open: boolean) => void;
 	setRightSidebarOpen: (open: boolean) => void;
 	setEnableDesktopNotifications: (enabled: boolean) => void;
@@ -33,6 +35,7 @@ export const useAppStore = create<AppSlice>()(
 			appVersion: 'V...',
 			wsState: 'disconnected',
 			theme: 'dark',
+			chatBackground: 'none',
 			isLeftSidebarOpen: false,
 			isRightSidebarOpen: false,
 			enableDesktopNotifications: true,
@@ -41,6 +44,7 @@ export const useAppStore = create<AppSlice>()(
 
 			setWsState: (wsState) => set({ wsState }),
 			setTheme: (theme) => set({ theme }),
+			setChatBackground: (chatBackground) => set({ chatBackground }),
 			setLeftSidebarOpen: (isLeftSidebarOpen) => set({ isLeftSidebarOpen }),
 			setRightSidebarOpen: (isRightSidebarOpen) => set({ isRightSidebarOpen }),
 			setEnableDesktopNotifications: (enableDesktopNotifications) =>
@@ -62,10 +66,17 @@ export const useAppStore = create<AppSlice>()(
 			name: 'app-settings',
 			partialize: (s) => ({
 				theme: s.theme,
+				chatBackground: s.chatBackground,
 				enableDesktopNotifications: s.enableDesktopNotifications,
 				enableNotificationSounds: s.enableNotificationSounds,
 				preferredMicId: s.preferredMicId,
 			}),
+			onRehydrateStorage: () => (state) => {
+				const validPatterns = ['none', 'animals', 'space', 'games', 'sweets'];
+				if (state && (!state.chatBackground || !validPatterns.includes(state.chatBackground))) {
+					state.chatBackground = 'none';
+				}
+			},
 		},
 	),
 );

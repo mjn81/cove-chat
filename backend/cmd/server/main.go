@@ -92,7 +92,7 @@ func main() {
 	// ── 5. App layers ──────────────────────────────────────────────────────
 	dataStore := store.New(database)
 	tokenTTL  := time.Duration(cfg.Security.TokenExpireHours) * time.Hour
-	sessions  := auth.NewSessionStore(tokenTTL)
+	sessions  := auth.NewSessionStore(tokenTTL, database)
 
 	// ── 6. HTTP router + WebSocket Hub ────────────────────────────────────
 	var blobStorage storage.BlobStorage
@@ -109,11 +109,14 @@ func main() {
 		Sessions:       sessions,
 		KEK:            kek,
 		Storage:        blobStorage,
-		TokenTTL:       tokenTTL,
-		MaxFileSizeMB:  cfg.Server.MaxFileSizeMB,
-		UDPPort:        cfg.Server.UDPPort,
-		IsDev:          cfg.Server.Dev,
-		FrontendOrigin: cfg.Server.FrontendOrigin,
+		TokenTTL:            tokenTTL,
+		MaxFileSizeMB:       cfg.Server.MaxFileSizeMB,
+		MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
+		MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
+		FFmpegPath:          cfg.Server.FFmpegPath,
+		UDPPort:             cfg.Server.UDPPort,
+		IsDev:               cfg.Server.Dev,
+		FrontendOrigin:      cfg.Server.FrontendOrigin,
 	}
 	hub := ws.NewHub(dataStore, sessions, kek)
 	apiHandler.Hub = hub

@@ -8,6 +8,7 @@ interface FileMetadata {
 	name?: string;
 	mime: string;
 	size: number;
+	duration?: number;
 	nonce: string;
 	thumb_ciphertext?: string;
 	thumb_nonce?: string;
@@ -26,12 +27,13 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 	waveform,
 	handleDownload,
 }) => {
-	const { track, isPlaying, isLoading, currentTime, duration } = useVoicePlayer();
+	const { track, isPlaying, isLoading, currentTime, duration } =
+		useVoicePlayer();
 
-	const isActive   = track?.fileId === meta.file_id;
+	const isActive = track?.fileId === meta.file_id;
 	const thisPlaying = isActive && isPlaying;
 	const thisLoading = isActive && isLoading;
-	const progress    = isActive && duration > 0 ? currentTime / duration : 0;
+	const progress = isActive && duration > 0 ? currentTime / duration : 0;
 
 	const formatTime = (s: number) => {
 		if (!isFinite(s) || isNaN(s)) return '0:00';
@@ -47,17 +49,18 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 		} else {
 			// Different track: load and play
 			voicePlayer.play({
-				fileId:    meta.file_id,
+				fileId: meta.file_id,
 				channelId,
-				mime:      meta.mime,
-				nonce:     meta.nonce,
+				mime: meta.mime,
+				nonce: meta.nonce,
 				waveform,
-				label:     meta.name,
+				label: meta.name,
 			});
 		}
 	};
 
-	const displayDuration = isActive ? duration : 0;
+	const displayDuration =
+		isActive && duration > 0 ? duration : meta.duration || 0;
 
 	return (
 		<div
@@ -76,7 +79,7 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 					) : thisPlaying ? (
 						<Pause size={20} fill="currentColor" />
 					) : (
-						<Play size={20} fill="currentColor" className="ml-0.5" />
+						<Play size={20} fill="currentColor" />
 					)}
 				</button>
 
@@ -86,14 +89,12 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 						{waveform ? (
 							waveform.map((peak, i) => {
 								const barProgress = i / waveform.length;
-								const isPlayed    = isActive && progress > barProgress;
+								const isPlayed = isActive && progress > barProgress;
 								return (
 									<div
 										key={i}
 										className={`flex-1 rounded-full transition-colors duration-75 ${
-											isPlayed
-												? 'bg-primary'
-												: 'bg-muted-foreground/30'
+											isPlayed ? 'bg-primary' : 'bg-muted-foreground/30'
 										}`}
 										style={{ height: `${Math.max(15, peak)}%` }}
 									/>
@@ -112,7 +113,10 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 								: formatTime(displayDuration)}
 						</span>
 						<button
-							onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+							onClick={(e) => {
+								e.stopPropagation();
+								handleDownload();
+							}}
 							className="text-muted-foreground hover:text-foreground transition p-0.5"
 							title="Download Voice Note"
 						>

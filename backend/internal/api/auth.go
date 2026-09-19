@@ -84,6 +84,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Status:           u.Status,
 		StatusPreference: u.StatusPreference,
 		AvatarID:         u.AvatarID,
+		BannerColor:      u.BannerColor,
 		CustomMsg:        u.CustomMsg,
 		Token:            token,
 	})

@@ -98,6 +98,29 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* Ensure interactive elements and all their descendants show the pointer cursor */
+  button,
+  button *,
+  [role="button"],
+  [role="button"] *,
+  .cursor-pointer,
+  .cursor-pointer * {
+    cursor: pointer !important;
+  }
+
+  /* Prevent browser native drag from switching cursor to default/grab arrow */
+  img, svg {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
+  button:disabled,
+  button:disabled *,
+  :disabled,
+  :disabled * {
+    cursor: not-allowed !important;
+  }
 }
 
 /* Base custom scrollbar for Discord feel */

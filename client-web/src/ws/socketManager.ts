@@ -26,25 +26,42 @@ export interface SocketManager {
 const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const HEARTBEAT_INTERVAL_MS = 25_000;
+// A socket that hasn't produced any inbound traffic (message, pong, or
+// otherwise) for two full heartbeat cycles is treated as dead — some
+// proxies/NATs drop a connection without ever sending a close frame, leaving
+// it stuck in a zombie `OPEN` state that silently swallows sends forever.
+const LIVENESS_TIMEOUT_MS = HEARTBEAT_INTERVAL_MS * 2;
 
 export function createSocketManager(callbacks: SocketManagerCallbacks): SocketManager {
 	let socket: WebSocket | null = null;
 	let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+	let livenessTimer: ReturnType<typeof setInterval> | null = null;
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
 	let lastUrl = '';
 	let disconnected = false;
+	let lastInboundAt = 0;
 
 	function stopHeartbeat() {
 		if (heartbeatTimer) clearInterval(heartbeatTimer);
 		heartbeatTimer = null;
+		if (livenessTimer) clearInterval(livenessTimer);
+		livenessTimer = null;
 	}
 
 	function startHeartbeat() {
 		stopHeartbeat();
+		lastInboundAt = Date.now();
 		heartbeatTimer = setInterval(() => {
 			if (socket?.readyState === WebSocket.OPEN) {
 				socket.send(JSON.stringify({ type: 'ping', payload: null }));
+			}
+		}, HEARTBEAT_INTERVAL_MS);
+		livenessTimer = setInterval(() => {
+			if (socket?.readyState === WebSocket.OPEN && Date.now() - lastInboundAt > LIVENESS_TIMEOUT_MS) {
+				// Force-close so the browser fires a real close event and the
+				// existing reconnect-with-backoff logic below takes over.
+				socket.close();
 			}
 		}, HEARTBEAT_INTERVAL_MS);
 	}
@@ -78,6 +95,7 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 		};
 
 		socket.onmessage = (event) => {
+			lastInboundAt = Date.now();
 			callbacks.onMessage(event.data);
 		};
 

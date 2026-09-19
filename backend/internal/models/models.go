@@ -10,16 +10,21 @@ import (
 
 // User represents an authenticated account stored under u:{id}.
 type User struct {
-	ID        string    `json:"id"`
-	Username  string    `json:"username"`
-	PwdHash   []byte    `json:"pwd_hash"`   // Argon2id SaltedHash JSON blob
-	Domain    string    `json:"domain"`     // e.g. "localhost" or "chat.example.com"
-	Status           string    `json:"status"`            // Active status: "online" | "away" | "dnd" | "offline"
-	StatusPreference string    `json:"status_preference"` // "online" | "away" | "dnd" | "offline" | "auto"
-	AvatarID  string    `json:"avatar_id"`  // Reference to file storage
-	CustomMsg string    `json:"custom_msg"`  // Optional status message
-	PublicKey []byte    `json:"pub_key"`    // Reserved for future E2EE key exchange
-	CreatedAt time.Time `json:"created_at"`
+	ID                      string    `json:"id"`
+	Username                string    `json:"username"`
+	PwdHash                 []byte    `json:"pwd_hash"`                            // Argon2id SaltedHash JSON blob
+	Domain                  string    `json:"domain"`                              // e.g. "localhost" or "chat.example.com"
+	Status                  string    `json:"status"`                              // Active status: "online" | "away" | "dnd" | "offline"
+	StatusPreference        string    `json:"status_preference"`                   // "online" | "away" | "dnd" | "offline" | "auto"
+	AvatarID                string    `json:"avatar_id"`                           // Reference to file storage
+	AvatarIDs               []string  `json:"avatar_ids,omitempty"`                // History/gallery of avatar IDs (max 5)
+	BannerColor             string    `json:"banner_color,omitempty"`              // Hex color code for profile banner (e.g. #5865F2)
+	CustomMsg               string    `json:"custom_msg"`                          // Optional status message
+	AllowChannelAdds        string    `json:"allow_channel_adds,omitempty"`        // "everyone" | "friends" | "nobody" (default: "everyone")
+	DMPermission            string    `json:"dm_permission,omitempty"`             // "everyone" | "friends" | "nobody" (default: "everyone")
+	FriendRequestPermission string    `json:"friend_request_permission,omitempty"` // "everyone" | "nobody" (default: "everyone")
+	PublicKey               []byte    `json:"pub_key"`                             // Reserved for future E2EE key exchange
+	CreatedAt               time.Time `json:"created_at"`
 }
 
 // ---- Channel --------------------------------------------------------------- //
@@ -28,12 +33,24 @@ type User struct {
 type Channel struct {
 	ID              string    `json:"id"`
 	Name            string    `json:"name"`
+	Description     string    `json:"description,omitempty"`
+	AvatarID        string    `json:"avatar_id,omitempty"`
 	IsPrivate       bool      `json:"is_private"`  // If true, hidden from public search
-	InviteLink      string    `json:"invite_link"`  // Unique public/private join link
+	InviteLink      string    `json:"invite_link"` // Unique public/private join link
 	CreatorID       string    `json:"creator_id"`
-	AESKeyEncrypted []byte    `json:"aes_key_enc"`  // Channel AES-256 key encrypted with server KEK
+	AESKeyEncrypted []byte    `json:"aes_key_enc"` // Channel AES-256 key encrypted with server KEK
 	CreatedAt       time.Time `json:"created_at"`
-	UnreadCount     int       `json:"unread_count"` // Ephemeral: Populated per-user in handlers
+	UnreadCount     int       `json:"unread_count"`    // Ephemeral: Populated per-user in handlers
+	LastMessageAt   time.Time `json:"last_message_at"` // Ephemeral: Populated in ListUserChannels
+
+	// Ephemeral, populated in ListUserChannels: the channel's most recent
+	// message, still encrypted — lets the client render a sidebar preview
+	// without a second round-trip. The server never sees the plaintext.
+	LastMessageCiphertext []byte      `json:"last_message_ciphertext,omitempty"`
+	LastMessageNonce      []byte      `json:"last_message_nonce,omitempty"`
+	LastMessageType       MessageType `json:"last_message_type,omitempty"`
+	LastMessageSenderID   string      `json:"last_message_sender_id,omitempty"`
+	LastMessageID         string      `json:"last_message_id,omitempty"`
 }
 
 func (ch *Channel) IsDM(memberCount int) bool {
@@ -64,6 +81,7 @@ type UserChannel struct {
 	Status     string    `json:"status"` // "active", "kicked", "banned", "left"
 	JoinedAt   time.Time `json:"joined_at"`
 	LastReadAt time.Time `json:"last_read_at"`
+	ClearedAt  time.Time `json:"cleared_at,omitempty"`
 }
 
 // ---- Message --------------------------------------------------------------- //
@@ -75,6 +93,7 @@ const (
 	MessageTypeText  MessageType = "text"
 	MessageTypeFile  MessageType = "file"
 	MessageTypeVoice MessageType = "voice"
+	MessageTypeVideo MessageType = "video"
 )
 
 // Message is stored under m:{chan_id}:{time_nano}. The server only sees
@@ -83,7 +102,7 @@ type Message struct {
 	ID          string      `json:"id"`
 	ChannelID   string      `json:"channel_id"`
 	SenderID    string      `json:"sender_id"`
-	Type        MessageType `json:"type"`        // "text" | "file" | "voice"
+	Type        MessageType `json:"type"`        // "text" | "file" | "voice" | "video"
 	Ciphertext  []byte      `json:"ciphertext"`  // AES-256-GCM encrypted payload
 	Nonce       []byte      `json:"nonce"`       // GCM nonce (also prepended in ciphertext)
 	Compression string      `json:"compression"` // "none", "zstd", etc.
@@ -105,18 +124,44 @@ type Presence struct {
 
 // ---- File / Media ---------------------------------------------------------- //
 
-// File holds metadata for uploaded files and encrypted voice notes, stored
-// under f:{uuid}.
+// File holds metadata for uploaded files, encrypted voice notes, and video messages,
+// stored under f:{uuid}.
 type File struct {
-	ID          string    `json:"id"`
-	OwnerID     string    `json:"owner_id"`
-	ChannelID   string    `json:"channel_id"`
-	SizeBytes   int64     `json:"size"`
-	MIMEType    string    `json:"mime"`             // e.g. "audio/webm", "image/png"
-	StoragePath string    `json:"storage_path"`
-	ThumbCipher []byte    `json:"thumb_ciphertext"` // Optional encrypted thumbnail
-	ThumbNonce  []byte    `json:"thumb_nonce"`      // Nonce for thumbnail
-	UploadedAt  time.Time `json:"uploaded_at"`
+	ID               string    `json:"id"`
+	OwnerID          string    `json:"owner_id"`
+	ChannelID        string    `json:"channel_id"`
+	SizeBytes        int64     `json:"size"`
+	MIMEType         string    `json:"mime"` // e.g. "audio/webm", "video/webm", "image/png"
+	StoragePath      string    `json:"storage_path"`
+	ThumbCipher      []byte    `json:"thumb_ciphertext,omitempty"`  // Optional encrypted thumbnail
+	ThumbNonce       []byte    `json:"thumb_nonce,omitempty"`       // Nonce for thumbnail
+	ProcessingStatus string    `json:"processing_status,omitempty"` // "ready" | "processing" | "failed"
+	DurationSec      float64   `json:"duration_sec,omitempty"`      // Duration in seconds (for audio/video)
+	UploadedAt       time.Time `json:"uploaded_at"`
+}
+
+// ---- Relationship (Unified Friend / Block / Request) ----------------------- //
+
+type RelationshipType string
+
+const (
+	RelNone      RelationshipType = "none"
+	RelRequested RelationshipType = "requested"
+	RelFriend    RelationshipType = "friend"
+	RelBlocked   RelationshipType = "blocked"
+)
+
+// Relationship is stored under rel:{from_user_id}:{to_user_id}.
+// For friends, it is bidirectional: rel:A:B = friend AND rel:B:A = friend.
+// For block, it is directional: rel:A:B = blocked (A blocked B).
+// For requests, from=Requester, to=Recipient: rel:A:B = requested.
+// Secondary index reli:{to_user_id}:{from_user_id} provides fast inbox lookup.
+type Relationship struct {
+	FromUserID string           `json:"from_user_id"`
+	ToUserID   string           `json:"to_user_id"`
+	Type       RelationshipType `json:"type"` // "requested" | "friend" | "blocked"
+	CreatedAt  time.Time        `json:"created_at"`
+	UpdatedAt  time.Time        `json:"updated_at"`
 }
 
 // ---- WebSocket Wire Types -------------------------------------------------- //
@@ -125,4 +170,15 @@ type File struct {
 type WSMessage struct {
 	Type    string          `json:"type"`    // e.g. "message", "presence", "channel_key"
 	Payload json.RawMessage `json:"payload"` // Type-specific JSON
+}
+
+// ---- Session --------------------------------------------------------------- //
+
+// Session represents an authenticated session record stored under s:{token}.
+type Session struct {
+	Token     string    `json:"token"`
+	UserID    string    `json:"user_id"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }

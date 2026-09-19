@@ -1,29 +1,39 @@
 import { useState, Profiler } from 'react';
 import { logProfiler } from '@/utils/profiler';
 
-import { Avatar } from '../Avatar';
+import { Avatar, ChannelInitialsAvatar } from '../Avatar';
 import {
 	Search,
 	SlidersHorizontal,
-	Hash,
 	X,
 	ChevronLeft,
 	Users,
 	Mic,
+	UserPlus,
+	Check,
+	Clock,
+	Loader2,
+	Trash2,
 } from 'lucide-react';
 import { type Channel } from '@/types/api';
 import {
 	getChannelDisplayName,
 	useAppStore,
+	useAuthStore,
 	useChannelStore,
 } from '@/store/store';
 import { GroupSettingsModal } from './GroupSettingsModal';
+import { ChannelInfoModal } from './ChannelInfoModal';
 import { isDirectMessage } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isAdmin } from '@/utils/role';
 import { isWails } from '@/utils/wails';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useVoiceStore } from '@/store/voiceStore';
+
+import { UserProfileModal } from '../UserProfileModal';
+import { DeleteChatModal } from './DeleteChatModal';
+import { getFileUrl } from '@/api/client';
 
 interface ChatTopbarProps {
 	channel: Channel;
@@ -34,18 +44,47 @@ interface ChatTopbarProps {
 
 export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 	channel,
-	currentUserId,
+	currentUserId: propUserId,
 	searchQuery,
 	onSearchChange,
 }) => {
 	const [showSettings, setShowSettings] = useState(false);
+	const [showUserProfile, setShowUserProfile] = useState(false);
+	const [showChannelInfo, setShowChannelInfo] = useState(false);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
-	const isDM = isDirectMessage(channel);
+
+	const authUserId = useAuthStore((state) => state.user?.id);
+	const currentUserId = authUserId || propUserId;
+
+	// Use reactive channel from store if available
+	const liveChannel = useChannelStore(
+		(state) => state.channels.find((c) => c.id === channel.id),
+	) || channel;
+
+	const isDM = isDirectMessage(liveChannel);
 	const otherMemberId =
-		channel.members.find((m) => m !== currentUserId) || channel.id;
+		liveChannel.members.find((m) => m !== currentUserId) ||
+		liveChannel.members[0] ||
+		liveChannel.id;
+
+	const otherStatus = liveChannel.member_statuses?.[otherMemberId] || 'offline';
+	const dmSubtitle = otherStatus.charAt(0).toUpperCase() + otherStatus.slice(1);
 
 	// Only show settings icon for admins/owners of group channels
-	const canManage = !isDM && isAdmin(channel.user_role);
+	const canManage = !isDM && isAdmin(liveChannel.user_role);
+
+	const relationships = useAuthStore((state) => state.relationships);
+	const incomingRequests = useAuthStore((state) => state.incomingRequests);
+	const relationshipAction = useAuthStore((state) => state.relationshipAction);
+	const [isSendingFriendReq, setIsSendingFriendReq] = useState(false);
+
+	const outgoingRel = relationships.find((r) => r.to_user_id === otherMemberId);
+	const incomingReq = incomingRequests.find((r) => r.from_user_id === otherMemberId);
+	const isFriend = outgoingRel?.type === 'friend';
+	const isRequested = outgoingRel?.type === 'requested';
+	const isBlocked = outgoingRel?.type === 'blocked';
+	const canAddFriend = isDM && otherMemberId !== currentUserId && !isFriend && !isBlocked;
 
 	const isMobile = useMediaQuery('(max-width: 768px)');
 	const { setRightSidebarOpen, isRightSidebarOpen } = useAppStore();
@@ -53,12 +92,12 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 	const { startVoice, stopVoice } = useVoiceChat();
 	const isActive = useVoiceStore(
-		(state) => state.isActive && state.activeChannelId === channel.id,
+		(state) => state.isActive && state.activeChannelId === liveChannel.id,
 	);
 
 	return (
 		<Profiler id="ChatTopbar" onRender={logProfiler}>
-			<div className="flex items-center justify-between px-4 h-12 border-b border-border shrink-0 shadow-sm relative z-10 bg-background">
+			<div className="flex items-center justify-between px-4 h-12 border-b border-border shrink-0 relative z-10 bg-background">
 				<div className="flex items-center gap-2 min-w-0">
 					{isMobile && (
 						<button
@@ -70,29 +109,141 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 					)}
 					<div className="flex items-center gap-3 min-w-0">
 						{isDM ? (
-							<Avatar
-								userId={otherMemberId}
-								avatarId={channel.member_avatars?.[otherMemberId]}
-								size={32}
-							/>
+							<button
+								type="button"
+								onClick={() => setShowUserProfile(true)}
+								className="flex items-center gap-3 text-left hover:opacity-85 transition min-w-0 cursor-pointer group"
+								title="View profile"
+							>
+								<div className="relative shrink-0 pointer-events-none">
+									<Avatar
+										userId={otherMemberId}
+										avatarId={liveChannel.member_avatars?.[otherMemberId]}
+										size={40}
+									/>
+									<div
+										className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-background z-10 ${
+											otherStatus === 'online'
+												? 'bg-green-500'
+												: otherStatus === 'away'
+													? 'bg-yellow-500'
+													: otherStatus === 'dnd'
+														? 'bg-red-500'
+														: 'bg-gray-500'
+										}`}
+									/>
+								</div>
+								<div className="flex flex-col min-w-0 pointer-events-none">
+									<div className="text-[15px] font-bold text-foreground leading-tight truncate">
+										{getChannelDisplayName(liveChannel, currentUserId)}
+									</div>
+									<div className="text-[12px] text-muted-foreground leading-tight mt-0.5">
+										{dmSubtitle}
+									</div>
+								</div>
+							</button>
 						) : (
-							<div className="w-8 h-8 flex items-center justify-center text-muted-foreground shrink-0">
-								<Hash size={24} className="opacity-70" />
-							</div>
+							<button
+								type="button"
+								onClick={() => setShowChannelInfo(true)}
+								className="flex items-center gap-3 text-left hover:opacity-85 transition min-w-0 cursor-pointer group"
+								title="View channel info"
+							>
+								{liveChannel.avatar_id ? (
+									<div className="w-10 h-10 rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0 pointer-events-none">
+										<img
+											src={getFileUrl(liveChannel.avatar_id)}
+											alt={liveChannel.name}
+											className="w-full h-full object-cover"
+											draggable={false}
+										/>
+									</div>
+								) : (
+									<ChannelInitialsAvatar id={liveChannel.id} name={liveChannel.name} size={40} />
+								)}
+								<div className="flex flex-col min-w-0 pointer-events-none">
+									<div
+										className="text-[15px] font-bold text-foreground leading-tight truncate"
+										title={liveChannel.name}
+									>
+										{getChannelDisplayName(liveChannel, currentUserId)}
+									</div>
+									<div
+										className="text-[12px] text-muted-foreground leading-tight truncate max-w-[200px] sm:max-w-xs md:max-w-md mt-0.5"
+										title={liveChannel.description || undefined}
+									>
+										{liveChannel.description
+											? liveChannel.description
+											: `${liveChannel.members?.length ?? 0} members`}
+									</div>
+								</div>
+							</button>
 						)}
-						<div className="flex flex-col min-w-0">
-							<div className="text-[15px] font-bold text-foreground leading-tight truncate">
-								{getChannelDisplayName(channel, currentUserId)}
-							</div>
-							<div className="text-[13px] text-muted-foreground leading-tight">
-								{isDM ? 'Direct Message' : `${channel.members.length} members`}
-							</div>
-						</div>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 sm:gap-4 text-muted-foreground">
+				<div className="flex items-center gap-2 sm:gap-3 text-muted-foreground">
+					{/* Add Friend button if DM and not friends */}
+					{canAddFriend && (
+						<div>
+							{isRequested ? (
+								<div
+									className="p-1 text-muted-foreground select-none"
+									title="Friend request pending"
+								>
+									<Clock size={20} className="text-amber-500 opacity-80" />
+								</div>
+							) : incomingReq ? (
+								<button
+									type="button"
+									disabled={isSendingFriendReq}
+									onClick={async () => {
+										setIsSendingFriendReq(true);
+										try {
+											await relationshipAction(otherMemberId, 'accept');
+										} catch (err) {
+											console.error('Failed to accept friend request', err);
+										} finally {
+											setIsSendingFriendReq(false);
+										}
+									}}
+									className="p-1 hover:text-emerald-400 text-emerald-500 transition cursor-pointer"
+									title="Accept Friend Request"
+								>
+									{isSendingFriendReq ? (
+										<Loader2 size={20} className="animate-spin" />
+									) : (
+										<Check size={20} />
+									)}
+								</button>
+							) : (
+								<button
+									type="button"
+									disabled={isSendingFriendReq}
+									onClick={async () => {
+										setIsSendingFriendReq(true);
+										try {
+											await relationshipAction(otherMemberId, 'request');
+										} catch (err) {
+											console.error('Failed to send friend request', err);
+										} finally {
+											setIsSendingFriendReq(false);
+										}
+									}}
+									className="p-1 hover:text-foreground text-muted-foreground transition cursor-pointer"
+									title="Add Friend"
+								>
+									{isSendingFriendReq ? (
+										<Loader2 size={20} className="animate-spin" />
+									) : (
+										<UserPlus size={20} className="opacity-70 hover:opacity-100 transition-opacity" />
+									)}
+								</button>
+							)}
+						</div>
+					)}
+
 					<div
-						className={`flex items-center bg-secondary/50 rounded-lg px-2 transition-all duration-200 ${isSearching || searchQuery ? 'w-32 sm:w-48 ring-1 ring-primary/20' : 'w-9 bg-transparent'}`}
+						className={`flex items-center bg-secondary/50 rounded-lg px-2 transition-all duration-200 ${isSearching || searchQuery ? 'w-44 sm:w-64 md:w-72 ring-1 ring-primary/20' : 'w-9 bg-transparent'}`}
 					>
 						<button
 							onClick={() => setIsSearching(!isSearching)}
@@ -162,6 +313,20 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						</button>
 					)}
 
+					{isDM && (
+						<button
+							type="button"
+							onClick={() => setShowDeleteModal(true)}
+							className="hover:text-destructive text-muted-foreground transition p-1 cursor-pointer"
+							title="Delete Chat"
+						>
+							<Trash2
+								size={20}
+								className="opacity-80 hover:opacity-100"
+							/>
+						</button>
+					)}
+
 					{isWails() && (
 						<button
 							onClick={() => (isActive ? stopVoice() : startVoice(channel.id))}
@@ -179,8 +344,33 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 				{showSettings && (
 					<GroupSettingsModal
-						channel={channel}
+						channel={liveChannel}
 						onClose={() => setShowSettings(false)}
+					/>
+				)}
+
+				{showUserProfile && (
+					<UserProfileModal
+						userId={otherMemberId}
+						open={showUserProfile}
+						onOpenChange={setShowUserProfile}
+					/>
+				)}
+
+				{showChannelInfo && (
+					<ChannelInfoModal
+						channel={liveChannel}
+						open={showChannelInfo}
+						onOpenChange={setShowChannelInfo}
+						onOpenSettings={() => setShowSettings(true)}
+					/>
+				)}
+
+				{showDeleteModal && (
+					<DeleteChatModal
+						channel={liveChannel}
+						isOpen={showDeleteModal}
+						onClose={() => setShowDeleteModal(false)}
 					/>
 				)}
 			</div>

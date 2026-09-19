@@ -21,9 +21,12 @@ type ServerConfig struct {
 	Domain         string `toml:"domain"`
 	HTTPPort       int    `toml:"http_port"`
 	UDPPort        int    `toml:"udp_port"`
-	MaxFileSizeMB  int    `toml:"max_file_size_mb"`
-	Dev            bool   `toml:"dev"`
-	FrontendOrigin string `toml:"frontend_origin"`
+	MaxFileSizeMB       int    `toml:"max_file_size_mb"`
+	MaxVideoSizeMB      int    `toml:"max_video_size_mb"`
+	MaxVideoDurationSec int    `toml:"max_video_duration_sec"`
+	FFmpegPath          string `toml:"ffmpeg_path"`
+	Dev                 bool   `toml:"dev"`
+	FrontendOrigin      string `toml:"frontend_origin"`
 	// TrustProxyHeaders enables reading the client IP from CF-Connecting-IP /
 	// X-Real-IP / X-Forwarded-For. Only enable this when the server sits
 	// behind a reverse proxy that overwrites these headers itself — otherwise
@@ -70,8 +73,11 @@ func Load() (*Config, error) {
 			Domain:         "localhost",
 			HTTPPort:       4000,
 			UDPPort:        9090,
-			MaxFileSizeMB:  100, // Default 100MB
-			Dev:               false,
+			MaxFileSizeMB:       100, // Default 100MB
+			MaxVideoSizeMB:      50,  // Default 50MB
+			MaxVideoDurationSec: 60,  // Default 60 seconds
+			FFmpegPath:          "ffmpeg",
+			Dev:                 false,
 			FrontendOrigin:    "http://localhost:5173",
 			TrustProxyHeaders: false,
 		},

@@ -26,12 +26,18 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, UserResponse{
-		ID:       u.ID,
-		Username: u.Username,
-		Domain:   u.Domain,
-		Status:           u.Status,
-		StatusPreference: u.StatusPreference,
-		AvatarID: u.AvatarID, CustomMsg: u.CustomMsg,
+		ID:                      u.ID,
+		Username:                u.Username,
+		Domain:                  u.Domain,
+		Status:                  u.Status,
+		StatusPreference:        u.StatusPreference,
+		AvatarID:                u.AvatarID,
+		AvatarIDs:               u.AvatarIDs,
+		BannerColor:             u.BannerColor,
+		CustomMsg:               u.CustomMsg,
+		AllowChannelAdds:        u.AllowChannelAdds,
+		DMPermission:            u.DMPermission,
+		FriendRequestPermission: u.FriendRequestPermission,
 	})
 }
 
@@ -91,6 +97,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		u.Username = body.Username
+		if session != nil {
+			token, _, _ := auth.ResolveToken(r)
+			if token != "" {
+				h.Sessions.UpdateUsername(token, u.Username)
+			}
+		}
 	}
 
 	if body.Password != "" {
@@ -101,7 +113,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		// Verify old password
 		valid, err := crypto.VerifyPassword(body.OldPassword, u.PwdHash)
 		if err != nil || !valid {
-			writeError(w, http.StatusUnauthorized, "invalid current password")
+			writeError(w, http.StatusBadRequest, "invalid current password")
 			return
 		}
 
@@ -115,9 +127,57 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	if body.AvatarID != nil {
 		u.AvatarID = *body.AvatarID
+		if u.AvatarID != "" {
+			exists := false
+			for _, id := range u.AvatarIDs {
+				if id == u.AvatarID {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				u.AvatarIDs = append([]string{u.AvatarID}, u.AvatarIDs...)
+				if len(u.AvatarIDs) > 5 {
+					u.AvatarIDs = u.AvatarIDs[:5]
+				}
+			}
+		}
+	}
+	if body.AvatarIDs != nil {
+		gallery := *body.AvatarIDs
+		if len(gallery) > 5 {
+			gallery = gallery[:5]
+		}
+		u.AvatarIDs = gallery
+		if len(gallery) > 0 {
+			u.AvatarID = gallery[0]
+		} else {
+			u.AvatarID = ""
+		}
+	}
+	if body.BannerColor != nil {
+		u.BannerColor = *body.BannerColor
 	}
 	if body.CustomMsg != nil {
 		u.CustomMsg = *body.CustomMsg
+	}
+	if body.AllowChannelAdds != nil {
+		val := *body.AllowChannelAdds
+		if val == "everyone" || val == "friends" || val == "nobody" {
+			u.AllowChannelAdds = val
+		}
+	}
+	if body.DMPermission != nil {
+		val := *body.DMPermission
+		if val == "everyone" || val == "friends" || val == "nobody" {
+			u.DMPermission = val
+		}
+	}
+	if body.FriendRequestPermission != nil {
+		val := *body.FriendRequestPermission
+		if val == "everyone" || val == "nobody" {
+			u.FriendRequestPermission = val
+		}
 	}
 	if body.StatusPreference != nil {
 		u.StatusPreference = *body.StatusPreference
@@ -143,12 +203,18 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, UserResponse{
-		ID:       u.ID,
-		Username: u.Username,
-		Domain:   u.Domain,
-		Status:           u.Status,
-		StatusPreference: u.StatusPreference,
-		AvatarID: u.AvatarID, CustomMsg: u.CustomMsg,
+		ID:                      u.ID,
+		Username:                u.Username,
+		Domain:                  u.Domain,
+		Status:                  u.Status,
+		StatusPreference:        u.StatusPreference,
+		AvatarID:                u.AvatarID,
+		AvatarIDs:               u.AvatarIDs,
+		BannerColor:             u.BannerColor,
+		CustomMsg:               u.CustomMsg,
+		AllowChannelAdds:        u.AllowChannelAdds,
+		DMPermission:            u.DMPermission,
+		FriendRequestPermission: u.FriendRequestPermission,
 	})
 }
 
@@ -175,12 +241,14 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 	var res []UserResponse
 	for _, u := range users {
 		res = append(res, UserResponse{
-			ID:        u.ID,
-			Username:  u.Username,
-			Domain:    u.Domain,
-			Status:    u.Status,
-			AvatarID:  u.AvatarID,
-			CustomMsg: u.CustomMsg,
+			ID:          u.ID,
+			Username:    u.Username,
+			Domain:      u.Domain,
+			Status:      u.Status,
+			AvatarID:    u.AvatarID,
+			AvatarIDs:   u.AvatarIDs,
+			BannerColor: u.BannerColor,
+			CustomMsg:   u.CustomMsg,
 		})
 	}
 	if res == nil {
@@ -204,14 +272,24 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "user not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, UserResponse{
-		ID:       u.ID,
-		Username: u.Username,
-		Domain:   u.Domain,
+	resp := UserResponse{
+		ID:               u.ID,
+		Username:         u.Username,
+		Domain:           u.Domain,
 		Status:           u.Status,
 		StatusPreference: u.StatusPreference,
-		AvatarID: u.AvatarID, CustomMsg: u.CustomMsg,
-	})
+		AvatarID:         u.AvatarID,
+		AvatarIDs:        u.AvatarIDs,
+		BannerColor:      u.BannerColor,
+		CustomMsg:        u.CustomMsg,
+	}
+	session := auth.SessionFromContext(r.Context())
+	if session != nil && session.UserID == u.ID {
+		resp.AllowChannelAdds = u.AllowChannelAdds
+		resp.DMPermission = u.DMPermission
+		resp.FriendRequestPermission = u.FriendRequestPermission
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // ============================

@@ -7,6 +7,7 @@ interface TabButtonProps {
 	icon: LucideIcon;
 	activeTab: SettingsTab;
 	setActiveTab: (id: SettingsTab) => void;
+	badge?: number | string;
 }
 
 export const TabButton = ({
@@ -15,21 +16,29 @@ export const TabButton = ({
 	icon: Icon,
 	activeTab,
 	setActiveTab,
+	badge,
 }: TabButtonProps) => (
 	<button
 		onClick={() => setActiveTab(id)}
-		className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-all text-sm font-medium ${
+		className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-all text-sm font-medium cursor-pointer select-none ${
 			activeTab === id
 				? 'bg-accent text-accent-foreground shadow-sm'
 				: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
 		}`}
 	>
-		<Icon
-			size={18}
-			className={
-				activeTab === id ? 'text-accent-foreground' : 'text-muted-foreground'
-			}
-		/>
-		{label}
+		<div className="flex items-center gap-2.5 min-w-0">
+			<Icon
+				size={18}
+				className={`pointer-events-none shrink-0 ${
+					activeTab === id ? 'text-accent-foreground' : 'text-muted-foreground'
+				}`}
+			/>
+			<span className="pointer-events-none truncate">{label}</span>
+		</div>
+		{badge !== undefined && (
+			<span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-600 text-white font-bold font-mono">
+				{badge}
+			</span>
+		)}
 	</button>
 );

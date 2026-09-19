@@ -34,7 +34,6 @@ const socketManager = createSocketManager({
 });
 
 // Listen for connections from new tabs.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _self: any = self;
 _self.onconnect = (e: MessageEvent) => {
 	const port = e.ports[0];

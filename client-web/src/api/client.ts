@@ -32,8 +32,14 @@ const getBaseUrl = () => {
 					// fallback to 4000
 				}
 			}
-			// Use 127.0.0.1 explicitly to avoid IPv6/IPv4 cookie mismatches
-			return `http://127.0.0.1:${port}`;
+			// Match the page's own hostname. The session cookie is
+			// SameSite=Lax, and browsers treat 'localhost' and '127.0.0.1'
+			// as different sites for that purpose — pointing API calls at a
+			// different loopback alias than the page itself is served from
+			// makes every post-login request look cross-site, so the cookie
+			// gets silently withheld and the user is bounced back to login.
+			const apiHost = host === '[::1]' ? '127.0.0.1' : host;
+			return `http://${apiHost}:${port}`;
 		}
 	}
 	return (envUrl ?? 'http://127.0.0.1:4000').replace(/\/$/, '');
@@ -158,6 +164,9 @@ import type {
 	Presence,
 	UploadedFile,
 	User,
+	RelationshipResponse,
+	RelationshipAction,
+	AddMembersResponse,
 } from '@/types/api';
 
 // ─────────────────────────────────────────────
@@ -192,22 +201,55 @@ export async function apiLogout() {
 }
 
 export async function apiMe() {
-	return request<AuthUser>(apiClient.get('/api/me'));
+	// Uses a short timeout instead of the client's 1-hour default (sized for
+	// large uploads) — this call gates the initial loading screen, so a
+	// server that's slow/unreachable at startup must fail fast into the
+	// "stay logged in locally, let WS state show connection status" path in
+	// auth.slice.ts's initAuth(), rather than leaving the screen stuck.
+	return request<AuthUser>(apiClient.get('/api/me', { timeout: 10_000 }));
+}
+
+export async function apiGetUser(userId: string) {
+	return request<User>(apiClient.get(`/api/users/${userId}`));
 }
 
 export async function apiUpdateProfile(data: {
 	avatar_id?: string;
+	avatar_ids?: string[];
+	banner_color?: string;
 	username?: string;
 	custom_msg?: string;
 	status_preference?: string;
 	password?: string;
 	old_password?: string;
+	allow_channel_adds?: string;
+	dm_permission?: string;
+	friend_request_permission?: string;
 }) {
 	return request<AuthUser>(apiClient.patch('/api/users/me', data));
 }
 
 export async function apiDeleteAccount() {
 	return apiClient.delete('/api/users/me');
+}
+
+// ─────────────────────────────────────────────
+// Relationships (Friends & Blocking)
+// ─────────────────────────────────────────────
+export async function apiGetMyRelationships() {
+	return request<RelationshipResponse[]>(apiClient.get('/api/relationships')).then((r) => r || []);
+}
+
+export async function apiGetIncomingRequests() {
+	return request<RelationshipResponse[]>(apiClient.get('/api/relationships/incoming')).then((r) => r || []);
+}
+
+export async function apiGetRelationship(userId: string) {
+	return request<RelationshipResponse>(apiClient.get(`/api/users/${userId}/relationship`));
+}
+
+export async function apiRelationshipAction(userId: string, action: RelationshipAction) {
+	return request<RelationshipResponse>(apiClient.put(`/api/users/${userId}/relationship`, { action }));
 }
 
 // ─────────────────────────────────────────────
@@ -227,12 +269,16 @@ export async function apiCreateChannel(
 	name: string,
 	memberIds: string[],
 	isPrivate: boolean,
+	description?: string,
+	avatarId?: string,
 ) {
 	return request<Channel>(
 		apiClient.post('/api/channels', {
 			name,
 			members: memberIds,
 			is_private: isPrivate,
+			description,
+			avatar_id: avatarId,
 		}),
 	);
 }
@@ -246,20 +292,24 @@ export async function apiJoinChannel(link: string) {
 }
 
 export async function apiAddMember(channelId: string, userIds: string[]) {
-	return apiClient.post(`/api/channels/${channelId}/members`, {
-		user_ids: userIds,
-	});
+	return request<AddMembersResponse>(
+		apiClient.post(`/api/channels/${channelId}/members`, {
+			user_ids: userIds,
+		}),
+	);
 }
 
 export async function apiUpdateChannel(
 	id: string,
-	data: { name?: string; is_private?: boolean },
+	data: { name?: string; description?: string; avatar_id?: string; is_private?: boolean },
 ) {
 	return request<Channel>(apiClient.patch(`/api/channels/${id}`, data));
 }
 
-export async function apiDeleteChannel(id: string) {
-	return apiClient.delete(`/api/channels/${id}`);
+export async function apiDeleteChannel(id: string, forBoth: boolean = false) {
+	return apiClient.delete(`/api/channels/${id}`, {
+		params: { for_both: forBoth },
+	});
 }
 
 export async function apiLeaveChannel(channelId: string, userId: string) {
@@ -302,6 +352,11 @@ export async function apiListMessages(id: string, limit = 50, before?: string) {
 // ─────────────────────────────────────────────
 // File Uploads
 // ─────────────────────────────────────────────
+export function getFileUrl(fileId: string): string {
+	if (!fileId) return '';
+	return `${BASE_URL}/api/files/${fileId}`;
+}
+
 export async function apiUploadFile(
 	file: Blob,
 	mimeType: string,
@@ -309,12 +364,14 @@ export async function apiUploadFile(
 	thumbNonce?: string,
 	onUploadProgress?: (progressEvent: any) => void,
 	channelId?: string,
+	isVideo?: boolean,
 ) {
 	const formData = new FormData();
 	formData.append('file', file, `upload.${mimeType.split('/')[1] ?? 'bin'}`);
 	if (thumbCipher) formData.append('thumb_ciphertext', thumbCipher);
 	if (thumbNonce) formData.append('thumb_nonce', thumbNonce);
 	if (channelId) formData.append('channel_id', channelId);
+	if (isVideo) formData.append('is_video', 'true');
 
 	return request<UploadedFile>(
 		apiClient.post('/api/files', formData, {

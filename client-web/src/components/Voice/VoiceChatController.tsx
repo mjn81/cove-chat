@@ -295,7 +295,7 @@ export const VoiceChatController: React.FC = () => {
 			
 			// DISCONNECT AND CLEAR REMOTE PLAYERS
 			remotePlayersRef.current.forEach(p => {
-				try { p.node.disconnect(); } catch (e) {}
+				try { p.node.disconnect(); } catch { /* already disconnected */ }
 			});
 			remotePlayersRef.current.clear();
 			remoteGainRef.current = null;
@@ -435,7 +435,7 @@ export const VoiceChatController: React.FC = () => {
 				if (player.queue.length < 10) {
 					player.queue.push(float32);
 				}
-			} catch (e) {
+			} catch {
 				// Log errors sparingly
 			}
 		};

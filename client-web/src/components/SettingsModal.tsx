@@ -10,10 +10,12 @@ import { X, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { Sidebar } from './SettingsModal/Sidebar';
 import { AccountTab } from './SettingsModal/AccountTab';
+import { FriendsTab } from './SettingsModal/FriendsTab';
 import { AppearanceTab } from './SettingsModal/AppearanceTab';
 import { PrivacyTab } from './SettingsModal/PrivacyTab';
 import { NotificationsTab } from './SettingsModal/NotificationsTab';
 import { VoiceTab } from './SettingsModal/VoiceTab';
+import { StorageTab } from './SettingsModal/StorageTab';
 import type { SettingsTab } from './SettingsModal/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -41,7 +43,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 				className={`bg-background border-none text-foreground flex flex-col p-0 overflow-hidden shadow-2xl [&>button]:hidden ${
 					isMobile
 						? 'w-full h-full max-w-none rounded-none'
-						: 'max-w-[800px] h-[600px] rounded-lg'
+						: 'max-w-[960px] md:max-w-[1000px] h-[640px] md:h-[680px] rounded-xl'
 				}`}
 			>
 				<DialogTitle className="sr-only">{t('settings.title')}</DialogTitle>
@@ -86,6 +88,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 										{activeTab === 'notifications' &&
 											t('settings.notifications')}
 										{activeTab === 'voice' && t('settings.voice_video')}
+										{activeTab === 'storage' && t('settings.storage')}
 									</span>
 								</div>
 							)}
@@ -96,10 +99,12 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 								}`}
 							>
 								{activeTab === 'account' && <AccountTab />}
+								{activeTab === 'friends' && <FriendsTab onCloseModal={onClose} />}
 								{activeTab === 'appearance' && <AppearanceTab />}
 								{activeTab === 'privacy' && <PrivacyTab />}
 								{activeTab === 'notifications' && <NotificationsTab />}
 								{activeTab === 'voice' && <VoiceTab />}
+								{activeTab === 'storage' && <StorageTab />}
 							</div>
 
 							{/* Floating Close Button - Desktop Only */}

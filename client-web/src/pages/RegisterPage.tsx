@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
-import { apiRegister, BASE_URL } from '@/api/client';
+import { BASE_URL } from '@/api/client';
+import { useAuthStore } from '@/store/store';
 import {
 	Card,
 	CardContent,
@@ -19,13 +20,13 @@ import { isWails } from '@/utils/wails';
 export default function RegisterPage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const register = useAuthStore((state) => state.register);
 
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
-	const [success, setSuccess] = useState(false);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -46,9 +47,8 @@ export default function RegisterPage() {
 
 		setLoading(true);
 		try {
-			await apiRegister(username, password);
-			setSuccess(true);
-			setTimeout(() => navigate('/login'), 2000);
+			await register(username, password);
+			navigate('/', { replace: true });
 		} catch (err: unknown) {
 			setError(t((err as Error).message) || t('auth.errors.register_failed'));
 		} finally {
@@ -58,7 +58,7 @@ export default function RegisterPage() {
 
 	return (
 		<div className="flex h-screen w-full flex-col items-center justify-center bg-background relative overflow-hidden">
-			<Card className="w-full max-w-[480px] bg-background border-none sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
+			<Card className="w-full max-w-[480px] bg-background border-0 sm:border sm:border-border sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
 				<CardHeader className="text-center space-y-2 pb-6">
 					<CardTitle className="text-2xl font-bold text-foreground tracking-wide">
 						Create an account
@@ -71,11 +71,6 @@ export default function RegisterPage() {
 					{error && (
 						<div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4 border border-destructive/20 text-center">
 							{error}
-						</div>
-					)}
-					{success && (
-						<div className="bg-green-500/10 text-green-400 text-sm p-3 rounded-md mb-4 border border-green-500/20 text-center">
-							Registration successful! Redirecting to login...
 						</div>
 					)}
 
@@ -140,7 +135,7 @@ export default function RegisterPage() {
 						<Button
 							type="submit"
 							className="w-full h-11 bg-primary hover:opacity-90 text-primary-foreground font-medium text-base mt-2 transition-colors"
-							disabled={loading || success}
+							disabled={loading}
 						>
 							{loading ? <span className="spinner" /> : 'Continue'}
 						</Button>

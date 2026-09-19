@@ -14,12 +14,14 @@ import type { Message, Channel } from '@/types/api';
 import { onWS, decryptMessage, wsSendReadReceipt } from '@/ws';
 import { useAuthStore, useCryptoStore } from '@/store/store';
 import { db } from '@/lib/db';
+import { resolveOldestPending } from '@/utils/pendingMessages';
 
 import { ChatTopbar } from './Chat/ChatTopbar';
 import { ChatMessageFeed } from './Chat/ChatMessageFeed';
 import { ChatInputArea } from './Chat/ChatInputArea';
 import { VoicePlayer } from './Chat/VoicePlayer';
 import { ForwardModal } from './Chat/ForwardModal';
+import { ChatBackgroundPattern } from './Chat/ChatBackgroundPattern';
 
 interface ChatAreaProps {
 	channel: Channel;
@@ -108,6 +110,9 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 		const unsubMsg = onWS('message', (payload) => {
 			const msg = payload as Message;
 			if (msg.channel_id === channel.id) {
+				if (msg.sender_id === user?.id) {
+					resolveOldestPending(queryClient, channel.id);
+				}
 				addMessage(msg);
 			}
 		});
@@ -156,7 +161,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 			unsubUpdate();
 			unsubDelete();
 		};
-	}, [channel.id, addMessage, queryClient]);
+	}, [channel.id, addMessage, queryClient, user?.id]);
 
 	// Invalidate messages if the channel key arrives late
 	useEffect(() => {
@@ -184,6 +189,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 	return (
 		<Profiler id="ChatArea" onRender={logProfiler}>
 			<div className="flex flex-col h-full w-full bg-background relative overflow-hidden overscroll-none">
+				<ChatBackgroundPattern />
 				<ChatTopbar
 					channel={channel}
 					currentUserId={user?.id ?? ''}

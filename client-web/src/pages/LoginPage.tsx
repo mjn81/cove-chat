@@ -45,7 +45,7 @@ export default function LoginPage() {
 
 	return (
 		<div className="flex h-screen w-full flex-col items-center justify-center bg-background relative overflow-hidden">
-			<Card className="w-full max-w-[480px] bg-background border-none sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
+			<Card className="w-full max-w-[480px] bg-background border-0 sm:border sm:border-border sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
 				<CardHeader className="text-center space-y-2 pb-6">
 					<CardTitle className="text-2xl font-bold text-foreground tracking-wide">
 						Welcome back!

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"nodetalk/backend/internal/auth"
+	"nodetalk/backend/internal/models"
 )
 
 func TestSessionCreateAndValidate(t *testing.T) {
@@ -85,5 +86,54 @@ func TestBearerTokenExtraction(t *testing.T) {
 		req := &struct{ h string }{h: tc.header}
 		_ = req // just checking the helper compiles and is importable
 		_ = time.Now() // keep time import used
+	}
+}
+
+type mockPersister struct {
+	sessions map[string]*models.Session
+}
+
+func (m *mockPersister) SetSession(s *models.Session) error {
+	m.sessions[s.Token] = s
+	return nil
+}
+
+func (m *mockPersister) DeleteSession(token string) error {
+	delete(m.sessions, token)
+	return nil
+}
+
+func (m *mockPersister) ListSessions() ([]*models.Session, error) {
+	var list []*models.Session
+	for _, s := range m.sessions {
+		list = append(list, s)
+	}
+	return list, nil
+}
+
+func TestSessionPersistence(t *testing.T) {
+	t.Parallel()
+	mp := &mockPersister{sessions: make(map[string]*models.Session)}
+	ss1 := auth.NewSessionStore(time.Hour, mp)
+
+	token, err := ss1.Create("user-persist", "persister_user")
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	// Create second store simulating server restart with same persister
+	ss2 := auth.NewSessionStore(time.Hour, mp)
+	s, err := ss2.Validate(token)
+	if err != nil {
+		t.Fatalf("Validate() on restarted store error = %v", err)
+	}
+	if s.UserID != "user-persist" || s.Username != "persister_user" {
+		t.Errorf("Hydrated session mismatch: %+v", s)
+	}
+
+	// Deleting from store should remove from persister
+	ss2.Delete(token)
+	if _, exists := mp.sessions[token]; exists {
+		t.Error("Delete() did not remove session from persister")
 	}
 }

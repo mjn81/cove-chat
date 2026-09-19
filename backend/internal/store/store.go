@@ -212,7 +212,7 @@ func (s *Store) CreateChannel(name, creatorID string, isPrivate bool, memberIDs 
 		if uid == creatorID {
 			role = models.RoleOwner
 		}
-		
+
 		uc := &models.UserChannel{
 			UserID:    uid,
 			ChannelID: ch.ID,
@@ -282,12 +282,45 @@ func (s *Store) ListUserChannels(userID string) ([]*models.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
+	var visible []*models.Channel
 	for _, ch := range channels {
+		uc, _ := s.db.GetUserChannel(userID, ch.ID)
+
+		ch.LastMessageAt = ch.CreatedAt
+		if latest, err := s.db.ListMessages(ch.ID, "", 1); err == nil && len(latest) > 0 {
+			ch.LastMessageAt = latest[0].SentAt
+			ch.LastMessageCiphertext = latest[0].Ciphertext
+			ch.LastMessageNonce = latest[0].Nonce
+			ch.LastMessageType = latest[0].Type
+			ch.LastMessageSenderID = latest[0].SenderID
+			ch.LastMessageID = latest[0].ID
+		}
+
+		// If user cleared/deleted this channel (e.g. DM "delete for me"), hide it unless a message arrived after ClearedAt
+		if uc != nil && !uc.ClearedAt.IsZero() {
+			if !ch.LastMessageAt.After(uc.ClearedAt) {
+				continue
+			}
+		}
+
 		if count, err := s.db.CountUnreadMessages(userID, ch.ID); err == nil {
 			ch.UnreadCount = count
 		}
+
+		visible = append(visible, ch)
 	}
-	return channels, nil
+	return visible, nil
+}
+
+// ClearChannelForUser updates ClearedAt and LastReadAt timestamps for a user's channel membership.
+func (s *Store) ClearChannelForUser(userID, channelID string, clearedAt time.Time) error {
+	uc, err := s.db.GetUserChannel(userID, channelID)
+	if err != nil {
+		return err
+	}
+	uc.ClearedAt = clearedAt
+	uc.LastReadAt = clearedAt
+	return s.db.SetUserChannel(uc)
 }
 
 // UpdateChannelRead sets the LastReadAt timestamp to now for this user/channel.
@@ -347,7 +380,6 @@ func (s *Store) UpdateMemberRole(channelID, userID string, role int) error {
 	uc.Role = role
 	return s.db.SetUserChannel(uc)
 }
-
 
 // DecryptChannelKey decrypts and returns the raw AES key for a channel.
 func (s *Store) DecryptChannelKey(ch *models.Channel, kek []byte) ([]byte, error) {
@@ -422,4 +454,226 @@ func (s *Store) RegisterFile(ownerID, channelID, mime, storagePath string, size 
 		return nil, err
 	}
 	return f, nil
+}
+
+// ============================================================
+//  Relationships (Friend / Block / Request)
+// ============================================================
+
+// GetRelationship returns the relationship from fromID to toID.
+func (s *Store) GetRelationship(fromID, toID string) (*models.Relationship, error) {
+	rel, err := s.db.GetRelationship(fromID, toID)
+	if err != nil {
+		return &models.Relationship{
+			FromUserID: fromID,
+			ToUserID:   toID,
+			Type:       models.RelNone,
+		}, nil
+	}
+	return rel, nil
+}
+
+// BlockUser blocks targetID for actorID. Removes mutual friendships and pending requests.
+func (s *Store) BlockUser(actorID, targetID string) error {
+	if actorID == targetID {
+		return fmt.Errorf("cannot block yourself")
+	}
+	now := time.Now().UTC()
+
+	// Clean up any existing friendship or pending request between the two
+	_ = s.db.DeleteRelationship(targetID, actorID)
+	_ = s.db.DeleteRelationshipInbox(actorID, targetID)
+	_ = s.db.DeleteRelationshipInbox(targetID, actorID)
+
+	rel := &models.Relationship{
+		FromUserID: actorID,
+		ToUserID:   targetID,
+		Type:       models.RelBlocked,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	return s.db.SetRelationship(rel)
+}
+
+// UnblockUser removes the block record.
+func (s *Store) UnblockUser(actorID, targetID string) error {
+	rel, err := s.db.GetRelationship(actorID, targetID)
+	if err != nil || rel.Type != models.RelBlocked {
+		return fmt.Errorf("user is not blocked")
+	}
+	return s.db.DeleteRelationship(actorID, targetID)
+}
+
+// SendFriendRequest sends a friend request from actorID to targetID.
+// If targetID already sent a request to actorID, auto-accepts and establishes friendship.
+func (s *Store) SendFriendRequest(actorID, targetID string) error {
+	if actorID == targetID {
+		return fmt.Errorf("cannot friend yourself")
+	}
+	target, err := s.GetUser(targetID)
+	if err != nil {
+		return fmt.Errorf("target user not found")
+	}
+	if target.FriendRequestPermission == "nobody" {
+		return fmt.Errorf("user does not accept friend requests")
+	}
+	if s.IsBlocked(targetID, actorID) {
+		return fmt.Errorf("cannot send friend request to this user")
+	}
+
+	existing, err := s.db.GetRelationship(actorID, targetID)
+	if err == nil {
+		if existing.Type == models.RelFriend {
+			return fmt.Errorf("already friends")
+		}
+		if existing.Type == models.RelRequested {
+			return fmt.Errorf("friend request already sent")
+		}
+		if existing.Type == models.RelBlocked {
+			return fmt.Errorf("you have blocked this user")
+		}
+	}
+
+	// Check if target already sent a request to actor
+	reverse, err := s.db.GetRelationship(targetID, actorID)
+	if err == nil && reverse.Type == models.RelRequested {
+		return s.AcceptFriendRequest(actorID, targetID)
+	}
+
+	now := time.Now().UTC()
+	rel := &models.Relationship{
+		FromUserID: actorID,
+		ToUserID:   targetID,
+		Type:       models.RelRequested,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	if err := s.db.SetRelationship(rel); err != nil {
+		return err
+	}
+	return s.db.SetRelationshipInbox(rel)
+}
+
+// AcceptFriendRequest accepts an incoming friend request from targetID.
+func (s *Store) AcceptFriendRequest(actorID, targetID string) error {
+	req, err := s.db.GetRelationship(targetID, actorID)
+	if err != nil || req.Type != models.RelRequested {
+		return fmt.Errorf("no pending friend request from this user")
+	}
+	now := time.Now().UTC()
+	rel1 := &models.Relationship{
+		FromUserID: targetID,
+		ToUserID:   actorID,
+		Type:       models.RelFriend,
+		CreatedAt:  req.CreatedAt,
+		UpdatedAt:  now,
+	}
+	rel2 := &models.Relationship{
+		FromUserID: actorID,
+		ToUserID:   targetID,
+		Type:       models.RelFriend,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	if err := s.db.SetRelationship(rel1); err != nil {
+		return err
+	}
+	if err := s.db.SetRelationship(rel2); err != nil {
+		return err
+	}
+	return s.db.DeleteRelationshipInbox(actorID, targetID)
+}
+
+// DeclineFriendRequest declines an incoming friend request from targetID.
+func (s *Store) DeclineFriendRequest(actorID, targetID string) error {
+	_ = s.db.DeleteRelationship(targetID, actorID)
+	return s.db.DeleteRelationshipInbox(actorID, targetID)
+}
+
+// CancelFriendRequest cancels an outgoing friend request to targetID.
+func (s *Store) CancelFriendRequest(actorID, targetID string) error {
+	_ = s.db.DeleteRelationship(actorID, targetID)
+	return s.db.DeleteRelationshipInbox(targetID, actorID)
+}
+
+// RemoveFriend unfriends targetID for actorID bidirectionally.
+func (s *Store) RemoveFriend(actorID, targetID string) error {
+	_ = s.db.DeleteRelationship(actorID, targetID)
+	return s.db.DeleteRelationship(targetID, actorID)
+}
+
+// ListRelationships returns all outgoing relationships for a user.
+func (s *Store) ListRelationships(userID string) ([]*models.Relationship, error) {
+	return s.db.ListRelationshipsByUser(userID)
+}
+
+// ListIncomingRequests returns all pending incoming requests for a user.
+func (s *Store) ListIncomingRequests(userID string) ([]*models.Relationship, error) {
+	return s.db.ListIncomingRequests(userID)
+}
+
+// IsBlocked checks if targetUserID is blocked by byUserID.
+func (s *Store) IsBlocked(byUserID, targetUserID string) bool {
+	rel, err := s.db.GetRelationship(byUserID, targetUserID)
+	return err == nil && rel.Type == models.RelBlocked
+}
+
+// AreFriends checks if two users are friends.
+func (s *Store) AreFriends(userA, userB string) bool {
+	rel, err := s.db.GetRelationship(userA, userB)
+	return err == nil && rel.Type == models.RelFriend
+}
+
+// CanAddToChannel validates if actorID can add targetID to a channel.
+func (s *Store) CanAddToChannel(actorID, targetID string) (bool, string) {
+	if actorID == targetID {
+		return true, ""
+	}
+	if s.IsBlocked(targetID, actorID) {
+		return false, "User has blocked you"
+	}
+	target, err := s.GetUser(targetID)
+	if err != nil {
+		return false, "User not found"
+	}
+	pref := target.AllowChannelAdds
+	if pref == "" {
+		pref = "everyone"
+	}
+	switch pref {
+	case "nobody":
+		return false, "User privacy settings prevent being added to channels"
+	case "friends":
+		if !s.AreFriends(actorID, targetID) {
+			return false, "Only friends can add this user to channels"
+		}
+	}
+	return true, ""
+}
+
+// CanSendDM validates if senderID can send a direct message to recipientID.
+func (s *Store) CanSendDM(senderID, recipientID string) (bool, string) {
+	if senderID == recipientID {
+		return true, ""
+	}
+	if s.IsBlocked(recipientID, senderID) {
+		return false, "User has blocked you"
+	}
+	recipient, err := s.GetUser(recipientID)
+	if err != nil {
+		return false, "User not found"
+	}
+	pref := recipient.DMPermission
+	if pref == "" {
+		pref = "everyone"
+	}
+	switch pref {
+	case "nobody":
+		return false, "User privacy settings do not allow direct messages"
+	case "friends":
+		if !s.AreFriends(senderID, recipientID) {
+			return false, "Only friends can direct message this user"
+		}
+	}
+	return true, ""
 }

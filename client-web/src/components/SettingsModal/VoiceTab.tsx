@@ -14,6 +14,18 @@ export const VoiceTab = () => {
 	const streamRef = useRef<MediaStream | null>(null);
 	const animationRef = useRef<number | null>(null);
 
+	const stopTest = () => {
+		if (animationRef.current) cancelAnimationFrame(animationRef.current);
+		if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+		if (audioContextRef.current) {
+			if (audioContextRef.current.state !== 'closed') {
+				audioContextRef.current.close();
+			}
+		}
+		setIsTesting(false);
+		setVolume(0);
+	};
+
 	useEffect(() => {
 		const getDevices = async () => {
 			try {
@@ -33,7 +45,7 @@ export const VoiceTab = () => {
 			}
 		};
 		getDevices();
-		
+
 		return () => {
 			stopTest();
 		};
@@ -81,18 +93,6 @@ export const VoiceTab = () => {
 		} catch (err) {
 			console.error('Error testing mic:', err);
 		}
-	};
-
-	const stopTest = () => {
-		if (animationRef.current) cancelAnimationFrame(animationRef.current);
-		if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-		if (audioContextRef.current) {
-			if (audioContextRef.current.state !== 'closed') {
-				audioContextRef.current.close();
-			}
-		}
-		setIsTesting(false);
-		setVolume(0);
 	};
 
 	return (

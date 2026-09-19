@@ -12,6 +12,7 @@ import { encryptAndCompressFile } from '@/utils/file';
 import { bytesToBase64, base64ToBytes } from '@/ws';
 import { apiUploadFile } from '@/api/client';
 import { decryptAndDecompressFile } from '@/utils/file';
+import { db } from '@/lib/db';
 
 interface ForwardModalProps {
 	message: Message & { text?: string };
@@ -101,8 +102,20 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 						targetId,
 					);
 
+					const newFileId = (res as any).id;
+					try {
+						await db.cacheFile(
+							newFileId,
+							processed.rawBytes,
+							processed.mimeType,
+							processed.originalSize,
+						);
+					} catch (cacheErr) {
+						console.warn('Failed to pre-cache forwarded file:', cacheErr);
+					}
+
 					const newMeta = JSON.stringify({
-						file_id: (res as any).id,
+						file_id: newFileId,
 						name: meta.name,
 						mime: meta.mime,
 						size: meta.size,

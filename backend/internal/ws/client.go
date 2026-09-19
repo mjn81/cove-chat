@@ -78,6 +78,11 @@ func (c *Client) handleMessage(ctx context.Context, msg *models.WSMessage) error
 	case "read_receipt":
 		return c.handleReadReceipt(msg)
 	case "ping":
+		pongMsg := &models.WSMessage{Type: "pong"}
+		select {
+		case c.send <- &envelope{msg: pongMsg}:
+		default:
+		}
 		return c.hub.store.SetPresence(c.UserID, "online")
 	default:
 		return fmt.Errorf("unknown message type: %s", msg.Type)

@@ -15,3 +15,15 @@ export const isWails = (): boolean => {
 export const isBrowser = (): boolean => {
 	return !isWails();
 };
+
+/**
+ * Detects if the client is running on macOS / Apple platform.
+ */
+export const isMac = (): boolean => {
+	if (typeof window === 'undefined') return false;
+	const nav = window.navigator as any;
+	const platform =
+		nav?.userAgentData?.platform || nav?.platform || nav?.userAgent || '';
+	return /Mac|iPhone|iPod|iPad/i.test(platform);
+};
+

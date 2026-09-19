@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { User, Shield, Palette, Bell, LogOut, Mic } from 'lucide-react';
+import { User, Users, Shield, Palette, Bell, LogOut, Mic, HardDrive } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { TabButton } from './TabButton';
 import type { SettingsTab } from './types';
@@ -16,6 +16,7 @@ import { ConfirmModal } from '../ConfirmModal';
 export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => {
 	const { t } = useTranslation();
 	const logout = useAuthStore((state) => state.logout);
+	const incomingRequests = useAuthStore((state) => state.incomingRequests);
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 	return (
@@ -32,6 +33,14 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 							icon={User}
 							activeTab={activeTab}
 							setActiveTab={setActiveTab}
+						/>
+						<TabButton
+							id="friends"
+							label="Friends"
+							icon={Users}
+							activeTab={activeTab}
+							setActiveTab={setActiveTab}
+							badge={incomingRequests.length > 0 ? incomingRequests.length : undefined}
 						/>
 						<TabButton
 							id="privacy"
@@ -69,6 +78,13 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 							activeTab={activeTab}
 							setActiveTab={setActiveTab}
 						/>
+						<TabButton
+							id="storage"
+							label={t('settings.storage')}
+							icon={HardDrive}
+							activeTab={activeTab}
+							setActiveTab={setActiveTab}
+						/>
 					</div>
 				</div>
 
@@ -76,10 +92,10 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 					<div className="h-[1px] bg-border mb-4 mx-2" />
 					<button
 						onClick={() => setShowLogoutConfirm(true)}
-						className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-all text-sm font-medium"
+						className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-all text-sm font-medium cursor-pointer select-none"
 					>
-						<LogOut size={18} />
-						{t('settings.logout')}
+						<LogOut size={18} className="pointer-events-none shrink-0" />
+						<span className="pointer-events-none">{t('settings.logout')}</span>
 					</button>
 
 					<ConfirmModal

@@ -7,3 +7,8 @@ import "nodetalk/backend/internal/models"
 func (s *Store) GetFile(id string) (*models.File, error) {
 	return s.db.GetFile(id)
 }
+
+func (s *Store) UpdateFile(f *models.File) error {
+	return s.db.SetFile(f)
+}
+

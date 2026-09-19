@@ -7,6 +7,7 @@ import {
 import LeftSidebar from '@/components/Layout/LeftSidebar';
 import RightSidebar from '@/components/Layout/RightSidebar';
 import ChatArea from '@/components/ChatArea';
+import { ChatBackgroundPattern } from '@/components/Chat/ChatBackgroundPattern';
 
 import { useAppStore, useChannelStore } from '@/store/store';
 import { onWS } from '@/ws';
@@ -16,6 +17,7 @@ import { apiJoinChannel } from '@/api/client';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VoiceChatController } from '@/components/Voice/VoiceChatController';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ConnectionBanner } from '@/components/ConnectionBanner';
 
 export default function AppPage() {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
@@ -65,7 +67,7 @@ export default function AppPage() {
 		};
 	}, [refreshChannels]);
 
-	const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+	const [isRightCollapsed, setIsRightCollapsed] = useState(true);
 
 	// Close sidebars when active channel changes on mobile
 	useEffect(() => {
@@ -92,15 +94,10 @@ export default function AppPage() {
 			{activeChannel ? (
 				<ChatArea channel={activeChannel} />
 			) : (
-				<div className="flex flex-col items-center justify-center flex-1 gap-4 text-center p-10">
-					<div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl border border-border">
-						💬
-					</div>
-					<h1 className="text-xl font-bold">Welcome to NodeTalk</h1>
-					<p className="text-sm text-muted-foreground max-w-sm">
-						Discover public channels, or create a new group/DM on the left.
-					</p>
-				</div>
+				<>
+					<ChatBackgroundPattern />
+					<div className="flex flex-col flex-1" />
+				</>
 			)}
 		</div>
 	);
@@ -108,6 +105,7 @@ export default function AppPage() {
 	if (isMobile) {
 		return (
 			<div className="h-screen w-full bg-background flex flex-col overflow-hidden relative">
+				<ConnectionBanner />
 				{/* Mobile App Navigation Logic */}
 				{!activeChannel ? (
 					// Mode 1: Chat Selector (Main Page)
@@ -146,16 +144,18 @@ export default function AppPage() {
 	}
 
 	return (
-		<>
+		<div className="h-screen w-full flex flex-col overflow-hidden">
+		<ConnectionBanner />
 		<ResizablePanelGroup
 			direction="horizontal"
-			className="h-screen w-full bg-background overflow-hidden"
+			className="flex-1 w-full bg-background overflow-hidden"
 		>
 			<ResizablePanel
-				defaultSize="20%"
-				minSize="15%"
-				maxSize="20%"
-				className="bg-secondary flex flex-col border-r border-border overflow-hidden"
+				defaultSize="280px"
+				minSize="240px"
+				maxSize="500px"
+				groupResizeBehavior="preserve-pixel-size"
+				className="bg-secondary flex flex-col overflow-hidden"
 			>
 				{renderLeftSidebar()}
 			</ResizablePanel>
@@ -164,6 +164,7 @@ export default function AppPage() {
 
 			<ResizablePanel
 				minSize="40%"
+				groupResizeBehavior="preserve-relative-size"
 				className="flex flex-col bg-background relative"
 			>
 				{renderChatArea()}
@@ -172,13 +173,14 @@ export default function AppPage() {
 			<ResizableHandle withHandle className="bg-border" />
 
 			<ResizablePanel
-				defaultSize="20%"
-				minSize="15%"
-				maxSize="25%"
+				defaultSize="64px"
+				minSize="64px"
+				maxSize="320px"
 				collapsible={true}
 				collapsedSize="64px"
+				groupResizeBehavior="preserve-pixel-size"
 				onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 64)}
-				className="bg-secondary flex flex-col border-l border-border transition-all duration-300 ease-in-out"
+				className="bg-secondary flex flex-col transition-all duration-300 ease-in-out"
 			>
 				{renderRightSidebar()}
 			</ResizablePanel>
@@ -186,6 +188,6 @@ export default function AppPage() {
 		<ErrorBoundary label="voice chat">
 			<VoiceChatController />
 		</ErrorBoundary>
-	</>
+	</div>
 	);
 }

@@ -4,9 +4,11 @@ import { type Message } from '@/types/api';
 import { decryptMessage, getChannelKey, base64ToBytes, onWS } from '@/ws';
 import { decryptAndDecompressFile, ensureZstdReady } from '@/utils/file';
 import { apiGetFile } from '@/api/client';
+import { db } from '@/lib/db';
 import { isWails } from '@/utils/wails';
 import { SaveFile } from '../../wailsjs/go/main/App';
 import { bytesToBase64 } from '@/ws';
+import { useAuthStore } from '@/store/store';
 
 
 import { VoiceBubble } from './File/VoiceBubble';
@@ -22,9 +24,11 @@ interface FileMetadata {
 	name?: string;
 	mime: string;
 	size: number;
+	duration?: number;
 	nonce: string;
 	thumb_ciphertext?: string;
 	thumb_nonce?: string;
+	as_document?: boolean;
 }
 
 export const FileBubble = memo(({ msg }: FileBubbleProps) => {
@@ -51,8 +55,46 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 				const parsed = JSON.parse(decrypted) as FileMetadata;
 				setMeta(parsed);
 
-				// Prepare thumbnail or waveform if present
-				if (parsed.thumb_ciphertext && parsed.thumb_nonce) {
+				// Check IndexedDB cache for already downloaded/opened file
+				let hasOpened = false;
+				try {
+					const cached = await db.getCachedFile(parsed.file_id);
+					if (cached) {
+						const blob = new Blob([cached.data as any], { type: cached.mime });
+						setFullUrl(URL.createObjectURL(blob));
+						hasOpened = true;
+					}
+				} catch (cacheErr) {
+					console.warn('Failed to load cached file from db:', cacheErr);
+				}
+
+				// The sender should not need to download the file they sent; it should come in opened state
+				const currentUser = useAuthStore.getState().user;
+				const isOwn = currentUser?.id === msg.sender_id;
+				if (
+					!hasOpened &&
+					isOwn &&
+					!parsed.as_document &&
+					(parsed.mime.startsWith('image/') || parsed.mime.startsWith('video/'))
+				) {
+					try {
+						const encryptedBuffer = await apiGetFile(parsed.file_id);
+						const decrypted = await decryptAndDecompressFile(
+							new Uint8Array(encryptedBuffer),
+							base64ToBytes(parsed.nonce),
+							key,
+							false,
+						);
+						await db.cacheFile(parsed.file_id, decrypted, parsed.mime);
+						const blob = new Blob([decrypted as any], { type: parsed.mime });
+						setFullUrl(URL.createObjectURL(blob));
+					} catch (autoErr) {
+						console.warn('Auto-opening sender media failed:', autoErr);
+					}
+				}
+
+				// Prepare thumbnail or waveform if present (and not treated as a raw document)
+				if (!parsed.as_document && parsed.thumb_ciphertext && parsed.thumb_nonce) {
 					await ensureZstdReady();
 					const thumbCipher = base64ToBytes(parsed.thumb_ciphertext);
 					const thumbNonce = base64ToBytes(parsed.thumb_nonce);
@@ -70,7 +112,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 						thumbCipher as any,
 					);
 
-					if (parsed.mime.startsWith('audio/')) {
+					if (parsed.mime.startsWith('audio/') || msg.type === 'voice') {
 						setWaveform(Array.from(new Uint8Array(decryptedThumb)));
 					} else {
 						const blob = new Blob([decryptedThumb], { type: 'image/webp' });
@@ -96,30 +138,51 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 		return () => {
 			unsubKey();
 			if (currentThumbUrl) URL.revokeObjectURL(currentThumbUrl);
-			if (fullUrl) URL.revokeObjectURL(fullUrl);
 		};
 	}, [msg]);
 
+	useEffect(() => {
+		return () => {
+			if (fullUrl) URL.revokeObjectURL(fullUrl);
+		};
+	}, [fullUrl]);
+
 	const handleDownload = async (e?: React.MouseEvent) => {
 		e?.stopPropagation();
-		const key = getChannelKey(msg.channel_id);
-		if (!meta || !key || isDecrypting) return;
+		if (!meta || isDecrypting) return;
 		setIsDecrypting(true);
 		setProgress(0);
 		setError(null);
 
 		try {
-			const encryptedBuffer = await apiGetFile(meta.file_id, (pe) => {
-				const pct = Math.round((pe.loaded * 100) / pe.total);
-				setProgress(pct);
-			});
+			let decrypted: Uint8Array;
+			const cached = await db.getCachedFile(meta.file_id);
+			if (cached) {
+				decrypted = cached.data;
+			} else {
+				const key = getChannelKey(msg.channel_id);
+				if (!key) throw new Error('Missing channel key');
+				const encryptedBuffer = await apiGetFile(meta.file_id, (pe) => {
+					const pct = Math.round((pe.loaded * 100) / pe.total);
+					setProgress(pct);
+				});
 
-			const decrypted = await decryptAndDecompressFile(
-				new Uint8Array(encryptedBuffer),
-				base64ToBytes(meta.nonce),
-				key,
-				meta.mime.startsWith('audio/'),
-			);
+				decrypted = await decryptAndDecompressFile(
+					new Uint8Array(encryptedBuffer),
+					base64ToBytes(meta.nonce),
+					key,
+					meta.mime.startsWith('audio/') || msg.type === 'voice',
+				);
+				await db.cacheFile(meta.file_id, decrypted, meta.mime);
+			}
+
+			// If it's an image or video, also update fullUrl so it unblurs (unless it's a raw document)
+			if (!meta.as_document && (meta.mime.startsWith('image/') || meta.mime.startsWith('video/'))) {
+				if (!fullUrl) {
+					const blob = new Blob([decrypted as any], { type: meta.mime });
+					setFullUrl(URL.createObjectURL(blob));
+				}
+			}
 
 			const blob = new Blob([decrypted as any], { type: meta.mime });
 			const filename = meta.name || `file-${meta.file_id.substring(0, 8)}.${meta.mime.split('/')[1] || 'bin'}`;
@@ -150,22 +213,30 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 		e.stopPropagation();
 		if (fullUrl) return;
 
-		const key = getChannelKey(msg.channel_id);
-		if (!meta || !key || isDecrypting) return;
+		if (!meta || isDecrypting) return;
 		setIsDecrypting(true);
 		setProgress(0);
 
 		try {
-			const encryptedBuffer = await apiGetFile(meta.file_id, (pe) => {
-				const pct = Math.round((pe.loaded * 100) / pe.total);
-				setProgress(pct);
-			});
-			const decrypted = await decryptAndDecompressFile(
-				new Uint8Array(encryptedBuffer),
-				base64ToBytes(meta.nonce),
-				key,
-				meta.mime.startsWith('audio/'),
-			);
+			let decrypted: Uint8Array;
+			const cached = await db.getCachedFile(meta.file_id);
+			if (cached) {
+				decrypted = cached.data;
+			} else {
+				const key = getChannelKey(msg.channel_id);
+				if (!key) throw new Error('Missing channel key');
+				const encryptedBuffer = await apiGetFile(meta.file_id, (pe) => {
+					const pct = Math.round((pe.loaded * 100) / pe.total);
+					setProgress(pct);
+				});
+				decrypted = await decryptAndDecompressFile(
+					new Uint8Array(encryptedBuffer),
+					base64ToBytes(meta.nonce),
+					key,
+					meta.mime.startsWith('audio/') || msg.type === 'voice',
+				);
+				await db.cacheFile(meta.file_id, decrypted, meta.mime);
+			}
 			const blob = new Blob([decrypted as any], { type: meta.mime });
 			const url = URL.createObjectURL(blob);
 			setFullUrl(url);
@@ -186,9 +257,10 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 		);
 	}
 
-	const isAudio = meta.mime.startsWith('audio/');
-	const isImage = meta.mime.startsWith('image/') && !meta.mime.includes('heic');
-	const isVideo = meta.mime.startsWith('video/');
+	const isDocument = Boolean(meta.as_document);
+	const isAudio = !isDocument && (meta.mime.startsWith('audio/') || msg.type === 'voice');
+	const isImage = !isDocument && (meta.mime.startsWith('image/') && !meta.mime.includes('heic'));
+	const isVideo = !isDocument && meta.mime.startsWith('video/');
 
 	return (
 		<div className="mt-2 group/bubble max-w-[400px]">

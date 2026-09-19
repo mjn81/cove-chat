@@ -15,7 +15,18 @@ import {
 	Lock,
 	AtSign,
 	Reply as ReplyIcon,
+	ImageIcon,
+	Music,
+	FileText,
+	Video,
+	AlertCircle,
 } from 'lucide-react';
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import {
 	useAuthStore,
 	getChannelDisplayName,
@@ -33,6 +44,17 @@ import { bytesToBase64 } from '@/ws';
 import { isDirectMessage } from '@/utils/channel';
 import { playNotificationSound } from '@/utils/notifications';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { db } from '@/lib/db';
+import { VideoMessageRecorderModal } from './VideoMessageRecorderModal';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+	addPendingMessage,
+	markPendingFailed,
+	removePendingMessage,
+	isPendingStillSending,
+} from '@/utils/pendingMessages';
+
+const SEND_TIMEOUT_MS = 10_000;
 
 interface ChatInputAreaProps {
 	channel: Channel;
@@ -51,18 +73,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 }) => {
 	const user = useAuthStore((state) => state.user);
 	const theme = useAppStore((state) => state.theme);
+	const queryClient = useQueryClient();
 	const [inputText, setInputText] = useState('');
 	const [sending, setSending] = useState(false);
 	const [showEmoji, setShowEmoji] = useState(false);
+	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<
 		{
 			file: File;
 			id: string;
-			status: 'idle' | 'encrypting' | 'uploading' | 'done';
+			status: 'idle' | 'encrypting' | 'uploading' | 'done' | 'failed';
 			progress: number;
+			asDocument?: boolean;
+			error?: string;
 		}[]
 	>([]);
+	const [sendError, setSendError] = useState<string | null>(null);
 
 	const [members, setMembers] = useState<{ id: string; username: string }[]>(
 		[],
@@ -73,17 +100,33 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const videoMessageInputRef = useRef<HTMLInputElement>(null);
+	const uploadAsDocumentRef = useRef(false);
 
-	const updateFileStatus = (id: string, status: any, progress: number = 0) => {
+	const triggerUpload = (mode: 'media' | 'audio' | 'file') => {
+		if (!fileInputRef.current) return;
+		uploadAsDocumentRef.current = mode === 'file';
+		if (mode === 'media') {
+			fileInputRef.current.accept = 'image/*,video/*';
+		} else if (mode === 'audio') {
+			fileInputRef.current.accept = 'audio/*';
+		} else {
+			fileInputRef.current.accept = '*/*';
+		}
+		fileInputRef.current.value = '';
+		fileInputRef.current.click();
+	};
+
+	const updateFileStatus = (id: string, status: any, progress: number = 0, error?: string) => {
 		setFiles((prev) =>
-			prev.map((f) => (f.id === id ? { ...f, status, progress } : f)),
+			prev.map((f) => (f.id === id ? { ...f, status, progress, error } : f)),
 		);
 	};
 
 	const removeFile = (id: string) => {
 		setFiles((prev) => prev.filter((f) => f.id !== id));
 	};
-	const addFiles = (newFiles: File[]) => {
+	const addFiles = (newFiles: File[], asDocument: boolean = false) => {
 		setFiles((prev) => [
 			...prev,
 			...newFiles.map((f) => ({
@@ -91,71 +134,144 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				id: Math.random().toString(36).substring(7),
 				status: 'idle' as const,
 				progress: 0,
+				asDocument,
 			})),
 		]);
 	};
+
+	// Sends a text message with visible failure feedback: wsSendMessage()
+	// always resolves even when the socket is disconnected (it's a silent
+	// no-op deep in the socket layer), so without this a message typed while
+	// offline would just vanish with no indication anything went wrong.
+	const sendTextGuarded = useCallback(
+		(text: string, replyToId?: string) => {
+			const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+			addPendingMessage(queryClient, channel.id, {
+				id: localId,
+				channel_id: channel.id,
+				sender_id: user?.id || '',
+				type: 'text',
+				ciphertext: '',
+				nonce: '',
+				compression: 'none',
+				sent_at: new Date().toISOString(),
+				reply_to_id: replyToId,
+				text,
+				pending: 'sending',
+				_retry: () => {
+					removePendingMessage(queryClient, channel.id, localId);
+					sendTextGuarded(text, replyToId);
+				},
+			} as any);
+
+			if (useAppStore.getState().wsState !== 'connected') {
+				markPendingFailed(queryClient, channel.id, localId);
+				return;
+			}
+
+			wsSendMessage(channel.id, text, 'text', 'none', replyToId);
+
+			setTimeout(() => {
+				if (isPendingStillSending(queryClient, channel.id, localId)) {
+					markPendingFailed(queryClient, channel.id, localId);
+				}
+			}, SEND_TIMEOUT_MS);
+		},
+		[channel.id, user?.id, queryClient],
+	);
 	const handleSend = useCallback(async () => {
 		const text = inputText.trim();
 		if ((!text && files.length === 0) || sending) return;
 		setSending(true);
+		setSendError(null);
 
 		try {
-			// Handle file uploads first
+			// Handle file uploads first — each file fails independently so one
+			// bad upload doesn't silently swallow the rest of the batch.
 			for (const f of files) {
-				updateFileStatus(f.id, 'encrypting', 30);
-				const processed = await encryptAndCompressFile(f.file, channelKey);
+				try {
+					updateFileStatus(f.id, 'encrypting', 30);
+					const processed = await encryptAndCompressFile(f.file, channelKey, {
+						asDocument: f.asDocument,
+					});
 
-				updateFileStatus(f.id, 'uploading', 0);
+					updateFileStatus(f.id, 'uploading', 0);
 
-				const res = await apiUploadFile(
-					new Blob([processed.ciphertext as any], { type: processed.mimeType }),
-					processed.mimeType,
-					processed.thumbnailCipher
-						? bytesToBase64(processed.thumbnailCipher)
-						: undefined,
-					processed.thumbnailNonce
-						? bytesToBase64(processed.thumbnailNonce)
-						: undefined,
-					(progressEvent) => {
-						const percent = Math.round(
-							(progressEvent.loaded * 100) / progressEvent.total,
+					const res = await apiUploadFile(
+						new Blob([processed.ciphertext as any], { type: processed.mimeType }),
+						processed.mimeType,
+						processed.thumbnailCipher
+							? bytesToBase64(processed.thumbnailCipher)
+							: undefined,
+						processed.thumbnailNonce
+							? bytesToBase64(processed.thumbnailNonce)
+							: undefined,
+						(progressEvent) => {
+							const percent = Math.round(
+								(progressEvent.loaded * 100) / progressEvent.total,
+							);
+							updateFileStatus(f.id, 'uploading', percent);
+						},
+						channel.id,
+					);
+
+					const fileId = (res as any).id;
+					// Immediately cache unencrypted file so sender sees it in opened state without downloading
+					try {
+						await db.cacheFile(
+							fileId,
+							processed.rawBytes,
+							processed.mimeType,
+							processed.originalSize,
 						);
-						updateFileStatus(f.id, 'uploading', percent);
-					},
-					channel.id,
-				);
+					} catch (cacheErr) {
+						console.warn('Failed to pre-cache uploaded file:', cacheErr);
+					}
 
-				const fileMetadata = JSON.stringify({
-					file_id: (res as any).id,
-					name: f.file.name,
-					mime: processed.mimeType,
-					size: processed.originalSize,
-					nonce: bytesToBase64(processed.nonce),
-					thumb_ciphertext: processed.thumbnailCipher
-						? bytesToBase64(processed.thumbnailCipher)
-						: undefined,
-					thumb_nonce: processed.thumbnailNonce
-						? bytesToBase64(processed.thumbnailNonce)
-						: undefined,
-				});
+					const fileMetadata = JSON.stringify({
+						file_id: fileId,
+						name: processed.fileName || f.file.name,
+						mime: processed.mimeType,
+						size: processed.originalSize,
+						nonce: bytesToBase64(processed.nonce),
+						thumb_ciphertext: processed.thumbnailCipher
+							? bytesToBase64(processed.thumbnailCipher)
+							: undefined,
+						thumb_nonce: processed.thumbnailNonce
+							? bytesToBase64(processed.thumbnailNonce)
+							: undefined,
+						as_document: f.asDocument ? true : undefined,
+					});
 
-				await wsSendMessage(channel.id, fileMetadata, 'file', 'zstd');
-				updateFileStatus(f.id, 'done', 100);
-				playNotificationSound('file-upload');
+					if (useAppStore.getState().wsState !== 'connected') {
+						updateFileStatus(f.id, 'failed', 100, 'Not connected — tap to retry');
+						continue;
+					}
+
+					await wsSendMessage(channel.id, fileMetadata, 'file', 'zstd');
+					updateFileStatus(f.id, 'done', 100);
+					playNotificationSound('file-upload');
+				} catch (fileErr: any) {
+					console.error('Failed to send file:', fileErr);
+					updateFileStatus(f.id, 'failed', 0, fileErr?.message || 'Failed to send');
+				}
 			}
 
+			// Drop successfully-sent files, keep failed ones visible for retry.
+			setFiles((prev) => prev.filter((f) => f.status === 'failed'));
+
 			if (text) {
-				await wsSendMessage(channel.id, text, 'text', 'none', replyTo?.id);
+				sendTextGuarded(text, replyTo?.id);
 			}
 
 			setInputText('');
-			setFiles([]);
 			if (replyTo) onCancelReply?.();
 			if (inputRef.current) {
 				inputRef.current.style.height = 'auto';
 			}
 		} catch (err) {
 			console.error('Failed to send messages:', err);
+			setSendError('Failed to send. Please try again.');
 		} finally {
 			setSending(false);
 			inputRef.current?.focus();
@@ -168,7 +284,172 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		channelKey,
 		replyTo,
 		onCancelReply,
+		sendTextGuarded,
 	]);
+
+	const retryFile = useCallback((id: string) => {
+		updateFileStatus(id, 'idle', 0, undefined);
+		// Re-run handleSend on next tick so it picks up the reset status.
+		setTimeout(() => handleSend(), 0);
+	}, [handleSend]);
+
+	const handleDirectVoiceSend = useCallback(
+		async (voiceFile: File, voiceDuration?: number) => {
+			try {
+				const processed = await encryptAndCompressFile(voiceFile, channelKey);
+				const res = await apiUploadFile(
+					new Blob([processed.ciphertext as any], { type: processed.mimeType }),
+					processed.mimeType,
+					processed.thumbnailCipher
+						? bytesToBase64(processed.thumbnailCipher)
+						: undefined,
+					processed.thumbnailNonce
+						? bytesToBase64(processed.thumbnailNonce)
+						: undefined,
+					undefined,
+					channel.id,
+				);
+
+				const fileId = (res as any).id;
+				// Immediately cache voice file so sender sees it in opened state
+				try {
+					await db.cacheFile(
+						fileId,
+						processed.rawBytes,
+						processed.mimeType,
+						processed.originalSize,
+					);
+				} catch (cacheErr) {
+					console.warn('Failed to pre-cache voice file:', cacheErr);
+				}
+
+				const fileMetadata = JSON.stringify({
+					file_id: fileId,
+					name: voiceFile.name,
+					mime: processed.mimeType,
+					size: processed.originalSize,
+					duration: voiceDuration ? Math.round(voiceDuration) : undefined,
+					nonce: bytesToBase64(processed.nonce),
+					thumb_ciphertext: processed.thumbnailCipher
+						? bytesToBase64(processed.thumbnailCipher)
+						: undefined,
+					thumb_nonce: processed.thumbnailNonce
+						? bytesToBase64(processed.thumbnailNonce)
+						: undefined,
+				});
+
+				if (useAppStore.getState().wsState !== 'connected') {
+					setSendError('Not connected — voice message not sent.');
+					addFiles([voiceFile]);
+					return;
+				}
+
+				await wsSendMessage(channel.id, fileMetadata, 'voice', 'none', replyTo?.id);
+				playNotificationSound('message');
+				if (replyTo) onCancelReply?.();
+			} catch (err) {
+				console.error('Failed to send direct voice message:', err);
+				setSendError('Failed to send voice message.');
+				// Fallback to adding to files queue if direct send fails
+				addFiles([voiceFile]);
+			}
+		},
+		[channel.id, channelKey, replyTo, onCancelReply],
+	);
+
+	const checkVideoDuration = (file: File): Promise<number> => {
+		return new Promise((resolve, reject) => {
+			const video = document.createElement('video');
+			video.preload = 'metadata';
+			video.onloadedmetadata = () => {
+				window.URL.revokeObjectURL(video.src);
+				resolve(video.duration);
+			};
+			video.onerror = () => {
+				window.URL.revokeObjectURL(video.src);
+				reject(new Error('Failed to load video metadata'));
+			};
+			video.src = URL.createObjectURL(file);
+		});
+	};
+
+	const handleDirectVideoSend = useCallback(
+		async (videoFile: File) => {
+			if (videoFile.size > 50 * 1024 * 1024) {
+				alert('Video message exceeds maximum file size of 50MB');
+				return;
+			}
+
+			try {
+				const dur = await checkVideoDuration(videoFile);
+				if (dur > 60) {
+					alert(
+						`Video messages cannot exceed 60 seconds (duration: ${Math.round(dur)}s)`,
+					);
+					return;
+				}
+
+				setSending(true);
+				const processed = await encryptAndCompressFile(videoFile, channelKey);
+				const res = await apiUploadFile(
+					new Blob([processed.ciphertext as any], { type: processed.mimeType }),
+					processed.mimeType,
+					processed.thumbnailCipher
+						? bytesToBase64(processed.thumbnailCipher)
+						: undefined,
+					processed.thumbnailNonce
+						? bytesToBase64(processed.thumbnailNonce)
+						: undefined,
+					undefined,
+					channel.id,
+					true,
+				);
+
+				const fileId = (res as any).id;
+				try {
+					await db.cacheFile(
+						fileId,
+						processed.rawBytes,
+						processed.mimeType,
+						processed.originalSize,
+					);
+				} catch (cacheErr) {
+					console.warn('Failed to pre-cache video message:', cacheErr);
+				}
+
+				const fileMetadata = JSON.stringify({
+					file_id: fileId,
+					name: videoFile.name,
+					mime: processed.mimeType,
+					size: processed.originalSize,
+					duration: Math.round(dur),
+					nonce: bytesToBase64(processed.nonce),
+					thumb_ciphertext: processed.thumbnailCipher
+						? bytesToBase64(processed.thumbnailCipher)
+						: undefined,
+					thumb_nonce: processed.thumbnailNonce
+						? bytesToBase64(processed.thumbnailNonce)
+						: undefined,
+					processing_status: 'processing',
+				});
+
+				if (useAppStore.getState().wsState !== 'connected') {
+					setSendError('Not connected — video message not sent.');
+					return;
+				}
+
+				await wsSendMessage(channel.id, fileMetadata, 'video', 'none', replyTo?.id);
+				playNotificationSound('message');
+				if (replyTo) onCancelReply?.();
+			} catch (err: any) {
+				console.error('Failed to send video message:', err);
+				setSendError(err.message || 'Failed to send video message.');
+			} finally {
+				setSending(false);
+			}
+		},
+		[channel.id, channelKey, replyTo, onCancelReply],
+	);
 
 	const insertMention = useCallback(
 		(username: string) => {
@@ -369,9 +650,26 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				</div>
 			)}
 
+			{/* Send Error Banner */}
+			{sendError && (
+				<div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-3 py-1.5 mb-1.5 flex items-center justify-between gap-2 text-[12px] font-medium animate-in slide-in-from-bottom-2 duration-150">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<AlertCircle size={13} className="shrink-0" />
+						<span className="truncate">{sendError}</span>
+					</div>
+					<button
+						onClick={() => setSendError(null)}
+						className="p-0.5 hover:bg-destructive/10 rounded-full transition-colors shrink-0"
+						title="Dismiss"
+					>
+						<X size={12} />
+					</button>
+				</div>
+			)}
+
 			{/* Reply Preview */}
 			{replyTo && (
-				<div className="bg-background/40 backdrop-blur-md border-x border-t border-border rounded-t-lg px-4 py-2 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150">
+				<div className="bg-secondary border-x border-t border-border rounded-t-lg px-4 py-2 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-150">
 					<div className="flex items-center gap-2 min-w-0">
 						<div className="flex items-center justify-center">
 							<ReplyIcon size={14} className="text-muted-foreground shrink-0" />
@@ -400,7 +698,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 			)}
 
 			<div
-				className={`bg-secondary/50 rounded-lg flex flex-col relative focus-within:ring-0 transition-all overflow-hidden border border-border text-flat ${replyTo ? 'rounded-t-none border-t-0' : ''}`}
+				className={`bg-secondary rounded-lg flex flex-col relative focus-within:ring-0 transition-all overflow-hidden border border-border text-flat ${replyTo ? 'rounded-t-none border-t-0' : ''}`}
 			>
 				{/* File Previews - Reverted Style */}
 				{files.length > 0 && (
@@ -417,7 +715,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 									<X size={14} />
 								</button>
 
-								{f.file.type.startsWith('image/') ? (
+								{!f.asDocument && f.file.type.startsWith('image/') ? (
 									<img
 										src={URL.createObjectURL(f.file)}
 										alt="preview"
@@ -425,31 +723,45 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 									/>
 								) : (
 									<div className="flex flex-col items-center gap-1">
-										<FileIcon size={32} className="text-[#949ba4]" />
-										<span className="text-[10px] text-[#949ba4] truncate w-20 text-center">
+										<FileIcon size={32} className="text-muted-foreground" />
+										<span className="text-[10px] text-muted-foreground truncate w-20 text-center">
 											{f.file.name}
 										</span>
 									</div>
 								)}
 
 								{/* Progress UI - Kept but simplified */}
-								{f.status !== 'idle' && f.status !== 'done' && (
-									<div className="absolute inset-0 bg-background/80 rounded-md flex flex-col items-center justify-center p-2">
-										{f.status === 'encrypting' ? (
-											<Lock size={16} className="text-primary animate-pulse" />
-										) : (
-											<Loader2
-												size={16}
-												className="text-foreground animate-spin"
-											/>
-										)}
-										<div className="w-full bg-black/40 h-1 rounded-full mt-2 overflow-hidden">
-											<div
-												className="bg-primary h-full transition-all duration-300"
-												style={{ width: `${f.progress}%` }}
-											/>
+								{f.status === 'failed' ? (
+									<button
+										type="button"
+										onClick={() => retryFile(f.id)}
+										className="absolute inset-0 bg-destructive/20 rounded-md flex flex-col items-center justify-center p-2 gap-1 cursor-pointer group/retry"
+										title={f.error || 'Failed to send — tap to retry'}
+									>
+										<AlertCircle size={16} className="text-destructive" />
+										<span className="text-[9px] text-destructive font-semibold group-hover/retry:underline">
+											Retry
+										</span>
+									</button>
+								) : (
+									f.status !== 'idle' && f.status !== 'done' && (
+										<div className="absolute inset-0 bg-background/80 rounded-md flex flex-col items-center justify-center p-2">
+											{f.status === 'encrypting' ? (
+												<Lock size={16} className="text-primary animate-pulse" />
+											) : (
+												<Loader2
+													size={16}
+													className="text-foreground animate-spin"
+												/>
+											)}
+											<div className="w-full bg-black/40 h-1 rounded-full mt-2 overflow-hidden">
+												<div
+													className="bg-primary h-full transition-all duration-300"
+													style={{ width: `${f.progress}%` }}
+												/>
+											</div>
 										</div>
-									</div>
+									)
 								)}
 							</div>
 						))}
@@ -459,22 +771,74 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				<div
 					className={`flex items-start ${isSmall ? 'px-2 py-2 gap-2' : 'px-4 py-2.5 gap-3'}`}
 				>
-					<button
-						onClick={() => fileInputRef.current?.click()}
-						className="mt-0.5 text-muted-foreground hover:text-foreground transition"
-					>
-						<Plus
-							className={`bg-muted-foreground/10 rounded-full p-1 ${isSmall ? 'w-5 h-5' : 'w-6 h-6'} hover:bg-muted-foreground/20`}
-						/>
-					</button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								type="button"
+								className="mt-0.5 text-muted-foreground hover:text-foreground transition focus:outline-none"
+								title="Add attachment"
+							>
+								<Plus
+									className={`bg-muted-foreground/10 rounded-full p-1 ${isSmall ? 'w-5 h-5' : 'w-6 h-6'} hover:bg-muted-foreground/20`}
+								/>
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="start"
+							side="top"
+							sideOffset={8}
+							className="w-44 bg-popover/95 backdrop-blur-md border-border shadow-xl rounded-xl p-1"
+						>
+							<DropdownMenuItem
+								onClick={() => triggerUpload('media')}
+								className="flex items-center gap-2.5 px-3 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-accent text-foreground transition-colors"
+							>
+								<ImageIcon size={16} className="text-primary" />
+								<span>Photo or Video</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => triggerUpload('audio')}
+								className="flex items-center gap-2.5 px-3 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-accent text-foreground transition-colors"
+							>
+								<Music size={16} className="text-primary" />
+								<span>Audio</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => triggerUpload('file')}
+								className="flex items-center gap-2.5 px-3 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-accent text-foreground transition-colors"
+							>
+								<FileText size={16} className="text-primary" />
+								<span>Document / File</span>
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => setShowVideoRecorder(true)}
+								className="flex items-center gap-2.5 px-3 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-accent text-foreground transition-colors"
+							>
+								<Video size={16} className="text-primary" />
+								<span>Video Message (max 1m)</span>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<input
 						type="file"
 						ref={fileInputRef}
 						className="hidden"
 						multiple
 						onChange={(e) =>
-							e.target.files && addFiles(Array.from(e.target.files))
+							e.target.files &&
+							addFiles(Array.from(e.target.files), uploadAsDocumentRef.current)
 						}
+					/>
+					<input
+						type="file"
+						ref={videoMessageInputRef}
+						accept="video/*"
+						className="hidden"
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (file) handleDirectVideoSend(file);
+							e.target.value = '';
+						}}
 					/>
 
 					<textarea
@@ -496,8 +860,17 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						<VoiceRecorder
 							channelId={channel.id}
 							onFile={(file) => addFiles([file])}
-							size={isSmall ? 18 : 24}
+							onSendVoice={handleDirectVoiceSend}
+							size={isSmall ? 18 : 22}
 						/>
+						<button
+							type="button"
+							onClick={() => setShowVideoRecorder(true)}
+							className="text-muted-foreground hover:text-foreground transition flex items-center justify-center cursor-pointer"
+							title="Record Video Message"
+						>
+							<Video size={isSmall ? 18 : 22} />
+						</button>
 						<div className="relative flex items-center justify-center">
 							<button
 								onClick={(e) => {
@@ -566,6 +939,12 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					/>
 				</div>
 			)}
+
+			<VideoMessageRecorderModal
+				open={showVideoRecorder}
+				onClose={() => setShowVideoRecorder(false)}
+				onSend={handleDirectVideoSend}
+			/>
 		</div>
 	);
 };

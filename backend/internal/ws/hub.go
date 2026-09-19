@@ -403,17 +403,86 @@ func (h *Hub) BroadcastMemberRoleUpdated(channelID string, userID string, role i
 	}
 }
 
-// BroadcastChannelUpdated notifies all members that channel settings (like Name) have changed.
+// BroadcastChannelUpdated notifies all members that channel settings (like Name, Description, AvatarID) have changed.
 func (h *Hub) BroadcastChannelUpdated(ch *models.Channel) {
 	payload, _ := json.Marshal(map[string]any{
-		"channel_id": ch.ID,
-		"name":       ch.Name,
-		"is_private": ch.IsPrivate,
-		"type":       "settings_updated",
+		"channel_id":  ch.ID,
+		"name":        ch.Name,
+		"description": ch.Description,
+		"avatar_id":   ch.AvatarID,
+		"is_private":  ch.IsPrivate,
+		"type":        "settings_updated",
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
 	h.broadcast <- &envelope{channelID: ch.ID, msg: msg}
 }
+
+// BroadcastChannelDeleted notifies specified users (or channel members) that a channel has been deleted or cleared.
+func (h *Hub) BroadcastChannelDeleted(channelID string, targetUserIDs []string) {
+	payload, _ := json.Marshal(map[string]any{
+		"channel_id": channelID,
+	})
+	msg := &models.WSMessage{Type: "channel_delete", Payload: payload}
+	env := &envelope{msg: msg}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, uid := range targetUserIDs {
+		if clients, ok := h.clients[uid]; ok {
+			for _, c := range clients {
+				select {
+				case c.send <- env:
+				default:
+				}
+			}
+		}
+	}
+}
+
+// BroadcastRelationshipUpdate notifies a specific user of a relationship change.
+func (h *Hub) BroadcastRelationshipUpdate(targetUserID string, rel *models.Relationship) {
+	payload, _ := json.Marshal(rel)
+	msg := &models.WSMessage{Type: "relationship_update", Payload: payload}
+	env := &envelope{msg: msg}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	if clients, ok := h.clients[targetUserID]; ok {
+		for _, c := range clients {
+			select {
+			case c.send <- env:
+			default:
+			}
+		}
+	}
+}
+
+// BroadcastVideoReady notifies channel members that an uploaded video is processed and ready.
+func (h *Hub) BroadcastVideoReady(fileID string, channelID string) {
+	payload, _ := json.Marshal(map[string]any{
+		"file_id":    fileID,
+		"channel_id": channelID,
+		"status":     "ready",
+	})
+	msg := &models.WSMessage{Type: "video_ready", Payload: payload}
+	if channelID != "" {
+		h.broadcast <- &envelope{channelID: channelID, msg: msg}
+	} else {
+		// Broadcast to all clients if not channel-specific
+		env := &envelope{msg: msg}
+		h.mu.RLock()
+		defer h.mu.RUnlock()
+		for _, clients := range h.clients {
+			for _, c := range clients {
+				select {
+				case c.send <- env:
+				default:
+				}
+			}
+		}
+	}
+}
+
 // BroadcastVoiceState notifies channel members of who is currently in the voice session.
 func (h *Hub) BroadcastVoiceState(channelID string, activeUsers []string) {
 	payload, _ := json.Marshal(map[string]any{
@@ -444,3 +513,4 @@ func (h *Hub) SendVoiceState(userID string, channelID string, activeUsers []stri
 		}
 	}
 }
+

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"nodetalk/backend/internal/auth"
 	"nodetalk/backend/internal/models"
 )
 
@@ -22,6 +23,7 @@ import (
 //	@Success     200 {array}  models.Message
 //	@Router      /api/channels/{id}/messages [get]
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
 	ch := ChannelFromContext(r.Context())
 	limit := 250
 	before := r.URL.Query().Get("before")
@@ -40,5 +42,18 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	if msgs == nil {
 		msgs = []*models.Message{}
 	}
+
+	if session != nil {
+		if uc, err := h.Store.GetUserChannel(session.UserID, ch.ID); err == nil && uc != nil && !uc.ClearedAt.IsZero() {
+			filtered := make([]*models.Message, 0, len(msgs))
+			for _, m := range msgs {
+				if m.SentAt.After(uc.ClearedAt) {
+					filtered = append(filtered, m)
+				}
+			}
+			msgs = filtered
+		}
+	}
+
 	writeJSON(w, http.StatusOK, msgs)
 }

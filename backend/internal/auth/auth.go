@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"nodetalk/backend/internal/models"
 )
 
 // Cookie names and header used for the web client's httpOnly-cookie session.
@@ -22,8 +24,6 @@ const (
 )
 
 // Session represents an authenticated server-side session stored in memory.
-// For production, consider backing sessions with BadgerDB for persistence
-// across restarts.
 type Session struct {
 	UserID    string
 	Username  string
@@ -31,19 +31,45 @@ type Session struct {
 	ExpiresAt time.Time
 }
 
-// SessionStore is an in-memory session registry with TTL-based expiry.
-type SessionStore struct {
-	mu       sync.RWMutex
-	sessions map[string]*Session
-	ttl      time.Duration
+// SessionPersister defines optional persistence for sessions across server restarts.
+type SessionPersister interface {
+	SetSession(s *models.Session) error
+	DeleteSession(token string) error
+	ListSessions() ([]*models.Session, error)
 }
 
-// NewSessionStore creates a new SessionStore and starts the background
-// expiry sweeper.
-func NewSessionStore(ttl time.Duration) *SessionStore {
+// SessionStore is an in-memory session registry with TTL-based expiry and optional persistence.
+type SessionStore struct {
+	mu        sync.RWMutex
+	sessions  map[string]*Session
+	ttl       time.Duration
+	persister SessionPersister
+}
+
+// NewSessionStore creates a new SessionStore, hydrates valid sessions if a persister is provided,
+// and starts the background expiry sweeper.
+func NewSessionStore(ttl time.Duration, persister ...SessionPersister) *SessionStore {
 	ss := &SessionStore{
 		sessions: make(map[string]*Session),
 		ttl:      ttl,
+	}
+	if len(persister) > 0 && persister[0] != nil {
+		ss.persister = persister[0]
+		if saved, err := ss.persister.ListSessions(); err == nil {
+			now := time.Now()
+			for _, s := range saved {
+				if s != nil && now.Before(s.ExpiresAt) {
+					ss.sessions[s.Token] = &Session{
+						UserID:    s.UserID,
+						Username:  s.Username,
+						CreatedAt: s.CreatedAt,
+						ExpiresAt: s.ExpiresAt,
+					}
+				} else if s != nil {
+					_ = ss.persister.DeleteSession(s.Token)
+				}
+			}
+		}
 	}
 	go ss.sweepExpired()
 	return ss
@@ -58,14 +84,25 @@ func (ss *SessionStore) Create(userID, username string) (string, error) {
 	}
 	token := base64.URLEncoding.EncodeToString(raw)
 	now := time.Now()
-	ss.mu.Lock()
-	ss.sessions[token] = &Session{
+	s := &Session{
 		UserID:    userID,
 		Username:  username,
 		CreatedAt: now,
 		ExpiresAt: now.Add(ss.ttl),
 	}
+	ss.mu.Lock()
+	ss.sessions[token] = s
 	ss.mu.Unlock()
+
+	if ss.persister != nil {
+		_ = ss.persister.SetSession(&models.Session{
+			Token:     token,
+			UserID:    s.UserID,
+			Username:  s.Username,
+			CreatedAt: s.CreatedAt,
+			ExpiresAt: s.ExpiresAt,
+		})
+	}
 	return token, nil
 }
 
@@ -90,6 +127,28 @@ func (ss *SessionStore) Delete(token string) {
 	ss.mu.Lock()
 	delete(ss.sessions, token)
 	ss.mu.Unlock()
+
+	if ss.persister != nil {
+		_ = ss.persister.DeleteSession(token)
+	}
+}
+
+// UpdateUsername updates the cached username for active session.
+func (ss *SessionStore) UpdateUsername(token, newUsername string) {
+	ss.mu.Lock()
+	if s, ok := ss.sessions[token]; ok {
+		s.Username = newUsername
+		if ss.persister != nil {
+			_ = ss.persister.SetSession(&models.Session{
+				Token:     token,
+				UserID:    s.UserID,
+				Username:  s.Username,
+				CreatedAt: s.CreatedAt,
+				ExpiresAt: s.ExpiresAt,
+			})
+		}
+	}
+	ss.mu.Unlock()
 }
 
 // sweepExpired runs every hour to purge expired sessions.
@@ -102,6 +161,9 @@ func (ss *SessionStore) sweepExpired() {
 		for token, s := range ss.sessions {
 			if now.After(s.ExpiresAt) {
 				delete(ss.sessions, token)
+				if ss.persister != nil {
+					_ = ss.persister.DeleteSession(token)
+				}
 			}
 		}
 		ss.mu.Unlock()

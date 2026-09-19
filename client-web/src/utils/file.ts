@@ -14,12 +14,80 @@ export async function ensureZstdReady() {
 }
 
 /**
- * Generates a small WebP thumbnail from an image file.
+ * Compresses an image file to high-efficiency WebP format on the client before upload.
+ * Constrains dimensions to max 1920x1920 while preserving aspect ratio.
+ * Preserves animated GIFs/SVGs and only uses the WebP output if it successfully optimizes size.
+ */
+export async function compressImageFile(
+	file: File,
+	maxDimension = 1920,
+	quality = 0.82,
+): Promise<File> {
+	if (
+		!file.type.startsWith('image/') ||
+		file.type === 'image/gif' ||
+		file.type.includes('svg') ||
+		file.type.includes('heic') ||
+		file.type.includes('heif')
+	) {
+		return file;
+	}
+
+	return new Promise((resolve) => {
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const img = new Image();
+			img.onload = () => {
+				let width = img.width;
+				let height = img.height;
+
+				if (width > maxDimension || height > maxDimension) {
+					if (width > height) {
+						height = Math.round((height * maxDimension) / width);
+						width = maxDimension;
+					} else {
+						width = Math.round((width * maxDimension) / height);
+						height = maxDimension;
+					}
+				}
+
+				const canvas = document.createElement('canvas');
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) return resolve(file);
+
+				ctx.drawImage(img, 0, 0, width, height);
+				canvas.toBlob(
+					(blob) => {
+						if (!blob || blob.size >= file.size) {
+							// If WebP didn't reduce file size, keep original
+							return resolve(file);
+						}
+						const newName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+						const compressedFile = new File([blob], newName, { type: 'image/webp' });
+						resolve(compressedFile);
+					},
+					'image/webp',
+					quality,
+				);
+			};
+			img.onerror = () => resolve(file);
+			img.src = e.target?.result as string;
+		};
+		reader.onerror = () => resolve(file);
+		reader.readAsDataURL(file);
+	});
+}
+
+/**
+ * Generates an ultra-compact WebP blur thumbnail from an image file (max 48x48, ~300-500 bytes).
+ * When rendered with CSS blur, it provides a smooth progressive placeholder with negligible payload.
  */
 async function generateThumbnail(
 	file: File,
-	maxWidth = 400,
-	maxHeight = 400,
+	maxWidth = 48,
+	maxHeight = 48,
 ): Promise<Uint8Array | null> {
 	return new Promise((resolve) => {
 		const reader = new FileReader();
@@ -32,12 +100,12 @@ async function generateThumbnail(
 
 				if (width > height) {
 					if (width > maxWidth) {
-						height *= maxWidth / width;
+						height = Math.max(1, Math.round((height * maxWidth) / width));
 						width = maxWidth;
 					}
 				} else {
 					if (height > maxHeight) {
-						width *= maxHeight / height;
+						width = Math.max(1, Math.round((width * maxHeight) / height));
 						height = maxHeight;
 					}
 				}
@@ -58,19 +126,21 @@ async function generateThumbnail(
 						reader.readAsArrayBuffer(blob);
 					},
 					'image/webp',
-					0.8,
+					0.5,
 				);
 			};
+			img.onerror = () => resolve(null);
 			img.src = e.target?.result as string;
 		};
+		reader.onerror = () => resolve(null);
 		reader.readAsDataURL(file);
 	});
 }
 
 /**
- * Generates a small WebP thumbnail from a video file at 1 second.
+ * Generates a small WebP blur thumbnail from a video file at 1 second.
  */
-async function generateVideoThumbnail(file: File, maxWidth = 400, maxHeight = 400): Promise<Uint8Array | null> {
+async function generateVideoThumbnail(file: File, maxWidth = 48, maxHeight = 48): Promise<Uint8Array | null> {
 	return new Promise((resolve) => {
 		const video = document.createElement('video');
 		const url = URL.createObjectURL(file);
@@ -91,12 +161,12 @@ async function generateVideoThumbnail(file: File, maxWidth = 400, maxHeight = 40
 
 			if (width > height) {
 				if (width > maxWidth) {
-					height *= maxWidth / width;
+					height = Math.max(1, Math.round((height * maxWidth) / width));
 					width = maxWidth;
 				}
 			} else {
 				if (height > maxHeight) {
-					width *= maxHeight / height;
+					width = Math.max(1, Math.round((width * maxHeight) / height));
 					height = maxHeight;
 				}
 			}
@@ -115,7 +185,7 @@ async function generateVideoThumbnail(file: File, maxWidth = 400, maxHeight = 40
 					resolve(new Uint8Array(reader.result as ArrayBuffer));
 				};
 				reader.readAsArrayBuffer(blob);
-			}, 'image/webp', 0.8);
+			}, 'image/webp', 0.5);
 		};
 
 		video.onerror = () => {
@@ -166,18 +236,31 @@ async function generateWaveform(file: File, samples = 60): Promise<Uint8Array | 
 export async function encryptAndCompressFile(
 	file: File,
 	channelKey: Uint8Array,
+	options?: { asDocument?: boolean },
 ): Promise<{
 	ciphertext: Uint8Array;
 	nonce: Uint8Array;
 	thumbnailCipher?: Uint8Array;
 	thumbnailNonce?: Uint8Array;
 	mimeType: string;
+	fileName: string;
 	originalSize: number;
+	rawBytes: Uint8Array;
 }> {
 	await ensureZstdReady();
 
-	const arrayBuffer = await file.arrayBuffer();
-	const isAudio = file.type.startsWith('audio/');
+	// Automatically compress images to modern WebP on client before encryption UNLESS asDocument is specified
+	const effectiveFile = options?.asDocument ? file : await compressImageFile(file);
+
+	const arrayBuffer = typeof (effectiveFile as any).arrayBuffer === 'function'
+		? await effectiveFile.arrayBuffer()
+		: await new Promise<ArrayBuffer>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = () => resolve(reader.result as ArrayBuffer);
+				reader.onerror = reject;
+				reader.readAsArrayBuffer(effectiveFile);
+			});
+	const isAudio = effectiveFile.type.startsWith('audio/');
 	
 	// Skip ZSTD compression for audio files as they are already compressed (Opus/WebM)
 	// and additional compression can sometimes cause issues with media headers.
@@ -203,56 +286,61 @@ export async function encryptAndCompressFile(
 	const result: any = {
 		ciphertext: new Uint8Array(ciphertextBuffer),
 		nonce: nonce,
-		mimeType: file.type,
-		originalSize: file.size,
+		mimeType: effectiveFile.type,
+		fileName: effectiveFile.name,
+		originalSize: effectiveFile.size,
+		rawBytes: new Uint8Array(arrayBuffer),
 	};
 
-	// thumbnail (exclude HEIC/HEIF as browsers can't render them natively)
-	if (
-		file.type.startsWith('image/') &&
-		!file.type.includes('heic') &&
-		!file.type.includes('heif')
-	) {
-		const thumb = await generateThumbnail(file);
-		if (thumb) {
-			const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
-			const thumbCipher = await crypto.subtle.encrypt(
-				{ name: 'AES-GCM', iv: thumbNonce as any },
-				cryptoKey,
-				thumb as any,
-			);
-			result.thumbnailCipher = new Uint8Array(thumbCipher);
-			result.thumbnailNonce = thumbNonce;
+	// Generate thumbnails and waveforms only if NOT treated as a document
+	if (!options?.asDocument) {
+		// thumbnail (exclude HEIC/HEIF as browsers can't render them natively)
+		if (
+			effectiveFile.type.startsWith('image/') &&
+			!effectiveFile.type.includes('heic') &&
+			!effectiveFile.type.includes('heif')
+		) {
+			const thumb = await generateThumbnail(effectiveFile);
+			if (thumb) {
+				const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
+				const thumbCipher = await crypto.subtle.encrypt(
+					{ name: 'AES-GCM', iv: thumbNonce as any },
+					cryptoKey,
+					thumb as any,
+				);
+				result.thumbnailCipher = new Uint8Array(thumbCipher);
+				result.thumbnailNonce = thumbNonce;
+			}
 		}
-	}
 
-	// thumbnail for videos
-	if (file.type.startsWith('video/')) {
-		const thumb = await generateVideoThumbnail(file);
-		if (thumb) {
-			const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
-			const thumbCipher = await crypto.subtle.encrypt(
-				{ name: 'AES-GCM', iv: thumbNonce as any },
-				cryptoKey,
-				thumb as any,
-			);
-			result.thumbnailCipher = new Uint8Array(thumbCipher);
-			result.thumbnailNonce = thumbNonce;
+		// thumbnail for videos
+		if (effectiveFile.type.startsWith('video/')) {
+			const thumb = await generateVideoThumbnail(effectiveFile);
+			if (thumb) {
+				const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
+				const thumbCipher = await crypto.subtle.encrypt(
+					{ name: 'AES-GCM', iv: thumbNonce as any },
+					cryptoKey,
+					thumb as any,
+				);
+				result.thumbnailCipher = new Uint8Array(thumbCipher);
+				result.thumbnailNonce = thumbNonce;
+			}
 		}
-	}
 
-	// waveform for audio
-	if (file.type.startsWith('audio/')) {
-		const peaks = await generateWaveform(file);
-		if (peaks) {
-			const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
-			const thumbCipher = await crypto.subtle.encrypt(
-				{ name: 'AES-GCM', iv: thumbNonce as any },
-				cryptoKey,
-				peaks as any,
-			);
-			result.thumbnailCipher = new Uint8Array(thumbCipher);
-			result.thumbnailNonce = thumbNonce;
+		// waveform for audio
+		if (effectiveFile.type.startsWith('audio/')) {
+			const peaks = await generateWaveform(effectiveFile);
+			if (peaks) {
+				const thumbNonce = crypto.getRandomValues(new Uint8Array(12));
+				const thumbCipher = await crypto.subtle.encrypt(
+					{ name: 'AES-GCM', iv: thumbNonce as any },
+					cryptoKey,
+					peaks as any,
+				);
+				result.thumbnailCipher = new Uint8Array(thumbCipher);
+				result.thumbnailNonce = thumbNonce;
+			}
 		}
 	}
 

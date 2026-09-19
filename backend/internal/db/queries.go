@@ -394,3 +394,128 @@ func (d *DB) GetFile(id string) (*models.File, error) {
 	}
 	return &f, nil
 }
+
+// ============================================================
+//  Sessions
+// ============================================================
+
+// SetSession writes a Session record to BadgerDB.
+func (d *DB) SetSession(s *models.Session) error {
+	return d.set(sessionKey(s.Token), s)
+}
+
+// GetSession retrieves a Session record by token.
+func (d *DB) GetSession(token string) (*models.Session, error) {
+	var s models.Session
+	if err := d.get(sessionKey(token), &s); err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// DeleteSession deletes a Session record by token.
+func (d *DB) DeleteSession(token string) error {
+	return d.delete(sessionKey(token))
+}
+
+// ListSessions returns all stored session records.
+func (d *DB) ListSessions() ([]*models.Session, error) {
+	var sessions []*models.Session
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefixSession)
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			var s models.Session
+			if err := it.Item().Value(func(val []byte) error {
+				return json.Unmarshal(val, &s)
+			}); err != nil {
+				return err
+			}
+			sessions = append(sessions, &s)
+		}
+		return nil
+	})
+	return sessions, err
+}
+
+// ============================================================
+//  Relationships (Friend / Block / Request)
+// ============================================================
+
+// SetRelationship writes a Relationship record to BadgerDB.
+func (d *DB) SetRelationship(rel *models.Relationship) error {
+	return d.set(relationshipKey(rel.FromUserID, rel.ToUserID), rel)
+}
+
+// GetRelationship retrieves a Relationship by fromID and toID.
+func (d *DB) GetRelationship(fromID, toID string) (*models.Relationship, error) {
+	var rel models.Relationship
+	if err := d.get(relationshipKey(fromID, toID), &rel); err != nil {
+		return nil, err
+	}
+	return &rel, nil
+}
+
+// DeleteRelationship removes a Relationship record.
+func (d *DB) DeleteRelationship(fromID, toID string) error {
+	return d.delete(relationshipKey(fromID, toID))
+}
+
+// ListRelationshipsByUser returns all outgoing relationships for a user (rel:fromID:*).
+func (d *DB) ListRelationshipsByUser(userID string) ([]*models.Relationship, error) {
+	var list []*models.Relationship
+	prefix := prefixRelationship + userID + ":"
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefix)
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			var rel models.Relationship
+			if err := it.Item().Value(func(val []byte) error {
+				return json.Unmarshal(val, &rel)
+			}); err != nil {
+				return err
+			}
+			list = append(list, &rel)
+		}
+		return nil
+	})
+	return list, err
+}
+
+// SetRelationshipInbox writes to the incoming request index (reli:toID:fromID).
+func (d *DB) SetRelationshipInbox(rel *models.Relationship) error {
+	return d.set(relationshipInboxKey(rel.ToUserID, rel.FromUserID), rel)
+}
+
+// DeleteRelationshipInbox removes an incoming request from the inbox index.
+func (d *DB) DeleteRelationshipInbox(toID, fromID string) error {
+	return d.delete(relationshipInboxKey(toID, fromID))
+}
+
+// ListIncomingRequests returns all pending incoming requests for a user (reli:toUserID:*).
+func (d *DB) ListIncomingRequests(toUserID string) ([]*models.Relationship, error) {
+	var list []*models.Relationship
+	prefix := prefixRelationshipInbox + toUserID + ":"
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefix)
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			var rel models.Relationship
+			if err := it.Item().Value(func(val []byte) error {
+				return json.Unmarshal(val, &rel)
+			}); err != nil {
+				return err
+			}
+			list = append(list, &rel)
+		}
+		return nil
+	})
+	return list, err
+}
+

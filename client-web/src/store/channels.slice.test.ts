@@ -68,4 +68,36 @@ describe('channels.slice refreshChannels race handling', () => {
 		expect(useChannelStore.getState().channels).toHaveLength(1);
 		expect(useChannelStore.getState().channels[0].id).toBe('c1');
 	});
+
+	it('removeChannel removes the specified channel and resets activeChannel if active', () => {
+		const ch1 = makeChannel('c1', 'Channel 1');
+		const ch2 = makeChannel('c2', 'Channel 2');
+		useChannelStore.setState({
+			channels: [ch1, ch2],
+			activeChannel: ch1,
+		});
+
+		useChannelStore.getState().removeChannel('c1');
+
+		const state = useChannelStore.getState();
+		expect(state.channels).toHaveLength(1);
+		expect(state.channels[0].id).toBe('c2');
+		expect(state.activeChannel).toBeNull();
+	});
+
+	it('removeChannel preserves activeChannel if different channel is removed', () => {
+		const ch1 = makeChannel('c1', 'Channel 1');
+		const ch2 = makeChannel('c2', 'Channel 2');
+		useChannelStore.setState({
+			channels: [ch1, ch2],
+			activeChannel: ch2,
+		});
+
+		useChannelStore.getState().removeChannel('c1');
+
+		const state = useChannelStore.getState();
+		expect(state.channels).toHaveLength(1);
+		expect(state.channels[0].id).toBe('c2');
+		expect(state.activeChannel?.id).toBe('c2');
+	});
 });

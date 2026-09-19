@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUserSearch } from '@/hooks/useUsers';
 import { useAuthStore, useChannelStore } from '@/store/store';
 import {
@@ -10,8 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Hash, Search, Lock, Globe } from 'lucide-react';
-import { Avatar as MinidenticonAvatar } from '@/components/Avatar';
+import { MessageSquare, Hash, Search, Lock, Globe, Camera, X, Loader2 } from 'lucide-react';
+import { Avatar as MinidenticonAvatar, ChannelInitialsAvatar } from '@/components/Avatar';
+import { ImageEditor } from './ImageEditor';
+import { apiUploadFile } from '@/api/client';
 
 interface NewChannelModalProps {
 	initialTab?: 'dm' | 'channel';
@@ -30,7 +32,53 @@ export default function NewChannelModal({
 		initialTab === 'channel' ? 'channel' : 'dm',
 	);
 	const [name, setName] = useState('');
+	const [description, setDescription] = useState('');
 	const [isPrivate, setIsPrivate] = useState(true);
+
+	// Avatar State
+	const [avatarId, setAvatarId] = useState<string | null>(null);
+	const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+	const [showCropModal, setShowCropModal] = useState(false);
+	const [cropFile, setCropFile] = useState<File | null>(null);
+	const [uploadingAvatar, setUploadingAvatar] = useState(false);
+	const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (avatarPreviewUrl) {
+				URL.revokeObjectURL(avatarPreviewUrl);
+			}
+		};
+	}, [avatarPreviewUrl]);
+
+	const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (file.size > 5 * 1024 * 1024) {
+			setError('Channel avatar must be under 5MB');
+			return;
+		}
+		setCropFile(file);
+		setShowCropModal(true);
+		e.target.value = '';
+	};
+
+	const handleSaveAvatarCrop = async (blob: Blob, mime: string) => {
+		setShowCropModal(false);
+		setUploadingAvatar(true);
+		try {
+			const ext = mime === 'image/svg+xml' ? 'svg' : mime.split('/')[1] || 'png';
+			const file = new File([blob], `channel_avatar.${ext}`, { type: mime });
+			const res = await apiUploadFile(file, mime);
+			setAvatarId(res.id);
+			setAvatarPreviewUrl(URL.createObjectURL(blob));
+		} catch (err) {
+			console.error('Failed to upload channel avatar:', err);
+			setError('Failed to upload channel avatar');
+		} finally {
+			setUploadingAvatar(false);
+		}
+	};
 
 	// DM Search state
 	const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +108,13 @@ export default function NewChannelModal({
 
 		setLoading(true);
 		try {
-			const ch = await createChannel(name.trim(), [user!.id], isPrivate);
+			const ch = await createChannel(
+				name.trim(),
+				[user!.id],
+				isPrivate,
+				description.trim() || undefined,
+				avatarId || undefined,
+			);
 			setActiveChannel(ch);
 			onClose();
 		} catch (e: unknown) {
@@ -86,7 +140,7 @@ export default function NewChannelModal({
 
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="bg-background border border-border text-foreground sm:max-w-[440px] p-0 overflow-hidden shadow-2xl">
+			<DialogContent className="bg-background border border-border text-foreground sm:max-w-[560px] md:max-w-[600px] p-0 overflow-hidden shadow-2xl">
 				<div className="p-6">
 					<DialogHeader>
 						<DialogTitle className="text-xl font-bold text-foreground text-center mb-2">
@@ -170,21 +224,95 @@ export default function NewChannelModal({
 						)}
 
 						{mode === 'channel' && (
-							<div className="space-y-4 pb-4">
-								<div className="space-y-2">
+							<div className="space-y-4 pb-2">
+								{/* Avatar & Name */}
+								<div className="flex items-center gap-4 py-1">
+									<div className="relative group shrink-0">
+										<div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border/80 bg-secondary flex items-center justify-center shadow-inner">
+											{avatarPreviewUrl ? (
+												<img
+													src={avatarPreviewUrl}
+													alt={name || 'Channel Avatar'}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												<ChannelInitialsAvatar name={name} size={64} />
+											)}
+										</div>
+
+										<input
+											ref={avatarInputRef}
+											type="file"
+											accept="image/*,.svg"
+											className="hidden"
+											onChange={handleAvatarFileSelect}
+										/>
+
+										<button
+											type="button"
+											onClick={() => avatarInputRef.current?.click()}
+											disabled={uploadingAvatar}
+											className="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-medium backdrop-blur-[1px] cursor-pointer"
+											title="Upload channel avatar"
+										>
+											{uploadingAvatar ? (
+												<Loader2 size={18} className="animate-spin" />
+											) : (
+												<>
+													<Camera size={18} />
+													<span className="mt-0.5 text-[9px] font-semibold">Photo</span>
+												</>
+											)}
+										</button>
+
+										{avatarPreviewUrl && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setAvatarId(null);
+													setAvatarPreviewUrl(null);
+												}}
+												className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm hover:opacity-90 transition cursor-pointer"
+												title="Remove photo"
+											>
+												<X size={12} />
+											</button>
+										)}
+									</div>
+
+									<div className="flex-1 space-y-1 min-w-0">
+										<Label
+											htmlFor="channel-name"
+											className="text-xs uppercase font-bold text-muted-foreground"
+										>
+											Channel Name
+										</Label>
+										<Input
+											id="channel-name"
+											className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+											placeholder="e.g. Design Team"
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											autoFocus
+										/>
+									</div>
+								</div>
+
+								{/* Description (Optional) */}
+								<div className="space-y-1">
 									<Label
-										htmlFor="channel-name"
+										htmlFor="channel-description"
 										className="text-xs uppercase font-bold text-muted-foreground"
 									>
-										Channel Name
+										Description <span className="text-[10px] font-normal lowercase">(optional)</span>
 									</Label>
 									<Input
-										id="channel-name"
-										className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
-										placeholder="e.g. Design Team"
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										autoFocus
+										id="channel-description"
+										className="bg-popover border-none text-[13px] h-9 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+										placeholder="What is this channel about?"
+										value={description}
+										onChange={(e) => setDescription(e.target.value)}
 									/>
 								</div>
 
@@ -255,6 +383,18 @@ export default function NewChannelModal({
 						{loading ? <span className="spinner" /> : 'Create'}
 					</Button>
 				</div>
+
+				{showCropModal && cropFile && (
+					<ImageEditor
+						open={showCropModal}
+						onOpenChange={(open) => setShowCropModal(open)}
+						file={cropFile}
+						onSave={handleSaveAvatarCrop}
+						aspectRatio={1}
+						circularCrop={true}
+						maxSizeMB={5}
+					/>
+				)}
 			</DialogContent>
 		</Dialog>
 	);

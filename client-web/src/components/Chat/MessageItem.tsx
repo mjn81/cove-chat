@@ -4,7 +4,8 @@ import { useAuthStore } from '@/store/store';
 import { Avatar } from '../Avatar';
 import { type Message, type Channel } from '@/types/api';
 import { FileBubble } from './FileBubble';
-import { Reply, Pencil, Trash2, Play, Pause, CornerUpLeft } from 'lucide-react';
+import { VideoMessageBubble } from './VideoMessageBubble';
+import { Reply, Pencil, Trash2, CornerUpLeft, Loader2, AlertCircle } from 'lucide-react';
 import { wsEditMessage, wsDeleteMessage } from '@/ws';
 import { JoinPreview } from './JoinPreview';
 import { ConfirmModal } from '../ConfirmModal';
@@ -185,7 +186,7 @@ export const MessageItem = memo(
 					style={{ transform: `translateX(${dragX}px)` }}
 				>
 					{/* Action Menu */}
-					{!isEditing && (
+					{!isEditing && !msg.pending && (
 						<div
 							className={`absolute right-4 -top-3 items-center gap-0.5 bg-background border border-border rounded-md shadow-lg overflow-hidden z-20 ${
 								showMobileMenu && isMobile
@@ -359,7 +360,7 @@ export const MessageItem = memo(
 								</div>
 							) : (
 								<div
-									className={`text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0`}
+									className={`text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 ${msg.pending ? 'opacity-60' : ''}`}
 									dir="auto"
 								>
 									{msg.text ? renderText(msg.text) : '[encrypted]'}
@@ -370,11 +371,34 @@ export const MessageItem = memo(
 									)}
 								</div>
 							)}
+							{msg.pending === 'sending' && (
+								<div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+									<Loader2 size={10} className="animate-spin" />
+									<span>Sending…</span>
+								</div>
+							)}
+							{msg.pending === 'failed' && (
+								<div className="flex items-center gap-1.5 text-[10px] text-destructive mt-0.5">
+									<AlertCircle size={10} />
+									<span>Failed to send</span>
+									<button
+										type="button"
+										onClick={() => (msg as any)._retry?.()}
+										className="underline hover:no-underline font-semibold"
+									>
+										Retry
+									</button>
+								</div>
+							)}
 							{joinCode && !isEditing && <JoinPreview inviteCode={joinCode} />}
 						</>
 					)}
-					{msg.type === 'voice' && <VoiceBubble msg={msg} />}
-					{msg.type === 'file' && <FileBubble msg={msg} />}
+					{(msg.type === 'file' || msg.type === 'voice') && (
+						<FileBubble msg={msg} />
+					)}
+					{msg.type === 'video' && (
+						<VideoMessageBubble msg={msg} />
+					)}
 				</div>
 			</div>
 		</div>
@@ -383,59 +407,3 @@ export const MessageItem = memo(
 
 MessageItem.displayName = 'MessageItem';
 
-const VoiceBubble = memo(({ msg }: { msg: Message }) => {
-	const [playing, setPlaying] = useState(false);
-	const audioRef = useRef<HTMLAudioElement | null>(null);
-
-	const bars = useMemo(
-		() =>
-			Array.from(
-				{ length: 28 },
-				(_, i) =>
-					Math.sin(i * 0.8 + (msg.id.charCodeAt(i % msg.id.length) ?? 1)) *
-						0.5 +
-					0.5,
-			),
-		[msg.id],
-	);
-
-	const handlePlay = () => {
-		if (!audioRef.current) return;
-		if (playing) {
-			audioRef.current.pause();
-			setPlaying(false);
-		} else {
-			audioRef.current.play();
-			setPlaying(true);
-		}
-	};
-
-	return (
-		<div className="flex items-center gap-3 bg-card border border-border rounded-md p-2 w-max max-w-full mt-1">
-			<button
-				className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition shrink-0"
-				onClick={handlePlay}
-			>
-				{playing ? (
-					<Pause size={18} className="fill-current" />
-				) : (
-					<Play size={18} className="fill-current ml-1" />
-				)}
-			</button>
-			<div className="flex items-end gap-[2px] h-8 shrink-0 overflow-hidden">
-				{bars.map((h, i) => (
-					<div
-						key={i}
-						className="w-1 bg-muted-foreground/30 rounded-full"
-						style={{ height: `${Math.max(20, h * 100)}%` }}
-					/>
-				))}
-			</div>
-			<span className="text-xs font-medium text-muted-foreground px-2 shrink-0">
-				0:00
-			</span>
-		</div>
-	);
-});
-
-VoiceBubble.displayName = 'VoiceBubble';

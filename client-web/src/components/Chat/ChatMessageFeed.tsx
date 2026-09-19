@@ -1,10 +1,14 @@
-import { useRef, useMemo, memo, useEffect } from 'react';
+import { useRef, useMemo, memo, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { ChevronDown } from 'lucide-react';
 import { type Message, type Channel } from '@/types/api';
 import { MessageItem } from './MessageItem';
 import { Avatar } from '../Avatar';
 import { isDirectMessage } from '@/utils/channel';
 import { getChannelDisplayName, useAuthStore } from '@/store/store';
+
+// In flex-col-reverse, scrollTop is 0 exactly at the bottom (newest message).
+const AT_BOTTOM_THRESHOLD = 100;
 
 interface ChatMessageFeedProps {
 	messages: (Message & { text?: string })[];
@@ -110,6 +114,12 @@ export const ChatMessageFeed = memo(
 		const isDM = isDirectMessage(channel);
 		const displayName = getChannelDisplayName(channel, user?.id || '');
 
+		const [isAtBottom, setIsAtBottom] = useState(true);
+
+		const scrollToBottom = useCallback(() => {
+			feedRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+		}, []);
+
 		const virtualizer = useVirtualizer({
 			count: renderedItems.length,
 			getScrollElement: () => feedRef.current,
@@ -123,7 +133,9 @@ export const ChatMessageFeed = memo(
 				const handler = (isScrolling: boolean) => {
 					// In flex-col-reverse, scrollTop is 0 at bottom and negative towards top.
 					// We want the absolute distance from the bottom.
-					cb(Math.abs(element.scrollTop), isScrolling);
+					const distance = Math.abs(element.scrollTop);
+					cb(distance, isScrolling);
+					setIsAtBottom(distance < AT_BOTTOM_THRESHOLD);
 				};
 
 				const onScroll = () => handler(true);
@@ -158,11 +170,12 @@ export const ChatMessageFeed = memo(
 		const endSpacerHeight = totalSize - (virtualItems[virtualItems.length - 1]?.end || 0);
 
 		return (
+			<div className="flex-1 relative z-10 min-h-0">
 			<div
-				className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 flex flex-col-reverse"
+				className="absolute inset-0 overflow-y-auto overflow-x-hidden px-4 py-6 flex flex-col-reverse"
 				ref={feedRef}
 				id="messages-feed"
-				style={{ 
+				style={{
 					overflowAnchor: 'none',
 					willChange: 'scroll-position',
 					overscrollBehaviorY: 'contain',
@@ -227,11 +240,11 @@ export const ChatMessageFeed = memo(
 							className="w-full shrink-0"
 						>
 							{item.type === 'date' ? (
-								<div className="flex items-center justify-center my-6 relative">
+								<div className="flex items-center justify-center my-6 relative select-none">
 									<div className="absolute inset-0 flex items-center">
-										<div className="w-full border-t border-[#3f4147]"></div>
+										<div className="w-full border-t border-border/50"></div>
 									</div>
-									<div className="relative flex justify-center text-xs font-semibold text-[#949ba4] bg-[#313338] px-2 rounded-lg">
+									<div className="relative flex justify-center items-center text-xs font-semibold text-muted-foreground bg-background px-3 py-0.5 rounded-full border border-border/50">
 										{item.label}
 									</div>
 								</div>
@@ -274,6 +287,20 @@ export const ChatMessageFeed = memo(
 				>
 					{hasNextPage && <span className="spinner small" />}
 				</div>
+			</div>
+
+			<button
+				type="button"
+				onClick={scrollToBottom}
+				aria-label="Scroll to latest messages"
+				className={`absolute bottom-4 right-4 z-20 w-9 h-9 rounded-full bg-secondary border border-border shadow-md flex items-center justify-center text-foreground transition-all duration-200 hover:bg-accent ${
+					isAtBottom
+						? 'opacity-0 scale-90 pointer-events-none'
+						: 'opacity-100 scale-100'
+				}`}
+			>
+				<ChevronDown size={18} />
+			</button>
 			</div>
 		);
 	},

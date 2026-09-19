@@ -11,14 +11,17 @@ vi.mock('@/utils/wails', () => ({
 }));
 
 const mockApiLogin = vi.fn();
+const mockApiRegister = vi.fn();
 const mockApiLogout = vi.fn();
 vi.mock('@/api/client', () => ({
 	apiLogin: (...args: unknown[]) => mockApiLogin(...args),
-	apiRegister: vi.fn(),
+	apiRegister: (...args: unknown[]) => mockApiRegister(...args),
 	apiLogout: (...args: unknown[]) => mockApiLogout(...args),
 	apiMe: vi.fn(),
 	apiUpdateProfile: vi.fn(),
 	apiDeleteAccount: vi.fn(),
+	apiGetMyRelationships: vi.fn().mockResolvedValue([]),
+	apiGetIncomingRequests: vi.fn().mockResolvedValue([]),
 }));
 
 const mockConnectWS = vi.fn();
@@ -146,5 +149,26 @@ describe('auth.slice logout', () => {
 		await useAuthStore.getState().logout();
 
 		expect(localStorage.getItem('nodetalk_token')).toBeNull();
+	});
+});
+
+describe('auth.slice register', () => {
+	it('registers and then immediately logs in the user directly', async () => {
+		mockApiRegister.mockResolvedValue({ id: 'u2', username: 'carol' });
+		mockApiLogin.mockResolvedValue({
+			id: 'u2',
+			username: 'carol',
+			domain: 'localhost',
+			status: 'online',
+			status_preference: '',
+			token: 'carol-token',
+		});
+
+		await useAuthStore.getState().register('carol', 'password123');
+
+		expect(mockApiRegister).toHaveBeenCalledWith('carol', 'password123');
+		expect(mockApiLogin).toHaveBeenCalledWith('carol', 'password123');
+		expect(useAuthStore.getState().user?.username).toBe('carol');
+		expect(mockConnectWS).toHaveBeenCalledWith('carol-token');
 	});
 });

@@ -19,21 +19,27 @@ type ChannelBroadcaster interface {
 	BroadcastMemberLeft(channelID string, userID string)
 	BroadcastMemberRoleUpdated(channelID string, userID string, role int)
 	BroadcastPresence(userID string, status string)
+	BroadcastRelationshipUpdate(targetUserID string, rel *models.Relationship)
+	BroadcastVideoReady(fileID string, channelID string)
+	BroadcastChannelDeleted(channelID string, targetUserIDs []string)
 	SendChannelKey(channelID, userID string)
 }
 
 // Handler bundles all HTTP handler dependencies.
 type Handler struct {
-	Store          *store.Store
-	Sessions       *auth.SessionStore
-	Hub            ChannelBroadcaster
-	KEK            []byte
-	Storage        storage.BlobStorage
-	TokenTTL       time.Duration
-	MaxFileSizeMB  int
-	UDPPort        int
-	IsDev          bool
-	FrontendOrigin string
+	Store               *store.Store
+	Sessions            *auth.SessionStore
+	Hub                 ChannelBroadcaster
+	KEK                 []byte
+	Storage             storage.BlobStorage
+	TokenTTL            time.Duration
+	MaxFileSizeMB       int
+	MaxVideoSizeMB      int
+	MaxVideoDurationSec int
+	FFmpegPath          string
+	UDPPort             int
+	IsDev               bool
+	FrontendOrigin      string
 }
 
 
@@ -63,6 +69,12 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("GET /api/users",                         protect(h.SearchUsers))
 	mux.Handle("GET /api/users/{id}",                    protect(h.GetUser))
 	mux.Handle("GET /api/users/{id}/presence",           protect(h.GetPresence))
+
+	// Relationships (Friends / Blocking / Requests)
+	mux.Handle("GET /api/relationships",                 protect(h.ListRelationships))
+	mux.Handle("GET /api/relationships/incoming",        protect(h.ListIncomingRequests))
+	mux.Handle("GET /api/users/{id}/relationship",       protect(h.GetRelationship))
+	mux.Handle("PUT /api/users/{id}/relationship",       protect(h.HandleRelationshipAction))
 
 	mux.Handle("POST /api/channels",                     protect(h.CreateChannel))
 	mux.Handle("GET /api/channels",                      protect(h.ListChannels))
