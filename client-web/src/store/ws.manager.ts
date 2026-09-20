@@ -6,6 +6,7 @@ import type { Message } from '@/types/api';
 import { useAppStore } from './app.slice';
 import { useVoiceStore } from './voiceStore';
 import { buildMessagePreview } from '@/utils/messagePreview';
+import { initWhisperListeners } from './whisperStore';
 
 let initialized = false;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -43,6 +44,8 @@ function retryFailedMessages() {
 export function initWebSocket() {
 	if (initialized) return;
 	initialized = true;
+
+	initWhisperListeners();
 
 	onWS('open', () => {
 		useAppStore.getState().setWsState('connected');
@@ -97,21 +100,25 @@ export function initWebSocket() {
 
 		// Bump conversation-list recency for every message, including our own
 		// (sent from another session/device), so ordering stays Telegram-like.
-		// The preview decrypts async and patches in via bumpLastMessage's
-		// optional preview/messageId args once it resolves.
-		bumpLastMessage(msg.channel_id, msg.sent_at, undefined, msg.id);
+		// Wait for the preview to build before bumping so that recency and
+		// preview update in a single atomic dispatch (avoids animation stutter/flicker).
 		const channelForPreview = channels.find((c) => c.id === msg.channel_id);
 		if (channelForPreview) {
-			buildMessagePreview(
-				channelForPreview,
-				msg.sender_id,
-				msg.type,
-				msg.ciphertext,
-				msg.nonce,
-				currentUserId || '',
-			)
-				.then((preview) => bumpLastMessage(msg.channel_id, msg.sent_at, preview, msg.id))
-				.catch(() => {});
+			try {
+				const preview = await buildMessagePreview(
+					channelForPreview,
+					msg.sender_id,
+					msg.type,
+					msg.ciphertext,
+					msg.nonce,
+					currentUserId || '',
+				);
+				bumpLastMessage(msg.channel_id, msg.sent_at, preview, msg.id);
+			} catch {
+				bumpLastMessage(msg.channel_id, msg.sent_at, undefined, msg.id);
+			}
+		} else {
+			bumpLastMessage(msg.channel_id, msg.sent_at, undefined, msg.id);
 		}
 
 		// If this channel is not in our channel list (e.g. was previously cleared/deleted by this user,

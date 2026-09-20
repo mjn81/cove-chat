@@ -71,20 +71,39 @@ export function isPendingStillSending(
 // Called when a real server-echoed message for the current user arrives —
 // removes the oldest still-'sending' placeholder for that channel so the
 // real message takes its place instead of appearing as a duplicate.
+//
+// Placeholders are always inserted at the front of the newest page
+// (addPendingMessage unshifts), so the array is newest-first both across
+// pages and within a page. That means the *oldest* pending entry is the
+// *last* 'sending' match found while scanning in that same newest-first
+// order — not the first. Removing the first match (as this used to do)
+// deleted the most-recently-sent placeholder instead: sending several
+// messages in quick succession would resolve them out of order, leaving a
+// stuck "sending" bubble for one message and a duplicate for another once
+// its real echo arrived later and got added on top of the wrongly-kept
+// placeholder.
 export function resolveOldestPending(queryClient: QueryClient, channelId: string) {
 	queryClient.setQueryData(messagesKey(channelId), (old: any) => {
 		if (!old || !old.pages) return old;
-		let removed = false;
-		const pages = old.pages.map((page: any[]) =>
-			page.filter((m) => {
-				if (!removed && m.pending === 'sending') {
-					removed = true;
-					return false;
+
+		let targetPageIdx = -1;
+		let targetMsgIdx = -1;
+		for (let p = 0; p < old.pages.length; p++) {
+			const page = old.pages[p];
+			for (let m = 0; m < page.length; m++) {
+				if (page[m].pending === 'sending') {
+					// Keep overwriting — scanning newest-first, the last match
+					// found is the oldest pending entry.
+					targetPageIdx = p;
+					targetMsgIdx = m;
 				}
-				return true;
-			}),
+			}
+		}
+		if (targetPageIdx === -1) return old;
+
+		const pages = old.pages.map((page: any[], p: number) =>
+			p === targetPageIdx ? page.filter((_: any, m: number) => m !== targetMsgIdx) : page,
 		);
-		if (!removed) return old;
 		return { ...old, pages };
 	});
 }

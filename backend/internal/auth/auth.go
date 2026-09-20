@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -172,28 +173,69 @@ func (ss *SessionStore) sweepExpired() {
 
 // ---- HTTP Helpers ---------------------------------------------------------- //
 
-// BearerToken extracts the token from the `Authorization: Bearer <token>` header or query parameter.
-// This is the desktop/API client path — it never reads the session cookie.
+// wsAuthSubprotocolPrefix marks the WebSocket subprotocol a client can offer
+// to authenticate the handshake without putting the token in the URL, where
+// it would leak into access logs, proxy logs, and browser history. Used only
+// by the Wails desktop client, whose webview doesn't reliably persist
+// httpOnly cookies. The token's base64url padding ('=') is stripped by the
+// client since '=' isn't a legal character in an HTTP token / WS subprotocol
+// value, and restored here.
+const wsAuthSubprotocolPrefix = "nodetalk-token."
+
+// wsAuthSubprotocol scans the Sec-WebSocket-Protocol header for a
+// "nodetalk-token.<token>" entry. It returns the exact subprotocol string
+// (which must be echoed back to the client verbatim per RFC 6455 to accept
+// the connection) and the decoded session token.
+func wsAuthSubprotocol(r *http.Request) (proto, token string, ok bool) {
+	header := r.Header.Get("Sec-WebSocket-Protocol")
+	if header == "" {
+		return "", "", false
+	}
+	for _, p := range strings.Split(header, ",") {
+		p = strings.TrimSpace(p)
+		rest, found := strings.CutPrefix(p, wsAuthSubprotocolPrefix)
+		if !found || rest == "" {
+			continue
+		}
+		if pad := len(rest) % 4; pad != 0 {
+			rest += strings.Repeat("=", 4-pad)
+		}
+		return p, rest, true
+	}
+	return "", "", false
+}
+
+// WSSubprotocol reports the subprotocol a client offered for token auth (if
+// any), so the WebSocket handshake can echo it back per RFC 6455.
+func WSSubprotocol(r *http.Request) (string, bool) {
+	proto, _, ok := wsAuthSubprotocol(r)
+	return proto, ok
+}
+
+// BearerToken extracts the token from the `Authorization: Bearer <token>`
+// header. This is the desktop/API client path — it never reads the session
+// cookie. Tokens are never accepted via URL query parameter: query strings
+// land in server access logs, proxy logs, and browser history.
 func BearerToken(r *http.Request) (string, error) {
 	h := r.Header.Get("Authorization")
 	if len(h) >= 8 && h[:7] == "Bearer " {
 		return h[7:], nil
 	}
-	// Fallback for query parameter (required for WebSocket handshake)
-	if t := r.URL.Query().Get("token"); t != "" {
-		return t, nil
-	}
 	return "", errors.New("auth: missing or malformed token")
 }
 
 // ResolveToken extracts the session token from an incoming request, preferring
-// the Authorization header / query parameter (desktop/API clients) and
-// falling back to the httpOnly session cookie (web client). viaCookie reports
-// whether the cookie was the source, which callers use to decide whether
-// CSRF protection applies (bearer-token requests can't be forged cross-site
-// the way ambient cookies can).
+// the Authorization header (desktop/API clients), then the WebSocket
+// subprotocol auth scheme (desktop client's WS handshake), and falling back
+// to the httpOnly session cookie (web client). viaCookie reports whether the
+// cookie was the source, which callers use to decide whether CSRF protection
+// applies (bearer-token requests can't be forged cross-site the way ambient
+// cookies can).
 func ResolveToken(r *http.Request) (token string, viaCookie bool, err error) {
 	if t, berr := BearerToken(r); berr == nil {
+		return t, false, nil
+	}
+	if _, t, ok := wsAuthSubprotocol(r); ok {
 		return t, false, nil
 	}
 	if c, cerr := r.Cookie(SessionCookieName); cerr == nil && c.Value != "" {

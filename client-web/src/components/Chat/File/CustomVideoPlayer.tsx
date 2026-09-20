@@ -131,9 +131,22 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 				setShowSpeedSlider(false);
 			}
 		};
-		document.addEventListener('mousedown', handleClickOutside);
 		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, [showSpeedSlider]);
+
+	// Smooth playback progress sync via requestAnimationFrame
+	useEffect(() => {
+		if (!isPlaying) return;
+		let rafId: number;
+		const tick = () => {
+			if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
+				setCurrentTime(videoRef.current.currentTime);
+				rafId = requestAnimationFrame(tick);
+			}
+		};
+		rafId = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(rafId);
+	}, [isPlaying]);
 
 	// Native video event listeners
 	const handleTimeUpdate = () => {

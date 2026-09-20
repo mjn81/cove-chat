@@ -13,7 +13,7 @@ import {
 	Check,
 	Clock,
 	Loader2,
-	Trash2,
+	Lock,
 } from 'lucide-react';
 import { type Channel } from '@/types/api';
 import {
@@ -21,6 +21,7 @@ import {
 	useAppStore,
 	useAuthStore,
 	useChannelStore,
+	useWhisperStore,
 } from '@/store/store';
 import { GroupSettingsModal } from './GroupSettingsModal';
 import { ChannelInfoModal } from './ChannelInfoModal';
@@ -32,7 +33,6 @@ import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useVoiceStore } from '@/store/voiceStore';
 
 import { UserProfileModal } from '../UserProfileModal';
-import { DeleteChatModal } from './DeleteChatModal';
 import { getFileUrl } from '@/api/client';
 
 interface ChatTopbarProps {
@@ -51,7 +51,6 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 	const [showSettings, setShowSettings] = useState(false);
 	const [showUserProfile, setShowUserProfile] = useState(false);
 	const [showChannelInfo, setShowChannelInfo] = useState(false);
-	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
 
 	const authUserId = useAuthStore((state) => state.user?.id);
@@ -94,6 +93,15 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 	const isActive = useVoiceStore(
 		(state) => state.isActive && state.activeChannelId === liveChannel.id,
 	);
+
+	const isWhisperModeActive = useWhisperStore((state) => state.isWhisperModeActive);
+	const whisperPeerId = useWhisperStore((state) => state.whisperPeerId);
+	const whisperSession = useWhisperStore((state) => state.activeSession);
+	const incomingInvite = useWhisperStore((state) => state.incomingInvite);
+	const acceptInvite = useWhisperStore((state) => state.acceptInvite);
+	const isWhisperActiveHere = isWhisperModeActive && whisperPeerId === otherMemberId;
+	const hasSessionForPeer = Boolean(whisperSession && whisperSession.peerId === otherMemberId);
+	const hasIncomingInviteForPeer = Boolean(incomingInvite && incomingInvite.initiatorId === otherMemberId);
 
 	return (
 		<Profiler id="ChatTopbar" onRender={logProfiler}>
@@ -181,146 +189,195 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						)}
 					</div>
 				</div>
-				<div className="flex items-center gap-2 sm:gap-3 text-muted-foreground">
+				<div className="flex items-center gap-1.5 text-muted-foreground">
 					{/* Add Friend button if DM and not friends */}
 					{canAddFriend && (
-						<div>
-							{isRequested ? (
-								<div
-									className="p-1 text-muted-foreground select-none"
-									title="Friend request pending"
-								>
-									<Clock size={20} className="text-amber-500 opacity-80" />
-								</div>
-							) : incomingReq ? (
-								<button
-									type="button"
-									disabled={isSendingFriendReq}
-									onClick={async () => {
-										setIsSendingFriendReq(true);
-										try {
-											await relationshipAction(otherMemberId, 'accept');
-										} catch (err) {
-											console.error('Failed to accept friend request', err);
-										} finally {
-											setIsSendingFriendReq(false);
-										}
-									}}
-									className="p-1 hover:text-emerald-400 text-emerald-500 transition cursor-pointer"
-									title="Accept Friend Request"
-								>
-									{isSendingFriendReq ? (
-										<Loader2 size={20} className="animate-spin" />
-									) : (
-										<Check size={20} />
-									)}
-								</button>
-							) : (
-								<button
-									type="button"
-									disabled={isSendingFriendReq}
-									onClick={async () => {
-										setIsSendingFriendReq(true);
-										try {
-											await relationshipAction(otherMemberId, 'request');
-										} catch (err) {
-											console.error('Failed to send friend request', err);
-										} finally {
-											setIsSendingFriendReq(false);
-										}
-									}}
-									className="p-1 hover:text-foreground text-muted-foreground transition cursor-pointer"
-									title="Add Friend"
-								>
-									{isSendingFriendReq ? (
-										<Loader2 size={20} className="animate-spin" />
-									) : (
-										<UserPlus size={20} className="opacity-70 hover:opacity-100 transition-opacity" />
-									)}
-								</button>
-							)}
-						</div>
+						isRequested ? (
+							<div
+								className="w-9 h-9 flex items-center justify-center text-muted-foreground select-none"
+								title="Friend request pending"
+							>
+								<Clock size={20} className="text-amber-500 opacity-80" />
+							</div>
+						) : incomingReq ? (
+							<button
+								type="button"
+								disabled={isSendingFriendReq}
+								onClick={async () => {
+									setIsSendingFriendReq(true);
+									try {
+										await relationshipAction(otherMemberId, 'accept');
+									} catch (err) {
+										console.error('Failed to accept friend request', err);
+									} finally {
+										setIsSendingFriendReq(false);
+									}
+								}}
+								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-emerald-400 text-emerald-500 transition-colors cursor-pointer"
+								title="Accept Friend Request"
+							>
+								{isSendingFriendReq ? (
+									<Loader2 size={20} className="animate-spin" />
+								) : (
+									<Check size={20} />
+								)}
+							</button>
+						) : (
+							<button
+								type="button"
+								disabled={isSendingFriendReq}
+								onClick={async () => {
+									setIsSendingFriendReq(true);
+									try {
+										await relationshipAction(otherMemberId, 'request');
+									} catch (err) {
+										console.error('Failed to send friend request', err);
+									} finally {
+										setIsSendingFriendReq(false);
+									}
+								}}
+								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
+								title="Add Friend"
+							>
+								{isSendingFriendReq ? (
+									<Loader2 size={20} className="animate-spin" />
+								) : (
+									<UserPlus size={20} className="opacity-70 hover:opacity-100 transition-opacity" />
+								)}
+							</button>
+						)
 					)}
 
-					<div
-						className={`flex items-center bg-secondary/50 rounded-lg px-2 transition-all duration-200 ${isSearching || searchQuery ? 'w-44 sm:w-64 md:w-72 ring-1 ring-primary/20' : 'w-9 bg-transparent'}`}
-					>
+					{/* Search button / input */}
+					{isSearching || searchQuery ? (
+						<div className="flex items-center bg-secondary/60 rounded-lg px-2.5 h-9 w-44 sm:w-64 md:w-72 ring-1 ring-primary/20 transition-all duration-200">
+							<button
+								type="button"
+								onClick={() => {
+									if (!searchQuery) setIsSearching(false);
+								}}
+								className="hover:text-foreground text-primary transition-colors p-1"
+								title="Search"
+							>
+								<Search size={18} />
+							</button>
+							<input
+								autoFocus
+								type="text"
+								placeholder="Search..."
+								value={searchQuery}
+								onChange={(e) => onSearchChange(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Escape') {
+										onSearchChange('');
+										setIsSearching(false);
+									}
+								}}
+								className="bg-transparent border-none outline-none text-sm w-full ml-1 text-foreground placeholder:text-muted-foreground/50"
+								onBlur={() => {
+									if (!searchQuery) setIsSearching(false);
+								}}
+							/>
+							<button
+								type="button"
+								onClick={() => {
+									if (searchQuery) {
+										onSearchChange('');
+									} else {
+										setIsSearching(false);
+									}
+								}}
+								className="p-1 hover:text-foreground text-muted-foreground"
+							>
+								<X size={14} />
+							</button>
+						</div>
+					) : (
 						<button
-							onClick={() => setIsSearching(!isSearching)}
-							className="hover:text-foreground transition p-1"
+							type="button"
+							onClick={() => setIsSearching(true)}
+							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							title="Search"
 						>
-							<Search
-								size={20}
-								className={`${isSearching || searchQuery ? 'text-primary opacity-100' : 'opacity-70'}`}
-							/>
+							<Search size={20} className="opacity-70 hover:opacity-100" />
 						</button>
-						{(isSearching || searchQuery) && (
-							<>
-								<input
-									autoFocus
-									type="text"
-									placeholder="Search..."
-									value={searchQuery}
-									onChange={(e) => onSearchChange(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === 'Escape') {
-											onSearchChange('');
-											setIsSearching(false);
-										}
-									}}
-									className="bg-transparent border-none outline-none text-sm w-full ml-1 text-foreground placeholder:text-muted-foreground/50"
-									onBlur={() => {
-										if (!searchQuery) setIsSearching(false);
-									}}
-								/>
-								<button
-									onClick={() => {
-										if (searchQuery) {
-											onSearchChange('');
-										} else {
-											setIsSearching(false);
-										}
-									}}
-									className="p-1 hover:text-foreground"
-								>
-									<X size={14} />
-								</button>
-							</>
-						)}
-					</div>
+					)}
+
+					{isDM && otherMemberId !== currentUserId && (
+						<button
+							type="button"
+							onClick={async () => {
+								if (!isFriend) return;
+								if (hasIncomingInviteForPeer && incomingInvite) {
+									await acceptInvite(incomingInvite);
+									return;
+								}
+								if (isWhisperActiveHere) {
+									useWhisperStore.getState().exitWhisperMode();
+									return;
+								}
+								if (hasSessionForPeer) {
+									useWhisperStore.getState().enterWhisperMode(otherMemberId);
+									return;
+								}
+								const peerName = getChannelDisplayName(liveChannel, currentUserId);
+								const loaded = await useWhisperStore.getState().loadSessionForPeer(otherMemberId, peerName);
+								if (!loaded) {
+									useWhisperStore.getState().openStartModal(otherMemberId, peerName);
+								}
+							}}
+							disabled={!isFriend}
+							className={`relative w-9 h-9 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+								!isFriend
+									? 'opacity-40 cursor-not-allowed text-muted-foreground'
+									: hasIncomingInviteForPeer
+									? 'bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30 shadow-sm'
+									: isWhisperActiveHere
+									? 'bg-foreground/15 text-foreground border border-foreground/30 hover:bg-foreground/20 shadow-sm'
+									: hasSessionForPeer
+									? 'text-foreground/90 hover:bg-secondary/60'
+									: 'hover:bg-secondary/60 text-muted-foreground hover:text-foreground'
+							}`}
+							title={
+								!isFriend
+									? 'Whisper requires mutual friendship'
+									: hasIncomingInviteForPeer
+									? `Incoming Whisper request from ${incomingInvite?.initiatorUsername} - click to accept`
+									: isWhisperActiveHere
+									? 'Exit Whisper Mode'
+									: hasSessionForPeer
+									? 'Enter Whisper Mode (E2EE)'
+									: 'Start Secure Whisper (E2EE)'
+							}
+						>
+							<Lock size={19} className={isWhisperActiveHere || hasIncomingInviteForPeer ? 'text-current' : 'opacity-80 hover:opacity-100'} />
+							{hasIncomingInviteForPeer && (
+								<span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
+							)}
+						</button>
+					)}
 
 					{isMobile && !isDM && (
 						<button
+							type="button"
 							onClick={() => setRightSidebarOpen(!isRightSidebarOpen)}
-							className={`p-1 hover:text-foreground transition ${isRightSidebarOpen ? 'text-primary' : ''}`}
+							className={`w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground transition-colors cursor-pointer ${
+								isRightSidebarOpen ? 'text-primary bg-primary/10' : 'text-muted-foreground'
+							}`}
 							title="Show Members"
 						>
-							<Users size={22} />
+							<Users size={20} />
 						</button>
 					)}
 
 					{canManage && (
 						<button
+							type="button"
 							onClick={() => setShowSettings(true)}
-							className="hover:text-foreground transition"
+							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							title="Channel Settings"
 						>
 							<SlidersHorizontal
-								size={22}
-								className="opacity-80 hover:opacity-100"
-							/>
-						</button>
-					)}
-
-					{isDM && (
-						<button
-							type="button"
-							onClick={() => setShowDeleteModal(true)}
-							className="hover:text-destructive text-muted-foreground transition p-1 cursor-pointer"
-							title="Delete Chat"
-						>
-							<Trash2
 								size={20}
 								className="opacity-80 hover:opacity-100"
 							/>
@@ -329,11 +386,12 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 					{isWails() && (
 						<button
+							type="button"
 							onClick={() => (isActive ? stopVoice() : startVoice(channel.id))}
-							className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors duration-200 ${
+							className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
 								isActive
 									? 'bg-primary/10 text-primary border border-primary/30'
-									: 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+									: 'hover:bg-secondary/60 text-muted-foreground hover:text-foreground'
 							}`}
 							title={isActive ? 'Leave Voice Chat' : 'Join Voice Chat'}
 						>
@@ -363,14 +421,6 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						open={showChannelInfo}
 						onOpenChange={setShowChannelInfo}
 						onOpenSettings={() => setShowSettings(true)}
-					/>
-				)}
-
-				{showDeleteModal && (
-					<DeleteChatModal
-						channel={liveChannel}
-						isOpen={showDeleteModal}
-						onClose={() => setShowDeleteModal(false)}
 					/>
 				)}
 			</div>

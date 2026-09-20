@@ -12,16 +12,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMessages } from '@/hooks/useMessages';
 import type { Message, Channel } from '@/types/api';
 import { onWS, decryptMessage, wsSendReadReceipt } from '@/ws';
-import { useAuthStore, useCryptoStore } from '@/store/store';
+import { useAuthStore, useCryptoStore, useWhisperStore } from '@/store/store';
 import { db } from '@/lib/db';
 import { resolveOldestPending } from '@/utils/pendingMessages';
+import { isDirectMessage } from '@/utils/channel';
 
+import { Lock } from 'lucide-react';
 import { ChatTopbar } from './Chat/ChatTopbar';
 import { ChatMessageFeed } from './Chat/ChatMessageFeed';
 import { ChatInputArea } from './Chat/ChatInputArea';
 import { VoicePlayer } from './Chat/VoicePlayer';
 import { ForwardModal } from './Chat/ForwardModal';
 import { ChatBackgroundPattern } from './Chat/ChatBackgroundPattern';
+import { WhisperChatArea } from './Chat/WhisperChatArea';
 
 interface ChatAreaProps {
 	channel: Channel;
@@ -35,6 +38,20 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState('');
+
+	const isWhisperModeActive = useWhisperStore((state) => state.isWhisperModeActive);
+	const whisperPeerId = useWhisperStore((state) => state.whisperPeerId);
+	const incomingInvite = useWhisperStore((state) => state.incomingInvite);
+	const acceptInvite = useWhisperStore((state) => state.acceptInvite);
+	const rejectInvite = useWhisperStore((state) => state.rejectInvite);
+	const isConnecting = useWhisperStore((state) => state.isConnecting);
+
+	const isDM = isDirectMessage(channel);
+	const otherMemberId = isDM
+		? channel.members?.find((m) => m !== user?.id) || channel.members?.[0]
+		: undefined;
+	const isWhisperActive = isDM && isWhisperModeActive && Boolean(otherMemberId && whisperPeerId === otherMemberId);
+	const hasIncomingInviteForPeer = Boolean(isDM && incomingInvite && otherMemberId && incomingInvite.initiatorId === otherMemberId);
 
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(channel.id);
@@ -186,6 +203,14 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 		setForwardMessage(msg);
 	}, []);
 
+	if (isWhisperActive) {
+		return (
+			<Profiler id="ChatArea" onRender={logProfiler}>
+				<WhisperChatArea channel={channel} />
+			</Profiler>
+		);
+	}
+
 	return (
 		<Profiler id="ChatArea" onRender={logProfiler}>
 			<div className="flex flex-col h-full w-full bg-background relative overflow-hidden overscroll-none">
@@ -196,6 +221,34 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 					searchQuery={searchQuery}
 					onSearchChange={setSearchQuery}
 				/>
+				{hasIncomingInviteForPeer && incomingInvite && (
+					<div className="bg-secondary/40 border-b border-border px-4 py-2.5 flex items-center justify-between gap-3 text-xs z-10 animate-in fade-in slide-in-from-top-2 duration-150">
+						<div className="flex items-center gap-2.5 min-w-0">
+							<Lock className="w-4 h-4 text-muted-foreground shrink-0" />
+							<span className="text-muted-foreground truncate">
+								<strong className="text-foreground font-medium">{incomingInvite.initiatorUsername}</strong> invited you to a Whisper chat
+							</span>
+						</div>
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								onClick={() => acceptInvite(incomingInvite)}
+								disabled={isConnecting}
+								className="px-3.5 py-1 bg-foreground text-background font-medium rounded-lg hover:opacity-90 active:scale-98 transition text-xs cursor-pointer shadow-xs disabled:opacity-50"
+							>
+								{isConnecting ? 'Connecting...' : 'Accept'}
+							</button>
+							<button
+								type="button"
+								onClick={() => rejectInvite(incomingInvite.sessionId)}
+								disabled={isConnecting}
+								className="px-3.5 py-1 bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground font-medium rounded-lg active:scale-98 transition text-xs cursor-pointer disabled:opacity-50"
+							>
+								Decline
+							</button>
+						</div>
+					</div>
+				)}
 				<VoicePlayer />
 				<ChatMessageFeed
 					messages={filteredMessages}

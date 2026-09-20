@@ -9,3 +9,17 @@ export function isDirectMessage(channel: Channel): boolean {
 		(!channel.name || channel.name.trim() === '')
 	);
 }
+
+export function getChannelDisplayName(
+	ch: Channel,
+	currentUserId: string,
+): string {
+	if (isDirectMessage(ch)) {
+		const otherId = ch.members.find((m: string) => m !== currentUserId);
+		if (otherId && ch.member_names && ch.member_names[otherId]) {
+			return ch.member_names[otherId];
+		}
+		return otherId || 'Unknown';
+	}
+	return ch.name || `Group (${ch.members.length})`;
+}

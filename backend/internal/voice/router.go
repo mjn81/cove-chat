@@ -5,6 +5,7 @@ import (
 	"net"
 	"nodetalk/backend/internal/auth"
 	"nodetalk/backend/internal/logger"
+	"nodetalk/backend/internal/models"
 	"strings"
 	"sync"
 )
@@ -23,24 +24,36 @@ type VoiceStateNotifier interface {
 	SendVoiceState(userID string, channelID string, activeUsers []string)
 }
 
-// Router handles UDP voice packet routing between users within channel sessions.
-type Router struct {
-	sessions *auth.SessionStore
-	notifier VoiceStateNotifier
-	mu       sync.RWMutex
-	addrMap  map[string]*net.UDPAddr   // userID -> remoteAddr
-	userMap  map[string]string         // remoteAddr.String() -> userID
-	active   map[string]map[string]bool // channelID -> set of userIDs joined in voice
+// MembershipChecker verifies a user belongs to a channel before letting them
+// join its live voice session. Implemented by *store.Store.
+type MembershipChecker interface {
+	GetUserChannel(userID, channelID string) (*models.UserChannel, error)
 }
 
-// NewRouter creates a new Voice Router.
-func NewRouter(sessions *auth.SessionStore, notifier VoiceStateNotifier) *Router {
+// Router handles UDP voice packet routing between users within channel sessions.
+type Router struct {
+	sessions   *auth.SessionStore
+	notifier   VoiceStateNotifier
+	membership MembershipChecker
+	mu         sync.RWMutex
+	addrMap    map[string]*net.UDPAddr    // userID -> remoteAddr
+	userMap    map[string]string          // remoteAddr.String() -> userID
+	active     map[string]map[string]bool // channelID -> set of userIDs joined in voice
+}
+
+// NewRouter creates a new Voice Router. membership is used to verify a user
+// is actually a member of a channel before admitting them to its voice
+// session — without it, any registered user could join and eavesdrop on
+// (or inject audio into) an arbitrary channel's call by guessing/observing
+// its ID.
+func NewRouter(sessions *auth.SessionStore, notifier VoiceStateNotifier, membership MembershipChecker) *Router {
 	return &Router{
-		sessions: sessions,
-		notifier: notifier,
-		addrMap:  make(map[string]*net.UDPAddr),
-		userMap:  make(map[string]string),
-		active:   make(map[string]map[string]bool),
+		sessions:   sessions,
+		notifier:   notifier,
+		membership: membership,
+		addrMap:    make(map[string]*net.UDPAddr),
+		userMap:    make(map[string]string),
+		active:     make(map[string]map[string]bool),
 	}
 }
 
@@ -137,14 +150,60 @@ func (r *Router) handleRegister(addr *net.UDPAddr, token string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Cleanup old mappings if any
+	// Cleanup this user's old address mapping, if any.
 	if oldAddr, ok := r.addrMap[session.UserID]; ok {
 		delete(r.userMap, oldAddr.String())
+	}
+
+	// The address we're about to claim may still be mapped to a *different*
+	// user (e.g. that user crashed/dropped without unregistering and a NAT
+	// later reassigned their public address to this one). Without clearing
+	// that stale reverse mapping, handleAudio would keep resolving the old
+	// user's addrMap entry to this address and misroute their audio stream
+	// to whoever now holds it.
+	if prevUserID, ok := r.userMap[addr.String()]; ok && prevUserID != session.UserID {
+		if prevAddr, ok := r.addrMap[prevUserID]; ok && prevAddr.String() == addr.String() {
+			delete(r.addrMap, prevUserID)
+		}
 	}
 
 	r.addrMap[session.UserID] = addr
 	r.userMap[addr.String()] = session.UserID
 	logger.Infof("voice: SUCCESSFUL REGISTRATION - User: %s, Port: %s", session.UserID, addr.String())
+}
+
+// RemoveUser purges a user from all voice routing state — their registered
+// address and any channel voice sessions they were part of. Call this on WS
+// disconnect / session expiry: without it, a client that drops without
+// sending a Leave packet (crash, network loss) stays a "ghost" participant
+// in the channel's voice session forever, and their addrMap/userMap entries
+// leak for the life of the process.
+func (r *Router) RemoveUser(userID string) {
+	r.mu.Lock()
+	addr, hadAddr := r.addrMap[userID]
+	if hadAddr {
+		delete(r.addrMap, userID)
+		delete(r.userMap, addr.String())
+	}
+
+	var affectedChannels []string
+	for channelID, participants := range r.active {
+		if participants[userID] {
+			delete(participants, userID)
+			if len(participants) == 0 {
+				delete(r.active, channelID)
+			}
+			affectedChannels = append(affectedChannels, channelID)
+		}
+	}
+	r.mu.Unlock()
+
+	if hadAddr {
+		logger.Infof("voice: removed user %s from voice routing (disconnected)", userID)
+	}
+	for _, channelID := range affectedChannels {
+		r.notifyVoiceUpdate(channelID, "")
+	}
 }
 
 func (r *Router) handleJoin(addr *net.UDPAddr, channelID string) {
@@ -155,6 +214,13 @@ func (r *Router) handleJoin(addr *net.UDPAddr, channelID string) {
 	if !ok {
 		logger.Warnf("voice: join ignored for unregistered addr %v", addr)
 		return
+	}
+
+	if r.membership != nil {
+		if _, err := r.membership.GetUserChannel(userID, channelID); err != nil {
+			logger.Warnf("voice: join REJECTED for user %s: not a member of channel %s", userID, channelID)
+			return
+		}
 	}
 
 	r.mu.Lock()

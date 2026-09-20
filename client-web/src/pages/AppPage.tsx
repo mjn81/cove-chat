@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { PanelImperativeHandle } from 'react-resizable-panels';
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -6,10 +7,12 @@ import {
 } from '@/components/ui/resizable';
 import LeftSidebar from '@/components/Layout/LeftSidebar';
 import RightSidebar from '@/components/Layout/RightSidebar';
+import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
 import { ChatBackgroundPattern } from '@/components/Chat/ChatBackgroundPattern';
+import { cn } from '@/lib/utils';
 
-import { useAppStore, useChannelStore } from '@/store/store';
+import { useAppStore, useChannelStore, initWhisperListeners } from '@/store/store';
 import { onWS } from '@/ws';
 import { ensureZstdReady } from '@/utils/file';
 import { requestNotificationPermission } from '@/utils/notifications';
@@ -18,6 +21,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VoiceChatController } from '@/components/Voice/VoiceChatController';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
+import { WhisperIncomingToast } from '@/components/WhisperIncomingToast';
+import { WhisperStartModal } from '@/components/Chat/WhisperStartModal';
+import { WhisperSafetyNumberModal } from '@/components/Chat/WhisperSafetyNumberModal';
 
 export default function AppPage() {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
@@ -29,6 +35,8 @@ export default function AppPage() {
 		isRightSidebarOpen,
 		setLeftSidebarOpen,
 		setRightSidebarOpen,
+		sidebarTab,
+		setSidebarTab,
 	} = useAppStore();
 
 	useEffect(() => {
@@ -57,6 +65,7 @@ export default function AppPage() {
 	useEffect(() => {
 		ensureZstdReady();
 		requestNotificationPermission();
+		initWhisperListeners();
 
 		const unsubChannel = onWS('channel_update', () => {
 			refreshChannels();
@@ -68,6 +77,11 @@ export default function AppPage() {
 	}, [refreshChannels]);
 
 	const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+	const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+	const [isLeftTransitioning, setIsLeftTransitioning] = useState(false);
+	const [isRightTransitioning, setIsRightTransitioning] = useState(false);
+	const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
+	const rightPanelRef = useRef<PanelImperativeHandle | null>(null);
 
 	// Close sidebars when active channel changes on mobile
 	useEffect(() => {
@@ -77,15 +91,51 @@ export default function AppPage() {
 		}
 	}, [activeChannel?.id, isMobile]);
 
+	const toggleLeftCollapse = () => {
+		const panel = leftPanelRef.current;
+		if (!panel) return;
+		setIsLeftTransitioning(true);
+		setTimeout(() => setIsLeftTransitioning(false), 310);
+		if (isLeftCollapsed) {
+			panel.expand();
+			if (panel.getSize().inPixels <= 70) {
+				panel.resize(280);
+			}
+		} else {
+			panel.collapse();
+		}
+	};
+
+	const toggleRightCollapse = () => {
+		const panel = rightPanelRef.current;
+		if (!panel) return;
+		setIsRightTransitioning(true);
+		setTimeout(() => setIsRightTransitioning(false), 310);
+		if (isRightCollapsed) {
+			panel.expand();
+			if (panel.getSize().inPixels <= 70) {
+				panel.resize(260);
+			}
+		} else {
+			panel.collapse();
+		}
+	};
+
 	const renderLeftSidebar = () => (
 		<div className="flex flex-col h-full overflow-hidden bg-secondary">
-			<LeftSidebar />
+			<LeftSidebar
+				isCollapsed={isMobile ? false : isLeftCollapsed}
+				onToggleCollapse={isMobile ? undefined : toggleLeftCollapse}
+			/>
 		</div>
 	);
 
 	const renderRightSidebar = () => (
 		<div className="flex flex-col h-full overflow-hidden bg-secondary">
-			<RightSidebar isCollapsed={isMobile ? false : isRightCollapsed} />
+			<RightSidebar
+				isCollapsed={isMobile ? false : isRightCollapsed}
+				onToggleCollapse={isMobile ? undefined : toggleRightCollapse}
+			/>
 		</div>
 	);
 
@@ -145,49 +195,70 @@ export default function AppPage() {
 
 	return (
 		<div className="h-screen w-full flex flex-col overflow-hidden">
-		<ConnectionBanner />
-		<ResizablePanelGroup
-			direction="horizontal"
-			className="flex-1 w-full bg-background overflow-hidden"
-		>
-			<ResizablePanel
-				defaultSize="280px"
-				minSize="240px"
-				maxSize="500px"
-				groupResizeBehavior="preserve-pixel-size"
-				className="bg-secondary flex flex-col overflow-hidden"
-			>
-				{renderLeftSidebar()}
-			</ResizablePanel>
+			<ConnectionBanner />
+			<div className="flex-1 w-full flex flex-row overflow-hidden">
+				<NavStrip
+					activeTab={sidebarTab}
+					onChange={setSidebarTab}
+					orientation="vertical"
+				/>
+				<ResizablePanelGroup
+					direction="horizontal"
+					className="flex-1 w-full bg-background overflow-hidden"
+				>
+					<ResizablePanel
+						panelRef={leftPanelRef}
+						defaultSize="280px"
+						minSize="240px"
+						maxSize="500px"
+						collapsible={true}
+						collapsedSize="64px"
+						groupResizeBehavior="preserve-pixel-size"
+						onResize={(panelSize) => setIsLeftCollapsed(panelSize.inPixels <= 70)}
+						className={cn(
+							'bg-secondary flex flex-col overflow-hidden',
+							isLeftTransitioning && 'transition-all duration-300 ease-in-out',
+						)}
+					>
+						{renderLeftSidebar()}
+					</ResizablePanel>
 
-			<ResizableHandle withHandle className="bg-border" />
+					<ResizableHandle withHandle className="bg-border" />
 
-			<ResizablePanel
-				minSize="40%"
-				groupResizeBehavior="preserve-relative-size"
-				className="flex flex-col bg-background relative"
-			>
-				{renderChatArea()}
-			</ResizablePanel>
+					<ResizablePanel
+						minSize="40%"
+						groupResizeBehavior="preserve-relative-size"
+						className="flex flex-col bg-background relative"
+					>
+						{renderChatArea()}
+					</ResizablePanel>
 
-			<ResizableHandle withHandle className="bg-border" />
+					<ResizableHandle withHandle className="bg-border" />
 
-			<ResizablePanel
-				defaultSize="64px"
-				minSize="64px"
-				maxSize="320px"
-				collapsible={true}
-				collapsedSize="64px"
-				groupResizeBehavior="preserve-pixel-size"
-				onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 64)}
-				className="bg-secondary flex flex-col transition-all duration-300 ease-in-out"
-			>
-				{renderRightSidebar()}
-			</ResizablePanel>
-		</ResizablePanelGroup>
-		<ErrorBoundary label="voice chat">
-			<VoiceChatController />
-		</ErrorBoundary>
-	</div>
+					<ResizablePanel
+						panelRef={rightPanelRef}
+						defaultSize="64px"
+						minSize="220px"
+						maxSize="320px"
+						collapsible={true}
+						collapsedSize="64px"
+						groupResizeBehavior="preserve-pixel-size"
+						onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 70)}
+						className={cn(
+							'bg-secondary flex flex-col',
+							isRightTransitioning && 'transition-all duration-300 ease-in-out',
+						)}
+					>
+						{renderRightSidebar()}
+					</ResizablePanel>
+				</ResizablePanelGroup>
+			</div>
+			<ErrorBoundary label="voice chat">
+				<VoiceChatController />
+			</ErrorBoundary>
+			<WhisperIncomingToast />
+			<WhisperStartModal />
+			<WhisperSafetyNumberModal />
+		</div>
 	);
 }

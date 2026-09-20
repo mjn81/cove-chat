@@ -155,14 +155,25 @@ func (d *DB) CountUnreadMessages(userID, channelID string) (int, error) {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
-		// Optimize: Create a KSUID with the last read timestamp to seek directly to unread messages.
-		// Since KSUIDs are K-Sortable, this will skip most read messages.
+		// Optimize: Create a KSUID with the last read timestamp to seek directly
+		// to unread messages. Since KSUIDs are K-Sortable, this will skip most
+		// read messages.
+		//
+		// KSUIDs only carry SECOND-granularity timestamps; ordering among
+		// KSUIDs from the same second is decided by their random payload. Using
+		// NewRandomWithTime here (a random payload) meant the seek key could
+		// sort *after* a real unread message minted in the same wall-clock
+		// second as LastReadAt, silently skipping it and undercounting. Seeking
+		// from one second earlier with the all-zero (minimum) payload guarantees
+		// the seek key sorts at or before every KSUID from LastReadAt's second,
+		// so no same-second message can be skipped; the SentAt.After() filter
+		// below still excludes anything actually already read.
 		startKey := prefix
 		if !uc.LastReadAt.IsZero() {
-			// We seek to just after the last read timestamp.
-			// NewRandomWithTime creates a KSUID with the provided timestamp.
-			k, _ := ksuid.NewRandomWithTime(uc.LastReadAt.Add(time.Nanosecond))
-			startKey = []byte(fmt.Sprintf("%s%s:%s", prefixMessage, channelID, k.String()))
+			k, err := ksuid.FromParts(uc.LastReadAt.Add(-time.Second), make([]byte, 16))
+			if err == nil {
+				startKey = []byte(fmt.Sprintf("%s%s:%s", prefixMessage, channelID, k.String()))
+			}
 		}
 
 		for it.Seek(startKey); it.ValidForPrefix(prefix); it.Next() {

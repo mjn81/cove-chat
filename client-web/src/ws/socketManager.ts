@@ -17,7 +17,7 @@ export interface SocketManagerCallbacks {
 }
 
 export interface SocketManager {
-	connect: (url?: string) => void;
+	connect: (url?: string, protocols?: string[]) => void;
 	disconnect: () => void;
 	send: (payload: unknown) => void;
 	isOpen: () => boolean;
@@ -39,6 +39,7 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	let reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
 	let lastUrl = '';
+	let lastProtocols: string[] | undefined;
 	let disconnected = false;
 	let lastInboundAt = 0;
 
@@ -70,11 +71,11 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 		if (reconnectTimer) clearTimeout(reconnectTimer);
 		reconnectTimer = setTimeout(() => {
 			reconnectDelay = Math.min(reconnectDelay * 1.5, MAX_RECONNECT_DELAY_MS);
-			connect(lastUrl);
+			connect(lastUrl, lastProtocols);
 		}, reconnectDelay);
 	}
 
-	function connect(url?: string) {
+	function connect(url?: string, protocols?: string[]) {
 		disconnected = false;
 
 		if (socket) {
@@ -86,7 +87,10 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 		}
 
 		lastUrl = url || lastUrl;
-		socket = new WebSocket(lastUrl);
+		lastProtocols = protocols ?? lastProtocols;
+		socket = lastProtocols?.length
+			? new WebSocket(lastUrl, lastProtocols)
+			: new WebSocket(lastUrl);
 
 		socket.onopen = () => {
 			reconnectDelay = INITIAL_RECONNECT_DELAY_MS;

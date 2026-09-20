@@ -32,8 +32,10 @@ export const ChatBackgroundPattern: React.FC = () => {
 
 	return (
 		<div
-			className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+			className="absolute top-0 left-0 pointer-events-none z-0 overflow-hidden"
 			style={{
+				width: '100vw',
+				height: '100vh',
 				maskImage: `url(${pattern.src})`,
 				WebkitMaskImage: `url(${pattern.src})`,
 				maskSize: `${PATTERN_WIDTH}px ${PATTERN_HEIGHT}px`,
@@ -44,6 +46,9 @@ export const ChatBackgroundPattern: React.FC = () => {
 				// In dark mode: softly blends with #313338 at 1.8% white tint
 				// In light mode: softly blends with white at 2.5% dark tint
 				backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.018)' : 'rgba(0, 0, 0, 0.025)',
+				transform: 'translateZ(0)',
+				willChange: 'transform',
+				contain: 'strict',
 			}}
 		/>
 	);

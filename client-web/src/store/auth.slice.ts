@@ -70,50 +70,51 @@ export const useAuthStore = create<AuthSlice>()(
 			incomingRequests: [],
 
 			initAuth: async () => {
-				const saved = get().user;
+				try {
+					const saved = get().user;
 
-				if (saved) {
-					try {
-						// Verify session is still valid on server and get fresh data
-						const fresh = await apiMe();
-						set({ user: fresh, isAuthLoading: false });
+					if (saved) {
+						try {
+							// Verify session is still valid on server and get fresh data
+							const fresh = await apiMe();
+							set({ user: fresh });
 
-						// Check for avatar updates and invalidate any deleted avatars on reload
-						const savedAvatars = [
-							...(saved.avatar_ids || []),
-							...(saved.avatar_id ? [saved.avatar_id] : []),
-						];
-						const freshAvatars = [
-							...(fresh.avatar_ids || []),
-							...(fresh.avatar_id ? [fresh.avatar_id] : []),
-						];
-						// Evict any avatar that was present in saved state but is no longer in fresh state
-						evictStaleAvatars(freshAvatars, savedAvatars).catch(() => {});
-						// Pre-warm the cache for active avatars
-						prewarmAvatars(freshAvatars).catch(() => {});
+							// Check for avatar updates and invalidate any deleted avatars on reload
+							const savedAvatars = [
+								...(saved.avatar_ids || []),
+								...(saved.avatar_id ? [saved.avatar_id] : []),
+							];
+							const freshAvatars = [
+								...(fresh.avatar_ids || []),
+								...(fresh.avatar_id ? [fresh.avatar_id] : []),
+							];
+							// Evict any avatar that was present in saved state but is no longer in fresh state
+							evictStaleAvatars(freshAvatars, savedAvatars).catch(() => {});
+							// Pre-warm the cache for active avatars
+							prewarmAvatars(freshAvatars).catch(() => {});
 
-						connectWS(fresh.token);
-						useChannelStore.getState().refreshChannels();
-						get().fetchRelationships();
-						get().fetchIncomingRequests();
-					} catch (err: any) {
-						// Only clear session if it's a definitive 401 Unauthorized
-						// If it's a network error or 500, we keep the 'saved' user state
-						// so the app doesn't flick back to login incorrectly.
-						if (err?.status === 401) {
-							set({ user: null, isAuthLoading: false, relationships: [], incomingRequests: [] });
-							disconnectWS();
-						} else {
-							// Network error or server blip - stay "logged in" locally
-							// but the UI will show connection errors via WS state.
-							set({ isAuthLoading: false });
-							connectWS(saved.token);
+							connectWS(fresh.token);
 							useChannelStore.getState().refreshChannels().catch(() => {});
-							get().fetchRelationships();
-							get().fetchIncomingRequests();
+							get().fetchRelationships().catch(() => {});
+							get().fetchIncomingRequests().catch(() => {});
+						} catch (err: any) {
+							// Only clear session if it's a definitive 401 Unauthorized
+							// If it's a network error or 500, we keep the 'saved' user state
+							// so the app doesn't flick back to login incorrectly.
+							if (err?.status === 401) {
+								set({ user: null, relationships: [], incomingRequests: [] });
+								disconnectWS();
+							} else {
+								// Network error or server blip - stay "logged in" locally
+								// but the UI will show connection errors via WS state.
+								connectWS(saved.token);
+								useChannelStore.getState().refreshChannels().catch(() => {});
+								get().fetchRelationships().catch(() => {});
+								get().fetchIncomingRequests().catch(() => {});
+							}
 						}
 					}
-				} else {
+				} finally {
 					set({ isAuthLoading: false });
 				}
 			},

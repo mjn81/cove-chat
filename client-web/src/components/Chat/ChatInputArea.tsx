@@ -810,13 +810,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 								<FileText size={16} className="text-primary" />
 								<span>Document / File</span>
 							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => setShowVideoRecorder(true)}
-								className="flex items-center gap-2.5 px-3 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-accent text-foreground transition-colors"
-							>
-								<Video size={16} className="text-primary" />
-								<span>Video Message (max 1m)</span>
-							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<input
@@ -843,6 +836,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 					<textarea
 						ref={inputRef}
+						data-chat-input
 						className="flex-1 bg-transparent border-none outline-none text-foreground text-[15px] leading-6 resize-none min-h-[24px] max-h-[140px] placeholder-muted-foreground/60 py-0 shadow-none ring-0 focus:ring-0"
 						placeholder={
 							isSmall ? 'Message...' : `Message ${prefix}${displayName}`
@@ -855,7 +849,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					/>
 
 					<div
-						className={`flex items-center ${isSmall ? 'gap-1.5' : 'gap-3'} shrink-0 h-6`}
+						className={`flex items-center ${isSmall ? 'gap-1' : 'gap-1.5'} shrink-0`}
 					>
 						<VoiceRecorder
 							channelId={channel.id}
@@ -866,31 +860,50 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowVideoRecorder(true)}
-							className="text-muted-foreground hover:text-foreground transition flex items-center justify-center cursor-pointer"
+							className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-full transition flex items-center justify-center cursor-pointer group"
 							title="Record Video Message"
+							aria-label="Record Video Message"
 						>
-							<Video size={isSmall ? 18 : 22} />
+							<Video
+								size={isSmall ? 18 : 22}
+								className="group-hover:scale-110 transition-transform"
+							/>
 						</button>
 						<div className="relative flex items-center justify-center">
 							<button
+								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowEmoji((v) => !v);
 								}}
-								className="text-muted-foreground hover:text-foreground transition flex items-center"
+								className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-full transition flex items-center justify-center cursor-pointer group"
+								title="Add emoji"
+								aria-label="Add emoji"
 							>
-								<Smile size={isSmall ? 20 : 24} />
+								<Smile
+									size={isSmall ? 18 : 22}
+									className="group-hover:scale-110 transition-transform"
+								/>
 							</button>
 						</div>
 						<button
+							type="button"
 							onClick={handleSend}
 							disabled={(!inputText.trim() && files.length === 0) || sending}
-							className="text-muted-foreground hover:text-foreground disabled:opacity-50 transition"
+							className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/80 disabled:hover:bg-transparent disabled:hover:text-muted-foreground rounded-full transition flex items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 group"
+							title="Send message"
+							aria-label="Send message"
 						>
 							{sending ? (
-								<Loader2 size={isSmall ? 20 : 24} className="animate-spin" />
+								<Loader2
+									size={isSmall ? 18 : 22}
+									className="animate-spin text-primary"
+								/>
 							) : (
-								<SendHorizontal size={isSmall ? 20 : 24} />
+								<SendHorizontal
+									size={isSmall ? 18 : 22}
+									className="group-hover:scale-110 group-disabled:scale-100 transition-transform"
+								/>
 							)}
 						</button>
 					</div>

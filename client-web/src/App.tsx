@@ -43,26 +43,45 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    let unmounted = false;
+
     const init = async () => {
-      // Check for Wails server URL
-      if (isWails()) {
-        const wails = (window as any).go.main.App;
-        const savedUrl = await wails.GetServerURL();
-        if (savedUrl) {
-          setApiBaseUrl(savedUrl);
-          // Only init auth if we have a saved server
-          await useAuthStore.getState().initAuth();
-        } else {
-          setShouldConnect(true);
-          // Stop auth loading since we can't check session without a server
-          useAuthStore.setState({ isAuthLoading: false });
+      try {
+        const timeoutPromise = new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 6000)
+        );
+
+        const initPromise = (async () => {
+          if (isWails()) {
+            try {
+              const wails = (window as any).go?.main?.App;
+              const savedUrl = await wails?.GetServerURL?.();
+              if (savedUrl) {
+                setApiBaseUrl(savedUrl);
+                await useAuthStore.getState().initAuth();
+              } else {
+                setShouldConnect(true);
+                useAuthStore.setState({ isAuthLoading: false });
+              }
+            } catch (err) {
+              console.error('Wails server URL check failed:', err);
+              setShouldConnect(true);
+              useAuthStore.setState({ isAuthLoading: false });
+            }
+          } else {
+            await useAuthStore.getState().initAuth();
+          }
+        })();
+
+        await Promise.race([initPromise, timeoutPromise]);
+      } catch (err) {
+        console.warn('App init timed out or encountered an error, unblocking:', err);
+        useAuthStore.setState({ isAuthLoading: false });
+      } finally {
+        if (!unmounted) {
+          setIsWailsReady(true);
         }
-      } else {
-        // Standard web browser mode
-        await useAuthStore.getState().initAuth();
       }
-      
-      setIsWailsReady(true);
     };
 
     init();
@@ -78,6 +97,7 @@ export default function App() {
     window.addEventListener('api:url_changed', handleUrlChanged);
     window.addEventListener('auth:unauthorized', handleUnauthorized);
     return () => {
+      unmounted = true;
       window.removeEventListener('api:url_changed', handleUrlChanged);
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };

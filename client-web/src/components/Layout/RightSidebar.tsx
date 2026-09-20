@@ -3,7 +3,7 @@ import { logProfiler } from '@/utils/profiler';
 
 import { Avatar } from '@/components/Avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, LogOut, UserMinus, Shield, ChevronLeft, User } from 'lucide-react';
+import { Users, LogOut, UserMinus, Shield, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipContent,
@@ -37,10 +37,12 @@ interface Member {
 
 interface RightSidebarProps {
 	isCollapsed?: boolean;
+	onToggleCollapse?: () => void;
 }
 
 export default function RightSidebar({
 	isCollapsed = false,
+	onToggleCollapse,
 }: RightSidebarProps) {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
 	const refreshChannels = useChannelStore((state) => state.refreshChannels);
@@ -176,6 +178,15 @@ export default function RightSidebar({
 							>
 								<ChevronLeft size={26} />
 							</button>
+						) : isCollapsed && onToggleCollapse ? (
+							<button
+								type="button"
+								onClick={onToggleCollapse}
+								className="w-8 h-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition"
+								title="Expand members"
+							>
+								<Users size={20} className="opacity-70" />
+							</button>
 						) : (
 							<div className="w-8 h-8 flex items-center justify-center text-muted-foreground shrink-0">
 								<Users size={24} className="opacity-70" />
@@ -187,6 +198,16 @@ export default function RightSidebar({
 							</h2>
 						)}
 					</div>
+					{!isMobile && !isCollapsed && onToggleCollapse && (
+						<button
+							type="button"
+							onClick={onToggleCollapse}
+							className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition"
+							title="Collapse members"
+						>
+							<ChevronRight size={16} />
+						</button>
+					)}
 				</div>
 
 				<ScrollArea className="flex-1">

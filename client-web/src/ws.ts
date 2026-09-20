@@ -51,6 +51,12 @@ type WSEventType =
 	| 'voice_update'
 	| 'relationship_update'
 	| 'video_ready'
+	| 'whisper_init'
+	| 'whisper_accept'
+	| 'whisper_reject'
+	| 'whisper_msg'
+	| 'whisper_close'
+	| 'whisper_error'
 	| 'open'
 	| 'close';
 type WSListener = (payload: unknown) => void;
@@ -78,6 +84,11 @@ let worker: {
 } | null = null;
 
 let unloadListenerRegistered = false;
+
+// Prefix for the WebSocket subprotocol used to carry the session token
+// during the handshake (desktop/Wails client only — see getFullWsUrl).
+// Must match the backend's wsAuthSubprotocolPrefix in internal/auth/auth.go.
+const WS_TOKEN_SUBPROTOCOL_PREFIX = 'nodetalk-token.';
 
 export function wsConnect(token?: string): void {
 	if (!worker) {
@@ -129,18 +140,23 @@ export function wsConnect(token?: string): void {
 	}
 
 	// Trigger initial connection or update existing one with new token
-	sendToWorker('CONNECT', { url: getFullWsUrl(token) });
+	const { url, protocols } = getFullWsUrl(token);
+	sendToWorker('CONNECT', { url, protocols });
 }
 
-function getFullWsUrl(explicitToken?: string): string {
+function getFullWsUrl(explicitToken?: string): { url: string; protocols?: string[] } {
+	const url = `${getWsUrl()}/ws`;
+
 	// Web client: the session travels via the httpOnly cookie automatically
-	// included in the WS handshake — no token needed in the URL.
+	// included in the WS handshake — no token needed at all.
 	if (!isWails()) {
-		return `${getWsUrl()}/ws`;
+		return { url };
 	}
 
 	// Desktop (Wails) client: its webview doesn't reliably persist httpOnly
-	// cookies, so continue authenticating via a token in the URL.
+	// cookies, so it authenticates via a WebSocket subprotocol instead of a
+	// URL query parameter — a token in the URL would leak into server
+	// access logs, any intermediate proxy logs, and browser history.
 	let token = explicitToken || '';
 	if (!token) {
 		try {
@@ -153,9 +169,13 @@ function getFullWsUrl(explicitToken?: string): string {
 		}
 	}
 
-	const url = `${getWsUrl()}/ws${token ? `?token=${token}` : ''}`;
-	console.info('[ws] connecting to:', url.replace(token, '***'));
-	return url;
+	if (!token) return { url };
+
+	// '=' padding isn't a legal character in an HTTP token / WS subprotocol
+	// value, so it's stripped here and restored server-side.
+	const protocols = [`${WS_TOKEN_SUBPROTOCOL_PREFIX}${token.replace(/=+$/, '')}`];
+	console.info('[ws] connecting to:', url, 'with token subprotocol');
+	return { url, protocols };
 }
 
 function setupDirectConnection() {
@@ -195,7 +215,7 @@ function setupDirectConnection() {
 		port: {
 			postMessage: (msg: any) => {
 				const { cmd, payload } = msg;
-				if (cmd === 'CONNECT') socketManager.connect(payload?.url ?? getFullWsUrl());
+				if (cmd === 'CONNECT') socketManager.connect(payload?.url ?? getFullWsUrl().url, payload?.protocols);
 				else if (cmd === 'DISCONNECT') socketManager.disconnect();
 				else if (cmd === 'SEND') socketManager.send(payload);
 			},
@@ -270,6 +290,24 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 		case 'video_ready':
 			emit('video_ready', msg.payload);
 			break;
+		case 'whisper_init':
+			emit('whisper_init', msg.payload);
+			break;
+		case 'whisper_accept':
+			emit('whisper_accept', msg.payload);
+			break;
+		case 'whisper_reject':
+			emit('whisper_reject', msg.payload);
+			break;
+		case 'whisper_msg':
+			emit('whisper_msg', msg.payload);
+			break;
+		case 'whisper_close':
+			emit('whisper_close', msg.payload);
+			break;
+		case 'whisper_error':
+			emit('whisper_error', msg.payload);
+			break;
 		default:
 			console.debug('[ws-worker] unknown message type', msg.type);
 	}
@@ -283,6 +321,79 @@ function wsSend(msg: { type: string; payload: unknown }): boolean {
 		payload: msg,
 	});
 	return true;
+}
+
+export function wsSendWhisperInit(
+	sessionId: string,
+	targetUserId: string,
+	pubKeyBase64: string,
+	expiryMode: string,
+): boolean {
+	return wsSend({
+		type: 'whisper_init',
+		payload: {
+			session_id: sessionId,
+			target_user_id: targetUserId,
+			pub_key: pubKeyBase64,
+			expiry_mode: expiryMode,
+		},
+	});
+}
+
+export function wsSendWhisperAccept(
+	sessionId: string,
+	pubKeyBase64: string,
+): boolean {
+	return wsSend({
+		type: 'whisper_accept',
+		payload: {
+			session_id: sessionId,
+			pub_key: pubKeyBase64,
+		},
+	});
+}
+
+export function wsSendWhisperReject(
+	sessionId: string,
+	reason?: string,
+): boolean {
+	return wsSend({
+		type: 'whisper_reject',
+		payload: {
+			session_id: sessionId,
+			reason,
+		},
+	});
+}
+
+export function wsSendWhisperMsg(
+	sessionId: string,
+	ciphertextBase64: string,
+	nonceBase64: string,
+	expiresAt?: number | null,
+): boolean {
+	return wsSend({
+		type: 'whisper_msg',
+		payload: {
+			session_id: sessionId,
+			ciphertext: ciphertextBase64,
+			nonce: nonceBase64,
+			expires_at: expiresAt,
+		},
+	});
+}
+
+export function wsSendWhisperClose(
+	sessionId: string,
+	reason?: string,
+): boolean {
+	return wsSend({
+		type: 'whisper_close',
+		payload: {
+			session_id: sessionId,
+			reason: reason || 'closed',
+		},
+	});
 }
 
 export function wsSendReadReceipt(channelId: string) {

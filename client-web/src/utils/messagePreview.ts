@@ -1,6 +1,6 @@
 import type { Channel } from '@/types/api';
 import { decryptText } from '@/ws';
-import { isDirectMessage } from '@/utils/channel';
+import { isDirectMessage, getChannelDisplayName } from '@/utils/channel';
 
 const MAX_PREVIEW_LENGTH = 60;
 
@@ -29,9 +29,12 @@ export async function buildMessagePreview(
 	const text = type === 'text' ? await decryptText(channel.id, ciphertext, nonce) : '';
 	const body = bodyForType(type, text);
 
-	if (isDirectMessage(channel)) return body;
-
 	const prefix =
-		senderId === currentUserId ? 'You' : channel.member_names?.[senderId] || 'Someone';
+		senderId === currentUserId
+			? 'You'
+			: channel.member_names?.[senderId] ||
+			  (isDirectMessage(channel)
+					? getChannelDisplayName(channel, currentUserId)
+					: 'Someone');
 	return `${prefix}: ${body}`;
 }

@@ -118,7 +118,7 @@ func main() {
 		IsDev:               cfg.Server.Dev,
 		FrontendOrigin:      cfg.Server.FrontendOrigin,
 	}
-	hub := ws.NewHub(dataStore, sessions, kek)
+	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 
 	rootMux := http.NewServeMux()
@@ -142,7 +142,8 @@ func main() {
 	// ── 8. UDP voice router ────────────────────────────────────────────────
 	var udpConn *net.UDPConn
 	if cfg.Server.UDPPort > 0 {
-		voiceRouter := voice.NewRouter(sessions, hub)
+		voiceRouter := voice.NewRouter(sessions, hub, dataStore)
+		hub.SetVoiceRouter(voiceRouter)
 		var err error
 		udpConn, err = startUDPRouter(cfg.Server.UDPPort, voiceRouter)
 		if err != nil {

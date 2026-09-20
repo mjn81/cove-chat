@@ -33,6 +33,8 @@ func (s *FileSystemStorage) Save(id string, r io.Reader) (string, int64, error) 
 
 	n, err := io.Copy(f, r)
 	if err != nil {
+		f.Close()
+		_ = os.Remove(path)
 		return "", 0, fmt.Errorf("storage: failed to write data: %w", err)
 	}
 

@@ -81,6 +81,50 @@
     --mention-foreground: 40 86% 57%;
     --mention-border: 40 86% 57%;
   }
+
+  .whisper-mode {
+    --background: 0 0% 7%; /* #121212 - pitch dark black */
+    --foreground: 0 0% 93%; /* #ededed */
+    --card: 0 0% 11%; /* #1c1c1c */
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 8%; /* #141414 */
+    --popover-foreground: 0 0% 93%;
+    --primary: 0 0% 95%; /* Sleek monochrome crisp accent */
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 12%; /* #1e1e1e */
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%; /* #8c8c8c */
+    --accent: 0 0% 16%; /* #292929 hover */
+    --accent-foreground: 0 0% 93%;
+    --destructive: 359 83% 66%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%; /* #333333 */
+    --input: 0 0% 20%;
+    --ring: 0 0% 40%;
+  }
+
+  .light .whisper-mode {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 359 83% 66%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 0 0% 40%;
+  }
 }
 
 @layer base {

@@ -88,8 +88,12 @@ export const useChannelStore = create<ChannelSlice>((set) => ({
 				return { channels: list, activeChannel: nextActive };
 			});
 			hydrateLastMessagePreviews(list);
+		} catch (err) {
+			console.error('Failed to refresh channels:', err);
 		} finally {
-			if (seq === refreshSeq) set({ isChannelsLoading: false });
+			if (seq === refreshSeq || useChannelStore.getState().channels.length > 0) {
+				set({ isChannelsLoading: false });
+			}
 		}
 	},
 

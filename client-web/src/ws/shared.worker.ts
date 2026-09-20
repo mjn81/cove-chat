@@ -44,7 +44,7 @@ _self.onconnect = (e: MessageEvent) => {
 
 		switch (cmd) {
 			case 'CONNECT': {
-				socketManager.connect(payload.url);
+				socketManager.connect(payload.url, payload.protocols);
 				break;
 			}
 			case 'DISCONNECT': {

@@ -1,15 +1,22 @@
 import { useEffect, useState, memo, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Avatar, ChannelInitialsAvatar } from '@/components/Avatar';
-import { NavStrip, type SidebarTab } from './NavStrip';
+import { NavStrip } from './NavStrip';
 import NewChannelModal from '@/components/NewChannelModal';
 import SettingsModal from '@/components/SettingsModal';
 import { useExploreChannels } from '@/hooks/useChannels';
 import { apiJoinChannel } from '@/api/client';
-import { Settings, LogOut, Plus, Hash, Search, Volume2, Trash2, MessageSquare, User } from 'lucide-react';
+import { Settings, LogOut, Plus, Hash, Search, Volume2, Trash2, MessageSquare, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { ConversationSearchDialog } from './ConversationSearchDialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -44,6 +51,7 @@ const RenderChannel = memo(
 		user,
 		isActive,
 		isBlocked,
+		isCollapsed,
 		onSelect,
 		onDeleteDM,
 		onViewProfile,
@@ -53,6 +61,7 @@ const RenderChannel = memo(
 		user: AuthUser | null;
 		isActive: boolean;
 		isBlocked?: boolean;
+		isCollapsed?: boolean;
 		onSelect: (ch: Channel) => void;
 		onDeleteDM: (ch: Channel) => void;
 		onViewProfile: (userId: string) => void;
@@ -62,6 +71,7 @@ const RenderChannel = memo(
 			(state) => (state.participants[ch.id]?.length ?? 0) > 0,
 		);
 		const otherMemberId = ch.members.find((m) => m !== user?.id) || ch.id;
+		const unreadCount = !isActive ? (ch.unread_count ?? 0) : 0;
 
 		const subtitle =
 			ch.last_message_preview ||
@@ -72,64 +82,93 @@ const RenderChannel = memo(
 						return st ? st.charAt(0).toUpperCase() + st.slice(1) : 'Offline';
 					})());
 
-		return (
-			<ContextMenu>
-				<ContextMenuTrigger asChild>
-					<div
-						onClick={() => onSelect(ch)}
-						className={`w-full flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer select-none transition ${
-							isActive
-								? 'bg-accent text-foreground'
-								: isBlocked
-									? 'text-muted-foreground/60 opacity-60 hover:bg-accent/40 hover:text-foreground'
-									: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-						}`}
-					>
-				{isGroup ? (
-					<div className="relative shrink-0 pointer-events-none">
-						{ch.avatar_id ? (
-							<div className="w-10 h-10 rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0">
-								<img
-									src={getFileUrl(ch.avatar_id)}
-									alt={ch.name}
-									className="w-full h-full object-cover"
-									draggable={false}
-								/>
-							</div>
-						) : (
-							<ChannelInitialsAvatar id={ch.id} name={ch.name} size={40} />
-						)}
-						{hasVoice && (
-							<div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300">
-								<Volume2 size={10} fill="currentColor" />
-							</div>
-						)}
+		const avatarNode = isGroup ? (
+			<div className="relative shrink-0 pointer-events-none">
+				{ch.avatar_id ? (
+					<div className="w-10 h-10 rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0">
+						<img
+							src={getFileUrl(ch.avatar_id)}
+							alt={ch.name}
+							className="w-full h-full object-cover"
+							draggable={false}
+						/>
 					</div>
 				) : (
-					<div className="relative shrink-0 pointer-events-none">
-						<Avatar
-							userId={otherMemberId}
-							avatarId={ch.member_avatars?.[otherMemberId]}
-							size={40}
-						/>
-						<div
-							className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-secondary z-10 ${
-								ch.member_statuses?.[otherMemberId] === 'online'
-									? 'bg-green-500'
-									: ch.member_statuses?.[otherMemberId] === 'away'
-										? 'bg-yellow-500'
-										: ch.member_statuses?.[otherMemberId] === 'dnd'
-											? 'bg-red-500'
-											: 'bg-gray-500'
-							}`}
-						/>
-						{hasVoice && (
-							<div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300">
-								<Volume2 size={10} fill="currentColor" />
-							</div>
-						)}
+					<ChannelInitialsAvatar id={ch.id} name={ch.name} size={40} />
+				)}
+				{hasVoice && (
+					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300`}>
+						<Volume2 size={10} fill="currentColor" />
 					</div>
 				)}
+				{isCollapsed && unreadCount > 0 && (
+					<div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-[16px] px-1 bg-[#e05638] rounded-full text-[10px] font-bold text-white shadow-sm border-2 border-secondary z-10 leading-none tabular-nums">
+						{unreadCount > 9 ? '9+' : unreadCount}
+					</div>
+				)}
+			</div>
+		) : (
+			<div className="relative shrink-0 pointer-events-none">
+				<Avatar
+					userId={otherMemberId}
+					avatarId={ch.member_avatars?.[otherMemberId]}
+					size={40}
+				/>
+				<div
+					className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-secondary z-10 ${
+						ch.member_statuses?.[otherMemberId] === 'online'
+							? 'bg-green-500'
+							: ch.member_statuses?.[otherMemberId] === 'away'
+								? 'bg-yellow-500'
+								: ch.member_statuses?.[otherMemberId] === 'dnd'
+									? 'bg-red-500'
+									: 'bg-gray-500'
+					}`}
+				/>
+				{hasVoice && (
+					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300`}>
+						<Volume2 size={10} fill="currentColor" />
+					</div>
+				)}
+				{isCollapsed && unreadCount > 0 && (
+					<div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-[16px] px-1 bg-[#e05638] rounded-full text-[10px] font-bold text-white shadow-sm border-2 border-secondary z-10 leading-none tabular-nums">
+						{unreadCount > 9 ? '9+' : unreadCount}
+					</div>
+				)}
+			</div>
+		);
+
+		const rowClassName = `w-full flex items-center rounded-md cursor-pointer select-none transition-colors duration-150 ${
+			isCollapsed ? 'justify-center p-1.5' : 'gap-3 px-2 py-2'
+		} ${
+			isActive
+				? 'bg-accent text-foreground'
+				: isBlocked
+					? 'text-muted-foreground/60 opacity-60 hover:bg-accent/40 hover:text-foreground'
+					: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+		}`;
+
+		const row = isCollapsed ? (
+			<TooltipProvider delayDuration={0}>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div onClick={() => onSelect(ch)} className={rowClassName}>
+							{avatarNode}
+						</div>
+					</TooltipTrigger>
+					<TooltipContent side="right" className="font-bold flex items-center gap-1.5">
+						<span>{display}</span>
+						{unreadCount > 0 && (
+							<span className="text-[10px] bg-[#e05638] text-white px-1.5 py-0.5 rounded-full font-bold tabular-nums">
+								{unreadCount}
+							</span>
+						)}
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+		) : (
+			<div onClick={() => onSelect(ch)} className={rowClassName}>
+				{avatarNode}
 				<div className="min-w-0 flex-1 flex flex-col justify-center pointer-events-none select-none">
 					<div className="flex items-center gap-2">
 						<span className="truncate text-[14px] font-medium leading-tight pointer-events-none select-none">
@@ -146,15 +185,19 @@ const RenderChannel = memo(
 					</span>
 				</div>
 
-				{!isActive && (ch.unread_count ?? 0) > 0 && (
+				{unreadCount > 0 && (
 					<div className="flex items-center justify-center min-w-[19px] h-[19px] px-1 bg-[#e05638] rounded-[5px] text-[11.5px] font-bold text-white shadow-sm shrink-0 pointer-events-none select-none leading-none tabular-nums">
 						<span className="leading-none flex items-center justify-center -translate-y-[0.5px]">
-							{ch.unread_count}
+							{unreadCount}
 						</span>
 					</div>
 				)}
 			</div>
-				</ContextMenuTrigger>
+		);
+
+		return (
+			<ContextMenu>
+				<ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
 				<ContextMenuContent className="w-48 bg-popover border-border text-foreground">
 					<ContextMenuItem
 						onClick={() => onSelect(ch)}
@@ -190,7 +233,15 @@ const RenderChannel = memo(
 
 RenderChannel.displayName = 'RenderChannel';
 
-export default function LeftSidebar() {
+interface LeftSidebarProps {
+	isCollapsed?: boolean;
+	onToggleCollapse?: () => void;
+}
+
+export default function LeftSidebar({
+	isCollapsed = false,
+	onToggleCollapse,
+}: LeftSidebarProps) {
 	const user = useAuthStore((state) => state.user);
 	const logout = useAuthStore((state) => state.logout);
 	const relationships = useAuthStore((state) => state.relationships);
@@ -207,7 +258,8 @@ export default function LeftSidebar() {
 		},
 		[setActiveChannel],
 	);
-	const [activeTab, setActiveTab] = useState<SidebarTab>('all');
+	const activeTab = useAppStore((state) => state.sidebarTab);
+	const setActiveTab = useAppStore((state) => state.setSidebarTab);
 	const [search, setSearch] = useState('');
 	const [debouncedSearch, setDebouncedSearch] = useState('');
 	const [isJoining, setIsJoining] = useState<string | null>(null);
@@ -295,36 +347,70 @@ export default function LeftSidebar() {
 	}, [filtered, activeTab]);
 
 	return (
-		<div className="flex flex-row h-full w-full overflow-hidden">
-			{!isMobile && (
-				<NavStrip
-					activeTab={activeTab}
-					onChange={setActiveTab}
-					orientation="vertical"
-				/>
-			)}
-
-			<div className="flex flex-col h-full bg-secondary flex-1 min-w-0 overflow-hidden">
+		<div className="flex flex-col h-full bg-secondary w-full min-w-0 overflow-hidden">
 				{/* Server Header */}
-				<div className="h-12 border-b border-border flex items-center px-4 shrink-0 transition-colors hover:bg-accent/30 cursor-pointer">
-					<div className="flex-1 flex flex-row justify-between items-center min-w-0">
-						<h2 className="font-bold text-[15px] text-foreground truncate leading-tight">
-							NodeTalk Client
-						</h2>
-						<span className="text-[11px] text-muted-foreground font-medium inline-flex items-center gap-1.5 shrink-0">
-							{appVersion}
-							<span
-								className={`w-2 h-2 rounded-full ${
-									wsState === 'connected'
-										? 'bg-green-500'
-										: wsState === 'connecting'
-											? 'bg-yellow-500'
-											: 'bg-red-500'
-								}`}
-								title={wsState}
-							/>
-						</span>
-					</div>
+				<div
+					className={`h-12 border-b border-border flex items-center shrink-0 transition-colors bg-secondary ${
+						isCollapsed ? 'justify-center w-full px-2' : 'px-4 hover:bg-accent/30'
+					}`}
+				>
+					{isCollapsed ? (
+						<TooltipProvider delayDuration={0}>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										onClick={onToggleCollapse}
+										className="relative w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer group"
+										title="Expand sidebar"
+									>
+										<ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+										<span
+											className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full border border-secondary ${
+												wsState === 'connected'
+													? 'bg-green-500'
+													: wsState === 'connecting'
+														? 'bg-yellow-500'
+														: 'bg-red-500'
+											}`}
+										/>
+									</button>
+								</TooltipTrigger>
+								<TooltipContent side="right" className="font-bold">
+									Expand sidebar
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					) : (
+						<div className="flex-1 flex flex-row justify-between items-center min-w-0">
+							<h2 className="font-bold text-[15px] text-foreground truncate leading-tight">
+								NodeTalk Client
+							</h2>
+							<span className="text-[11px] text-muted-foreground font-medium inline-flex items-center gap-1.5 shrink-0">
+								{appVersion}
+								<span
+									className={`w-2 h-2 rounded-full ${
+										wsState === 'connected'
+											? 'bg-green-500'
+											: wsState === 'connecting'
+												? 'bg-yellow-500'
+												: 'bg-red-500'
+									}`}
+									title={wsState}
+								/>
+								{!isMobile && onToggleCollapse && (
+									<button
+										type="button"
+										onClick={onToggleCollapse}
+										className="w-6 h-6 -mr-1 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+										title="Collapse sidebar"
+									>
+										<ChevronLeft size={16} />
+									</button>
+								)}
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* Mobile Horizontal NavStrip */}
@@ -336,38 +422,81 @@ export default function LeftSidebar() {
 					/>
 				)}
 
-				{/* Search area */}
-				<div className="px-2.5 pt-2.5 pb-2 shrink-0 flex items-center gap-1.5 min-w-0 w-full">
-					<button
-						type="button"
-						onClick={() => setShowSearchDialog(true)}
-						className="min-w-0 flex-1 flex items-center bg-popover hover:bg-accent/60 border border-border/40 text-[13px] h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground rounded-md transition cursor-pointer group select-none overflow-hidden"
-						title={`Search conversations (${isMac() ? '⌘K' : 'Ctrl+K'})`}
-					>
-						<Search className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-foreground transition" />
-						<span className="truncate min-w-0 text-xs text-left">
-							Search...
-						</span>
-						<kbd className="hidden lg:inline-flex items-center gap-0.5 pointer-events-none select-none h-5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground bg-muted border border-border/60 rounded shrink-0 ml-auto">
-							<span className="text-xs leading-none">
-								{isMac() ? '⌘' : 'Ctrl'}
+				{/* Search / Action area */}
+				{isCollapsed ? (
+					<div className="flex flex-col items-center gap-1.5 py-2.5 shrink-0 border-b border-border/40 w-full px-2">
+						<TooltipProvider delayDuration={0}>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer rounded-md flex items-center justify-center transition-colors"
+										onClick={() => setShowSearchDialog(true)}
+										title={`Search (${isMac() ? '⌘K' : 'Ctrl+K'})`}
+									>
+										<Search className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="right" className="font-bold">
+									Search ({isMac() ? '⌘K' : 'Ctrl+K'})
+								</TooltipContent>
+							</Tooltip>
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer rounded-md flex items-center justify-center transition-colors"
+										onClick={() => {
+											setModalTab('channel');
+											setShowNew(true);
+										}}
+										title="New conversation"
+									>
+										<Plus className="w-4 h-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="right" className="font-bold">
+									New conversation
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				) : (
+					<div className="pt-2.5 pb-2 shrink-0 flex items-center gap-1.5 min-w-0 w-full px-2.5">
+						<button
+							type="button"
+							onClick={() => setShowSearchDialog(true)}
+							className="min-w-0 flex-1 flex items-center bg-popover hover:bg-accent/60 border border-border/40 text-[13px] h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer group select-none overflow-hidden"
+							title={`Search conversations (${isMac() ? '⌘K' : 'Ctrl+K'})`}
+						>
+							<Search className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+							<span className="truncate min-w-0 text-xs text-left">
+								Search...
 							</span>
-							<span className="leading-none">K</span>
-						</kbd>
-					</button>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 cursor-pointer rounded-md flex items-center justify-center"
-						onClick={() => {
-							setModalTab('channel');
-							setShowNew(true);
-						}}
-						title="New conversation"
-					>
-						<Plus className="w-4 h-4 shrink-0" />
-					</Button>
-				</div>
+							<kbd className="hidden lg:inline-flex items-center gap-0.5 pointer-events-none select-none h-5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground bg-muted border border-border/60 rounded shrink-0 ml-auto">
+								<span className="text-xs leading-none">
+									{isMac() ? '⌘' : 'Ctrl'}
+								</span>
+								<span className="leading-none">K</span>
+							</kbd>
+						</button>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 cursor-pointer rounded-md flex items-center justify-center transition-colors"
+							onClick={() => {
+								setModalTab('channel');
+								setShowNew(true);
+							}}
+							title="New conversation"
+						>
+							<Plus className="w-4 h-4 shrink-0" />
+						</Button>
+					</div>
+				)}
 
 				{/* Channel Lists */}
 				<ScrollArea className="flex-1 w-full min-h-0">
@@ -377,7 +506,7 @@ export default function LeftSidebar() {
 						</div>
 					) : (
 						<div className="pb-4">
-							<div className="flex flex-col gap-0.5 px-2 mt-2">
+							<div className={`flex flex-col gap-0.5 ${isCollapsed ? 'px-1 items-center' : 'px-2'} mt-2`}>
 								{visibleChannels.map((ch) => {
 									const isDM = isDirectMessage(ch);
 									const otherId = isDM
@@ -389,24 +518,36 @@ export default function LeftSidebar() {
 											(r) => r.to_user_id === otherId && r.type === 'blocked',
 										);
 									return (
-										<RenderChannel
+										<motion.div
 											key={ch.id}
-											ch={ch}
-											isGroup={!isDM}
-											user={user}
-											isActive={activeChannelId === ch.id}
-											isBlocked={isBlocked}
-											onSelect={handleSelectChannel}
-											onDeleteDM={handleDeleteDM}
-											onViewProfile={handleViewProfile}
-										/>
+											layout="position"
+											transition={{
+												type: 'spring',
+												stiffness: 350,
+												damping: 30,
+												mass: 0.8,
+											}}
+											className={isCollapsed ? 'w-full flex justify-center' : 'w-full'}
+										>
+											<RenderChannel
+												ch={ch}
+												isGroup={!isDM}
+												user={user}
+												isActive={activeChannelId === ch.id}
+												isBlocked={isBlocked}
+												isCollapsed={isCollapsed}
+												onSelect={handleSelectChannel}
+												onDeleteDM={handleDeleteDM}
+												onViewProfile={handleViewProfile}
+											/>
+										</motion.div>
 									);
 								})}
 							</div>
 
 							{visibleChannels.length === 0 && !isLoading && !search && (
 								<div className="text-center mt-6 text-muted-foreground text-xs px-4">
-									No conversations. Click + to start!
+									{isCollapsed ? 'Empty' : 'No conversations. Click + to start!'}
 								</div>
 							)}
 
@@ -433,7 +574,7 @@ export default function LeftSidebar() {
 														onClick={() =>
 															handleJoinChannel(ch.invite_link, ch.id)
 														}
-														className="flex items-center justify-between px-2 py-1.5 mx-2 rounded-md cursor-pointer select-none transition min-w-0 overflow-hidden text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+														className="flex items-center justify-between px-2 py-1.5 mx-2 rounded-md cursor-pointer select-none transition-colors min-w-0 overflow-hidden text-muted-foreground hover:bg-accent/50 hover:text-foreground"
 													>
 														<div className="flex items-center gap-3 min-w-0 flex-1 mr-2 pointer-events-none select-none">
 															<Hash className="w-5 h-5 shrink-0 opacity-70" />
@@ -464,68 +605,176 @@ export default function LeftSidebar() {
 				</ScrollArea>
 
 				{/* User Controls Footer */}
-				<div className="h-[52px] bg-secondary/80 backdrop-blur-sm shrink-0 flex items-center px-2 gap-2 border-t border-border/50">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<div className="flex items-center gap-2 flex-1 min-w-0 hover:bg-accent p-1 h-10 rounded-md cursor-pointer select-none transition">
-								<div className="relative pointer-events-none">
-									<Avatar
-										userId={user?.id || ''}
-										avatarId={user?.avatar_id}
-										size={32}
-										className="shrink-0"
-									/>
-									<div
-										className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-secondary z-10 ${
-											user?.status === 'online'
-												? 'bg-green-500'
-												: user?.status === 'away'
-													? 'bg-yellow-500'
-													: user?.status === 'dnd'
-														? 'bg-red-500'
-														: 'bg-gray-500'
-										}`}
-									/>
-								</div>
-								<div className="flex flex-col flex-1 min-w-0 leading-tight pointer-events-none select-none">
-									<span className="text-[13px] font-bold text-foreground truncate">
-										{user?.username}
-									</span>
-									<span className="text-[11px] text-muted-foreground truncate">
-										{user?.status
-											? user.status.charAt(0).toUpperCase() +
-												user.status.slice(1)
-											: 'Offline'}
-									</span>
-								</div>
-							</div>
-						</DropdownMenuTrigger>
+				{isCollapsed ? (
+					<div className="bg-secondary shrink-0 relative z-10 flex flex-col items-center gap-2 py-2.5 border-t border-border/50 w-full">
+						<TooltipProvider delayDuration={0}>
+							<DropdownMenu>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<button
+												type="button"
+												className="relative p-0.5 rounded-md hover:bg-accent cursor-pointer transition-colors"
+											>
+												<Avatar
+													userId={user?.id || ''}
+													avatarId={user?.avatar_id}
+													size={32}
+													className="shrink-0"
+												/>
+												<div
+													className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-secondary z-10 ${
+														user?.status === 'online'
+															? 'bg-green-500'
+															: user?.status === 'away'
+																? 'bg-yellow-500'
+																: user?.status === 'dnd'
+																	? 'bg-red-500'
+																	: 'bg-gray-500'
+													}`}
+												/>
+											</button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent side="right" className="font-bold">
+										{user?.username} ({user?.status || 'offline'})
+									</TooltipContent>
+								</Tooltip>
 
-						<DropdownMenuContent
-							align="start"
-							className="w-48 bg-popover border-border text-foreground"
-						>
-							<DropdownMenuItem
-								onClick={logout}
-								className="text-red-400 hover:text-red-300 focus:bg-[#f23f42] focus:text-white cursor-pointer"
+								<DropdownMenuContent
+									align="start"
+									side="right"
+									className="w-48 bg-popover border-border text-foreground ml-2"
+								>
+									<DropdownMenuItem
+										onClick={() => user?.id && handleViewProfile(user.id)}
+										className="cursor-pointer gap-2"
+									>
+										<User className="h-4 w-4 pointer-events-none" />
+										<span>My Profile</span>
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setShowSettings(true)}
+										className="cursor-pointer gap-2"
+									>
+										<Settings className="h-4 w-4 pointer-events-none" />
+										<span>Settings</span>
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={logout}
+										className="text-red-400 hover:text-red-300 focus:bg-[#f23f42] focus:text-white cursor-pointer gap-2"
+									>
+										<LogOut className="h-4 w-4 pointer-events-none" />
+										<span>Log out</span>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+
+							{/* Settings button - goes ABOVE Logout */}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer rounded-md flex items-center justify-center transition-colors"
+										onClick={() => setShowSettings(true)}
+									>
+										<Settings className="w-4 h-4 pointer-events-none" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="right" className="font-bold">
+									Settings
+								</TooltipContent>
+							</Tooltip>
+
+							{/* Logout button - goes BELOW Settings */}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-md flex items-center justify-center transition-colors"
+										onClick={logout}
+									>
+										<LogOut className="w-4 h-4 pointer-events-none" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="right" className="font-bold text-destructive">
+									Log out
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				) : (
+					<div className="h-[52px] bg-secondary shrink-0 relative z-10 flex items-center px-2 gap-2 border-t border-border/50">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<div className="gap-2 flex-1 min-w-0 p-1 h-10 flex items-center hover:bg-accent rounded-md cursor-pointer select-none transition-colors">
+									<div className="relative pointer-events-none">
+										<Avatar
+											userId={user?.id || ''}
+											avatarId={user?.avatar_id}
+											size={32}
+											className="shrink-0"
+										/>
+										<div
+											className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-secondary z-10 ${
+												user?.status === 'online'
+													? 'bg-green-500'
+													: user?.status === 'away'
+														? 'bg-yellow-500'
+														: user?.status === 'dnd'
+															? 'bg-red-500'
+															: 'bg-gray-500'
+											}`}
+										/>
+									</div>
+									<div className="flex flex-col flex-1 min-w-0 leading-tight pointer-events-none select-none">
+										<span className="text-[13px] font-bold text-foreground truncate">
+											{user?.username}
+										</span>
+										<span className="text-[11px] text-muted-foreground truncate">
+											{user?.status
+												? user.status.charAt(0).toUpperCase() +
+													user.status.slice(1)
+												: 'Offline'}
+										</span>
+									</div>
+								</div>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent
+								align="start"
+								className="w-48 bg-popover border-border text-foreground"
 							>
-								<LogOut className="mr-2 h-4 w-4 pointer-events-none" />
-								<span className="pointer-events-none">Log out</span>
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+								<DropdownMenuItem
+									onClick={() => user?.id && handleViewProfile(user.id)}
+									className="cursor-pointer gap-2"
+								>
+									<User className="h-4 w-4 pointer-events-none" />
+									<span>My Profile</span>
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={logout}
+									className="text-red-400 hover:text-red-300 focus:bg-[#f23f42] focus:text-white cursor-pointer gap-2"
+								>
+									<LogOut className="h-4 w-4 pointer-events-none" />
+									<span>Log out</span>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer rounded-md shrink-0 flex items-center justify-center"
-						onClick={() => setShowSettings(true)}
-						title="Settings"
-					>
-						<Settings className="w-6 h-6 pointer-events-none" />
-					</Button>
-				</div>
-			</div>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer rounded-md shrink-0 flex items-center justify-center transition-colors"
+							onClick={() => setShowSettings(true)}
+							title="Settings"
+						>
+							<Settings className="w-5 h-5 pointer-events-none" />
+						</Button>
+					</div>
+				)}
 
 			{showNewChannel && (
 				<NewChannelModal

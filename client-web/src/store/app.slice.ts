@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiGetVersion } from '@/api/client';
 
+export type SidebarTab = 'all' | 'dms' | 'channels';
+
 export interface AppSlice {
 	appVersion: string;
 	wsState: 'connecting' | 'connected' | 'disconnected';
@@ -10,6 +12,7 @@ export interface AppSlice {
 
 	isLeftSidebarOpen: boolean;
 	isRightSidebarOpen: boolean;
+	sidebarTab: SidebarTab;
 
 	// Notification Settings
 	enableDesktopNotifications: boolean;
@@ -25,6 +28,7 @@ export interface AppSlice {
 	setChatBackground: (bg: AppSlice['chatBackground']) => void;
 	setLeftSidebarOpen: (open: boolean) => void;
 	setRightSidebarOpen: (open: boolean) => void;
+	setSidebarTab: (tab: SidebarTab) => void;
 	setEnableDesktopNotifications: (enabled: boolean) => void;
 	setEnableNotificationSounds: (enabled: boolean) => void;
 }
@@ -38,6 +42,7 @@ export const useAppStore = create<AppSlice>()(
 			chatBackground: 'none',
 			isLeftSidebarOpen: false,
 			isRightSidebarOpen: false,
+			sidebarTab: 'all',
 			enableDesktopNotifications: true,
 			enableNotificationSounds: true,
 			preferredMicId: 'default',
@@ -47,6 +52,7 @@ export const useAppStore = create<AppSlice>()(
 			setChatBackground: (chatBackground) => set({ chatBackground }),
 			setLeftSidebarOpen: (isLeftSidebarOpen) => set({ isLeftSidebarOpen }),
 			setRightSidebarOpen: (isRightSidebarOpen) => set({ isRightSidebarOpen }),
+			setSidebarTab: (sidebarTab) => set({ sidebarTab }),
 			setEnableDesktopNotifications: (enableDesktopNotifications) =>
 				set({ enableDesktopNotifications }),
 			setEnableNotificationSounds: (enableNotificationSounds) =>

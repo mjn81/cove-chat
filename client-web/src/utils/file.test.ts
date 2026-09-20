@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compressImageFile, encryptAndCompressFile } from './file';
+import { compressImageFile, encryptAndCompressFile, formatFileSize } from './file';
 
 describe('file compression utilities', () => {
 	it('skips non-image files and returns them unchanged', async () => {
@@ -29,5 +29,16 @@ describe('file compression utilities', () => {
 		expect(processed.rawBytes).toBeDefined();
 		expect(new TextDecoder().decode(processed.rawBytes)).toBe('test file content');
 	});
+
+	it('formats file sizes accurately into human-readable strings', () => {
+		expect(formatFileSize(0)).toBe('0 B');
+		expect(formatFileSize(-10)).toBe('0 B');
+		expect(formatFileSize(500)).toBe('500 B');
+		expect(formatFileSize(1024)).toBe('1.0 KB');
+		expect(formatFileSize(2048)).toBe('2.0 KB');
+		expect(formatFileSize(1024 * 1024)).toBe('1.0 MB');
+		expect(formatFileSize(1024 * 1024 * 5.5)).toBe('5.5 MB');
+	});
 });
+
 

@@ -189,7 +189,7 @@ func setupComplexTestServer(t *testing.T) (*httptest.Server, *net.UDPAddr, func(
 	
 	dataStore := store.New(database)
 	sessions := auth.NewSessionStore(24 * time.Hour)
-	hub := ws.NewHub(dataStore, sessions, kek)
+	hub := ws.NewHub(dataStore, sessions, kek, true, "http://localhost:5173")
 	
 	handler := &api.Handler{
 		Store:         dataStore,
@@ -209,7 +209,7 @@ func setupComplexTestServer(t *testing.T) (*httptest.Server, *net.UDPAddr, func(
 	srv := httptest.NewServer(rootMux)
 
 	// UDP Voice
-	voiceRouter := voice.NewRouter(sessions, hub)
+	voiceRouter := voice.NewRouter(sessions, hub, dataStore)
 	udpConn, _ := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
 	udpAddr := udpConn.LocalAddr().(*net.UDPAddr)
 	go voiceRouter.HandleConn(udpConn)

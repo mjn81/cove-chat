@@ -86,8 +86,8 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 						noiseSuppression: true,
 					},
 					video: {
-						width: { ideal: 480 },
-						height: { ideal: 480 },
+						width: { ideal: 720 },
+						height: { ideal: 720 },
 						aspectRatio: { ideal: 1 },
 						facingMode: deviceId ? undefined : 'user',
 						deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -461,23 +461,26 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 	};
 
 	// Reverse progress perimeter calculations for squircle
-	// Width/Height: 256, corner radius: 36
-	const width = 256;
-	const height = 256;
-	const radius = 36;
+	// Base width/height: 384 (sm:w-96), corner radius: 48
+	const width = 384;
+	const height = 384;
+	const radius = 48;
+	const rectInset = 4;
+	const rectWidth = width - 2 * rectInset;
+	const rectHeight = height - 2 * rectInset;
 	const perimeter =
-		2 * (width - 2 * radius + height - 2 * radius) + 2 * Math.PI * radius;
+		2 * (rectWidth - 2 * radius + rectHeight - 2 * radius) + 2 * Math.PI * radius;
 	const progressRemaining = timeLeft / MAX_RECORDING_SECONDS;
 	const strokeDashoffset = perimeter * (1 - progressRemaining);
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
 			{/* Suppress built-in dialog close button via [&>button:last-child]:hidden so only one close button exists */}
-			<DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 p-0 border-none bg-transparent shadow-none max-w-sm sm:max-w-md w-full flex flex-col items-center justify-center select-none outline-none [&>button:last-child]:hidden">
+			<DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 p-0 border-none bg-transparent shadow-none max-w-[360px] sm:max-w-[420px] w-full flex flex-col items-center justify-center select-none outline-none [&>button:last-child]:hidden">
 				<DialogTitle className="sr-only">Record Video Message</DialogTitle>
 
 				{/* Single Dedicated Close Button (aligned with squircle) */}
-				<div className="w-64 flex justify-end mb-2 pointer-events-auto">
+				<div className="w-80 sm:w-96 flex justify-end mb-2 pointer-events-auto">
 					<button
 						type="button"
 						onClick={onClose}
@@ -490,7 +493,7 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 
 				{/* Main Squircle Video Container with WebKit hardware-accelerated clipping */}
 				<div
-					className="relative w-64 h-64 rounded-[36px] overflow-hidden bg-black shadow-2xl border-2 border-white/15 flex items-center justify-center group"
+					className="relative w-80 h-80 sm:w-96 sm:h-96 rounded-[40px] sm:rounded-[48px] overflow-hidden bg-black shadow-2xl border-2 border-white/15 flex items-center justify-center group"
 					style={{
 						WebkitMaskImage: '-webkit-radial-gradient(white, black)',
 						maskImage: 'radial-gradient(white, black)',
@@ -505,9 +508,9 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 							autoPlay
 							muted
 							playsInline
-							className="w-full h-full object-cover scale-x-[-1] rounded-[36px]"
+							className="w-full h-full object-cover scale-x-[-1] rounded-[40px] sm:rounded-[48px]"
 							style={{
-								borderRadius: '36px',
+								borderRadius: '48px',
 								overflow: 'hidden',
 								transform: 'scaleX(-1) translateZ(0)',
 								WebkitMaskImage: '-webkit-radial-gradient(white, black)',
@@ -526,9 +529,9 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 							onTimeUpdate={handlePreviewTimeUpdate}
 							onPlay={() => setPreviewPlaying(true)}
 							onPause={() => setPreviewPlaying(false)}
-							className="w-full h-full object-cover cursor-pointer rounded-[36px]"
+							className="w-full h-full object-cover cursor-pointer rounded-[40px] sm:rounded-[48px]"
 							style={{
-								borderRadius: '36px',
+								borderRadius: '48px',
 								overflow: 'hidden',
 								transform: 'translateZ(0)',
 								WebkitMaskImage: '-webkit-radial-gradient(white, black)',
@@ -549,14 +552,14 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 					{mode === 'recording' && (
 						<svg
 							className="absolute inset-0 w-full h-full pointer-events-none"
-							viewBox="0 0 256 256"
+							viewBox={`0 0 ${width} ${height}`}
 						>
 							{/* Track */}
 							<rect
-								x="4"
-								y="4"
-								width="248"
-								height="248"
+								x={rectInset}
+								y={rectInset}
+								width={rectWidth}
+								height={rectHeight}
 								rx={radius}
 								ry={radius}
 								fill="none"
@@ -565,10 +568,10 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 							/>
 							{/* Reverse Remaining Progress */}
 							<rect
-								x="4"
-								y="4"
-								width="248"
-								height="248"
+								x={rectInset}
+								y={rectInset}
+								width={rectWidth}
+								height={rectHeight}
 								rx={radius}
 								ry={radius}
 								fill="none"
@@ -627,7 +630,7 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 				</div>
 
 				{/* Bottom Action Controls */}
-				<div className="mt-4 w-full max-w-xs flex flex-col items-center gap-3">
+				<div className="mt-4 w-full max-w-80 sm:max-w-96 flex flex-col items-center gap-3">
 					{/* Mode: Idle - Record Button */}
 					{mode === 'idle' && (
 						<div className="flex flex-col items-center gap-2">

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, memo, useEffect } from 'react';
+import { useState, useRef, useMemo, memo, useEffect, useCallback } from 'react';
 
 import { useAuthStore } from '@/store/store';
 import { Avatar } from '../Avatar';
@@ -42,6 +42,24 @@ export const MessageItem = memo(
 		const isMobile = useMediaQuery('(max-width: 768px)');
 		const dragStartX = useRef<number | null>(null);
 		const isDragging = useRef(false);
+		const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+		// Sync editValue whenever the decrypted text is updated externally
+		// (e.g. another edit arrives, or the message is first decrypted).
+		// Guard with isEditing so we don't clobber live user input.
+		useEffect(() => {
+			if (!isEditing) {
+				setEditValue(msg.text || '');
+			}
+		}, [msg.text, isEditing]);
+
+		// Auto-resize the textarea whenever its content or visibility changes.
+		useEffect(() => {
+			const el = textareaRef.current;
+			if (!el) return;
+			el.style.height = 'auto';
+			el.style.height = `${el.scrollHeight}px`;
+		}, [editValue, isEditing]);
 
 		const handleDragStart = (x: number) => {
 			dragStartX.current = x;
@@ -92,13 +110,27 @@ export const MessageItem = memo(
 			return msg.text.includes(`@${user.username}`);
 		}, [user, msg.text]);
 
+		// Return focus to the main chat input after exiting edit mode.
+		const focusChatInput = useCallback(() => {
+			const chatInput = document.querySelector<HTMLElement>('[data-chat-input]');
+			chatInput?.focus();
+		}, []);
+
+		const cancelEditing = useCallback(() => {
+			setIsEditing(false);
+			focusChatInput();
+		}, [focusChatInput]);
+
 		const handleEdit = async () => {
 			if (!editValue.trim() || editValue === msg.text) {
-				setIsEditing(false);
+				cancelEditing();
 				return;
 			}
 			const ok = await wsEditMessage(channel.id, msg.id, editValue);
-			if (ok) setIsEditing(false);
+			if (ok) {
+				setIsEditing(false);
+				focusChatInput();
+			}
 		};
 
 		const handleDelete = async () => {
@@ -321,6 +353,7 @@ export const MessageItem = memo(
 								<div className="mt-1">
 									<div className="bg-secondary rounded-lg px-3 py-2 border border-primary/30">
 										<textarea
+											ref={textareaRef}
 											autoFocus
 											value={editValue}
 											onChange={(e) => setEditValue(e.target.value)}
@@ -329,10 +362,10 @@ export const MessageItem = memo(
 													e.preventDefault();
 													handleEdit();
 												} else if (e.key === 'Escape') {
-													setIsEditing(false);
+													cancelEditing();
 												}
 											}}
-											className="w-full bg-transparent border-none outline-none text-[15px] resize-none min-h-[44px]"
+											className="w-full bg-transparent border-none outline-none text-[15px] resize-none overflow-hidden"
 											rows={1}
 										/>
 									</div>
@@ -341,7 +374,7 @@ export const MessageItem = memo(
 											escape to{' '}
 											<span
 												className="text-primary hover:underline cursor-pointer"
-												onClick={() => setIsEditing(false)}
+												onClick={cancelEditing}
 											>
 												cancel
 											</span>

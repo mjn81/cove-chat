@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,14 +18,43 @@ import (
 	"github.com/coder/websocket/wsjson"
 )
 
+// WhisperSession tracks an active in-memory peer-to-peer E2EE session.
+// The Hub only maintains routing state in RAM and NEVER sees keys, plaintext, or stores messages.
+type WhisperSession struct {
+	ID                string    `json:"session_id"`
+	InitiatorID       string    `json:"initiator_id"`
+	InitiatorUsername string    `json:"initiator_username"`
+	TargetID          string    `json:"target_id"`
+	PubKey            string    `json:"pub_key"`
+	ExpiryMode        string    `json:"expiry_mode"` // "persistent", "5m", "1h", "24h", "session_only"
+	CreatedAt         time.Time `json:"created_at"`
+	Pending           bool      `json:"pending"`
+}
+
+// voiceUserRemover is the subset of *voice.Router the Hub needs to purge a
+// user's voice-call state on disconnect. Declared here (rather than
+// importing the voice package's concrete type) to keep ws decoupled from
+// voice; wired up via SetVoiceRouter once both are constructed in main.go.
+type voiceUserRemover interface {
+	RemoveUser(userID string)
+}
+
 // Hub manages all active WebSocket connections and broadcasts messages.
 type Hub struct {
 	mu      sync.RWMutex
 	clients map[string][]*Client // key: userID, value: slice of active connections
 
+	whisperMu       sync.RWMutex
+	whisperSessions map[string]*WhisperSession // key: session_id
+
 	store    *store.Store
 	sessions *auth.SessionStore
 	kek      []byte
+
+	voiceRouter voiceUserRemover
+
+	isDev          bool
+	originPatterns []string
 
 	broadcast chan *envelope
 	closed    bool
@@ -46,17 +77,51 @@ type envelope struct {
 	msg       *models.WSMessage
 }
 
-// NewHub creates and starts a Hub.
-func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte) *Hub {
+// NewHub creates and starts a Hub. isDev relaxes WebSocket Origin
+// verification for local development; in production, origin patterns are
+// derived from frontendOrigin (a comma-separated list, same format as the
+// HTTP CORS config) so the handshake only accepts the deployed frontend(s)
+// as defense-in-depth against cross-site WebSocket hijacking.
+func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte, isDev bool, frontendOrigin string) *Hub {
 	h := &Hub{
-		clients:   make(map[string][]*Client),
-		store:     s,
-		sessions:  sessions,
-		kek:       kek,
-		broadcast: make(chan *envelope, 256),
+		clients:         make(map[string][]*Client),
+		whisperSessions: make(map[string]*WhisperSession),
+		store:           s,
+		sessions:        sessions,
+		kek:             kek,
+		isDev:           isDev,
+		originPatterns:  originPatternsFrom(frontendOrigin),
+		broadcast:       make(chan *envelope, 256),
 	}
 	go h.run()
 	return h
+}
+
+// SetVoiceRouter wires the voice router in after construction (NewRouter
+// itself takes the Hub as its VoiceStateNotifier, so the two can't be built
+// in one step). Once set, a user's last WS connection dropping also purges
+// their voice-call state — see unregister() in client.go.
+func (h *Hub) SetVoiceRouter(r voiceUserRemover) {
+	h.voiceRouter = r
+}
+
+// originPatternsFrom converts a comma-separated list of origins (e.g.
+// "https://chat.example.com,https://admin.example.com") into the
+// scheme://host patterns expected by websocket.AcceptOptions.OriginPatterns.
+func originPatternsFrom(frontendOrigin string) []string {
+	var patterns []string
+	for _, o := range strings.Split(frontendOrigin, ",") {
+		o = strings.TrimSpace(o)
+		if o == "" {
+			continue
+		}
+		if u, err := url.Parse(o); err == nil && u.Host != "" {
+			patterns = append(patterns, u.Scheme+"://"+u.Host)
+		} else {
+			patterns = append(patterns, o)
+		}
+	}
+	return patterns
 }
 
 // Close gracefully disconnects all active WebSocket clients.
@@ -115,7 +180,9 @@ func (h *Hub) dispatch(e *envelope) {
 }
 
 // ServeHTTP upgrades an HTTP request to a WebSocket connection.
-// Authentication is via the `nodetalk_session` cookie or a `token` query parameter.
+// Authentication is via the `nodetalk_session` cookie, an Authorization
+// header, or (for the Wails desktop client, whose webview doesn't reliably
+// persist httpOnly cookies) a `nodetalk-token.<token>` WebSocket subprotocol.
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, _, err := auth.ResolveToken(r)
 	if err != nil {
@@ -128,16 +195,27 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		// Allow any origin in development; restrict with OriginPatterns in production.
-		InsecureSkipVerify: true,
-	})
+	opts := &websocket.AcceptOptions{}
+	if h.isDev {
+		// Allow any origin in development, where the frontend often runs on
+		// an arbitrary local port not known ahead of time.
+		opts.InsecureSkipVerify = true
+	} else {
+		opts.OriginPatterns = h.originPatterns
+	}
+	if proto, ok := auth.WSSubprotocol(r); ok {
+		// Per RFC 6455, the server must echo back a subprotocol the client
+		// offered for the connection to be accepted.
+		opts.Subprotocols = []string{proto}
+	}
+
+	conn, err := websocket.Accept(w, r, opts)
 	if err != nil {
 		logger.Warnf("ws: upgrade failed for user %s: %v", session.UserID, err)
 		return
 	}
-	// Set a generous read limit for file/voice payloads (5 MB).
-	conn.SetReadLimit(5 << 20)
+	// Set a generous read limit for encrypted file/voice payloads (20 MB).
+	conn.SetReadLimit(20 << 20)
 
 	client := &Client{
 		UserID:     session.UserID,
@@ -167,6 +245,9 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if effectiveStatus != "offline" {
 		h.BroadcastPresence(session.UserID, effectiveStatus)
 	}
+
+	// Replay any pending incoming whisper invitations for this user
+	h.ReplayPendingWhisperInvites(client)
 
 	// Formalize the Read/Write pumps as dedicated goroutines.
 	// This ensures that slow network connections don't block the Hub.
@@ -513,4 +594,121 @@ func (h *Hub) SendVoiceState(userID string, channelID string, activeUsers []stri
 		}
 	}
 }
+
+// RegisterWhisperSession stores an active in-memory whisper session.
+func (h *Hub) RegisterWhisperSession(sess *WhisperSession) {
+	h.whisperMu.Lock()
+	defer h.whisperMu.Unlock()
+	h.whisperSessions[sess.ID] = sess
+}
+
+// GetWhisperSession retrieves an active whisper session by ID.
+func (h *Hub) GetWhisperSession(id string) (*WhisperSession, bool) {
+	h.whisperMu.RLock()
+	defer h.whisperMu.RUnlock()
+	sess, ok := h.whisperSessions[id]
+	return sess, ok
+}
+
+// RemoveWhisperSession deletes a whisper session from RAM.
+func (h *Hub) RemoveWhisperSession(id string) *WhisperSession {
+	h.whisperMu.Lock()
+	defer h.whisperMu.Unlock()
+	sess, ok := h.whisperSessions[id]
+	if ok {
+		delete(h.whisperSessions, id)
+	}
+	return sess
+}
+
+// CleanupUserWhisperSessions removes all sessions involving the user and returns them.
+// Pending invitations are NOT deleted when the target disconnects, preserving them for when the target reconnects/logs in.
+func (h *Hub) CleanupUserWhisperSessions(userID string) []*WhisperSession {
+	h.whisperMu.Lock()
+	defer h.whisperMu.Unlock()
+	var closed []*WhisperSession
+	for id, sess := range h.whisperSessions {
+		if sess.InitiatorID == userID {
+			// Initiator disconnected; their ephemeral private key is destroyed in client memory
+			closed = append(closed, sess)
+			delete(h.whisperSessions, id)
+		} else if sess.TargetID == userID && !sess.Pending {
+			// Target disconnected from an already established session
+			closed = append(closed, sess)
+			delete(h.whisperSessions, id)
+		}
+	}
+	return closed
+}
+
+// ReplayPendingWhisperInvites delivers pending whisper invitations to a newly connected client.
+func (h *Hub) ReplayPendingWhisperInvites(c *Client) {
+	h.whisperMu.Lock()
+	var toDeliver []*WhisperSession
+	var toDelete []string
+	now := time.Now().UTC()
+
+	for id, sess := range h.whisperSessions {
+		if sess.Pending && now.Sub(sess.CreatedAt) > 30*time.Minute {
+			toDelete = append(toDelete, id)
+			continue
+		}
+		if sess.Pending && sess.TargetID == c.UserID {
+			if !h.IsUserOnline(sess.InitiatorID) {
+				toDelete = append(toDelete, id)
+			} else {
+				toDeliver = append(toDeliver, sess)
+			}
+		}
+	}
+	for _, id := range toDelete {
+		delete(h.whisperSessions, id)
+	}
+	h.whisperMu.Unlock()
+
+	for _, sess := range toDeliver {
+		relayedPayload, _ := json.Marshal(map[string]any{
+			"session_id":         sess.ID,
+			"initiator_id":       sess.InitiatorID,
+			"initiator_username": sess.InitiatorUsername,
+			"pub_key":            sess.PubKey,
+			"expiry_mode":        sess.ExpiryMode,
+		})
+		msg := &models.WSMessage{
+			Type:    "whisper_init",
+			Payload: relayedPayload,
+		}
+		select {
+		case c.send <- &envelope{msg: msg}:
+		default:
+		}
+	}
+}
+
+// IsUserOnline returns true if the user has at least one active connection to the Hub.
+func (h *Hub) IsUserOnline(userID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	clients, ok := h.clients[userID]
+	return ok && len(clients) > 0
+}
+
+// SendToUser dispatches a WSMessage to all active connections for a given user.
+func (h *Hub) SendToUser(userID string, msg *models.WSMessage) bool {
+	env := &envelope{msg: msg}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	clients, ok := h.clients[userID]
+	if !ok || len(clients) == 0 {
+		return false
+	}
+	for _, c := range clients {
+		select {
+		case c.send <- env:
+		default:
+		}
+	}
+	return true
+}
+
 
