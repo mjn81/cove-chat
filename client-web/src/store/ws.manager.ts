@@ -7,6 +7,7 @@ import { useAppStore } from './app.slice';
 import { useVoiceStore } from './voiceStore';
 import { buildMessagePreview } from '@/utils/messagePreview';
 import { initWhisperListeners } from './whisperStore';
+import { isDirectMessage } from '@/utils/channel';
 
 let initialized = false;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -244,6 +245,65 @@ export function initWebSocket() {
 			queryClient.invalidateQueries({ queryKey: ['messages', payload.channel_id] });
 		}
 	});
+
+	useChannelStore.subscribe((state, prevState) => {
+		if (state.channels !== prevState.channels && state.channels.length > 0) {
+			const voiceStore = useVoiceStore.getState();
+			for (const [chId, users] of Object.entries(voiceStore.participants)) {
+				if (users && users.length > 0) {
+					checkIncomingCall(chId, users);
+				}
+			}
+		}
+	});
+
+	onWS('voice_update', (rawPayload: unknown) => {
+		const payload = rawPayload as { channel_id?: string; users?: string[] };
+		if (!payload?.channel_id) return;
+
+		const users = Array.isArray(payload.users) ? payload.users : [];
+		const store = useVoiceStore.getState();
+		store.updateParticipants(payload.channel_id, users);
+
+		if (users.length === 0) {
+			store.resetHandledCall(payload.channel_id);
+			if (store.incomingCall?.channelId === payload.channel_id) {
+				store.dismissIncomingCall();
+			}
+			return;
+		}
+
+		checkIncomingCall(payload.channel_id, users);
+	});
+}
+
+export function checkIncomingCall(channelId: string, users: string[]) {
+	if (users.length === 0) return;
+	const store = useVoiceStore.getState();
+	const currentUser = useAuthStore.getState().user;
+	const channels = useChannelStore.getState().channels;
+	const channel = channels.find((c) => c.id === channelId);
+
+	// If this is a direct message, check for incoming call
+	if (channel && isDirectMessage(channel)) {
+		const isUserInCall = store.isActive && store.activeChannelId === channelId;
+		const isAlreadyHandled = store.handledCallChannels.has(channelId);
+		const otherMemberId = channel.members.find((m) => m !== currentUser?.id);
+		const callerId = users.find((id) => id !== currentUser?.id);
+
+		if (!isUserInCall && !isAlreadyHandled && callerId && otherMemberId === callerId) {
+			const callerName = channel.member_names?.[callerId] || 'Someone';
+			const callerAvatar = channel.member_avatars?.[callerId];
+			store.setIncomingCall({
+				channelId: channel.id,
+				callerId,
+				callerUsername: callerName,
+				callerAvatarId: callerAvatar,
+				timestamp: Date.now(),
+			});
+			showBrowserNotification('Incoming Call', `${callerName} is calling you...`);
+		}
+	}
 }
 
 export function connectWS(token?: string) {

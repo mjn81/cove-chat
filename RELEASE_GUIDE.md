@@ -5,7 +5,7 @@ This guide explains how to perform a proper multi-platform release for NodeTalk 
 ## 1. Prerequisites
 Before starting a release, ensure you have the following installed:
 - **Go** (1.21+)
-- **Node.js** (18+) & **npm**
+- **Node.js** (18+) & **pnpm** (`corepack enable`)
 - **Wails CLI** (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 - **Docker** (optional, for Docker images)
 

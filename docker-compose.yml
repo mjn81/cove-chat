@@ -6,6 +6,8 @@ services:
     image: nodetalk-server:latest
     ports:
       - "4000:4000"
+      - "3478:3478/udp"
+      - "50000-50100:50000-50100/udp"
       - "9090:9090/udp"
     volumes:
       - ./backend/data:/app/data

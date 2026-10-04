@@ -19,6 +19,7 @@ import { requestNotificationPermission } from '@/utils/notifications';
 import { apiJoinChannel } from '@/api/client';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VoiceChatController } from '@/components/Voice/VoiceChatController';
+import { IncomingCallModal } from '@/components/Voice/IncomingCallModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
 import { WhisperIncomingToast } from '@/components/WhisperIncomingToast';
@@ -152,110 +153,104 @@ export default function AppPage() {
 		</div>
 	);
 
-	if (isMobile) {
-		return (
-			<div className="h-screen w-full bg-background flex flex-col overflow-hidden relative">
-				<ConnectionBanner />
-				{/* Mobile App Navigation Logic */}
-				{!activeChannel ? (
-					// Mode 1: Chat Selector (Main Page)
-					<div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
-						{renderLeftSidebar()}
-					</div>
-				) : (
-					// Mode 2: Dedicated Chat View
-					<div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-						{renderChatArea()}
-					</div>
-				)}
-
-				{/* Right Sidebar Drawer (Members) - Only accessible from Chat View */}
-				<div
-					className={`fixed inset-y-0 right-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
-						isRightSidebarOpen && activeChannel ? 'translate-x-0' : 'translate-x-full'
-					}`}
-				>
-					{renderRightSidebar()}
-				</div>
-
-				{/* Overlay for Right Sidebar on Tablets/Small Desktop but we use isMobile here */}
-				{isRightSidebarOpen && activeChannel && isMobile && (
-					<div
-						className="fixed inset-0 bg-black/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
-						onClick={() => setRightSidebarOpen(false)}
-					/>
-				)}
-
-				<ErrorBoundary label="voice chat">
-					<VoiceChatController />
-				</ErrorBoundary>
-			</div>
-		);
-	}
-
 	return (
-		<div className="h-screen w-full flex flex-col overflow-hidden">
+		<div className="h-screen w-full bg-background flex flex-col overflow-hidden relative">
 			<ConnectionBanner />
-			<div className="flex-1 w-full flex flex-row overflow-hidden">
-				<NavStrip
-					activeTab={sidebarTab}
-					onChange={setSidebarTab}
-					orientation="vertical"
-				/>
-				<ResizablePanelGroup
-					direction="horizontal"
-					className="flex-1 w-full bg-background overflow-hidden"
-				>
-					<ResizablePanel
-						panelRef={leftPanelRef}
-						defaultSize="280px"
-						minSize="240px"
-						maxSize="500px"
-						collapsible={true}
-						collapsedSize="64px"
-						groupResizeBehavior="preserve-pixel-size"
-						onResize={(panelSize) => setIsLeftCollapsed(panelSize.inPixels <= 70)}
-						className={cn(
-							'bg-secondary flex flex-col overflow-hidden',
-							isLeftTransitioning && 'transition-all duration-300 ease-in-out',
-						)}
-					>
-						{renderLeftSidebar()}
-					</ResizablePanel>
+			{isMobile ? (
+				<>
+					{/* Mobile App Navigation Logic */}
+					{!activeChannel ? (
+						// Mode 1: Chat Selector (Main Page)
+						<div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+							{renderLeftSidebar()}
+						</div>
+					) : (
+						// Mode 2: Dedicated Chat View
+						<div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+							{renderChatArea()}
+						</div>
+					)}
 
-					<ResizableHandle withHandle className="bg-border" />
-
-					<ResizablePanel
-						minSize="40%"
-						groupResizeBehavior="preserve-relative-size"
-						className="flex flex-col bg-background relative"
-					>
-						{renderChatArea()}
-					</ResizablePanel>
-
-					<ResizableHandle withHandle className="bg-border" />
-
-					<ResizablePanel
-						panelRef={rightPanelRef}
-						defaultSize="64px"
-						minSize="220px"
-						maxSize="320px"
-						collapsible={true}
-						collapsedSize="64px"
-						groupResizeBehavior="preserve-pixel-size"
-						onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 70)}
-						className={cn(
-							'bg-secondary flex flex-col',
-							isRightTransitioning && 'transition-all duration-300 ease-in-out',
-						)}
+					{/* Right Sidebar Drawer (Members) - Only accessible from Chat View */}
+					<div
+						className={`fixed inset-y-0 right-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
+							isRightSidebarOpen && activeChannel ? 'translate-x-0' : 'translate-x-full'
+						}`}
 					>
 						{renderRightSidebar()}
-					</ResizablePanel>
-				</ResizablePanelGroup>
-			</div>
+					</div>
+
+					{/* Overlay for Right Sidebar on Tablets/Small Desktop */}
+					{isRightSidebarOpen && activeChannel && (
+						<div
+							className="fixed inset-0 bg-black/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+							onClick={() => setRightSidebarOpen(false)}
+						/>
+					)}
+				</>
+			) : (
+				<div className="flex-1 w-full flex flex-row overflow-hidden">
+					<NavStrip
+						activeTab={sidebarTab}
+						onChange={setSidebarTab}
+						orientation="vertical"
+					/>
+					<ResizablePanelGroup
+						direction="horizontal"
+						className="flex-1 w-full bg-background overflow-hidden"
+					>
+						<ResizablePanel
+							panelRef={leftPanelRef}
+							defaultSize="280px"
+							minSize="240px"
+							maxSize="500px"
+							collapsible={true}
+							collapsedSize="64px"
+							groupResizeBehavior="preserve-pixel-size"
+							onResize={(panelSize) => setIsLeftCollapsed(panelSize.inPixels <= 70)}
+							className={cn(
+								'bg-secondary flex flex-col overflow-hidden',
+								isLeftTransitioning && 'transition-all duration-300 ease-in-out',
+							)}
+						>
+							{renderLeftSidebar()}
+						</ResizablePanel>
+
+						<ResizableHandle withHandle className="bg-border" />
+
+						<ResizablePanel
+							minSize="40%"
+							groupResizeBehavior="preserve-relative-size"
+							className="flex flex-col bg-background relative"
+						>
+							{renderChatArea()}
+						</ResizablePanel>
+
+						<ResizableHandle withHandle className="bg-border" />
+
+						<ResizablePanel
+							panelRef={rightPanelRef}
+							defaultSize="64px"
+							minSize="220px"
+							maxSize="320px"
+							collapsible={true}
+							collapsedSize="64px"
+							groupResizeBehavior="preserve-pixel-size"
+							onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 70)}
+							className={cn(
+								'bg-secondary flex flex-col',
+								isRightTransitioning && 'transition-all duration-300 ease-in-out',
+							)}
+						>
+							{renderRightSidebar()}
+						</ResizablePanel>
+					</ResizablePanelGroup>
+				</div>
+			)}
 			<ErrorBoundary label="voice chat">
 				<VoiceChatController />
 			</ErrorBoundary>
+			<IncomingCallModal />
 			<WhisperIncomingToast />
 			<WhisperStartModal />
 			<WhisperSafetyNumberModal />

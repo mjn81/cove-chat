@@ -1,4 +1,4 @@
-.PHONY: help build run dev dev-back dev-front front/dev front/install front/build wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -6,7 +6,7 @@ release: clean backend/release wails/build/mac wails/build/windows wails/build/l
 
 GOBIN := $(HOME)/go/bin
 GO    := go
-NPM   := npm
+PNPM  := pnpm
 BIN   := nodetalk-server
 
 help: ## Show this help
@@ -34,16 +34,25 @@ swagger: ## Regenerate Swagger docs (requires swag in GOBIN)
 	cd backend && $(GOBIN)/swag init -g cmd/server/main.go --output docs --parseDependency
 
 ## ── Frontend ─────────────────────────────────────────────────────────────────
-front/install: ## npm install
-	$(NPM) --prefix client-web install
+front/install: ## Install web client deps (pnpm, frozen lockfile)
+	$(PNPM) -C client-web install --frozen-lockfile
 
 dev-front: ## Run frontend dev server (Vite)
-	$(NPM) --prefix client-web run dev
+	$(PNPM) -C client-web dev
 
 front/dev: dev-front ## Vite dev server (alias for dev-front)
 
 front/build: ## Build production bundle into client-web/dist/
-	$(NPM) --prefix client-web run build
+	$(PNPM) -C client-web build
+
+front/test: ## Run frontend unit tests (Vitest)
+	$(PNPM) -C client-web test
+
+front/lint: ## Run ESLint on the web client
+	$(PNPM) -C client-web lint
+
+front/typecheck: ## Type-check the web client (tsc, no emit)
+	$(PNPM) -C client-web typecheck
 
 ## ── Wails Desktop (PRIMARY build target) ────────────────────────────────────
 wails/dev: build ## Run Wails in dev mode (hot-reload desktop app)

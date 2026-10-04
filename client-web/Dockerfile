@@ -3,9 +3,12 @@ FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
 
 WORKDIR /app
 
+# pnpm version is pinned by the "packageManager" field in package.json
+RUN corepack enable
+
 # Copy package files
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source
 COPY . .
@@ -13,7 +16,7 @@ COPY . .
 # Build the application
 # We set VITE_API_URL to a placeholder that will be replaced at runtime by entrypoint.sh
 ENV VITE_API_URL=___VITE_API_URL_PLACEHOLDER___
-RUN npm run build
+RUN pnpm build
 
 # Run stage
 FROM nginx:alpine

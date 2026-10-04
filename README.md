@@ -80,7 +80,7 @@ See [DOCKER.md](./DOCKER.md) for detailed configuration and the [Examples](./exa
 cd backend && go run ./cmd/server
 
 # Web Client
-cd client-web && npm install && npm run dev
+make front/install && make dev-front
 ```
 
 ### 3 — Desktop App (Wails)

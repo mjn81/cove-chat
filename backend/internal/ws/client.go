@@ -47,6 +47,9 @@ func (h *Hub) unregister(c *Client) {
 	// sending a voice Leave packet would otherwise stay a ghost participant
 	// forever), and notify peers.
 	if !stillConnected {
+		if h.rtc != nil {
+			h.rtc.RemoveUser(c.UserID)
+		}
 		if h.voiceRouter != nil {
 			h.voiceRouter.RemoveUser(c.UserID)
 		}
@@ -114,6 +117,12 @@ func (c *Client) handleMessage(ctx context.Context, msg *models.WSMessage) error
 		return c.handleWhisperMsg(msg)
 	case "whisper_close":
 		return c.handleWhisperClose(msg)
+	case "call_join", "call_leave", "call_publish_offer", "call_subscribe_answer",
+		"call_ice_candidate", "call_track_state":
+		if c.hub.rtc == nil {
+			return fmt.Errorf("calling is not enabled on this server")
+		}
+		return c.hub.rtc.HandleSignal(c.UserID, c.Username, msg.Type, msg.Payload)
 	case "ping":
 		pongMsg := &models.WSMessage{Type: "pong"}
 		select {

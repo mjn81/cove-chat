@@ -41,3 +41,49 @@ path = "./data/db"
 global_rps = 100
 # Strict rate limit for auth endpoints (/api/login, /api/register).
 auth_rps = 5
+
+[voice]
+# Group audio/video calling + screen share engine.
+#   "webrtc"  - production, internet-capable: a self-hosted SFU (see
+#               internal/rtc) with encrypted media (DTLS-SRTP) and NAT
+#               traversal via ICE/STUN/TURN. Supports video + screen share.
+#   "raw_udp" - the original unencrypted, audio-only UDP packet router
+#               (internal/voice), for isolated/LAN deployments where every
+#               client can already reach the server directly and the
+#               DTLS/ICE overhead isn't wanted. No video/screen-share.
+mode = "webrtc"
+
+# Maximum participants in a single call (resource cap; enforced at join).
+max_participants_per_call = 10
+
+# WebRTC media (ICE/DTLS/SRTP) ephemeral UDP port range. Firewall this
+# range on the host; each active track negotiation uses one port.
+webrtc_port_min = 50000
+webrtc_port_max = 50100
+
+# Required whenever this process is behind NAT/a cloud load balancer/a
+# Docker port mapping — the IP clients should use to reach it. "webrtc" mode
+# is the internet-capable engine, so it's fine (and the default) for this to
+# assume internet access is available. Deployments with NO internet egress
+# at all should use mode = "raw_udp" above instead of "webrtc" with this
+# left empty.
+#   "auto"    - (default) auto-detect via a one-time STUN query at startup.
+#               Falls back to "" behavior if unreachable.
+#   ""        - direct/LAN-only "webrtc" deployments; never calls out.
+#   "1.2.3.4" - explicit manual value.
+public_ip = "auto"
+# Only used when public_ip = "auto"; overrides the default STUN servers.
+# public_ip_discovery_stun_servers = ["stun:stun.l.google.com:19302"]
+
+# Runs our own STUN+TURN relay in-process (github.com/pion/turn) so NAT
+# traversal works without any external TURN provider. Requires public_ip
+# to be set to be useful. Disable for LAN-only deployments that don't need
+# NAT traversal at all.
+embedded_turn_enabled = true
+embedded_turn_port = 3478
+turn_realm = "nodetalk"
+# Drives short-lived, per-call HMAC-derived TURN credentials (TURN REST API
+# convention) — never a static shared secret handed to clients directly.
+# Generated automatically on first run and persisted here, like
+# master_password above.
+turn_shared_secret = ""

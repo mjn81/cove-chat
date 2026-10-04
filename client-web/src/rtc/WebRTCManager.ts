@@ -1,0 +1,922 @@
+/**
+ * WebRTC Client Manager for NodeTalk group calling.
+ *
+ * Implements the dual-PeerConnection architecture matching backend/internal/rtc:
+ * - publishPC: sends local microphone, camera, and screen share tracks to the SFU
+ * - subscribePC: receives forwarded audio/video/screen tracks from all room peers
+ *
+ * Signaling is routed entirely over the existing authenticated WebSocket hub (ws.ts).
+ */
+
+import {
+	onWS,
+	wsSendCallJoin,
+	wsSendCallLeave,
+	wsSendCallPublishOffer,
+	wsSendCallSubscribeAnswer,
+	wsSendCallICECandidate,
+	wsSendCallTrackState,
+	type CallJoinedPayload,
+	type CallSDPPayload,
+	type CallICECandidatePayload,
+	type CallTrackStatePayload,
+	type CallParticipantEventPayload,
+	type CallErrorPayload,
+} from '@/ws';
+import { useVoiceStore } from '@/store/voiceStore';
+import { useAppStore } from '@/store/app.slice';
+import { useAuthStore } from '@/store/store';
+
+export interface WebRTCOptions {
+	video?: boolean;
+}
+
+export class WebRTCManager {
+	private channelId: string | null = null;
+	private publishPC: RTCPeerConnection | null = null;
+	private subscribePC: RTCPeerConnection | null = null;
+
+	private localAudioTrack: MediaStreamTrack | null = null;
+	private localVideoTrack: MediaStreamTrack | null = null;
+	private localScreenTrack: MediaStreamTrack | null = null;
+
+	private localAudioSender: RTCRtpSender | null = null;
+	private localVideoSender: RTCRtpSender | null = null;
+	private localScreenSender: RTCRtpSender | null = null;
+
+	private audioContext: AudioContext | null = null;
+	private localAnalyser: AnalyserNode | null = null;
+	private remoteAudioNodes: Map<string, { gainNode: GainNode; audio: HTMLAudioElement }> = new Map();
+	private remoteAnalysers: Map<string, AnalyserNode> = new Map();
+	private speakerLastSpoke: Map<string, number> = new Map();
+	private vadInterval: ReturnType<typeof setInterval> | null = null;
+	private pingInterval: ReturnType<typeof setInterval> | null = null;
+
+	private unsubs: Array<() => void> = [];
+	private pendingPublishCandidates: RTCIceCandidateInit[] = [];
+	private pendingSubscribeCandidates: RTCIceCandidateInit[] = [];
+	private pendingSubscribeOffer: RTCSessionDescriptionInit | null = null;
+
+	private isConnecting = false;
+
+	/**
+	 * Ensures the AudioContext is initialized within a user gesture.
+	 */
+	private initAudioContext(): AudioContext | null {
+		if (this.audioContext) return this.audioContext;
+		const AudioCtx =
+			typeof window !== 'undefined'
+				? window.AudioContext ||
+				  (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+				: null;
+		if (typeof AudioCtx === 'function') {
+			try {
+				this.audioContext = new AudioCtx();
+				if (this.audioContext.state === 'suspended') {
+					this.audioContext.resume().catch(() => {});
+				}
+			} catch {
+				/* AudioContext may be restricted in some environments */
+			}
+		}
+		return this.audioContext;
+	}
+
+	/**
+	 * Connect to an active call or start a new call on the given channel.
+	 *
+	 * @param channelId - The channel ID for the call
+	 * @param options - Optional configuration (e.g., enable camera immediately)
+	 */
+	public async join(channelId: string, options?: WebRTCOptions): Promise<void> {
+		if (this.isConnecting || (this.channelId === channelId && this.publishPC)) {
+			return;
+		}
+
+		if (this.channelId) {
+			await this.leave();
+		}
+
+		// Initialize AudioContext immediately on user gesture
+		this.initAudioContext();
+
+		this.channelId = channelId;
+		this.isConnecting = true;
+		this.pendingSubscribeOffer = null;
+
+		const store = useVoiceStore.getState();
+		const currentUserId = useAuthStore.getState().user?.id;
+		const existingMembers = store.participants[channelId] || [];
+		const initialMembers = currentUserId && !existingMembers.includes(currentUserId)
+			? [...existingMembers, currentUserId]
+			: existingMembers;
+
+		store._setInternalState({
+			activeChannelId: channelId,
+			isActive: true,
+			callStatus: 'connecting',
+		});
+		if (initialMembers.length > 0) {
+			store.updateParticipants(channelId, initialMembers);
+		}
+		store.addLog(`[RTC] Joining call in channel ${channelId}...`);
+
+		this.setupSignalingListeners(channelId, options);
+		wsSendCallJoin(channelId);
+	}
+
+	/**
+	 * Leave the active call and release all media devices and peer connections.
+	 */
+	public async leave(): Promise<void> {
+		if (!this.channelId) return;
+
+		const prevChannelId = this.channelId;
+		this.channelId = null;
+		this.isConnecting = false;
+		this.pendingSubscribeOffer = null;
+
+		wsSendCallLeave(prevChannelId);
+
+		// Clean up signaling listeners
+		for (const unsub of this.unsubs) {
+			unsub();
+		}
+		this.unsubs = [];
+
+		// Stop and release local tracks
+		this.stopLocalTracks();
+
+		// Close PeerConnections
+		if (this.publishPC) {
+			try {
+				this.publishPC.close();
+			} catch {
+				/* ignore */
+			}
+			this.publishPC = null;
+		}
+		if (this.subscribePC) {
+			try {
+				this.subscribePC.close();
+			} catch {
+				/* ignore */
+			}
+			this.subscribePC = null;
+		}
+		this.stopPingMonitoring();
+
+		// Close audio context and remote audio nodes
+		this.cleanupAudio();
+
+		this.pendingPublishCandidates = [];
+		this.pendingSubscribeCandidates = [];
+
+		const store = useVoiceStore.getState();
+		store.leaveVoice();
+		store.addLog(`[RTC] Left call in channel ${prevChannelId}`);
+	}
+
+	/**
+	 * Toggle local microphone mute state.
+	 */
+	public toggleMute(): void {
+		if (!this.localAudioTrack) return;
+		const currentMuted = useVoiceStore.getState().isMuted;
+		const nextMuted = !currentMuted;
+		this.localAudioTrack.enabled = !nextMuted;
+
+		useVoiceStore.getState()._setInternalState({ isMuted: nextMuted });
+		if (this.channelId) {
+			wsSendCallTrackState(this.channelId, 'audio', !nextMuted);
+		}
+	}
+
+	/**
+	 * Toggle local deafen state (mute all incoming call audio).
+	 */
+	public toggleDeafen(): void {
+		const currentDeafened = useVoiceStore.getState().isDeafened;
+		const nextDeafened = !currentDeafened;
+		useVoiceStore.getState()._setInternalState({ isDeafened: nextDeafened });
+
+		this.remoteAudioNodes.forEach(({ gainNode }) => {
+			gainNode.gain.value = nextDeafened ? 0 : 1;
+		});
+	}
+
+	/**
+	 * Toggle local camera video stream.
+	 */
+	public async toggleVideo(): Promise<void> {
+		if (!this.publishPC || !this.channelId) return;
+		const isCurrentlyEnabled = useVoiceStore.getState().isVideoEnabled;
+
+		if (isCurrentlyEnabled) {
+			// Stop and remove camera track
+			if (this.localVideoSender && this.publishPC) {
+				try {
+					this.publishPC.removeTrack(this.localVideoSender);
+				} catch {
+					/* ignore */
+				}
+				this.localVideoSender = null;
+			}
+			if (this.localVideoTrack) {
+				this.localVideoTrack.stop();
+				this.localVideoTrack = null;
+			}
+
+			useVoiceStore.getState()._setInternalState({
+				isVideoEnabled: false,
+				localStream: this.createLocalStream(),
+			});
+			wsSendCallTrackState(this.channelId, 'video', false);
+			await this.renegotiatePublish();
+		} else {
+			// Acquire camera track
+			try {
+				const preferredCamera = useVoiceStore.getState().preferredCameraId;
+				const videoConstraints: MediaTrackConstraints = preferredCamera
+					? { deviceId: { exact: preferredCamera }, width: { ideal: 1280 }, height: { ideal: 720 } }
+					: { width: { ideal: 1280 }, height: { ideal: 720 } };
+
+				const videoStream = await navigator.mediaDevices.getUserMedia({
+					video: videoConstraints,
+				});
+				const track = videoStream.getVideoTracks()[0];
+				if (!track) return;
+
+				this.localVideoTrack = track;
+				const stream = this.createLocalStream();
+
+				this.localVideoSender = this.publishPC.addTrack(track, stream);
+
+				useVoiceStore.getState()._setInternalState({
+					isVideoEnabled: true,
+					localStream: stream,
+				});
+				wsSendCallTrackState(this.channelId, 'video', true);
+				await this.renegotiatePublish();
+			} catch (err) {
+				useVoiceStore.getState().addLog(`[RTC] Failed to access camera: ${err}`);
+			}
+		}
+	}
+
+	/**
+	 * Toggle local screen sharing stream.
+	 */
+	public async toggleScreenShare(): Promise<void> {
+		if (!this.publishPC || !this.channelId) return;
+		const isCurrentlySharing = useVoiceStore.getState().isScreenSharing;
+
+		if (isCurrentlySharing) {
+			// Stop screen share
+			if (this.localScreenSender && this.publishPC) {
+				try {
+					this.publishPC.removeTrack(this.localScreenSender);
+				} catch {
+					/* ignore */
+				}
+				this.localScreenSender = null;
+			}
+			if (this.localScreenTrack) {
+				this.localScreenTrack.stop();
+				this.localScreenTrack = null;
+			}
+
+			useVoiceStore.getState()._setInternalState({
+				isScreenSharing: false,
+				localScreenStream: null,
+			});
+			wsSendCallTrackState(this.channelId, 'screen', false);
+			await this.renegotiatePublish();
+		} else {
+			// Start screen share
+			try {
+				const displayStream = await navigator.mediaDevices.getDisplayMedia({
+					video: true,
+					audio: true,
+				});
+				const track = displayStream.getVideoTracks()[0];
+				if (!track) return;
+
+				this.localScreenTrack = track;
+				track.onended = () => {
+					this.toggleScreenShare();
+				};
+
+				this.localScreenSender = this.publishPC.addTrack(track, displayStream);
+
+				useVoiceStore.getState()._setInternalState({
+					isScreenSharing: true,
+					localScreenStream: displayStream,
+				});
+				wsSendCallTrackState(this.channelId, 'screen', true, track.id, displayStream.id);
+				await this.renegotiatePublish(track.id);
+			} catch (err) {
+				useVoiceStore.getState().addLog(`[RTC] Screen sharing cancelled or failed: ${err}`);
+			}
+		}
+	}
+
+	/**
+	 * Update the output volume for a specific remote user.
+	 *
+	 * @param userId - Target user ID
+	 * @param volume - Volume scale (0.0 to 2.0)
+	 */
+	public setParticipantVolume(userId: string, volume: number): void {
+		useVoiceStore.getState().setUserVolume(userId, volume);
+		const node = this.remoteAudioNodes.get(userId);
+		if (node) {
+			const isMutedLocally = useVoiceStore.getState().userMutes.has(userId);
+			const isDeafened = useVoiceStore.getState().isDeafened;
+			node.gainNode.gain.value = isMutedLocally || isDeafened ? 0 : volume;
+		}
+	}
+
+	/**
+	 * Toggle local mute for a specific remote user.
+	 *
+	 * @param userId - Target user ID
+	 */
+	public toggleParticipantMute(userId: string): void {
+		const store = useVoiceStore.getState();
+		store.toggleUserMute(userId);
+
+		const isMutedNow = useVoiceStore.getState().userMutes.has(userId);
+		const userVol = useVoiceStore.getState().userVolumes[userId] ?? 1;
+		const isDeafened = useVoiceStore.getState().isDeafened;
+
+		const node = this.remoteAudioNodes.get(userId);
+		if (node) {
+			node.gainNode.gain.value = isMutedNow || isDeafened ? 0 : userVol;
+		}
+	}
+
+	// ── Private Setup & Negotiation ──────────────────────────────────────────
+
+	private setupSignalingListeners(_channelId: string, options?: WebRTCOptions): void {
+		this.unsubs.push(
+			onWS('call_joined', async (rawPayload: unknown) => {
+				const payload = rawPayload as CallJoinedPayload;
+				if (payload.channel_id !== this.channelId) return;
+				await this.handleCallJoined(payload, options);
+			}),
+
+			onWS('call_publish_answer', async (rawPayload: unknown) => {
+				const payload = rawPayload as CallSDPPayload;
+				if (payload.channel_id !== this.channelId || !this.publishPC) return;
+				try {
+					await this.publishPC.setRemoteDescription(payload.sdp);
+					this.flushPendingCandidates(this.publishPC, this.pendingPublishCandidates);
+				} catch (err) {
+					useVoiceStore.getState().addLog(`[RTC] setRemoteDescription error on publishPC: ${err}`);
+				}
+			}),
+
+			onWS('call_subscribe_offer', async (rawPayload: unknown) => {
+				const payload = rawPayload as CallSDPPayload;
+				if (payload.channel_id !== this.channelId) return;
+
+				if (!this.subscribePC) {
+					useVoiceStore.getState().addLog('[RTC] Buffering early subscribe offer before subscribePC is ready');
+					this.pendingSubscribeOffer = payload.sdp;
+					return;
+				}
+
+				await this.handleSubscribeOffer(payload.sdp);
+			}),
+
+			onWS('call_ice_candidate', async (rawPayload: unknown) => {
+				const payload = rawPayload as CallICECandidatePayload;
+				if (payload.channel_id !== this.channelId) return;
+				const pc = payload.target === 'publish' ? this.publishPC : this.subscribePC;
+				const queue = payload.target === 'publish' ? this.pendingPublishCandidates : this.pendingSubscribeCandidates;
+
+				if (!pc || !pc.remoteDescription) {
+					queue.push(payload.candidate);
+					return;
+				}
+
+				try {
+					await pc.addIceCandidate(payload.candidate);
+				} catch {
+					/* ignore */
+				}
+			}),
+
+			onWS('call_track_state', (rawPayload: unknown) => {
+				const payload = rawPayload as CallTrackStatePayload;
+				if (payload.channel_id !== this.channelId || !payload.user_id) return;
+				useVoiceStore.getState().setTrackState(payload.user_id, payload.kind, payload.enabled);
+			}),
+
+			onWS('call_participant_joined', (rawPayload: unknown) => {
+				const payload = rawPayload as CallParticipantEventPayload;
+				if (payload.channel_id !== this.channelId) return;
+				const store = useVoiceStore.getState();
+				const current = store.participants[this.channelId] || [];
+				if (!current.includes(payload.user.user_id)) {
+					store.updateParticipants(this.channelId, [...current, payload.user.user_id]);
+				}
+				if (payload.user.track_states) {
+					for (const [kind, enabled] of Object.entries(payload.user.track_states)) {
+						store.setTrackState(payload.user.user_id, kind as 'audio' | 'video' | 'screen', enabled);
+					}
+				}
+			}),
+
+			onWS('call_participant_left', (rawPayload: unknown) => {
+				const payload = rawPayload as CallParticipantEventPayload;
+				if (payload.channel_id !== this.channelId) return;
+				const store = useVoiceStore.getState();
+				const current = store.participants[this.channelId] || [];
+				store.updateParticipants(this.channelId, current.filter(id => id !== payload.user.user_id));
+				store.removeRemoteStream(payload.user.user_id);
+				this.removeRemoteAudio(payload.user.user_id);
+			}),
+
+			onWS('call_error', (rawPayload: unknown) => {
+				const payload = rawPayload as CallErrorPayload;
+				useVoiceStore.getState().addLog(`[RTC] Server error: ${payload.error}`);
+				if (payload.error.includes('not a member') || payload.error.includes('call is full')) {
+					this.leave();
+				}
+			}),
+		);
+	}
+
+	private async handleCallJoined(payload: CallJoinedPayload, options?: WebRTCOptions): Promise<void> {
+		const store = useVoiceStore.getState();
+		const rtcConfig: RTCConfiguration = {
+			iceServers: payload.ice_servers || [],
+		};
+
+		store.addLog(`[RTC] Received call_joined. Initializing WebRTC with ${payload.ice_servers.length} ICE server(s)...`);
+
+		// Build participant roster immediately
+		const participantIds = payload.participants.map(p => p.user_id);
+		const currentUserId = useAuthStore.getState().user?.id;
+		if (currentUserId && !participantIds.includes(currentUserId)) {
+			participantIds.push(currentUserId);
+		}
+		store.updateParticipants(payload.channel_id, participantIds);
+
+		for (const p of payload.participants) {
+			if (p.track_states) {
+				for (const [kind, enabled] of Object.entries(p.track_states)) {
+					store.setTrackState(p.user_id, kind as 'audio' | 'video' | 'screen', enabled);
+				}
+			}
+		}
+
+		// Initialize PeerConnections synchronously right away to avoid race conditions with early subscribe offers
+		this.publishPC = new RTCPeerConnection(rtcConfig);
+		this.subscribePC = new RTCPeerConnection(rtcConfig);
+
+		// Wire connection state changes for ping monitoring
+		const onConnChange = () => {
+			if (
+				this.publishPC?.connectionState === 'connected' ||
+				this.subscribePC?.connectionState === 'connected'
+			) {
+				this.startPingMonitoring();
+			}
+		};
+		this.publishPC.onconnectionstatechange = onConnChange;
+		this.subscribePC.onconnectionstatechange = onConnChange;
+
+		// Wire ICE candidates
+		this.publishPC.onicecandidate = (e) => {
+			if (e.candidate && this.channelId) {
+				wsSendCallICECandidate(this.channelId, 'publish', e.candidate.toJSON());
+			}
+		};
+		this.subscribePC.onicecandidate = (e) => {
+			if (e.candidate && this.channelId) {
+				wsSendCallICECandidate(this.channelId, 'subscribe', e.candidate.toJSON());
+			}
+		};
+
+		// Wire subscribePC incoming tracks
+		this.subscribePC.ontrack = (event) => {
+			const { track, streams } = event;
+			const stream = streams[0];
+			const streamId = stream?.id || '';
+
+			store.addLog(`[RTC] Inbound track: kind=${track.kind}, streamId=${streamId}`);
+
+			if (streamId.endsWith(':screen') || streamId === 'screen') {
+				const publisherId = streamId.replace(':screen', '');
+				store.setRemoteScreenStream(publisherId, stream);
+				store.setTrackState(publisherId, 'screen', true);
+			} else if (streamId) {
+				const publisherId = streamId;
+				store.setRemoteStream(publisherId, stream);
+
+				if (track.kind === 'audio') {
+					this.attachRemoteAudio(publisherId, track);
+					store.setTrackState(publisherId, 'audio', true);
+				} else if (track.kind === 'video') {
+					store.setTrackState(publisherId, 'video', true);
+				}
+			}
+		};
+
+		// If a subscribe offer arrived before subscribePC was initialized, process it immediately!
+		if (this.pendingSubscribeOffer) {
+			const bufferedOffer = this.pendingSubscribeOffer;
+			this.pendingSubscribeOffer = null;
+			await this.handleSubscribeOffer(bufferedOffer);
+		}
+
+		// Acquire local microphone
+		try {
+			const preferredMic = useAppStore.getState().preferredMicId;
+			const audioConstraints: MediaTrackConstraints = preferredMic && preferredMic !== 'default'
+				? { deviceId: { exact: preferredMic }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+				: { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+
+			const audioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+			const audioTrack = audioStream.getAudioTracks()[0];
+			if (audioTrack) {
+				this.localAudioTrack = audioTrack;
+				const isMuted = store.isMuted;
+				audioTrack.enabled = !isMuted;
+				this.localAudioSender = this.publishPC.addTrack(audioTrack, this.createLocalStream());
+
+				// Setup local analyser for instant local VAD
+				this.setupLocalAnalyser(audioTrack);
+			}
+		} catch (err) {
+			store.addLog(`[RTC] Failed to acquire microphone: ${err}`);
+		}
+
+		// Optionally acquire local video if requested
+		if (options?.video) {
+			try {
+				const preferredCamera = store.preferredCameraId;
+				const videoConstraints: MediaTrackConstraints = preferredCamera
+					? { deviceId: { exact: preferredCamera }, width: { ideal: 1280 }, height: { ideal: 720 } }
+					: { width: { ideal: 1280 }, height: { ideal: 720 } };
+
+				const videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+				const videoTrack = videoStream.getVideoTracks()[0];
+				if (videoTrack) {
+					this.localVideoTrack = videoTrack;
+					this.localVideoSender = this.publishPC.addTrack(videoTrack, this.createLocalStream());
+					store._setInternalState({ isVideoEnabled: true });
+				}
+			} catch (err) {
+				store.addLog(`[RTC] Failed to acquire camera: ${err}`);
+			}
+		}
+
+		store._setInternalState({
+			localStream: this.createLocalStream(),
+			callStatus: 'connected',
+		});
+
+		// Start VAD loop with zero-lag onset and smooth decay
+		this.startVAD();
+
+		// Initial publish offer negotiation
+		await this.renegotiatePublish();
+
+		// Broadcast initial track states
+		wsSendCallTrackState(payload.channel_id, 'audio', !store.isMuted);
+		if (this.localVideoTrack) {
+			wsSendCallTrackState(payload.channel_id, 'video', true);
+		}
+	}
+
+	private async handleSubscribeOffer(sdp: RTCSessionDescriptionInit): Promise<void> {
+		if (!this.subscribePC || !this.channelId) return;
+		try {
+			await this.subscribePC.setRemoteDescription(sdp);
+			this.flushPendingCandidates(this.subscribePC, this.pendingSubscribeCandidates);
+
+			const answer = await this.subscribePC.createAnswer();
+			await this.subscribePC.setLocalDescription(answer);
+
+			wsSendCallSubscribeAnswer(this.channelId, answer);
+		} catch (err) {
+			useVoiceStore.getState().addLog(`[RTC] Error handling subscribe offer: ${err}`);
+		}
+	}
+
+	private async renegotiatePublish(screenTrackId?: string): Promise<void> {
+		if (!this.publishPC || !this.channelId) return;
+
+		try {
+			const offer = await this.publishPC.createOffer();
+			// Set local description with the browser's pristine offer first to prevent WebRTC rejection
+			await this.publishPC.setLocalDescription(offer);
+
+			let finalSdp = offer.sdp || '';
+
+			// If screen sharing, munge the msid of the screen track to 'screen'
+			// to satisfy backend/internal/rtc classifyTrack contract
+			if (screenTrackId && finalSdp.includes(screenTrackId)) {
+				finalSdp = finalSdp
+					.split('\r\n')
+					.map((line) => {
+						if (line.startsWith('a=msid:') && line.includes(screenTrackId)) {
+							return `a=msid:screen ${screenTrackId}`;
+						}
+						return line;
+					})
+					.join('\r\n');
+			}
+
+			wsSendCallPublishOffer(this.channelId, { type: offer.type, sdp: finalSdp });
+		} catch (err) {
+			useVoiceStore.getState().addLog(`[RTC] Renegotiate publish error: ${err}`);
+		}
+	}
+
+	private createLocalStream(): MediaStream {
+		const tracks: MediaStreamTrack[] = [];
+		if (this.localAudioTrack) tracks.push(this.localAudioTrack);
+		if (this.localVideoTrack) tracks.push(this.localVideoTrack);
+		return new MediaStream(tracks);
+	}
+
+	private flushPendingCandidates(pc: RTCPeerConnection, queue: RTCIceCandidateInit[]): void {
+		const toFlush = [...queue];
+		queue.length = 0;
+		for (const cand of toFlush) {
+			pc.addIceCandidate(cand).catch(() => {});
+		}
+	}
+
+	private stopLocalTracks(): void {
+		if (this.localAudioSender && this.publishPC) {
+			try {
+				this.publishPC.removeTrack(this.localAudioSender);
+			} catch {
+				/* ignore */
+			}
+			this.localAudioSender = null;
+		}
+		if (this.localAudioTrack) {
+			this.localAudioTrack.stop();
+			this.localAudioTrack = null;
+		}
+		if (this.localVideoTrack) {
+			this.localVideoTrack.stop();
+			this.localVideoTrack = null;
+		}
+		if (this.localScreenTrack) {
+			this.localScreenTrack.stop();
+			this.localScreenTrack = null;
+		}
+		this.localAudioSender = null;
+		this.localVideoSender = null;
+		this.localScreenSender = null;
+		this.localAnalyser = null;
+	}
+
+	private setupLocalAnalyser(track: MediaStreamTrack): void {
+		try {
+			const ctx = this.initAudioContext();
+			if (!ctx) return;
+			const stream = new MediaStream([track]);
+			const source = ctx.createMediaStreamSource(stream);
+			const analyser = ctx.createAnalyser();
+			analyser.fftSize = 256;
+			analyser.smoothingTimeConstant = 0.3;
+			source.connect(analyser);
+			this.localAnalyser = analyser;
+		} catch {
+			/* ignore */
+		}
+	}
+
+	private attachRemoteAudio(userId: string, track: MediaStreamTrack): void {
+		const ctx = this.initAudioContext();
+
+		// Cleanup existing node for this user if any
+		this.removeRemoteAudio(userId);
+
+		const mediaStream = new MediaStream([track]);
+		const audio = new Audio();
+		audio.srcObject = mediaStream;
+		audio.autoplay = true;
+
+		if (!ctx) {
+			return;
+		}
+
+		try {
+			const source = ctx.createMediaStreamSource(mediaStream);
+			const gainNode = ctx.createGain();
+			const analyser = ctx.createAnalyser();
+			analyser.fftSize = 256;
+			analyser.smoothingTimeConstant = 0.3;
+
+			const store = useVoiceStore.getState();
+			const volume = store.userVolumes[userId] ?? 1;
+			const isMuted = store.userMutes.has(userId);
+			const isDeafened = store.isDeafened;
+
+			gainNode.gain.value = isMuted || isDeafened ? 0 : volume;
+			source.connect(gainNode);
+			gainNode.connect(analyser);
+			analyser.connect(ctx.destination);
+
+			this.remoteAudioNodes.set(userId, { gainNode, audio });
+			this.remoteAnalysers.set(userId, analyser);
+		} catch {
+			try {
+				this.remoteAudioNodes.set(userId, { gainNode: ctx.createGain(), audio });
+			} catch {
+				/* ignore */
+			}
+		}
+	}
+
+	private removeRemoteAudio(userId: string): void {
+		const node = this.remoteAudioNodes.get(userId);
+		if (node) {
+			try {
+				node.gainNode.disconnect();
+				node.audio.srcObject = null;
+			} catch {
+				/* ignore */
+			}
+			this.remoteAudioNodes.delete(userId);
+		}
+		const analyser = this.remoteAnalysers.get(userId);
+		if (analyser) {
+			try {
+				analyser.disconnect();
+			} catch {
+				/* ignore */
+			}
+			this.remoteAnalysers.delete(userId);
+		}
+		this.speakerLastSpoke.delete(userId);
+	}
+
+	private cleanupAudio(): void {
+		if (this.vadInterval) {
+			clearInterval(this.vadInterval);
+			this.vadInterval = null;
+		}
+		this.stopPingMonitoring();
+
+		this.remoteAudioNodes.forEach((node) => {
+			try {
+				node.gainNode.disconnect();
+				node.audio.srcObject = null;
+			} catch {
+				/* ignore */
+			}
+		});
+		this.remoteAudioNodes.clear();
+
+		this.remoteAnalysers.forEach((analyser) => {
+			try {
+				analyser.disconnect();
+			} catch {
+				/* ignore */
+			}
+		});
+		this.remoteAnalysers.clear();
+		this.speakerLastSpoke.clear();
+		this.localAnalyser = null;
+
+		if (this.audioContext) {
+			try {
+				this.audioContext.close();
+			} catch {
+				/* ignore */
+			}
+			this.audioContext = null;
+		}
+	}
+
+	/**
+	 * Fast-attack and smooth-decay Voice Activity Detection (VAD) for Discord-style halos.
+	 * Checks both local microphone and all active remote subscribers.
+	 */
+	private startVAD(): void {
+		if (this.vadInterval) return;
+
+		const dataArray = new Uint8Array(128);
+		const SPEAKING_THRESHOLD = 15;
+		const DECAY_HANGTIME_MS = 250;
+
+		this.vadInterval = setInterval(() => {
+			const now = Date.now();
+			const store = useVoiceStore.getState();
+			const currentUserId = useAuthStore.getState().user?.id;
+			const isMuted = store.isMuted;
+
+			// Check local microphone
+			if (currentUserId && this.localAnalyser && !isMuted) {
+				this.localAnalyser.getByteFrequencyData(dataArray);
+				let sum = 0;
+				for (let i = 0; i < dataArray.length; i++) {
+					sum += dataArray[i];
+				}
+				const avg = sum / dataArray.length;
+				if (avg > SPEAKING_THRESHOLD) {
+					this.speakerLastSpoke.set(currentUserId, now);
+				}
+			}
+
+			// Check all remote audio streams
+			this.remoteAnalysers.forEach((analyser, userId) => {
+				analyser.getByteFrequencyData(dataArray);
+				let sum = 0;
+				for (let i = 0; i < dataArray.length; i++) {
+					sum += dataArray[i];
+				}
+				const avg = sum / dataArray.length;
+				if (avg > SPEAKING_THRESHOLD) {
+					this.speakerLastSpoke.set(userId, now);
+				}
+			});
+
+			// Calculate currently speaking users based on fast-attack & 250ms hangtime decay
+			const newSpeaking = new Set<string>();
+			this.speakerLastSpoke.forEach((lastTime, userId) => {
+				if (now - lastTime <= DECAY_HANGTIME_MS) {
+					newSpeaking.add(userId);
+				}
+			});
+
+			// Only trigger React state update if the speaking set actually changed
+			const currentSpeaking = store.speakingUsers;
+			let changed = newSpeaking.size !== currentSpeaking.size;
+			if (!changed) {
+				for (const u of newSpeaking) {
+					if (!currentSpeaking.has(u)) {
+						changed = true;
+						break;
+					}
+				}
+			}
+
+			if (changed) {
+				store._setInternalState({ speakingUsers: newSpeaking });
+			}
+		}, 40); // 25fps update rate for ultra-responsive indicators
+	}
+
+	/**
+	 * Monitors RTC round-trip time (ping) via RTCPeerConnection stats.
+	 */
+	private startPingMonitoring(): void {
+		if (this.pingInterval) return;
+
+		const queryStats = async () => {
+			const pc = this.publishPC || this.subscribePC;
+			if (!pc) return;
+
+			try {
+				const stats = await pc.getStats();
+				let rttMs: number | null = null;
+				stats.forEach((report) => {
+					if (
+						report.type === 'candidate-pair' &&
+						(report.state === 'succeeded' || report.nominated)
+					) {
+						if (typeof report.currentRoundTripTime === 'number') {
+							rttMs = Math.round(report.currentRoundTripTime * 1000);
+						} else if (typeof (report as any).roundTripTime === 'number') {
+							rttMs = Math.round((report as any).roundTripTime * 1000);
+						}
+					}
+				});
+
+				if (rttMs !== null) {
+					useVoiceStore.getState().setPing(rttMs);
+				}
+			} catch {
+				/* ignore */
+			}
+		};
+
+		queryStats();
+		this.pingInterval = setInterval(queryStats, 2000);
+	}
+
+	private stopPingMonitoring(): void {
+		if (this.pingInterval) {
+			clearInterval(this.pingInterval);
+			this.pingInterval = null;
+		}
+		useVoiceStore.getState().setPing(null);
+	}
+}
+
+/**
+ * Singleton instance of the WebRTC manager for client-web.
+ */
+export const webRTCManager = new WebRTCManager();

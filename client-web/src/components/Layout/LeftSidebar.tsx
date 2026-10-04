@@ -6,8 +6,9 @@ import NewChannelModal from '@/components/NewChannelModal';
 import SettingsModal from '@/components/SettingsModal';
 import { useExploreChannels } from '@/hooks/useChannels';
 import { apiJoinChannel } from '@/api/client';
-import { Settings, LogOut, Plus, Hash, Search, Volume2, Trash2, MessageSquare, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, LogOut, Plus, Hash, Search, Volume2, Trash2, MessageSquare, User, ChevronLeft, ChevronRight, PhoneOff, Signal, SignalHigh, SignalMedium, SignalLow } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
+import { webRTCManager } from '@/rtc/WebRTCManager';
 import { ConversationSearchDialog } from './ConversationSearchDialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -70,17 +71,22 @@ const RenderChannel = memo(
 		const hasVoice = useVoiceStore(
 			(state) => (state.participants[ch.id]?.length ?? 0) > 0,
 		);
+		const voiceCount = useVoiceStore(
+			(state) => state.participants[ch.id]?.length ?? 0,
+		);
 		const otherMemberId = ch.members.find((m) => m !== user?.id) || ch.id;
 		const unreadCount = !isActive ? (ch.unread_count ?? 0) : 0;
 
 		const subtitle =
-			ch.last_message_preview ||
-			(isGroup
-				? ch.description || `${ch.members?.length ?? 0} members`
-				: (() => {
-						const st = ch.member_statuses?.[otherMemberId];
-						return st ? st.charAt(0).toUpperCase() + st.slice(1) : 'Offline';
-					})());
+			hasVoice
+				? `${voiceCount} in voice call`
+				: ch.last_message_preview ||
+				  (isGroup
+					? ch.description || `${ch.members?.length ?? 0} members`
+					: (() => {
+							const st = ch.member_statuses?.[otherMemberId];
+							return st ? st.charAt(0).toUpperCase() + st.slice(1) : 'Offline';
+					  })());
 
 		const avatarNode = isGroup ? (
 			<div className="relative shrink-0 pointer-events-none">
@@ -97,8 +103,8 @@ const RenderChannel = memo(
 					<ChannelInitialsAvatar id={ch.id} name={ch.name} size={40} />
 				)}
 				{hasVoice && (
-					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300`}>
-						<Volume2 size={10} fill="currentColor" />
+					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-[#23a55a] text-white rounded-full p-1 shadow-md border-2 border-secondary z-10 animate-in zoom-in duration-200`}>
+						<Volume2 size={10} fill="currentColor" className="animate-pulse" />
 					</div>
 				)}
 				{isCollapsed && unreadCount > 0 && (
@@ -126,8 +132,8 @@ const RenderChannel = memo(
 					}`}
 				/>
 				{hasVoice && (
-					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-primary text-primary-foreground rounded-full p-0.5 shadow-sm border border-secondary z-10 animate-in zoom-in duration-300`}>
-						<Volume2 size={10} fill="currentColor" />
+					<div className={`absolute -top-1 ${isCollapsed ? '-left-1' : '-right-1'} bg-[#23a55a] text-white rounded-full p-1 shadow-md border-2 border-secondary z-10 animate-in zoom-in duration-200`}>
+						<Volume2 size={10} fill="currentColor" className="animate-pulse" />
 					</div>
 				)}
 				{isCollapsed && unreadCount > 0 && (
@@ -180,7 +186,11 @@ const RenderChannel = memo(
 							</span>
 						)}
 					</div>
-					<span className="truncate text-[11px] text-muted-foreground/80 leading-tight mt-0.5">
+					<span
+						className={`truncate text-[11px] leading-tight mt-0.5 ${
+							hasVoice ? 'text-[#23a55a] font-medium' : 'text-muted-foreground/80'
+						}`}
+					>
 						{subtitle}
 					</span>
 				</div>
@@ -252,6 +262,13 @@ export default function LeftSidebar({
 	const appVersion = useAppStore((state) => state.appVersion);
 	const fetchVersion = useAppStore((state) => state.fetchVersion);
 	const wsState = useAppStore((state) => state.wsState);
+	const isVoiceActive = useVoiceStore((state) => state.isActive);
+	const activeVoiceChannelId = useVoiceStore((state) => state.activeChannelId);
+	const ping = useVoiceStore((state) => state.ping);
+	const activeVoiceChannel = channels.find((c) => c.id === activeVoiceChannelId);
+	const activeVoiceChannelName = activeVoiceChannel
+		? getChannelDisplayName(activeVoiceChannel, user?.id ?? '')
+		: 'Voice Call';
 	const handleSelectChannel = useCallback(
 		(ch: Channel) => {
 			setActiveChannel(ch);
@@ -604,9 +621,102 @@ export default function LeftSidebar({
 					)}
 				</ScrollArea>
 
+				{/* Discord Voice Connected Bar */}
+				{isVoiceActive && !isCollapsed && (
+					<div className="bg-[#111214] border-t border-border/40 px-3 py-2 flex items-center justify-between select-none">
+						<div className="flex items-center gap-2 min-w-0">
+							<TooltipProvider delayDuration={150}>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<div className="cursor-pointer p-0.5 rounded hover:bg-white/10 transition-colors flex items-center justify-center">
+											{ping === null ? (
+												<Signal size={15} className="text-[#23a55a] animate-pulse shrink-0" />
+											) : ping < 100 ? (
+												<SignalHigh size={15} className="text-[#23a55a] shrink-0" />
+											) : ping < 250 ? (
+												<SignalMedium size={15} className="text-[#f0b232] shrink-0" />
+											) : (
+												<SignalLow size={15} className="text-[#da373c] shrink-0" />
+											)}
+										</div>
+									</TooltipTrigger>
+									<TooltipContent side="top" className="text-xs font-medium">
+										<div className="font-semibold text-foreground">
+											{ping === null
+												? 'RTC Connected'
+												: ping < 100
+												? 'Good Connection'
+												: ping < 250
+												? 'Average Connection'
+												: 'Poor Connection'}
+										</div>
+										<div className="text-[11px] text-muted-foreground mt-0.5">
+											Ping: <span className={ping === null ? 'text-muted-foreground' : ping < 100 ? 'text-[#23a55a] font-bold' : ping < 250 ? 'text-[#f0b232] font-bold' : 'text-[#da373c] font-bold'}>{ping !== null ? (ping < 5 ? '< 5 ms' : `${ping} ms`) : 'Measuring...'}</span>
+										</div>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<div className="flex flex-col min-w-0 leading-tight">
+								<span className="text-[#23a55a] font-bold text-xs tracking-tight">Voice Connected</span>
+								<span className="text-[11px] text-muted-foreground truncate hover:text-foreground cursor-pointer" title={activeVoiceChannelName}>
+									{activeVoiceChannelName}
+									{ping !== null && (
+										<span className="text-[10px] text-muted-foreground/70 ms-1 font-mono">
+											/ {ping < 5 ? '<5ms' : `${ping}ms`}
+										</span>
+									)}
+								</span>
+							</div>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => webRTCManager.leave()}
+							className="h-7 w-7 text-muted-foreground hover:text-[#da373c] hover:bg-[#da373c]/15 rounded-md shrink-0 transition-colors"
+							title="Disconnect"
+						>
+							<PhoneOff size={14} />
+						</Button>
+					</div>
+				)}
+
 				{/* User Controls Footer */}
 				{isCollapsed ? (
 					<div className="bg-secondary shrink-0 relative z-10 flex flex-col items-center gap-2 py-2.5 border-t border-border/50 w-full">
+						{isVoiceActive && (
+							<TooltipProvider delayDuration={0}>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 p-0 text-[#23a55a] hover:text-[#da373c] hover:bg-[#da373c]/10 cursor-pointer rounded-md flex items-center justify-center transition-colors"
+											onClick={() => webRTCManager.leave()}
+										>
+											{ping === null ? (
+												<Signal size={16} className="text-[#23a55a] animate-pulse pointer-events-none" />
+											) : ping < 100 ? (
+												<SignalHigh size={16} className="text-[#23a55a] pointer-events-none" />
+											) : ping < 250 ? (
+												<SignalMedium size={16} className="text-[#f0b232] pointer-events-none" />
+											) : (
+												<SignalLow size={16} className="text-[#da373c] pointer-events-none" />
+											)}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="right" className="text-xs">
+										<div className="font-semibold text-foreground">{activeVoiceChannelName}</div>
+										<div className="text-[11px] text-[#23a55a] flex items-center gap-1 mt-0.5">
+											<span>Voice Connected</span>
+											<span className="text-muted-foreground font-mono">({ping !== null ? (ping < 5 ? '< 5ms' : `${ping}ms`) : 'RTC'})</span>
+										</div>
+										<div className="text-[10px] text-muted-foreground/80 mt-1 border-t border-border/40 pt-1">
+											Click to disconnect
+										</div>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						)}
 						<TooltipProvider delayDuration={0}>
 							<DropdownMenu>
 								<Tooltip>

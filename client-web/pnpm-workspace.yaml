@@ -1,0 +1,11 @@
+# Single-package project: this file only holds pnpm settings (pnpm 10+ reads them here, not from .npmrc).
+
+# pnpm blocks dependency lifecycle scripts by default; allowlist only what needs one.
+allowBuilds:
+  esbuild: true
+
+peerDependencyRules:
+  # @emoji-mart/react@1.1.1 declares react ^16.8 || ^17 || ^18 but works on React 19.
+  # Scoped allowance instead of the old global `legacy-peer-deps=true`.
+  allowedVersions:
+    '@emoji-mart/react>react': '19'

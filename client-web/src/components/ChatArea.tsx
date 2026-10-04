@@ -25,6 +25,8 @@ import { VoicePlayer } from './Chat/VoicePlayer';
 import { ForwardModal } from './Chat/ForwardModal';
 import { ChatBackgroundPattern } from './Chat/ChatBackgroundPattern';
 import { WhisperChatArea } from './Chat/WhisperChatArea';
+import { VoiceCallStage } from './Voice/VoiceCallStage';
+import { useVoiceStore } from '@/store/voiceStore';
 
 interface ChatAreaProps {
 	channel: Channel;
@@ -52,6 +54,9 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 		: undefined;
 	const isWhisperActive = isDM && isWhisperModeActive && Boolean(otherMemberId && whisperPeerId === otherMemberId);
 	const hasIncomingInviteForPeer = Boolean(isDM && incomingInvite && otherMemberId && incomingInvite.initiatorId === otherMemberId);
+	const isCallActiveInThisChannel = useVoiceStore(
+		(state) => state.isActive && state.activeChannelId === channel.id,
+	);
 
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(channel.id);
@@ -221,6 +226,10 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 					searchQuery={searchQuery}
 					onSearchChange={setSearchQuery}
 				/>
+				{/* Integrated Discord Call Stage */}
+				{isCallActiveInThisChannel && (
+					<VoiceCallStage channel={channel} />
+				)}
 				{hasIncomingInviteForPeer && incomingInvite && (
 					<div className="bg-secondary/40 border-b border-border px-4 py-2.5 flex items-center justify-between gap-3 text-xs z-10 animate-in fade-in slide-in-from-top-2 duration-150">
 						<div className="flex items-center gap-2.5 min-w-0">

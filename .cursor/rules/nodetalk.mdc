@@ -1,0 +1,13 @@
+---
+description: NodeTalk development guidelines (canonical copy in .agents/rules/)
+alwaysApply: true
+---
+
+Follow the NodeTalk development guidelines. The canonical rules are in `.agents/rules/` — read the relevant files before writing code:
+
+- @.agents/rules/00-project-overview.md — repo map, agent workflow, security model (always)
+- @.agents/rules/01-shared.md — Makefile, DRY, docs, typing, tests (always)
+- @.agents/rules/02-frontend.md — when touching `client-web/**`
+- @.agents/rules/03-backend.md — when touching `backend/**`
+
+Do not duplicate or diverge from those files; update them instead.

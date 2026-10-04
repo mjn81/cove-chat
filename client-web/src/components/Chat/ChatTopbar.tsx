@@ -8,7 +8,9 @@ import {
 	X,
 	ChevronLeft,
 	Users,
-	Mic,
+	Phone,
+	PhoneCall,
+	PhoneOff,
 	UserPlus,
 	Check,
 	Clock,
@@ -28,7 +30,6 @@ import { ChannelInfoModal } from './ChannelInfoModal';
 import { isDirectMessage } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isAdmin } from '@/utils/role';
-import { isWails } from '@/utils/wails';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useVoiceStore } from '@/store/voiceStore';
 
@@ -86,13 +87,19 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 	const canAddFriend = isDM && otherMemberId !== currentUserId && !isFriend && !isBlocked;
 
 	const isMobile = useMediaQuery('(max-width: 768px)');
-	const { setRightSidebarOpen, isRightSidebarOpen } = useAppStore();
+	const isRightSidebarOpen = useAppStore((state) => state.isRightSidebarOpen);
+	const setRightSidebarOpen = useAppStore((state) => state.setRightSidebarOpen);
 	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 
 	const { startVoice, stopVoice } = useVoiceChat();
 	const isActive = useVoiceStore(
 		(state) => state.isActive && state.activeChannelId === liveChannel.id,
 	);
+	const channelParticipants = useVoiceStore(
+		(state) => state.participants[liveChannel.id],
+	);
+	const participantCount = channelParticipants?.length ?? 0;
+	const hasOngoingCall = participantCount > 0;
 
 	const isWhisperModeActive = useWhisperStore((state) => state.isWhisperModeActive);
 	const whisperPeerId = useWhisperStore((state) => state.whisperPeerId);
@@ -384,18 +391,37 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						</button>
 					)}
 
-					{isWails() && (
+					{/* Call Status / Action Button (Clean unboxed icon with color) */}
+					{isActive ? (
 						<button
 							type="button"
-							onClick={() => (isActive ? stopVoice() : startVoice(channel.id))}
-							className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-								isActive
-									? 'bg-primary/10 text-primary border border-primary/30'
-									: 'hover:bg-secondary/60 text-muted-foreground hover:text-foreground'
-							}`}
-							title={isActive ? 'Leave Voice Chat' : 'Join Voice Chat'}
+							onClick={() => stopVoice()}
+							className="w-9 h-9 flex items-center justify-center rounded-lg text-[#23a55a] hover:text-[#da373c] hover:bg-secondary/60 transition-colors cursor-pointer group"
+							title="Connected to voice call (Click to disconnect)"
 						>
-							<Mic size={20} />
+							<PhoneCall size={18} className="animate-pulse group-hover:hidden" />
+							<PhoneOff size={18} className="hidden group-hover:block" />
+						</button>
+					) : hasOngoingCall ? (
+						<button
+							type="button"
+							onClick={() => startVoice(liveChannel.id)}
+							className="relative w-9 h-9 flex items-center justify-center rounded-lg text-[#23a55a] hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
+							title={`Join ongoing voice call (${participantCount} active)`}
+						>
+							<PhoneCall size={18} className="animate-pulse" />
+							<span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#23a55a] text-white text-[10px] font-bold flex items-center justify-center border-2 border-background tabular-nums">
+								{participantCount}
+							</span>
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => startVoice(liveChannel.id)}
+							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+							title="Start Voice Call"
+						>
+							<Phone size={18} className="opacity-80 hover:opacity-100" />
 						</button>
 					)}
 				</div>

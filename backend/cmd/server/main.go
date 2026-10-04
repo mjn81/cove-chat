@@ -41,6 +41,7 @@ import (
 	"nodetalk/backend/internal/db"
 	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/middleware"
+	"nodetalk/backend/internal/rtc"
 	"nodetalk/backend/internal/storage"
 	"nodetalk/backend/internal/store"
 	"nodetalk/backend/internal/voice"
@@ -140,6 +141,9 @@ func main() {
 	}
 
 	// ── 8. UDP voice router ────────────────────────────────────────────────
+	// Independent of Voice.Mode: this is the legacy audio-only fallback,
+	// left running whenever a UDP port is configured regardless of which
+	// engine group calls use, since desktop clients may still target it.
 	var udpConn *net.UDPConn
 	if cfg.Server.UDPPort > 0 {
 		voiceRouter := voice.NewRouter(sessions, hub, dataStore)
@@ -148,6 +152,43 @@ func main() {
 		udpConn, err = startUDPRouter(cfg.Server.UDPPort, voiceRouter)
 		if err != nil {
 			logger.Warnf("UDP voice router failed to start: %v", err)
+		}
+	}
+
+	// ── 8b. WebRTC group calling (SFU) ─────────────────────────────────────
+	// See internal/rtc for the full design. Only constructed in "webrtc"
+	// mode — "raw_udp" mode deployments (isolated/LAN networks) use only the
+	// router above and never touch this package at all.
+	var rtcManager *rtc.Manager
+	if cfg.Voice.Mode == "webrtc" {
+		resolvedPublicIP := cfg.Voice.PublicIP
+		if resolvedPublicIP == "auto" {
+			ip, discoverErr := rtc.DiscoverPublicIP(cfg.Voice.PublicIPDiscoverySTUNServers, 5*time.Second)
+			if discoverErr != nil {
+				logger.Warnf("voice.public_ip=auto but discovery failed (%v) — continuing without a public IP (no NAT traversal)", discoverErr)
+				resolvedPublicIP = ""
+			} else {
+				logger.Infof("voice: auto-detected public IP %s via STUN", ip)
+				resolvedPublicIP = ip
+			}
+		}
+
+		rtcManager, err = rtc.NewManager(rtc.Config{
+			Mode:                   rtc.ModeWebRTC,
+			MaxParticipantsPerCall: cfg.Voice.MaxParticipantsPerCall,
+			PortMin:                uint16(cfg.Voice.WebRTCPortMin),
+			PortMax:                uint16(cfg.Voice.WebRTCPortMax),
+			PublicIP:               resolvedPublicIP,
+			EmbeddedTURNEnabled:    cfg.Voice.EmbeddedTURNEnabled,
+			TURNPort:               cfg.Voice.EmbeddedTURNPort,
+			TURNRealm:              cfg.Voice.TURNRealm,
+			TURNSharedSecret:       cfg.Voice.TURNSharedSecret,
+		}, dataStore, hub)
+		if err != nil {
+			logger.Warnf("WebRTC calling failed to start, disabling group calls: %v", err)
+		} else {
+			hub.SetRTCManager(rtcManager)
+			logger.Infof("WebRTC group calling enabled (max %d participants/call)", cfg.Voice.MaxParticipantsPerCall)
 		}
 	}
 
@@ -196,6 +237,11 @@ func main() {
 	// 2. Close UDP voice listener immediately (releases UDP port)
 	if udpConn != nil {
 		_ = udpConn.Close()
+	}
+
+	// 2b. Tear down all active WebRTC calls and the embedded TURN server
+	if rtcManager != nil {
+		rtcManager.Stop()
 	}
 
 	// 3. Disconnect WebSocket clients so HTTP server can finish shutdown immediately

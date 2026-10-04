@@ -40,7 +40,7 @@ export function getChannelKey(channelId: string): Uint8Array | undefined {
 }
 
 // ── Event Listeners ─────────────────────────────────────────────────────
-type WSEventType =
+export type WSEventType =
 	| 'message'
 	| 'message_update'
 	| 'message_delete'
@@ -57,9 +57,65 @@ type WSEventType =
 	| 'whisper_msg'
 	| 'whisper_close'
 	| 'whisper_error'
+	| 'call_joined'
+	| 'call_publish_answer'
+	| 'call_subscribe_offer'
+	| 'call_ice_candidate'
+	| 'call_participant_joined'
+	| 'call_participant_left'
+	| 'call_track_state'
+	| 'call_error'
 	| 'open'
 	| 'close';
-type WSListener = (payload: unknown) => void;
+
+export interface ICEServerInfo {
+	urls: string[];
+	username?: string;
+	credential?: string;
+}
+
+export interface ParticipantInfo {
+	user_id: string;
+	username: string;
+	track_states: Record<string, boolean>;
+}
+
+export interface CallJoinedPayload {
+	channel_id: string;
+	self_id: string;
+	ice_servers: ICEServerInfo[];
+	participants: ParticipantInfo[];
+}
+
+export interface CallSDPPayload {
+	channel_id: string;
+	sdp: RTCSessionDescriptionInit;
+}
+
+export interface CallICECandidatePayload {
+	channel_id: string;
+	target: 'publish' | 'subscribe';
+	candidate: RTCIceCandidateInit;
+}
+
+export interface CallTrackStatePayload {
+	channel_id: string;
+	user_id?: string;
+	kind: 'audio' | 'video' | 'screen';
+	enabled: boolean;
+}
+
+export interface CallParticipantEventPayload {
+	channel_id: string;
+	user: ParticipantInfo;
+}
+
+export interface CallErrorPayload {
+	channel_id?: string;
+	error: string;
+}
+
+export type WSListener = (payload: unknown) => void;
 
 const listeners = new Map<WSEventType, Set<WSListener>>();
 
@@ -308,6 +364,16 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 		case 'whisper_error':
 			emit('whisper_error', msg.payload);
 			break;
+		case 'call_joined':
+		case 'call_publish_answer':
+		case 'call_subscribe_offer':
+		case 'call_ice_candidate':
+		case 'call_participant_joined':
+		case 'call_participant_left':
+		case 'call_track_state':
+		case 'call_error':
+			emit(msg.type as WSEventType, msg.payload);
+			break;
 		default:
 			console.debug('[ws-worker] unknown message type', msg.type);
 	}
@@ -505,6 +571,59 @@ export function wsDeleteMessage(channelId: string, messageId: string): boolean {
 			channel_id: channelId,
 			message_id: messageId,
 		},
+	});
+}
+
+// ── WebRTC Calling Outbound Helpers ─────────────────────────────────────
+export function wsSendCallJoin(channelId: string): boolean {
+	return wsSend({
+		type: 'call_join',
+		payload: { channel_id: channelId },
+	});
+}
+
+export function wsSendCallLeave(channelId: string): boolean {
+	return wsSend({
+		type: 'call_leave',
+		payload: { channel_id: channelId },
+	});
+}
+
+export function wsSendCallPublishOffer(channelId: string, sdp: RTCSessionDescriptionInit): boolean {
+	return wsSend({
+		type: 'call_publish_offer',
+		payload: { channel_id: channelId, sdp },
+	});
+}
+
+export function wsSendCallSubscribeAnswer(channelId: string, sdp: RTCSessionDescriptionInit): boolean {
+	return wsSend({
+		type: 'call_subscribe_answer',
+		payload: { channel_id: channelId, sdp },
+	});
+}
+
+export function wsSendCallICECandidate(
+	channelId: string,
+	target: 'publish' | 'subscribe',
+	candidate: RTCIceCandidateInit,
+): boolean {
+	return wsSend({
+		type: 'call_ice_candidate',
+		payload: { channel_id: channelId, target, candidate },
+	});
+}
+
+export function wsSendCallTrackState(
+	channelId: string,
+	kind: 'audio' | 'video' | 'screen',
+	enabled: boolean,
+	trackId?: string,
+	streamId?: string,
+): boolean {
+	return wsSend({
+		type: 'call_track_state',
+		payload: { channel_id: channelId, kind, enabled, track_id: trackId, stream_id: streamId },
 	});
 }
 

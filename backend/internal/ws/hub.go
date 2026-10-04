@@ -39,6 +39,17 @@ type voiceUserRemover interface {
 	RemoveUser(userID string)
 }
 
+// RTCSignalHandler is the subset of *rtc.Manager the Hub needs: dispatching
+// inbound "call_*" signaling messages, and cleaning up a user's active call
+// state on disconnect. Declared here (rather than importing internal/rtc's
+// concrete type) for the same reason as voiceUserRemover above — wired up
+// via SetRTCManager once both are constructed in main.go.
+type RTCSignalHandler interface {
+	HandleSignal(userID, username, msgType string, payload json.RawMessage) error
+	RemoveUser(userID string)
+	ActiveRooms() map[string][]string
+}
+
 // Hub manages all active WebSocket connections and broadcasts messages.
 type Hub struct {
 	mu      sync.RWMutex
@@ -52,6 +63,7 @@ type Hub struct {
 	kek      []byte
 
 	voiceRouter voiceUserRemover
+	rtc         RTCSignalHandler
 
 	isDev          bool
 	originPatterns []string
@@ -103,6 +115,11 @@ func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte, isDev bool,
 // their voice-call state — see unregister() in client.go.
 func (h *Hub) SetVoiceRouter(r voiceUserRemover) {
 	h.voiceRouter = r
+}
+
+// SetRTCManager wires the WebRTC group-calling SFU in after construction.
+func (h *Hub) SetRTCManager(r RTCSignalHandler) {
+	h.rtc = r
 }
 
 // originPatternsFrom converts a comma-separated list of origins (e.g.
@@ -248,6 +265,21 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Replay any pending incoming whisper invitations for this user
 	h.ReplayPendingWhisperInvites(client)
+
+	// Synchronize active voice sessions for channels this user is a member of
+	if h.rtc != nil {
+		go func(targetUserID string) {
+			rooms := h.rtc.ActiveRooms()
+			for chID, participants := range rooms {
+				if len(participants) == 0 {
+					continue
+				}
+				if _, err := h.store.GetUserChannel(targetUserID, chID); err == nil {
+					h.SendVoiceState(targetUserID, chID, participants)
+				}
+			}
+		}(session.UserID)
+	}
 
 	// Formalize the Read/Write pumps as dedicated goroutines.
 	// This ensures that slow network connections don't block the Hub.
@@ -566,6 +598,9 @@ func (h *Hub) BroadcastVideoReady(fileID string, channelID string) {
 
 // BroadcastVoiceState notifies channel members of who is currently in the voice session.
 func (h *Hub) BroadcastVoiceState(channelID string, activeUsers []string) {
+	if activeUsers == nil {
+		activeUsers = []string{}
+	}
 	payload, _ := json.Marshal(map[string]any{
 		"channel_id": channelID,
 		"users":      activeUsers,
@@ -576,6 +611,9 @@ func (h *Hub) BroadcastVoiceState(channelID string, activeUsers []string) {
 
 // SendVoiceState notifies a specific user of who is currently in the voice session.
 func (h *Hub) SendVoiceState(userID string, channelID string, activeUsers []string) {
+	if activeUsers == nil {
+		activeUsers = []string{}
+	}
 	payload, _ := json.Marshal(map[string]any{
 		"channel_id": channelID,
 		"users":      activeUsers,
