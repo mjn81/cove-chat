@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"nodetalk/backend/internal/logger"
 
@@ -27,21 +28,18 @@ const (
 )
 
 func classifyTrack(remote *webrtc.TrackRemote) trackKind {
-	if remote.Kind() == webrtc.RTPCodecTypeAudio {
-		return kindAudio
-	}
 	streamID := strings.ToLower(remote.StreamID())
 	trackID := strings.ToLower(remote.ID())
 	if streamID == "screen" || trackID == "screen" || strings.Contains(streamID, "screen") || strings.Contains(trackID, "screen") {
 		return kindScreen
 	}
+	if remote.Kind() == webrtc.RTPCodecTypeAudio {
+		return kindAudio
+	}
 	return kindVideo
 }
 
 func (p *Participant) classifyTrack(remote *webrtc.TrackRemote) trackKind {
-	if remote.Kind() == webrtc.RTPCodecTypeAudio {
-		return kindAudio
-	}
 	streamID := strings.ToLower(remote.StreamID())
 	trackID := strings.ToLower(remote.ID())
 	if streamID == "screen" || trackID == "screen" || strings.Contains(streamID, "screen") || strings.Contains(trackID, "screen") {
@@ -54,10 +52,13 @@ func (p *Participant) classifyTrack(remote *webrtc.TrackRemote) trackKind {
 	isScreenState := p.trackStates[string(kindScreen)]
 	isVideoState := p.trackStates[string(kindVideo)]
 	hasExistingVideo := false
+	hasExistingAudio := false
 	for _, pt := range p.publishedTracks {
 		if pt.kind == kindVideo {
 			hasExistingVideo = true
-			break
+		}
+		if pt.kind == kindAudio {
+			hasExistingAudio = true
 		}
 	}
 	p.mu.Unlock()
@@ -68,6 +69,14 @@ func (p *Participant) classifyTrack(remote *webrtc.TrackRemote) trackKind {
 	if screenStreamID != "" && (remote.StreamID() == screenStreamID || strings.Contains(remote.StreamID(), screenStreamID)) {
 		return kindScreen
 	}
+
+	if remote.Kind() == webrtc.RTPCodecTypeAudio {
+		if hasExistingAudio {
+			return kindScreen
+		}
+		return kindAudio
+	}
+
 	if isScreenState && !isVideoState {
 		return kindScreen
 	}
@@ -134,7 +143,7 @@ func newParticipant(mgr *Manager, room *Room, userID, username string) (*Partici
 		mgr:             mgr,
 		room:            room,
 		publishedTracks: make(map[string]*publishedTrack),
-		trackStates:     map[string]bool{string(kindAudio): false, string(kindVideo): false, string(kindScreen): false},
+		trackStates:     map[string]bool{string(kindAudio): true, string(kindVideo): false, string(kindScreen): false},
 	}
 
 	publishPC, err := mgr.api.NewPeerConnection(mgr.webrtcConfig())
@@ -217,7 +226,12 @@ func (p *Participant) onPublishedTrack(remote *webrtc.TrackRemote, receiver *web
 
 	p.mu.Lock()
 	p.publishedTracks[trackKey] = pt
-	p.trackStates[string(kind)] = true
+	shouldBroadcast := true
+	if kind == kindAudio && !p.trackStates[string(kindAudio)] {
+		shouldBroadcast = false
+	} else {
+		p.trackStates[string(kind)] = true
+	}
 	p.mu.Unlock()
 
 	// Drain RTCP on the receiver so interceptors (NACK, TWCC) actually run —
@@ -225,7 +239,9 @@ func (p *Participant) onPublishedTrack(remote *webrtc.TrackRemote, receiver *web
 	go drainRTCPReceiver(receiver)
 
 	p.room.onParticipantPublished(p, pt)
-	p.room.broadcastTrackState(p.UserID, kind, true)
+	if shouldBroadcast {
+		p.room.broadcastTrackState(p.UserID, kind, true)
+	}
 
 	go forwardTrack(p, pt)
 }
@@ -318,6 +334,14 @@ func (p *Participant) onSubscribeAnswer(sdp webrtc.SessionDescription) error {
 	if pending {
 		p.requestSubscribeRenegotiation()
 	}
+
+	// Request immediate keyframes for all video/screen tracks forwarded to this subscriber
+	// so their newly stable decoder immediately gets decodable I-frames
+	p.room.requestKeyframes("")
+	time.AfterFunc(350*time.Millisecond, func() {
+		p.room.requestKeyframes("")
+	})
+
 	return nil
 }
 
@@ -439,14 +463,23 @@ func drainRTCPReceiver(receiver *webrtc.RTPReceiver) {
 	}
 }
 
-// drainRTCPSender does the same for an RTPSender (subscribe side) — needed
-// so the interceptor chain sees receiver reports coming back from
-// subscribers and can react (e.g. NACK-triggered retransmission).
-func drainRTCPSender(sender *webrtc.RTPSender) {
-	buf := make([]byte, 1500)
+// drainRTCPSender reads RTCP packets arriving from a subscriber. It inspects
+// incoming feedback for PictureLossIndication (PLI) and FullIntraRequest (FIR)
+// packets and forwards them to the publisher so that a subscriber whose decoder
+// joins mid-stream or drops frames receives an immediate keyframe.
+func drainRTCPSender(sender *webrtc.RTPSender, pubPC *webrtc.PeerConnection, pubSSRC webrtc.SSRC) {
 	for {
-		if _, _, err := sender.Read(buf); err != nil {
+		pkts, _, err := sender.ReadRTCP()
+		if err != nil {
 			return
+		}
+		for _, pkt := range pkts {
+			switch pkt.(type) {
+			case *rtcp.PictureLossIndication, *rtcp.FullIntraRequest:
+				if pubPC != nil && pubSSRC != 0 {
+					requestKeyframe(pubPC, pubSSRC)
+				}
+			}
 		}
 	}
 }

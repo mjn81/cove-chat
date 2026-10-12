@@ -118,7 +118,7 @@ func (c *Client) handleMessage(ctx context.Context, msg *models.WSMessage) error
 	case "whisper_close":
 		return c.handleWhisperClose(msg)
 	case "call_join", "call_leave", "call_publish_offer", "call_subscribe_answer",
-		"call_ice_candidate", "call_track_state":
+		"call_ice_candidate", "call_track_state", "call_request_keyframe":
 		if c.hub.rtc == nil {
 			return fmt.Errorf("calling is not enabled on this server")
 		}

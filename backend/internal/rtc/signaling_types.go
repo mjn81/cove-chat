@@ -6,10 +6,11 @@ import "github.com/pion/webrtc/v4"
 // (internal/ws). All are prefixed "call_" so ws/client.go can route them to
 // this package without knowing their contents.
 const (
-	MsgJoin       = "call_join"        // client -> server: {channel_id}
-	MsgJoined     = "call_joined"      // server -> client: JoinedPayload
-	MsgLeave      = "call_leave"       // client -> server: {channel_id}
-	MsgTrackState = "call_track_state" // bidirectional (client sends, server rebroadcasts): TrackStatePayload
+	MsgJoin            = "call_join"             // client -> server: {channel_id}
+	MsgJoined          = "call_joined"           // server -> client: JoinedPayload
+	MsgLeave           = "call_leave"            // client -> server: {channel_id}
+	MsgTrackState      = "call_track_state"      // bidirectional (client sends, server rebroadcasts): TrackStatePayload
+	MsgRequestKeyframe = "call_request_keyframe" // client -> server: KeyframeRequestPayload
 
 	MsgPublishOffer  = "call_publish_offer"  // client -> server: SDPPayload (client's upload tracks)
 	MsgPublishAnswer = "call_publish_answer" // server -> client: SDPPayload
@@ -65,11 +66,6 @@ type ICECandidatePayload struct {
 	ChannelID string                  `json:"channel_id"`
 	Target    PCTarget                `json:"target"`
 	Candidate webrtc.ICECandidateInit `json:"candidate"`
-	// FromUserID/ToUserID are filled in by the server when relaying a
-	// subscribe-side candidate — a client's publish-PC candidates concern
-	// only its own connection to the server, but subscribe-PC candidates
-	// are per (server, that specific subscriber), so no cross-user routing
-	// is actually needed here; kept for forward-compat / debugging clarity.
 }
 
 type TrackStatePayload struct {
@@ -79,6 +75,11 @@ type TrackStatePayload struct {
 	Enabled   bool   `json:"enabled"`
 	TrackID   string `json:"track_id,omitempty"`
 	StreamID  string `json:"stream_id,omitempty"`
+}
+
+type KeyframeRequestPayload struct {
+	ChannelID string `json:"channel_id"`
+	UserID    string `json:"user_id,omitempty"`
 }
 
 type ParticipantEventPayload struct {

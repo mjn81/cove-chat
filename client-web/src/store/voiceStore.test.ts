@@ -62,3 +62,73 @@ describe('voiceStore.leaveVoice', () => {
 		expect(useVoiceStore.getState().activeChannelId).toBeNull();
 	});
 });
+
+describe('voiceStore handledCallChannels persistence', () => {
+	it('persists handled call channels to sessionStorage upon dismissIncomingCall', () => {
+		useVoiceStore.setState({
+			incomingCall: {
+				channelId: 'dm-123',
+				callerId: 'user-caller',
+				callerUsername: 'Caller',
+				timestamp: Date.now(),
+			},
+		});
+
+		useVoiceStore.getState().dismissIncomingCall();
+
+		expect(useVoiceStore.getState().handledCallChannels.has('dm-123')).toBe(true);
+		expect(sessionStorage.getItem('nodetalk_handled_calls')).toContain('dm-123');
+	});
+
+	it('persists handled call channels to sessionStorage upon leaveVoice', () => {
+		useVoiceStore.getState().joinVoice('dm-456');
+		useVoiceStore.getState().leaveVoice();
+
+		expect(useVoiceStore.getState().handledCallChannels.has('dm-456')).toBe(true);
+		expect(sessionStorage.getItem('nodetalk_handled_calls')).toContain('dm-456');
+	});
+
+	it('removes channel from handledCallChannels and sessionStorage upon resetHandledCall', () => {
+		useVoiceStore.getState().markCallHandled('dm-789');
+		expect(useVoiceStore.getState().handledCallChannels.has('dm-789')).toBe(true);
+
+		useVoiceStore.getState().resetHandledCall('dm-789');
+		expect(useVoiceStore.getState().handledCallChannels.has('dm-789')).toBe(false);
+		expect(sessionStorage.getItem('nodetalk_handled_calls')).not.toContain('dm-789');
+	});
+});
+
+describe('voiceStore screen share spotlighting and mute tracking', () => {
+	it('switches spotlight to remote user when remote user starts streaming while local user is already streaming', () => {
+		useVoiceStore.setState({
+			isScreenSharing: true,
+			spotlightStreamId: 'local',
+		});
+
+		// Bob starts streaming
+		useVoiceStore.getState().setTrackState('bob-123', 'screen', true);
+
+		expect(useVoiceStore.getState().spotlightStreamId).toBe('bob-123');
+		expect(useVoiceStore.getState().participantTrackStates['bob-123']?.screen).toBe(true);
+	});
+
+	it('reverts spotlight back to local screen share when remote user stops streaming', () => {
+		useVoiceStore.setState({
+			isScreenSharing: true,
+			spotlightStreamId: 'bob-123',
+		});
+
+		// Bob stops streaming
+		useVoiceStore.getState().setTrackState('bob-123', 'screen', false);
+
+		expect(useVoiceStore.getState().spotlightStreamId).toBe('local');
+	});
+
+	it('tracks remote participant audio mute state accurately', () => {
+		useVoiceStore.getState().setTrackState('alice-456', 'audio', false);
+		expect(useVoiceStore.getState().participantTrackStates['alice-456']?.audio).toBe(false);
+
+		useVoiceStore.getState().setTrackState('alice-456', 'audio', true);
+		expect(useVoiceStore.getState().participantTrackStates['alice-456']?.audio).toBe(true);
+	});
+});

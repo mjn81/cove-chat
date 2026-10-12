@@ -58,6 +58,13 @@ func (m *Manager) HandleSignal(userID, username, msgType string, raw json.RawMes
 		}
 		return m.handleTrackState(userID, p.ChannelID, p.Kind, p.Enabled, p.TrackID, p.StreamID)
 
+	case MsgRequestKeyframe:
+		var p KeyframeRequestPayload
+		if err := json.Unmarshal(raw, &p); err != nil {
+			return fmt.Errorf("rtc: invalid %s payload: %w", msgType, err)
+		}
+		return m.handleKeyframeRequest(userID, p.ChannelID, p.UserID)
+
 	default:
 		return fmt.Errorf("rtc: unknown signal type %q", msgType)
 	}
@@ -203,6 +210,15 @@ func (m *Manager) handleTrackState(userID, channelID, kind string, enabled bool,
 	}
 	participant.setTrackState(trackKind(kind), enabled, trackID, streamID)
 	room.broadcastTrackState(userID, trackKind(kind), enabled)
+	return nil
+}
+
+func (m *Manager) handleKeyframeRequest(requesterID, channelID, targetUserID string) error {
+	room, ok := m.getRoom(channelID)
+	if !ok {
+		return nil
+	}
+	room.requestKeyframes(targetUserID)
 	return nil
 }
 

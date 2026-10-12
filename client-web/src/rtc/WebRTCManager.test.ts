@@ -11,6 +11,7 @@ vi.mock('@/ws', () => ({
 	wsSendCallSubscribeAnswer: vi.fn(),
 	wsSendCallICECandidate: vi.fn(),
 	wsSendCallTrackState: vi.fn(),
+	wsSendCallRequestKeyframe: vi.fn(),
 }));
 
 describe('WebRTCManager', () => {
@@ -36,6 +37,9 @@ describe('WebRTCManager', () => {
 			logs: [],
 			userVolumes: {},
 			userMutes: new Set(),
+			screenShareVolumes: {},
+			screenShareMutes: {},
+			spotlightStreamId: null,
 		});
 
 		manager = new WebRTCManager();
@@ -78,5 +82,36 @@ describe('WebRTCManager', () => {
 		expect(useVoiceStore.getState().userMutes.has('user-99')).toBe(true);
 		manager.toggleParticipantMute('user-99');
 		expect(useVoiceStore.getState().userMutes.has('user-99')).toBe(false);
+	});
+
+	it('manages per-stream screen share volume and mute independently', () => {
+		manager.setScreenShareVolume('user-42', 1.75);
+		expect(useVoiceStore.getState().screenShareVolumes['user-42']).toBe(1.75);
+
+		manager.toggleScreenShareMute('user-42');
+		expect(useVoiceStore.getState().screenShareMutes['user-42']).toBe(true);
+		manager.toggleScreenShareMute('user-42');
+		expect(useVoiceStore.getState().screenShareMutes['user-42']).toBe(false);
+	});
+
+	it('sends call_request_keyframe when requestKeyframe is called', async () => {
+		await manager.join('channel-keyframe-test');
+		manager.requestKeyframe('user-presenter');
+		expect(wsModule.wsSendCallRequestKeyframe).toHaveBeenCalledWith('channel-keyframe-test', 'user-presenter');
+	});
+
+	it('updates screen share settings in store when applyScreenShareConstraints is invoked', async () => {
+		await manager.applyScreenShareConstraints({
+			resolution: '720p',
+			frameRate: 60,
+			aspectRatio: '16/9',
+			contentHint: 'motion',
+		});
+
+		const settings = useVoiceStore.getState().screenShareSettings;
+		expect(settings.resolution).toBe('720p');
+		expect(settings.frameRate).toBe(60);
+		expect(settings.aspectRatio).toBe('16/9');
+		expect(settings.contentHint).toBe('motion');
 	});
 });

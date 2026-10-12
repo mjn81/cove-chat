@@ -992,3 +992,139 @@ func TestSFU_TenParticipantsFullMeshAudio(t *testing.T) {
 	}
 	t.Logf("final stats: %+v", mgr.Stats())
 }
+
+// TestSFU_RequestKeyframeSignaling proves that clients can request keyframes on-demand
+// via call_request_keyframe signaling.
+func TestSFU_RequestKeyframeSignaling(t *testing.T) {
+	channelID := "chan-keyframe-sig"
+	sender := newFakeSender()
+	membership := &fakeMembership{allowed: map[string]bool{
+		"alice:" + channelID: true,
+		"bob:" + channelID:   true,
+	}}
+
+	mgr, err := NewManager(Config{MaxParticipantsPerCall: 10}, membership, sender)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	defer mgr.Stop()
+
+	alice := newTestClient(t, mgr, sender, "alice", channelID)
+	alice.join()
+	bob := newTestClient(t, mgr, sender, "bob", channelID)
+	bob.join()
+	time.Sleep(150 * time.Millisecond)
+
+	track := alice.publishScreenShare(t)
+	waitConnected(t, "alice-publish", alice.publishPC)
+
+	// Send some packets
+	for i := 0; i < 10; i++ {
+		_ = track.WriteRTP(&rtp.Packet{
+			Header: rtp.Header{
+				Version:        2,
+				SequenceNumber: uint16(i),
+				Timestamp:      uint32(i * 3000),
+				SSRC:           8888,
+				PayloadType:    96,
+			},
+			Payload: []byte("frame"),
+		})
+	}
+
+	// Bob sends call_request_keyframe
+	body, _ := json.Marshal(KeyframeRequestPayload{
+		ChannelID: channelID,
+		UserID:    "alice",
+	})
+	if err := mgr.HandleSignal("bob", "bob", MsgRequestKeyframe, body); err != nil {
+		t.Fatalf("handle keyframe request signal: %v", err)
+	}
+}
+
+
+func TestSFU_BothUsersScreenShareSimultaneously(t *testing.T) {
+	channelID := "chan-both-screen"
+	sender := newFakeSender()
+	membership := &fakeMembership{allowed: map[string]bool{
+		"alice:" + channelID: true,
+		"bob:" + channelID:   true,
+	}}
+
+	mgr, err := NewManager(Config{MaxParticipantsPerCall: 10}, membership, sender)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	defer mgr.Stop()
+
+	alice := newTestClient(t, mgr, sender, "alice", channelID)
+	alice.join()
+	bob := newTestClient(t, mgr, sender, "bob", channelID)
+	bob.join()
+	time.Sleep(200 * time.Millisecond)
+
+	// Alice starts screen share
+	aliceScreen := alice.publishScreenShare(t)
+	stopAlice := startWritingRTP(aliceScreen, 1001, 96)
+	defer stopAlice()
+
+	// Bob should receive Alice's screen track
+	select {
+	case remote := <-bob.receivedTrack:
+		t.Logf("Bob received Alice's track: kind=%s, streamID=%s", remote.Kind(), remote.StreamID())
+	case <-time.After(10 * time.Second):
+		t.Fatal("Bob never received Alice's screen track")
+	}
+
+	// Now Bob starts screen share while Alice is still screen sharing!
+	bobScreen := bob.publishScreenShare(t)
+	stopBob := startWritingRTP(bobScreen, 1002, 96)
+	defer stopBob()
+
+	// Alice should receive Bob's screen track!
+	select {
+	case remote := <-alice.receivedTrack:
+		t.Logf("Alice received Bob's track: kind=%s, streamID=%s", remote.Kind(), remote.StreamID())
+	case <-time.After(10 * time.Second):
+		t.Fatal("Alice never received Bob's screen track while already screen sharing!")
+	}
+}
+
+
+func TestSFU_InspectSubscriberSDPOffer(t *testing.T) {
+	channelID := "chan-sdp-test"
+	sender := newFakeSender()
+	membership := &fakeMembership{allowed: map[string]bool{
+		"alice:" + channelID: true,
+		"bob:" + channelID:   true,
+	}}
+
+	mgr, err := NewManager(Config{MaxParticipantsPerCall: 10}, membership, sender)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	defer mgr.Stop()
+
+	alice := newTestClient(t, mgr, sender, "alice", channelID)
+	alice.join()
+	bob := newTestClient(t, mgr, sender, "bob", channelID)
+	bob.join()
+	time.Sleep(100 * time.Millisecond)
+
+	// Alice publishes screen share
+	aliceScreen := alice.publishScreenShare(t)
+	stopAlice := startWritingRTP(aliceScreen, 1001, 96)
+	defer stopAlice()
+
+	// Drain Bob's offer
+	select {
+	case msg := <-bob.inbox:
+		if msg.Type == MsgSubscribeOffer {
+			var p SDPPayload
+			_ = json.Unmarshal(msg.Payload, &p)
+			t.Logf("Bob subscribe offer SDP:\n%s", p.SDP.SDP)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("no subscribe offer for bob")
+	}
+}

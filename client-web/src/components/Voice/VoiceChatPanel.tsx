@@ -50,17 +50,32 @@ const StreamVideo: React.FC<{
 	isLocal?: boolean;
 	className?: string;
 	objectFit?: 'cover' | 'contain';
-}> = ({ stream, isLocal, className, objectFit = 'cover' }) => {
+	mirror?: boolean;
+}> = ({ stream, isLocal, className, objectFit = 'cover', mirror }) => {
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 
 	useEffect(() => {
 		const el = videoRef.current;
-		if (el && stream) {
-			el.srcObject = stream;
-			el.play().catch(() => {
-				/* Browser autoplay policies may block audio, video will still play inline */
-			});
-		}
+		if (!el || !stream) return;
+
+		el.srcObject = stream;
+
+		const tryPlay = () => {
+			const p = el.play();
+			if (p !== undefined) {
+				p.catch(() => {});
+			}
+		};
+
+		tryPlay();
+		el.onloadedmetadata = () => {
+			tryPlay();
+		};
+
+		const tracks = stream.getVideoTracks();
+		tracks.forEach((track) => {
+			track.onunmute = () => tryPlay();
+		});
 	}, [stream]);
 
 	return (
@@ -68,11 +83,11 @@ const StreamVideo: React.FC<{
 			ref={videoRef}
 			autoPlay
 			playsInline
-			muted={isLocal}
+			muted={true}
 			className={`${className || 'w-full h-full'} ${
 				objectFit === 'contain' ? 'object-contain bg-black' : 'object-cover'
 			} rounded-2xl`}
-			style={isLocal ? { transform: 'scaleX(-1)' } : undefined}
+			style={mirror ?? isLocal ? { transform: 'scaleX(-1)' } : undefined}
 		/>
 	);
 };
@@ -105,13 +120,19 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
 	if (!isActive) return null;
 
+	const spotlightStreamId = useVoiceStore((state) => state.spotlightStreamId);
+
 	// Check if someone (local or remote) is sharing screen
 	const activeScreenStream =
-		isScreenSharing && localScreenStream
+		spotlightStreamId === 'local' && isScreenSharing && localScreenStream
+			? localScreenStream
+			: spotlightStreamId && remoteScreenStreams[spotlightStreamId]
+			? remoteScreenStreams[spotlightStreamId]
+			: isScreenSharing && localScreenStream
 			? localScreenStream
 			: activePresenterId && remoteScreenStreams[activePresenterId]
 			? remoteScreenStreams[activePresenterId]
-			: null;
+			: Object.values(remoteScreenStreams)[0] || null;
 
 	const presenterName =
 		activeScreenStream && isScreenSharing
@@ -234,6 +255,12 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 						const isLocalMuted = userMutes.has(userId);
 						const volume = userVolumes[userId] ?? 1;
 
+						const isUserMuted = isMe
+							? isMuted
+							: participantTrackStates[userId]
+							? !participantTrackStates[userId].audio
+							: false;
+
 						// Determine video stream
 						const stream = isMe
 							? isVideoEnabled && localStream
@@ -289,7 +316,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 									</span>
 
 									{/* Status indicators inside badge */}
-									{isMe && isMuted && (
+									{isUserMuted && (
 										<div className="text-[#da373c] shrink-0" title="Muted">
 											<MicOff size={12} />
 										</div>

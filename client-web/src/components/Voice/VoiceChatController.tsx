@@ -34,33 +34,13 @@ export const VoiceChatController: React.FC = () => {
 	}, [participants, currentUserId]);
 
 	const currentlyOpenChannel = useChannelStore((state) => state.activeChannel);
-	const remoteStreams = useVoiceStore((state) => state.remoteStreams);
 	const isViewingCallChannel = currentlyOpenChannel?.id === activeChannelId;
 
 	if (!isActive || !activeChannel) return null;
 
 	return (
 		<>
-			{/* Persistent remote audio elements so audio never cuts out regardless of channel navigation */}
-			{displayParticipants
-				.filter((uid) => uid !== currentUser?.id)
-				.map((uid) => {
-					const stream = remoteStreams[uid];
-					return (
-						<audio
-							key={uid}
-							ref={(el) => {
-								if (el && stream && el.srcObject !== stream) {
-									el.srcObject = stream;
-									el.play().catch(() => {});
-								}
-							}}
-							autoPlay
-							playsInline
-							className="hidden"
-						/>
-					);
-				})}
+			{/* Remote audio is routed directly through WebRTCManager singleton AudioContext for low latency and zero echo */}
 
 			{/* Floating PiP panel is only shown when browsing a DIFFERENT channel than the active call */}
 			{!isViewingCallChannel && (

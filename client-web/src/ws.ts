@@ -627,6 +627,16 @@ export function wsSendCallTrackState(
 	});
 }
 
+export function wsSendCallRequestKeyframe(
+	channelId: string,
+	userId?: string,
+): boolean {
+	return wsSend({
+		type: 'call_request_keyframe',
+		payload: { channel_id: channelId, user_id: userId },
+	});
+}
+
 // ── Decryption Helper ────────────────────────────────────────────────────
 export async function decryptText(
 	channelId: string,

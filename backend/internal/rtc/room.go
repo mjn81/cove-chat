@@ -3,6 +3,7 @@ package rtc
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"nodetalk/backend/internal/logger"
 
@@ -132,15 +133,19 @@ func (r *Room) wireSubscriber(subscriber, publisher *Participant, pt *publishedT
 		logger.Errorf("rtc: add forwarded track to %s's subscribe PC: %v", subscriber.UserID, err)
 		return
 	}
-	go drainRTCPSender(sender)
+	go drainRTCPSender(sender, publisher.publishPC, pt.remote.SSRC())
 
 	pt.addSubscriber(subscriber.UserID, localTrack, sender)
 
 	// New subscriber, existing video stream: ask the publisher for a fresh
 	// keyframe immediately rather than waiting for the periodic interval
-	// PLI, so this subscriber isn't stuck looking at a blank frame.
+	// PLI, and schedule a follow-up after ICE/DTLS settling so this subscriber
+	// isn't stuck looking at a blank frame.
 	if pt.kind == kindVideo || pt.kind == kindScreen {
 		requestKeyframe(publisher.publishPC, pt.remote.SSRC())
+		time.AfterFunc(350*time.Millisecond, func() {
+			requestKeyframe(publisher.publishPC, pt.remote.SSRC())
+		})
 	}
 }
 
@@ -227,4 +232,32 @@ func (r *Room) getParticipant(userID string) (*Participant, error) {
 		return nil, fmt.Errorf("rtc: %s is not in room %s", userID, r.channelID)
 	}
 	return p, nil
+}
+
+// requestKeyframes requests an immediate keyframe from publishers in this room.
+// If targetUserID is empty, it requests keyframes from all active video and screen publishers.
+func (r *Room) requestKeyframes(targetUserID string) {
+	r.mu.RLock()
+	participants := make([]*Participant, 0, len(r.participants))
+	for _, p := range r.participants {
+		if targetUserID == "" || p.UserID == targetUserID {
+			participants = append(participants, p)
+		}
+	}
+	r.mu.RUnlock()
+
+	for _, p := range participants {
+		p.mu.Lock()
+		tracks := make([]*publishedTrack, 0, len(p.publishedTracks))
+		for _, pt := range p.publishedTracks {
+			if pt.kind == kindVideo || pt.kind == kindScreen {
+				tracks = append(tracks, pt)
+			}
+		}
+		p.mu.Unlock()
+
+		for _, pt := range tracks {
+			requestKeyframe(p.publishPC, pt.remote.SSRC())
+		}
+	}
 }

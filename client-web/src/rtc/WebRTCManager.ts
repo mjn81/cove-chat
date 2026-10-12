@@ -16,6 +16,7 @@ import {
 	wsSendCallSubscribeAnswer,
 	wsSendCallICECandidate,
 	wsSendCallTrackState,
+	wsSendCallRequestKeyframe,
 	type CallJoinedPayload,
 	type CallSDPPayload,
 	type CallICECandidatePayload,
@@ -23,7 +24,7 @@ import {
 	type CallParticipantEventPayload,
 	type CallErrorPayload,
 } from '@/ws';
-import { useVoiceStore } from '@/store/voiceStore';
+import { useVoiceStore, type ScreenShareSettings } from '@/store/voiceStore';
 import { useAppStore } from '@/store/app.slice';
 import { useAuthStore } from '@/store/store';
 
@@ -39,14 +40,17 @@ export class WebRTCManager {
 	private localAudioTrack: MediaStreamTrack | null = null;
 	private localVideoTrack: MediaStreamTrack | null = null;
 	private localScreenTrack: MediaStreamTrack | null = null;
+	private localScreenAudioTrack: MediaStreamTrack | null = null;
 
 	private localAudioSender: RTCRtpSender | null = null;
 	private localVideoSender: RTCRtpSender | null = null;
 	private localScreenSender: RTCRtpSender | null = null;
+	private localScreenAudioSender: RTCRtpSender | null = null;
 
 	private audioContext: AudioContext | null = null;
 	private localAnalyser: AnalyserNode | null = null;
 	private remoteAudioNodes: Map<string, { gainNode: GainNode; audio: HTMLAudioElement }> = new Map();
+	private remoteScreenAudioNodes: Map<string, { gainNode: GainNode; audio: HTMLAudioElement }> = new Map();
 	private remoteAnalysers: Map<string, AnalyserNode> = new Map();
 	private speakerLastSpoke: Map<string, number> = new Map();
 	private vadInterval: ReturnType<typeof setInterval> | null = null;
@@ -265,9 +269,18 @@ export class WebRTCManager {
 	}
 
 	/**
-	 * Toggle local screen sharing stream.
+	 * Request an immediate keyframe from video publishers (or all publishers if not specified).
 	 */
-	public async toggleScreenShare(): Promise<void> {
+	public requestKeyframe(targetUserId?: string): void {
+		if (this.channelId) {
+			wsSendCallRequestKeyframe(this.channelId, targetUserId);
+		}
+	}
+
+	/**
+	 * Toggle local screen sharing stream with configurable quality and constraints.
+	 */
+	public async toggleScreenShare(customSettings?: Partial<ScreenShareSettings>): Promise<void> {
 		if (!this.publishPC || !this.channelId) return;
 		const isCurrentlySharing = useVoiceStore.getState().isScreenSharing;
 
@@ -281,43 +294,178 @@ export class WebRTCManager {
 				}
 				this.localScreenSender = null;
 			}
+			if (this.localScreenAudioSender && this.publishPC) {
+				try {
+					this.publishPC.removeTrack(this.localScreenAudioSender);
+				} catch {
+					/* ignore */
+				}
+				this.localScreenAudioSender = null;
+			}
 			if (this.localScreenTrack) {
 				this.localScreenTrack.stop();
 				this.localScreenTrack = null;
+			}
+			if (this.localScreenAudioTrack) {
+				this.localScreenAudioTrack.stop();
+				this.localScreenAudioTrack = null;
 			}
 
 			useVoiceStore.getState()._setInternalState({
 				isScreenSharing: false,
 				localScreenStream: null,
+				spotlightStreamId:
+					useVoiceStore.getState().spotlightStreamId === 'local'
+						? null
+						: useVoiceStore.getState().spotlightStreamId,
 			});
 			wsSendCallTrackState(this.channelId, 'screen', false);
 			await this.renegotiatePublish();
 		} else {
-			// Start screen share
+			// Start screen share with configurable settings
 			try {
+				if (customSettings) {
+					useVoiceStore.getState().setScreenShareSettings(customSettings);
+				}
+				const settings = useVoiceStore.getState().screenShareSettings;
+
+				let widthConstraint: ConstrainULong | undefined;
+				let heightConstraint: ConstrainULong | undefined;
+				if (settings.resolution === '720p') {
+					widthConstraint = { max: 1280 };
+					heightConstraint = { max: 720 };
+				} else if (settings.resolution === '1080p') {
+					widthConstraint = { max: 1920 };
+					heightConstraint = { max: 1080 };
+				} else if (settings.resolution === '1440p') {
+					widthConstraint = { max: 2560 };
+					heightConstraint = { max: 1440 };
+				}
+
+				let aspectRatioConstraint: ConstrainDouble | undefined;
+				if (settings.aspectRatio === '16/9') {
+					aspectRatioConstraint = 16 / 9;
+				} else if (settings.aspectRatio === '4/3') {
+					aspectRatioConstraint = 4 / 3;
+				}
+
+				const videoConstraints: MediaTrackConstraints = {
+					frameRate: { max: settings.frameRate, ideal: settings.frameRate },
+				};
+				if (widthConstraint) videoConstraints.width = widthConstraint;
+				if (heightConstraint) videoConstraints.height = heightConstraint;
+				if (aspectRatioConstraint) videoConstraints.aspectRatio = aspectRatioConstraint;
+
 				const displayStream = await navigator.mediaDevices.getDisplayMedia({
-					video: true,
-					audio: true,
+					video: videoConstraints,
+					audio: settings.includeAudio
+						? { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+						: false,
 				});
 				const track = displayStream.getVideoTracks()[0];
 				if (!track) return;
 
 				this.localScreenTrack = track;
+				try {
+					track.contentHint = settings.contentHint || 'detail';
+				} catch {
+					/* ignore */
+				}
+
 				track.onended = () => {
 					this.toggleScreenShare();
 				};
 
 				this.localScreenSender = this.publishPC.addTrack(track, displayStream);
 
+				// Capture and add screen audio track if present
+				let screenAudioTrackId: string | undefined;
+				const audioTracks = displayStream.getAudioTracks();
+				if (audioTracks.length > 0) {
+					this.localScreenAudioTrack = audioTracks[0];
+					screenAudioTrackId = audioTracks[0].id;
+					this.localScreenAudioSender = this.publishPC.addTrack(audioTracks[0], displayStream);
+				}
+
 				useVoiceStore.getState()._setInternalState({
 					isScreenSharing: true,
 					localScreenStream: displayStream,
+					spotlightStreamId: 'local',
 				});
 				wsSendCallTrackState(this.channelId, 'screen', true, track.id, displayStream.id);
-				await this.renegotiatePublish(track.id);
+				await this.renegotiatePublish(track.id, screenAudioTrackId);
 			} catch (err) {
 				useVoiceStore.getState().addLog(`[RTC] Screen sharing cancelled or failed: ${err}`);
 			}
+		}
+	}
+
+	/**
+	 * Apply new screen share constraints on the fly to an active screen share track.
+	 */
+	public async applyScreenShareConstraints(newSettings: Partial<ScreenShareSettings>): Promise<void> {
+		useVoiceStore.getState().setScreenShareSettings(newSettings);
+		const settings = useVoiceStore.getState().screenShareSettings;
+		if (!this.localScreenTrack) return;
+
+		let widthConstraint: ConstrainULong | undefined;
+		let heightConstraint: ConstrainULong | undefined;
+		if (settings.resolution === '720p') {
+			widthConstraint = { max: 1280 };
+			heightConstraint = { max: 720 };
+		} else if (settings.resolution === '1080p') {
+			widthConstraint = { max: 1920 };
+			heightConstraint = { max: 1080 };
+		} else if (settings.resolution === '1440p') {
+			widthConstraint = { max: 2560 };
+			heightConstraint = { max: 1440 };
+		}
+
+		let aspectRatioConstraint: ConstrainDouble | undefined;
+		if (settings.aspectRatio === '16/9') {
+			aspectRatioConstraint = 16 / 9;
+		} else if (settings.aspectRatio === '4/3') {
+			aspectRatioConstraint = 4 / 3;
+		}
+
+		const constraints: MediaTrackConstraints = {
+			frameRate: { max: settings.frameRate, ideal: settings.frameRate },
+		};
+		if (widthConstraint) constraints.width = widthConstraint;
+		if (heightConstraint) constraints.height = heightConstraint;
+		if (aspectRatioConstraint) constraints.aspectRatio = aspectRatioConstraint;
+
+		try {
+			await this.localScreenTrack.applyConstraints(constraints);
+			this.localScreenTrack.contentHint = settings.contentHint || 'detail';
+			useVoiceStore.getState().addLog(`[RTC] Screen share constraints updated: ${settings.resolution} @ ${settings.frameRate}fps`);
+		} catch (err) {
+			useVoiceStore.getState().addLog(`[RTC] Failed to apply screen constraints: ${err}`);
+		}
+	}
+
+	/**
+	 * Update the output volume for a specific remote screen share stream.
+	 */
+	public setScreenShareVolume(userId: string, volume: number): void {
+		useVoiceStore.getState().setScreenShareVolume(userId, volume);
+		const node = this.remoteScreenAudioNodes.get(userId);
+		if (node) {
+			const isMuted = !!useVoiceStore.getState().screenShareMutes[userId] || useVoiceStore.getState().isDeafened;
+			node.gainNode.gain.value = isMuted ? 0 : volume;
+		}
+	}
+
+	/**
+	 * Toggle mute for a specific remote screen share stream.
+	 */
+	public toggleScreenShareMute(userId: string): void {
+		useVoiceStore.getState().toggleScreenShareMute(userId);
+		const isMuted = !!useVoiceStore.getState().screenShareMutes[userId] || useVoiceStore.getState().isDeafened;
+		const volume = useVoiceStore.getState().screenShareVolumes[userId] ?? 1;
+		const node = this.remoteScreenAudioNodes.get(userId);
+		if (node) {
+			node.gainNode.gain.value = isMuted ? 0 : volume;
 		}
 	}
 
@@ -412,6 +560,10 @@ export class WebRTCManager {
 				const payload = rawPayload as CallTrackStatePayload;
 				if (payload.channel_id !== this.channelId || !payload.user_id) return;
 				useVoiceStore.getState().setTrackState(payload.user_id, payload.kind, payload.enabled);
+				if (payload.kind === 'screen' && payload.enabled) {
+					this.requestKeyframe(payload.user_id);
+					setTimeout(() => this.requestKeyframe(payload.user_id), 300);
+				}
 			}),
 
 			onWS('call_participant_joined', (rawPayload: unknown) => {
@@ -470,6 +622,10 @@ export class WebRTCManager {
 				for (const [kind, enabled] of Object.entries(p.track_states)) {
 					store.setTrackState(p.user_id, kind as 'audio' | 'video' | 'screen', enabled);
 				}
+			} else {
+				store.setTrackState(p.user_id, 'audio', true);
+				store.setTrackState(p.user_id, 'video', false);
+				store.setTrackState(p.user_id, 'screen', false);
 			}
 		}
 
@@ -504,24 +660,52 @@ export class WebRTCManager {
 		// Wire subscribePC incoming tracks
 		this.subscribePC.ontrack = (event) => {
 			const { track, streams } = event;
-			const stream = streams[0];
-			const streamId = stream?.id || '';
+			const targetStream = streams[0] || new MediaStream([track]);
+			const streamId = targetStream.id || '';
 
 			store.addLog(`[RTC] Inbound track: kind=${track.kind}, streamId=${streamId}`);
 
-			if (streamId.endsWith(':screen') || streamId === 'screen') {
-				const publisherId = streamId.replace(':screen', '');
-				store.setRemoteScreenStream(publisherId, stream);
-				store.setTrackState(publisherId, 'screen', true);
+			const isScreen = streamId.endsWith(':screen') || streamId === 'screen' || streamId.includes(':screen');
+
+			if (isScreen) {
+				let publisherId = '';
+				if (streamId.includes(':screen')) {
+					publisherId = streamId.split(':screen')[0];
+				} else if (streamId.endsWith(':screen')) {
+					publisherId = streamId.slice(0, -':screen'.length);
+				}
+				// If publisherId is empty or literal 'screen', resolve from track states or participants
+				if (!publisherId || publisherId === 'screen') {
+					const trackStates = store.participantTrackStates;
+					const currentUid = useAuthStore.getState().user?.id;
+					const screenPublisher = Object.keys(trackStates).find(
+						(uid) => uid !== currentUid && trackStates[uid]?.screen
+					);
+					if (screenPublisher) {
+						publisherId = screenPublisher;
+					} else {
+						publisherId = store.activePresenterId || Object.keys(store.remoteStreams)[0] || 'screen';
+					}
+				}
+
+				if (track.kind === 'video') {
+					store.setRemoteScreenStream(publisherId, targetStream);
+					store.setTrackState(publisherId, 'screen', true);
+					// Request an immediate keyframe so the remote video begins decoding without delay
+					this.requestKeyframe(publisherId);
+					setTimeout(() => this.requestKeyframe(publisherId), 300);
+				} else if (track.kind === 'audio') {
+					this.attachRemoteScreenAudio(publisherId, track);
+				}
 			} else if (streamId) {
 				const publisherId = streamId;
-				store.setRemoteStream(publisherId, stream);
+				store.setRemoteStream(publisherId, targetStream);
 
 				if (track.kind === 'audio') {
 					this.attachRemoteAudio(publisherId, track);
-					store.setTrackState(publisherId, 'audio', true);
 				} else if (track.kind === 'video') {
-					store.setTrackState(publisherId, 'video', true);
+					this.requestKeyframe(publisherId);
+					setTimeout(() => this.requestKeyframe(publisherId), 300);
 				}
 			}
 		};
@@ -547,6 +731,9 @@ export class WebRTCManager {
 				const isMuted = store.isMuted;
 				audioTrack.enabled = !isMuted;
 				this.localAudioSender = this.publishPC.addTrack(audioTrack, this.createLocalStream());
+				if (this.channelId) {
+					wsSendCallTrackState(this.channelId, 'audio', !isMuted);
+				}
 
 				// Setup local analyser for instant local VAD
 				this.setupLocalAnalyser(audioTrack);
@@ -608,7 +795,7 @@ export class WebRTCManager {
 		}
 	}
 
-	private async renegotiatePublish(screenTrackId?: string): Promise<void> {
+	private async renegotiatePublish(screenTrackId?: string, screenAudioTrackId?: string): Promise<void> {
 		if (!this.publishPC || !this.channelId) return;
 
 		try {
@@ -618,14 +805,17 @@ export class WebRTCManager {
 
 			let finalSdp = offer.sdp || '';
 
-			// If screen sharing, munge the msid of the screen track to 'screen'
+			// If screen sharing, munge the msid of screen video and screen audio tracks to 'screen'
 			// to satisfy backend/internal/rtc classifyTrack contract
-			if (screenTrackId && finalSdp.includes(screenTrackId)) {
+			const screenTrackIds = [screenTrackId, screenAudioTrackId].filter(Boolean) as string[];
+			if (screenTrackIds.length > 0 && finalSdp) {
 				finalSdp = finalSdp
 					.split('\r\n')
 					.map((line) => {
-						if (line.startsWith('a=msid:') && line.includes(screenTrackId)) {
-							return `a=msid:screen ${screenTrackId}`;
+						for (const id of screenTrackIds) {
+							if (line.startsWith('a=msid:') && line.includes(id)) {
+								return `a=msid:screen ${id}`;
+							}
 						}
 						return line;
 					})
@@ -653,6 +843,48 @@ export class WebRTCManager {
 		}
 	}
 
+	private attachRemoteScreenAudio(userId: string, track: MediaStreamTrack): void {
+		const ctx = this.initAudioContext();
+		this.removeRemoteScreenAudio(userId);
+
+		const mediaStream = new MediaStream([track]);
+		const audio = new Audio();
+		audio.srcObject = mediaStream;
+		audio.muted = true; // Muted to avoid duplicate playback alongside Web Audio API
+		audio.autoplay = true;
+
+		if (!ctx) return;
+
+		try {
+			const source = ctx.createMediaStreamSource(mediaStream);
+			const gainNode = ctx.createGain();
+			const store = useVoiceStore.getState();
+			const volume = store.screenShareVolumes[userId] ?? 1;
+			const isMuted = !!store.screenShareMutes[userId] || store.isDeafened;
+
+			gainNode.gain.value = isMuted ? 0 : volume;
+			source.connect(gainNode);
+			gainNode.connect(ctx.destination);
+
+			this.remoteScreenAudioNodes.set(userId, { gainNode, audio });
+		} catch (err) {
+			console.warn('[RTC] Failed to attach remote screen audio:', err);
+		}
+	}
+
+	private removeRemoteScreenAudio(userId: string): void {
+		const node = this.remoteScreenAudioNodes.get(userId);
+		if (node) {
+			try {
+				node.gainNode.disconnect();
+				node.audio.srcObject = null;
+			} catch {
+				/* ignore */
+			}
+			this.remoteScreenAudioNodes.delete(userId);
+		}
+	}
+
 	private stopLocalTracks(): void {
 		if (this.localAudioSender && this.publishPC) {
 			try {
@@ -674,9 +906,22 @@ export class WebRTCManager {
 			this.localScreenTrack.stop();
 			this.localScreenTrack = null;
 		}
+		if (this.localScreenAudioSender && this.publishPC) {
+			try {
+				this.publishPC.removeTrack(this.localScreenAudioSender);
+			} catch {
+				/* ignore */
+			}
+			this.localScreenAudioSender = null;
+		}
+		if (this.localScreenAudioTrack) {
+			this.localScreenAudioTrack.stop();
+			this.localScreenAudioTrack = null;
+		}
 		this.localAudioSender = null;
 		this.localVideoSender = null;
 		this.localScreenSender = null;
+		this.localScreenAudioSender = null;
 		this.localAnalyser = null;
 	}
 
@@ -705,6 +950,7 @@ export class WebRTCManager {
 		const mediaStream = new MediaStream([track]);
 		const audio = new Audio();
 		audio.srcObject = mediaStream;
+		audio.muted = true; // Muted to avoid duplicate playback alongside Web Audio API
 		audio.autoplay = true;
 
 		if (!ctx) {
