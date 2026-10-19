@@ -1,6 +1,6 @@
 .DS_Store
 *.log
-data/
+/backend/data/
 config.toml
 nodetalk-server
 stress_report_*.txt
