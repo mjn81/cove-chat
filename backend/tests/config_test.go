@@ -2,6 +2,8 @@ package tests
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"nodetalk/backend/internal/config"
@@ -9,7 +11,8 @@ import (
 
 func TestLoadDefaults(t *testing.T) {
 	// Note: cannot use t.Parallel() with t.Setenv
-	t.Setenv("NODETALK_CONFIG", "/tmp/nodetalk_test_nonexistent.toml")
+	path := filepath.Join(t.TempDir(), "nodetalk_test_nonexistent.toml")
+	t.Setenv("NODETALK_CONFIG", path)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -24,8 +27,7 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Security.MasterPassword == "" {
 		t.Error("MasterPassword should be auto-generated when empty")
 	}
-	// Clean up the potentially generated config.toml
-	os.Remove("/tmp/nodetalk_test_nonexistent.toml")
+	os.Remove(path)
 }
 
 // TestPersistedConfigHasRestrictivePermissions guards against the config
@@ -34,7 +36,7 @@ func TestLoadDefaults(t *testing.T) {
 // the process umask and can leave it world-readable on a permissively
 // configured host.
 func TestPersistedConfigHasRestrictivePermissions(t *testing.T) {
-	path := "/tmp/nodetalk_test_perms.toml"
+	path := filepath.Join(t.TempDir(), "nodetalk_test_perms.toml")
 	t.Setenv("NODETALK_CONFIG", path)
 	defer os.Remove(path)
 
@@ -46,8 +48,10 @@ func TestPersistedConfigHasRestrictivePermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected config file to be persisted: %v", err)
 	}
-	if perm := info.Mode().Perm(); perm != 0600 {
-		t.Errorf("config file permissions = %o, want %o (owner read/write only)", perm, 0600)
+	if runtime.GOOS != "windows" {
+		if perm := info.Mode().Perm(); perm != 0600 {
+			t.Errorf("config file permissions = %o, want %o (owner read/write only)", perm, 0600)
+		}
 	}
 }
 
@@ -57,7 +61,7 @@ func TestPersistedConfigHasRestrictivePermissions(t *testing.T) {
 // the same way as master_password, never left empty or defaulted to a
 // fixed value.
 func TestVoiceDefaultsAndTURNSecretGenerated(t *testing.T) {
-	path := "/tmp/nodetalk_test_voice.toml"
+	path := filepath.Join(t.TempDir(), "nodetalk_test_voice.toml")
 	t.Setenv("NODETALK_CONFIG", path)
 	defer os.Remove(path)
 
@@ -96,7 +100,8 @@ func TestVoiceDefaultsAndTURNSecretGenerated(t *testing.T) {
 
 func TestEnvVarOverride(t *testing.T) {
 	// Note: cannot use t.Parallel() with t.Setenv
-	t.Setenv("NODETALK_CONFIG", "/tmp/nodetalk_test_env.toml")
+	path := filepath.Join(t.TempDir(), "nodetalk_test_env.toml")
+	t.Setenv("NODETALK_CONFIG", path)
 	t.Setenv("NODETALK_MASTER_PASSWORD", "env-override-password")
 
 	cfg, err := config.Load()
@@ -106,5 +111,5 @@ func TestEnvVarOverride(t *testing.T) {
 	if cfg.Security.MasterPassword != "env-override-password" {
 		t.Errorf("MasterPassword = %q, want %q", cfg.Security.MasterPassword, "env-override-password")
 	}
-	os.Remove("/tmp/nodetalk_test_env.toml")
+	os.Remove(path)
 }

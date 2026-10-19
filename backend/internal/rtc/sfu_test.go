@@ -88,6 +88,7 @@ type testClient struct {
 	receivedTrack chan *webrtc.TrackRemote
 	publishAnswer chan *models.WSMessage
 	trackState    chan TrackStatePayload
+	done          chan struct{}
 }
 
 func newTestClient(t *testing.T, mgr *Manager, sender *fakeSender, userID, channelID string) *testClient {
@@ -112,7 +113,13 @@ func newTestClient(t *testing.T, mgr *Manager, sender *fakeSender, userID, chann
 		receivedTrack: make(chan *webrtc.TrackRemote, 8),
 		publishAnswer: make(chan *models.WSMessage, 8),
 		trackState:    make(chan TrackStatePayload, 16),
+		done:          make(chan struct{}),
 	}
+	t.Cleanup(func() {
+		close(c.done)
+		_ = pubPC.Close()
+		_ = subPC.Close()
+	})
 
 	pubPC.OnICECandidate(func(cand *webrtc.ICECandidate) {
 		if cand == nil {
@@ -135,35 +142,72 @@ func newTestClient(t *testing.T, mgr *Manager, sender *fakeSender, userID, chann
 }
 
 func (c *testClient) signal(msgType string, payload any) {
+	select {
+	case <-c.done:
+		return
+	default:
+	}
 	body, err := json.Marshal(payload)
 	if err != nil {
+		select {
+		case <-c.done:
+			return
+		default:
+		}
 		c.t.Fatalf("marshal %s: %v", msgType, err)
 	}
 	if err := c.mgr.HandleSignal(c.userID, c.userID, msgType, body); err != nil {
+		select {
+		case <-c.done:
+			return
+		default:
+		}
 		c.t.Errorf("HandleSignal(%s) for %s: %v", msgType, c.userID, err)
 	}
 }
 
 func (c *testClient) run() {
-	for msg := range c.inbox {
-		switch msg.Type {
-		case MsgSubscribeOffer:
-			var p SDPPayload
-			_ = json.Unmarshal(msg.Payload, &p)
-			if err := c.subscribePC.SetRemoteDescription(p.SDP); err != nil {
-				c.t.Errorf("%s: set subscribe remote desc: %v", c.userID, err)
-				continue
+	for {
+		select {
+		case <-c.done:
+			return
+		case msg, ok := <-c.inbox:
+			if !ok {
+				return
 			}
-			answer, err := c.subscribePC.CreateAnswer(nil)
-			if err != nil {
-				c.t.Errorf("%s: create subscribe answer: %v", c.userID, err)
-				continue
-			}
-			if err := c.subscribePC.SetLocalDescription(answer); err != nil {
-				c.t.Errorf("%s: set subscribe local desc: %v", c.userID, err)
-				continue
-			}
-			c.signal(MsgSubscribeAnswer, SDPPayload{ChannelID: c.channelID, SDP: *c.subscribePC.LocalDescription()})
+			switch msg.Type {
+			case MsgSubscribeOffer:
+				var p SDPPayload
+				_ = json.Unmarshal(msg.Payload, &p)
+				if err := c.subscribePC.SetRemoteDescription(p.SDP); err != nil {
+					select {
+					case <-c.done:
+						return
+					default:
+					}
+					c.t.Errorf("%s: set subscribe remote desc: %v", c.userID, err)
+					continue
+				}
+				answer, err := c.subscribePC.CreateAnswer(nil)
+				if err != nil {
+					select {
+					case <-c.done:
+						return
+					default:
+					}
+					c.t.Errorf("%s: create subscribe answer: %v", c.userID, err)
+					continue
+				}
+				if err := c.subscribePC.SetLocalDescription(answer); err != nil {
+					select {
+					case <-c.done:
+						return
+					default:
+					}
+					c.t.Errorf("%s: set subscribe local desc: %v", c.userID, err)
+					continue
+				}
+				c.signal(MsgSubscribeAnswer, SDPPayload{ChannelID: c.channelID, SDP: *c.subscribePC.LocalDescription()})
 
 		case MsgICECandidate:
 			var p ICECandidatePayload
@@ -190,6 +234,7 @@ func (c *testClient) run() {
 		case MsgJoined, MsgParticipantJoined, MsgParticipantLeft, MsgError:
 			// Not needed by this test's assertions.
 		}
+	}
 	}
 }
 
