@@ -18,5 +18,7 @@ Instructions for AI coding agents (Codex, Cursor, Copilot, Gemini/Antigravity, C
 - Backend: `internal/logger` only (no `fmt.Print`/`log.Print`); every route wrapped in `protect`/`protectMember` unless explicitly public; every handler has a full Swagger block with an `**Access:**` line.
 - Frontend: Shadcn + theme tokens only, lucide icons, no hard-coded strings (en/fa/ar JSON), logical Tailwind classes (`ms/me/ps/pe/start/end`), React Query hooks over `<domain>.api.ts`, zod forms with `*` on required labels, `unknown` not `any`.
 - Web client + backend first; Wails desktop only when asked.
+- Calling architecture: WebRTC SFU (`internal/rtc`) is the DEFAULT for group audio/video calls; Raw UDP (`internal/voice`) is ONLY for air-gapped/isolated environments without video. Do not mix them up.
 
 Edit the rules in `.agents/rules/` — the other agent config files only point there.
+

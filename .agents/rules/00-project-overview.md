@@ -13,6 +13,7 @@ You are an expert full-stack engineer working on **NodeTalk**, a self-hosted, se
 |---|---|---|
 | `backend/` | Go 1.25 server: REST (`net/http` ServeMux), WebSocket hub, WebRTC SFU (`internal/rtc`), UDP voice, BadgerDB (encrypted at rest) | **Primary** |
 | `client-web/` | React 19 + Vite + TypeScript + Tailwind 3 + Shadcn + React Query + Zustand + i18next | **Primary** |
+| `client-android/` | Native Android client: Kotlin + Jetpack Compose + Stream WebRTC + Ktor + AES-256-GCM | Secondary |
 | `client-desktop/` | Wails shell that embeds the `client-web` build | Secondary — only touch when explicitly asked |
 | `Makefile` | The single entry point for all commands | — |
 
@@ -37,3 +38,16 @@ Related rule files (read the ones relevant to your task):
 - "Whisper" chats are zero-persistence E2EE — never persist their plaintext or keys server-side.
 - Web auth = httpOnly `nodetalk_session` cookie + double-submit CSRF (`nodetalk_csrf` cookie → `X-CSRF-Token` header). Desktop (Wails) = Bearer token. Do not "unify" these; the split is intentional (see `internal/auth/auth.go`).
 - Never log secrets, tokens, keys, plaintext message bodies, or passwords.
+
+## Calling & Media Architecture (Do not confuse)
+
+- **Default = WebRTC SFU (`backend/internal/rtc`)**:
+  - Group audio/video calling and screen sharing default to the in-process **WebRTC SFU** (`voice.mode = "webrtc"` in `config.toml`).
+  - Media is encrypted via DTLS-SRTP, with NAT traversal using embedded STUN/TURN.
+  - Signaling runs over the authenticated WebSocket hub (`internal/ws`).
+  - Frontend uses `client-web/src/rtc/WebRTCManager.ts` with dual PeerConnections (publish + subscribe).
+- **Air-Gapped / Isolated = Raw UDP (`backend/internal/voice`)**:
+  - Reserved for air-gapped or restricted LAN deployments (`voice.mode = "raw_udp"`).
+  - Audio-only, unencrypted UDP packet router on port `9090` without ICE/STUN/TURN overhead.
+  - No video or screen sharing is supported in this mode.
+
