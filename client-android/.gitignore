@@ -1,0 +1,26 @@
+# Gradle / Kotlin build output
+.gradle/
+.kotlin/
+build/
+*/build/
+.cxx/
+captures/
+externalNativeBuild/
+
+# Machine-specific (SDK path etc.)
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Signing + release artifacts
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+
+# OS
+.DS_Store
