@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">NodeTalk</string>
+    <string name="server_url">Server URL</string>
+    <string name="connect">Connect</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Log In</string>
+    <string name="register">Register</string>
+    <string name="channels">Channels</string>
+    <string name="send">Send</string>
+    <string name="type_message">Type an encrypted message…</string>
+    <string name="call">Join Call</string>
+    <string name="leave_call">Leave Call</string>
+    <string name="mute">Mute</string>
+    <string name="unmute">Unmute</string>
+    <string name="video_on">Video On</string>
+    <string name="video_off">Video Off</string>
+</resources>
