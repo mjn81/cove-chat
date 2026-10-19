@@ -19,8 +19,11 @@ tidy: ## go mod tidy
 build: ## Build standalone web server binary
 	cd backend && $(GO) build -o ../$(BIN) ./cmd/server
 
+dev dev-back run: export GO_ENV := development
+dev dev-back run: export NODE_ENV := development
+
 dev-back: ## Run standalone backend in dev mode (go run)
-	cd backend && GO_ENV=development NODE_ENV=development $(GO) run ./cmd/server
+	cd backend && $(GO) run ./cmd/server
 
 run: dev-back ## Run standalone backend (alias for dev-back)
 

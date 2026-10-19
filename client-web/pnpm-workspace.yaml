@@ -1,4 +1,6 @@
 # Single-package project: this file only holds pnpm settings (pnpm 10+ reads them here, not from .npmrc).
+packages:
+  - '.'
 
 # pnpm blocks dependency lifecycle scripts by default; allowlist only what needs one.
 allowBuilds:
