@@ -1,4 +1,4 @@
-.PHONY: help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -56,6 +56,23 @@ front/lint: ## Run ESLint on the web client
 
 front/typecheck: ## Type-check the web client (tsc, no emit)
 	$(PNPM) -C client-web typecheck
+
+## ── Android ─────────────────────────────────────────────────────────────────
+# Gradle 8.11 cannot start on JDK 24+ (Android Studio now bundles JDK 25), so builds are pinned to a JDK 17-23.
+# Auto-detected from ~/.jdks and Program Files; override with `make android/build ANDROID_JDK=/path/to/jdk`.
+ANDROID_JDK ?= $(firstword $(wildcard $(HOME)/.jdks/jbr-21* $(HOME)/.jdks/jbr-17* $(HOME)/.jdks/openjdk-21* $(HOME)/.jdks/temurin-21* $(HOME)/.jdks/corretto-21* /c/Program Files/Java/jdk-21* /c/Program Files/Java/jdk-17* /usr/lib/jvm/java-21-openjdk* /usr/lib/jvm/java-17-openjdk*))
+
+android/compile: ## Compile the Android client (Kotlin only, fast check)
+	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)
+	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:compileDebugKotlin
+
+android/build: ## Build the Android debug APK
+	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)
+	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:assembleDebug
+
+android/install: ## Build and install the debug APK on the connected device/emulator
+	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)
+	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:installDebug
 
 ## ── Wails Desktop (PRIMARY build target) ────────────────────────────────────
 wails/dev: build ## Run Wails in dev mode (hot-reload desktop app)
