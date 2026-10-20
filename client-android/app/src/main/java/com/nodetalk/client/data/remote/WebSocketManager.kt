@@ -67,6 +67,10 @@ class WebSocketManager(private val prefs: PreferencesManager) {
     private val _messageDeleteFlow = MutableSharedFlow<MessageDeletePayload>(extraBufferCapacity = 64)
     val messageDeleteFlow: SharedFlow<MessageDeletePayload> = _messageDeleteFlow.asSharedFlow()
 
+    /** Whisper (ephemeral E2EE) relay events, handled by WhisperManager. */
+    private val _whisperFlow = MutableSharedFlow<Pair<String, JsonElement>>(extraBufferCapacity = 64)
+    val whisperFlow: SharedFlow<Pair<String, JsonElement>> = _whisperFlow.asSharedFlow()
+
     /** Fires when the channel list changed server-side (joined, kicked, renamed, ...). */
     private val _channelsChangedFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
     val channelsChangedFlow: SharedFlow<Unit> = _channelsChangedFlow.asSharedFlow()
@@ -146,6 +150,8 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                 "message_update" -> _messageUpdateFlow.emit(json.decodeFromJsonElement<Message>(payload))
                 "message_delete" -> _messageDeleteFlow.emit(json.decodeFromJsonElement<MessageDeletePayload>(payload))
                 "channel_update", "channel_delete" -> _channelsChangedFlow.emit(Unit)
+                "whisper_init", "whisper_accept", "whisper_reject", "whisper_msg", "whisper_close", "whisper_error" ->
+                    _whisperFlow.emit(Pair(type, payload))
                 // WebRTC signaling events (names match backend/internal/rtc)
                 "call_joined", "call_publish_answer", "call_subscribe_offer", "call_ice_candidate",
                 "call_participant_joined", "call_participant_left", "call_track_state", "call_error",

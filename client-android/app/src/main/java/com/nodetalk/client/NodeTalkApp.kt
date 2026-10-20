@@ -27,6 +27,8 @@ class NodeTalkApp : Application() {
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
+    lateinit var whisperManager: com.nodetalk.client.whisper.WhisperManager
+        private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     companion object {
@@ -45,6 +47,7 @@ class NodeTalkApp : Application() {
         rawUdpVoiceManager = RawUdpVoiceManager()
 
         notificationHelper = NotificationHelper(this)
+        whisperManager = com.nodetalk.client.whisper.WhisperManager(webSocketManager) { preferencesManager.userId }
         appScope.launch {
             webSocketManager.messageFlow.collect { m ->
                 val me = preferencesManager.userId

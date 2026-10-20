@@ -2,6 +2,13 @@ package com.nodetalk.client.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.nodetalk.client.ui.screens.WhisperInviteDialog
+import com.nodetalk.client.ui.screens.WhisperScreen
+import com.nodetalk.client.ui.screens.WhisperStartDialog
 import com.nodetalk.client.notify.OpenChatRequest
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,7 +45,38 @@ fun NavGraph() {
         OpenChatRequest.channelId = null
     }
 
+    // Whisper: incoming requests anywhere in the app, and the expiry chooser when starting one.
+    val whisper = NodeTalkApp.instance.whisperManager
+    var startWhisperFor by remember { mutableStateOf<Pair<String, String>?>(null) }
+    whisper.invite?.let { inv ->
+        if (!prefs.authToken.isNullOrBlank()) {
+            WhisperInviteDialog(
+                invite = inv,
+                onAccept = { val id = whisper.accept(inv); navController.navigate("whisper/$id") },
+                onDecline = { whisper.decline(inv) }
+            )
+        }
+    }
+    startWhisperFor?.let { (peerId, peerName) ->
+        WhisperStartDialog(
+            peerName = peerName,
+            onDismiss = { startWhisperFor = null },
+            onStart = { mode ->
+                val id = whisper.start(peerId, peerName, mode)
+                startWhisperFor = null
+                navController.navigate("whisper/$id")
+            }
+        )
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
+        composable(
+            route = "whisper/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { entry ->
+            WhisperScreen(sessionId = entry.arguments?.getString("sessionId").orEmpty(), onBack = { navController.popBackStack() })
+        }
+
         composable("server") {
             ServerSelectScreen(
                 onServerConfigured = {
@@ -78,6 +116,7 @@ fun NavGraph() {
         composable("settings") {
             SettingsScreen(
                 onClose = { navController.popBackStack() },
+                onStartWhisper = { id, name -> startWhisperFor = id to name },
                 onOpenChat = { id, name ->
                     val enc = java.net.URLEncoder.encode(name, "UTF-8")
                     navController.navigate("chat/$id/$enc") { popUpTo("channels") }
@@ -105,6 +144,7 @@ fun NavGraph() {
                 channelId = channelId,
                 channelName = channelName,
                 onBack = { navController.popBackStack() },
+                onStartWhisper = { id, name -> startWhisperFor = id to name },
                 onStartCall = { withVideo ->
                     val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
                     navController.navigate("call/$channelId/$encodedName/$withVideo")

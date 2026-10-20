@@ -73,7 +73,7 @@ private enum class SettingsPage(val title: String, val icon: ImageVector) {
  * Appearance (theme) and My Account are functional; the other pages are not on mobile yet.
  */
 @Composable
-fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (String, String) -> Unit = { _, _ -> }) {
+fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (String, String) -> Unit = { _, _ -> }, onStartWhisper: (String, String) -> Unit = { _, _ -> }) {
     val c = NodeTalkTheme.extendedColors
     val app = NodeTalkApp.instance
     val scope = rememberCoroutineScope()
@@ -140,7 +140,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                 Spacer(Modifier.height(24.dp))
                 when (current) {
                     SettingsPage.Appearance -> AppearancePage()
-                    SettingsPage.Friends -> FriendsPage(onOpenChat)
+                    SettingsPage.Friends -> FriendsPage(onOpenChat, onStartWhisper)
                     SettingsPage.Account -> AccountSettings(onLogout = { logout() })
                     SettingsPage.Privacy -> PrivacySettings()
                     SettingsPage.Notifications -> NotificationSettings()

@@ -49,7 +49,7 @@ private enum class FriendsTab(val label: String) { Friends("Friends"), Pending("
  * (`/relationships/incoming`), sent requests (`type = requested`) and blocked users, plus add-by-username.
  */
 @Composable
-fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
+fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit, onStartWhisper: (userId: String, name: String) -> Unit = { _, _ -> }) {
     val c = NodeTalkTheme.extendedColors
     val api = NodeTalkApp.instance.apiClient
     val me = NodeTalkApp.instance.preferencesManager.userId.orEmpty()
@@ -131,6 +131,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
                     val name = f.user?.username ?: "Unknown"
                     PersonRow(f.toUserId, name, f.user?.avatarId) {
                         Action("Message", NTPrimary) { startDm(f.toUserId, name) }
+                        Action("Whisper", NTPrimary) { onStartWhisper(f.toUserId, name) }
                         Action("Remove", NTDestructive) { act(f.toUserId, "remove") }
                     }
                 }

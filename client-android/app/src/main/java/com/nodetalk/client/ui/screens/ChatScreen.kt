@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Search
@@ -132,7 +133,8 @@ fun ChatScreen(
     channelId: String,
     channelName: String,
     onBack: () -> Unit,
-    onStartCall: (withVideo: Boolean) -> Unit
+    onStartCall: (withVideo: Boolean) -> Unit,
+    onStartWhisper: (peerId: String, peerName: String) -> Unit = { _, _ -> }
 ) {
     val app = NodeTalkApp.instance
     val api = app.apiClient
@@ -330,6 +332,9 @@ fun ChatScreen(
                 if (!isDm) {
                     TopBarIcon(Icons.Outlined.Groups, "Show Members") { showMembers = true }
                     TopBarIcon(Icons.Outlined.Tune, "Channel Settings") { showSettings = true }
+                }
+                if (isDm) channel?.members?.firstOrNull { it != me }?.let { peer ->
+                    TopBarIcon(Icons.Outlined.Lock, "Start Whisper") { onStartWhisper(peer, title) }
                 }
                 TopBarIcon(Icons.Outlined.Phone, "Start Voice Call") { onStartCall(false) }
             }
