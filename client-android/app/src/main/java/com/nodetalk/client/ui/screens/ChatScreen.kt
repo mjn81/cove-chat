@@ -87,7 +87,9 @@ import com.nodetalk.client.ui.components.InitialsAvatar
 import com.nodetalk.client.ui.components.NTTextField
 import com.nodetalk.client.ui.components.SectionDivider
 import com.nodetalk.client.ui.components.UserAvatar
+import com.nodetalk.client.ui.theme.NTDestructive
 import com.nodetalk.client.ui.theme.NTPrimary
+import kotlinx.coroutines.delay
 import com.nodetalk.client.ui.theme.NodeTalkTheme
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -238,6 +240,50 @@ fun ChatScreen(
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, true) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
 
+    val recorder = remember { VoiceRecorder(context) }
+    var recording by remember { mutableStateOf(false) }
+    var elapsed by remember { mutableStateOf(0) }
+    LaunchedEffect(recording) {
+        elapsed = 0
+        while (recording) { delay(1000); elapsed++ }
+    }
+    DisposableEffect(Unit) { onDispose { recorder.cancel() } }
+    var videoFile by remember { mutableStateOf<java.io.File?>(null) }
+    val captureVideo = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        val f = videoFile
+        videoFile = null
+        if (res.resultCode == android.app.Activity.RESULT_OK && f != null && f.exists() && f.length() > 0) {
+            uploading = true
+            scope.launch {
+                runCatching { sendVideoFile(f, channelId) }.onFailure { toast(it.message ?: "Couldn't send the video.") }
+                uploading = false
+            }
+        } else f?.delete()
+    }
+    fun startVideo() {
+        val dir = java.io.File(context.cacheDir, "video").apply { mkdirs() }
+        val f = java.io.File(dir, "vid_${System.currentTimeMillis()}.mp4")
+        videoFile = f
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
+        val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
+            .putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
+            .putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, 60)
+            .putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 0)
+            .addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        runCatching { captureVideo.launch(intent) }.onFailure { toast("No camera app available."); videoFile = null }
+    }
+    fun finishRecording() {
+        recording = false
+        val result = recorder.stop()
+        if (result == null) { toast("Recording too short."); return }
+        uploading = true
+        scope.launch {
+            runCatching { sendVoiceFile(result.first, result.second, channelId) }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
+            uploading = false
+        }
+    }
+
+
     fun send() {
         val text = input.trim()
         if (text.isEmpty()) return
@@ -356,6 +402,29 @@ fun ChatScreen(
         }
         // Input bar. While typing, the extra media buttons collapse so the field gets the room (mobile width).
         val hasText = input.isNotBlank()
+        if (recording) {
+            // Recording bar replaces the text field: cancel, live timer, send.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(c.card)
+                    .border(1.dp, c.border, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BarIcon(Icons.Outlined.Close, "Cancel recording") { recording = false; recorder.cancel() }
+                Spacer(Modifier.width(8.dp))
+                Box(Modifier.size(10.dp).clip(CircleShape).background(NTDestructive))
+                Spacer(Modifier.width(8.dp))
+                Text("Recording  %d:%02d".format(elapsed / 60, elapsed % 60), color = c.textPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Box(
+                    Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)).background(NTPrimary).clickable { finishRecording() },
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.AutoMirrored.Outlined.Send, "Send voice message", tint = Color.White, modifier = Modifier.size(20.dp)) }
+            }
+        } else
         Row(
             Modifier
                 .fillMaxWidth()
@@ -398,8 +467,8 @@ fun ChatScreen(
                 )
             }
             if (!hasText) {
-                BarIcon(Icons.Outlined.Mic, "Record voice message") { toast("Voice messages aren't available on mobile yet.") }
-                BarIcon(Icons.Outlined.Videocam, "Record video message") { toast("Video messages aren't available on mobile yet.") }
+                BarIcon(Icons.Outlined.Mic, "Record voice message") { if (!uploading && recorder.start()) recording = true else toast("Couldn't start the microphone.") }
+                BarIcon(Icons.Outlined.Videocam, "Record video message") { if (!uploading) startVideo() }
             }
             BarIcon(Icons.Outlined.EmojiEmotions, "Add emoji") { toast("Use your keyboard's emoji picker.") }
             Box(
@@ -548,7 +617,11 @@ private fun MessageRow(
                 }
                 val fileMeta = remember(m.id, m.ciphertext, keyVersion) { m.fileMeta() }
                 if (fileMeta != null) {
-                    FileBubble(m.channelId, fileMeta, keyVersion)
+                    when (m.type) {
+                        "voice" -> VoiceBubble(m.channelId, fileMeta, keyVersion)
+                        "video" -> VideoBubble(m.channelId, fileMeta)
+                        else -> FileBubble(m.channelId, fileMeta, keyVersion)
+                    }
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     Text(text, color = c.textPrimary, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
                     if (m.editedAt != null) {

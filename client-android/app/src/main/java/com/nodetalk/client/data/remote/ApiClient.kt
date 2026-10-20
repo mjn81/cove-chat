@@ -213,11 +213,12 @@ class ApiClient(private val prefs: PreferencesManager) {
     // ── Files (end-to-end encrypted blobs) ──────────────────────────────────
 
     /** Uploads an already compressed + encrypted blob; returns the stored file id. */
-    suspend fun uploadFile(blob: ByteArray, mime: String, channelId: String): Result<UploadedFile> = runCatching {
+    suspend fun uploadFile(blob: ByteArray, mime: String, channelId: String, isVideo: Boolean = false): Result<UploadedFile> = runCatching {
         client.post(url("/api/files")) {
             bearer()
             setBody(MultiPartFormDataContent(formData {
                 append("channel_id", channelId)
+                if (isVideo) append("is_video", "true")
                 append("file", blob, Headers.build {
                     append(HttpHeaders.ContentType, mime)
                     append(HttpHeaders.ContentDisposition, "filename=\"upload.bin\"")

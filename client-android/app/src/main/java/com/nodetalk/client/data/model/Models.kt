@@ -263,7 +263,9 @@ data class FileMeta(
     val nonce: String,
     @SerialName("thumb_ciphertext") val thumbCiphertext: String? = null,
     @SerialName("thumb_nonce") val thumbNonce: String? = null,
-    @SerialName("as_document") val asDocument: Boolean? = null
+    @SerialName("as_document") val asDocument: Boolean? = null,
+    val duration: Int? = null,
+    @SerialName("processing_status") val processingStatus: String? = null
 )
 
 /** Body of `PATCH /api/users/me`; only non-null fields are sent (backend treats them as optional). */

@@ -116,18 +116,37 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
                 name = name.substringBeforeLast('.') + ".webp"
             }
         }
-        val originalSize = bytes.size.toLong()
-        val compressed = if (mime.startsWith("audio/")) bytes else Zstd.compress(bytes, 10)
-        val (cipher, nonce) = CryptoManager.encryptBytes(channelId, compressed) ?: error("Channel key not available yet. Try again in a moment.")
-        val uploaded = app.apiClient.uploadFile(cipher, mime, channelId).getOrThrow()
-        val meta = FileMeta(
-            fileId = uploaded.id, name = name, mime = mime, size = originalSize,
-            nonce = Base64.encodeToString(nonce, Base64.NO_WRAP),
-            asDocument = if (asPhoto) null else true
-        )
-        val ok = app.webSocketManager.sendChatMessage(channelId, metaJson.encodeToString(meta), type = "file", compression = "zstd")
-        if (!ok) error("Not connected. Try again.")
+        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto)
     }
+}
+
+/**
+ * Shared tail of every outgoing media message: zstd-compress (except audio, like the web client),
+ * AES-GCM encrypt with the channel key, upload, then send the encrypted JSON metadata as a message of [type].
+ */
+suspend fun sendPrepared(
+    channelId: String,
+    bytes: ByteArray,
+    mime: String,
+    name: String,
+    type: String,
+    asDocument: Boolean = false,
+    durationSec: Int? = null
+) {
+    val app = NodeTalkApp.instance
+    val originalSize = bytes.size.toLong()
+    val compressed = if (mime.startsWith("audio/")) bytes else Zstd.compress(bytes, 10)
+    val (cipher, nonce) = CryptoManager.encryptBytes(channelId, compressed) ?: error("Channel key not available yet. Try again in a moment.")
+    val uploaded = app.apiClient.uploadFile(cipher, mime, channelId, isVideo = type == "video").getOrThrow()
+    val meta = FileMeta(
+        fileId = uploaded.id, name = name, mime = mime, size = originalSize,
+        nonce = Base64.encodeToString(nonce, Base64.NO_WRAP),
+        asDocument = if (asDocument) true else null,
+        duration = durationSec,
+        processingStatus = if (type == "video") "processing" else null
+    )
+    val ok = app.webSocketManager.sendChatMessage(channelId, metaJson.encodeToString(meta), type = type, compression = "zstd")
+    if (!ok) error("Not connected. Try again.")
 }
 
 /** Downloads and decrypts (then inflates) an attachment; null on any failure (wrong key, missing file...). */

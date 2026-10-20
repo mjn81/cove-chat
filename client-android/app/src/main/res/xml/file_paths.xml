@@ -2,4 +2,6 @@
 <paths>
     <!-- Decrypted attachments are written here only when the user opens them. -->
     <cache-path name="attachments" path="attachments/" />
+    <!-- Camera output for video messages, deleted after sending. -->
+    <cache-path name="video" path="video/" />
 </paths>
