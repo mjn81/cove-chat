@@ -69,19 +69,15 @@ import kotlinx.coroutines.launch
  * whose members are [me, target]; the backend de-duplicates existing DMs.
  */
 @Composable
-fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, onJoined: () -> Unit = {}) {
+fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, initialDm: Boolean = false) {
     val c = NodeTalkTheme.extendedColors
     val app = NodeTalkApp.instance
     val api = app.apiClient
     val me = app.preferencesManager.userId.orEmpty()
     val scope = rememberCoroutineScope()
 
-    var mode by remember { mutableStateOf(1) } // 0 = DM, 1 = channel, 2 = explore
+    var mode by remember { mutableStateOf(if (initialDm) 0 else 1) } // 0 = DM, 1 = channel
     val dmTab = mode == 0
-    val exploreTab = mode == 2
-    var explore by remember { mutableStateOf<List<ExploreChannel>>(emptyList()) }
-    var exploreQuery by remember { mutableStateOf("") }
-    var inviteLink by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isPrivate by remember { mutableStateOf(true) }
@@ -90,7 +86,6 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    // Debounced user search (one request per pause in typing, never per keystroke)
     LaunchedEffect(userQuery, dmTab) {
         if (!dmTab || userQuery.isBlank()) {
             users = emptyList()
@@ -98,24 +93,6 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
         }
         delay(300)
         api.searchUsers(userQuery.trim()).onSuccess { res -> users = res.filter { it.id != me } }
-    }
-
-    LaunchedEffect(exploreQuery, exploreTab) {
-        if (!exploreTab) return@LaunchedEffect
-        delay(300)
-        api.exploreChannels(exploreQuery.trim()).onSuccess { explore = it }
-    }
-
-    fun join(link: String) {
-        if (busy || link.isBlank()) return
-        busy = true
-        error = null
-        scope.launch {
-            api.joinChannel(link.trim().substringAfterLast('/')).fold(
-                onSuccess = { onJoined() },
-                onFailure = { error = it.message; busy = false }
-            )
-        }
     }
 
     fun create(request: CreateChannelRequest) {
@@ -160,9 +137,8 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
                         .background(c.card)
                         .padding(3.dp)
                 ) {
-                    SegmentButton("DM", Icons.Outlined.ChatBubbleOutline, selected = mode == 0, Modifier.weight(1f)) { mode = 0 }
+                    SegmentButton("Direct Message", Icons.Outlined.ChatBubbleOutline, selected = mode == 0, Modifier.weight(1f)) { mode = 0 }
                     SegmentButton("Channel", Icons.Outlined.Tag, selected = mode == 1, Modifier.weight(1f)) { mode = 1 }
-                    SegmentButton("Explore", Icons.Outlined.Explore, selected = mode == 2, Modifier.weight(1f)) { mode = 2 }
                 }
 
                 error?.let { ErrorBanner(it) }
@@ -187,38 +163,7 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
                             }
                         }
                     }
-                } else if (exploreTab) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FieldLabel("Join with invite link")
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            NTTextField(inviteLink, { inviteLink = it }, placeholder = "Paste an invite link", modifier = Modifier.weight(1f))
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "Join", color = NTPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp,
-                                modifier = Modifier.clickable(enabled = inviteLink.isNotBlank() && !busy) { join(inviteLink) }.padding(8.dp)
-                            )
-                        }
-                        FieldLabel("Public channels")
-                        NTTextField(exploreQuery, { exploreQuery = it }, placeholder = "Search channels")
-                        LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                            items(explore, key = { it.id }) { ch ->
-                                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    InitialsAvatar(ch.id, ch.name, size = 36.dp)
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(ch.name, color = c.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                                        Text("${ch.memberCount} members", color = c.textMuted, fontSize = 12.sp)
-                                    }
-                                    Text(
-                                        "Join", color = NTPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                                        modifier = Modifier.clickable(enabled = !busy) { join(ch.inviteLink) }.padding(8.dp)
-                                    )
-                                }
-                            }
-                        }
-                        if (explore.isEmpty()) Text("No public channels found.", color = c.textMuted, fontSize = 13.sp)
-                    }
-                } else {
+                                } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         InitialsAvatar(id = name.ifBlank { "new" }, name = name, size = 64.dp)
                         Spacer(Modifier.width(16.dp))

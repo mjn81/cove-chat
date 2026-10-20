@@ -3,6 +3,7 @@ package com.nodetalk.client.ui.screens
 import com.nodetalk.client.ui.components.I18nToast
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -231,7 +232,6 @@ fun ChatScreen(
         else messages.filter { m -> m.type == "text" && bodyOf(m).contains(search, ignoreCase = true) }
     }
 
-    var attachMenu by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     fun upload(uri: android.net.Uri?, asPhoto: Boolean) {
         if (uri == null) return
@@ -241,7 +241,8 @@ fun ChatScreen(
             uploading = false
         }
     }
-    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, true) }
+    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { upload(it, true) }
+    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
 
     val recorder = remember { VoiceRecorder(context) }
@@ -387,108 +388,24 @@ fun ChatScreen(
             item(key = "welcome") { WelcomeHeader(title, isDm) }
         }
 
-        // Reply / edit context bar
-        val context2 = replyTo ?: editing
-        if (context2 != null) {
-            Row(
-                Modifier.fillMaxWidth().background(c.card).padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        if (editing != null) "Editing message" else "Replying to ${nameOf(context2.senderId)}",
-                        color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold
-                    )
-                    Text(bodyOf(context2), color = c.textMuted, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Icon(
-                    Icons.Outlined.Close, "Cancel", tint = c.textMuted,
-                    modifier = Modifier.size(20.dp).clickable { replyTo = null; if (editing != null) { editing = null; input = "" } }
-                )
-            }
-        }
-        // Input bar. While typing, the extra media buttons collapse so the field gets the room (mobile width).
-        val hasText = input.isNotBlank()
-        if (recording) {
-            // Recording bar replaces the text field: cancel, live timer, send.
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(c.card)
-                    .border(1.dp, c.border, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BarIcon(Icons.Outlined.Close, "Cancel recording") { recording = false; recorder.cancel() }
-                Spacer(Modifier.width(8.dp))
-                Box(Modifier.size(10.dp).clip(CircleShape).background(NTDestructive))
-                Spacer(Modifier.width(8.dp))
-                Text("Recording  %d:%02d".format(elapsed / 60, elapsed % 60), color = c.textPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                Box(
-                    Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)).background(NTPrimary).clickable { finishRecording() },
-                    contentAlignment = Alignment.Center
-                ) { Icon(Icons.AutoMirrored.Outlined.Send, "Send voice message", tint = Color.White, modifier = Modifier.size(20.dp)) }
-            }
-        } else
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(c.card)
-                .border(1.dp, c.border, RoundedCornerShape(4.dp))
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                Box(
-                    Modifier.size(28.dp).clip(RoundedCornerShape(4.dp)).background(c.accent.copy(alpha = 0.6f))
-                        .clickable(enabled = !uploading) { attachMenu = true },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (uploading) CircularProgressIndicator(color = NTPrimary, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
-                    else Icon(Icons.Outlined.Add, "Add attachment", tint = c.textMuted, modifier = Modifier.size(18.dp))
-                }
-                DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
-                    DropdownMenuItem(text = { Text("Photo") }, onClick = { attachMenu = false; pickPhoto.launch("image/*") })
-                    DropdownMenuItem(text = { Text("File") }, onClick = { attachMenu = false; pickFile.launch("*/*") })
-                }
-            }
-            Box(
-                Modifier.weight(1f).heightIn(min = 36.dp, max = 120.dp).padding(horizontal = 6.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (input.isEmpty()) Text("Message...", color = c.textMuted.copy(alpha = 0.7f), fontSize = 15.sp, lineHeight = 20.sp)
-                BasicTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    textStyle = TextStyle(
-                        color = c.textPrimary, fontSize = 15.sp, lineHeight = 20.sp,
-                        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
-                    ),
-                    cursorBrush = SolidColor(NTPrimary),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                )
-            }
-            if (!hasText) {
-                BarIcon(Icons.Outlined.Mic, "Record voice message") { if (!uploading && recorder.start()) recording = true else toast("Couldn't start the microphone.") }
-                BarIcon(Icons.Outlined.Videocam, "Record video message") { if (!uploading) startVideo() }
-            }
-            BarIcon(Icons.Outlined.EmojiEmotions, "Add emoji") { toast("Use your keyboard's emoji picker.") }
-            Box(
-                Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)).background(if (hasText) NTPrimary else Color.Transparent).clickable(enabled = hasText) { send() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Outlined.Send, "Send message",
-                    tint = if (hasText) Color.White else c.textMuted,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
+        ChatInputBar(
+            input = input,
+            onInputChange = { input = it },
+            targetLabel = if (isDm) "@$title" else "#$title",
+            context = (replyTo ?: editing)?.let { InputContext(editing != null, nameOf(it.senderId), bodyOf(it)) },
+            onCancelContext = { replyTo = null; if (editing != null) { editing = null; input = "" } },
+            uploading = uploading,
+            recording = recording,
+            elapsedSeconds = elapsed,
+            onSend = { send() },
+            onPickMedia = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
+            onPickAudio = { pickAudio.launch("audio/*") },
+            onPickFile = { pickFile.launch("*/*") },
+            onStartRecording = { if (!uploading && recorder.start()) recording = true else toast("Couldn't start the microphone.") },
+            onCancelRecording = { recording = false; recorder.cancel() },
+            onFinishRecording = { finishRecording() },
+            onVideo = { if (!uploading) startVideo() }
+        )
     }
 
     val reloadChannel: () -> Unit = {

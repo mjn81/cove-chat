@@ -53,6 +53,7 @@ import com.nodetalk.client.ui.components.StatusDot
 import com.nodetalk.client.ui.components.UserAvatar
 import com.nodetalk.client.ui.theme.NTPrimary
 import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.ThemeSettings
 
 private enum class ListTab(val icon: ImageVector) {
     All(Icons.Outlined.ViewList),
@@ -95,7 +96,8 @@ fun ChannelListScreen(
     var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
     var loaded by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf(ListTab.All) }
-    var query by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+    var newDmTab by remember { mutableStateOf(false) }
     var showNew by remember { mutableStateOf(false) }
     var version by remember { mutableStateOf("") }
     val connected by ws.connectionState.collectAsState(initial = false)
@@ -111,7 +113,7 @@ fun ChannelListScreen(
     LaunchedEffect(Unit) { ws.messageFlow.collect { refreshTick++ } }
     LaunchedEffect(Unit) { ws.channelsChangedFlow.collect { refreshTick++ } }
 
-    val visible = remember(channels, tab, query) {
+    val visible = remember(channels, tab) {
         channels
             .filter {
                 when (tab) {
@@ -120,7 +122,6 @@ fun ChannelListScreen(
                     ListTab.Channels -> !it.isDirectMessage
                 }
             }
-            .filter { query.isBlank() || it.displayName(me).contains(query, ignoreCase = true) }
             .sortedByDescending { it.lastMessageAt.ifBlank { it.createdAt } }
     }
 
@@ -175,19 +176,18 @@ fun ChannelListScreen(
             Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NTTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = "Search...",
-                modifier = Modifier.weight(1f),
-                height = 32.dp,
-                leading = {
-                    Icon(Icons.Outlined.Search, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                }
-            )
+            // Opens the full search / explore dialog (same as the web sidebar search box).
+            Row(
+                Modifier.weight(1f).height(32.dp).clip(RoundedCornerShape(8.dp)).background(if (ThemeSettings.dark) c.popover else c.chatCanvas)
+                    .clickable { showSearch = true }.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Outlined.Search, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Search...", color = c.textMuted, fontSize = 15.sp)
+            }
             Box(
-                Modifier.size(40.dp).clickable { showNew = true },
+                Modifier.size(40.dp).clickable { newDmTab = false; showNew = true },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Outlined.Add, contentDescription = "New conversation", tint = c.textMuted)
@@ -235,10 +235,21 @@ fun ChannelListScreen(
         }
     }
 
+    if (showSearch) {
+        ConversationSearchDialog(
+            channels = channels,
+            me = me,
+            onDismiss = { showSearch = false },
+            onOpenChannel = { ch -> showSearch = false; onChannelSelected(ch.id, ch.displayName(me)) },
+            onJoined = { id -> showSearch = false; refreshTick++; onChannelSelected(id, channels.firstOrNull { it.id == id }?.displayName(me) ?: "") },
+            onCreateNew = { dm -> showSearch = false; newDmTab = dm; showNew = true }
+        )
+    }
+
     if (showNew) {
         NewConversationDialog(
             onDismiss = { showNew = false },
-            onJoined = { showNew = false; refreshTick++ },
+            initialDm = newDmTab,
             onCreated = { ch ->
                 showNew = false
                 refreshTick++
