@@ -132,14 +132,15 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
 
 /** Downloads and decrypts (then inflates) an attachment; null on any failure (wrong key, missing file...). */
 suspend fun loadAttachment(channelId: String, meta: FileMeta): ByteArray? = withContext(Dispatchers.IO) {
-    val blob = NodeTalkApp.instance.apiClient.downloadFile(meta.fileId).getOrNull() ?: return@withContext null
-    val nonce = runCatching { Base64.decode(meta.nonce, Base64.NO_WRAP) }.getOrNull() ?: return@withContext null
-    val plain = CryptoManager.decryptBytes(channelId, blob, nonce) ?: return@withContext null
+    val dl = NodeTalkApp.instance.apiClient.downloadFile(meta.fileId)
+    val blob = dl.getOrNull() ?: run { android.util.Log.e("Attach", "download failed", dl.exceptionOrNull()); return@withContext null }
+    val nonce = runCatching { Base64.decode(meta.nonce, Base64.NO_WRAP) }.getOrNull() ?: run { android.util.Log.e("Attach", "bad nonce"); return@withContext null }
+    val plain = CryptoManager.decryptBytes(channelId, blob, nonce) ?: run { android.util.Log.e("Attach", "decrypt failed blob=${blob.size} key=${CryptoManager.getChannelKey(channelId) != null}"); return@withContext null }
     if (meta.mime.startsWith("audio/")) return@withContext plain
     runCatching {
         val size = Zstd.decompressedSize(plain).takeIf { it > 0 } ?: meta.size
         Zstd.decompress(plain, size.toInt())
-    }.getOrNull()
+    }.onFailure { android.util.Log.e("Attach", "zstd failed", it) }.getOrNull()
 }
 
 private fun formatSize(bytes: Long): String = when {

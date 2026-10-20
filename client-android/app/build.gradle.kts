@@ -86,7 +86,8 @@ dependencies {
     implementation(libs.stream.webrtc)
 
     // Zstandard Compression (Matches Web Client WASM)
-    implementation(libs.zstd.jni)
+    // The Android AAR carries the per-ABI native libs; the plain JVM jar fails to load on devices.
+    implementation("${libs.zstd.jni.get()}@aar")
 
     // Image & Avatar Loading
     implementation(libs.coil.compose)
