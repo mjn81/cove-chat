@@ -19,7 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +31,7 @@ import com.nodetalk.client.data.remote.AvatarCache
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -127,6 +128,9 @@ fun UserAvatar(userId: String, size: Dp = 36.dp, modifier: Modifier = Modifier, 
     }
 }
 
+/** Flips directional icons (back chevrons) when the UI is right-to-left. */
+fun Modifier.mirrorInRtl(): Modifier = this.then(Modifier.graphicsLayer { scaleX = if (AppLanguage.isRtl) -1f else 1f })
+
 /** Presence dot (green when online) drawn with a background-colored ring like the web avatar badge. */
 @Composable
 fun StatusDot(online: Boolean, size: Dp = 10.dp, ring: Color = NodeTalkTheme.extendedColors.card) {
@@ -154,7 +158,7 @@ fun StatusDot(online: Boolean, size: Dp = 10.dp, ring: Color = NodeTalkTheme.ext
 fun FieldLabel(text: String, required: Boolean = false) {
     Text(
         text = buildAnnotatedString {
-            append(text.uppercase())
+            append(AppLanguage.translate(text).uppercase())
             if (required) withStyle(SpanStyle(color = NTDestructive)) { append(" *") }
         },
         color = NodeTalkTheme.extendedColors.textMuted,

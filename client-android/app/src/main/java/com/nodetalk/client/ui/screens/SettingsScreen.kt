@@ -34,7 +34,8 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
+import com.nodetalk.client.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.ui.components.AppLanguage
 import com.nodetalk.client.ui.components.SectionDivider
 import com.nodetalk.client.ui.components.UserAvatar
 import com.nodetalk.client.ui.theme.NTDestructive
@@ -129,9 +131,9 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
             Column(Modifier.fillMaxWidth().background(c.card).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clickable { page = null }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
-                Text(current.title.uppercase(), color = c.textMuted, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(AppLanguage.translate(current.title).uppercase(), color = c.textMuted, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
             SectionDivider()
             }
@@ -190,25 +192,21 @@ private fun AppearancePage() {
     Text("LANGUAGE", color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).border(1.dp, c.border, RoundedCornerShape(8.dp)).padding(4.dp)) {
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(c.accent).padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text("English", color = c.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-                Text("English", color = c.textMuted, fontSize = 13.sp)
-            }
-            Icon(Icons.Outlined.Check, null, tint = NTPrimary)
-        }
-        listOf("Persian" to "فارسی", "Arabic" to "العربية").forEach { (en, native) ->
-            Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                Text(en, color = c.textPrimary.copy(alpha = 0.5f), fontSize = 17.sp, fontWeight = FontWeight.Medium)
-                Text(native, color = c.textMuted.copy(alpha = 0.5f), fontSize = 13.sp)
+        listOf(Triple("en", "English", "English"), Triple("fa", "Persian", "فارسی"), Triple("ar", "Arabic", "العربية")).forEach { (code, name, native) ->
+            val on = AppLanguage.code == code
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(if (on) c.accent else Color.Transparent)
+                    .clickable { AppLanguage.code = code; prefs.language = code }.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(name, color = c.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                    Text(native, color = c.textMuted, fontSize = 13.sp)
+                }
+                if (on) Icon(Icons.Outlined.Check, null, tint = NTPrimary)
             }
         }
     }
-    Spacer(Modifier.height(8.dp))
-    Text("More languages are coming to mobile soon.", color = c.textMuted, fontSize = 12.sp)
 }
 
 @Composable

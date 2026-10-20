@@ -26,7 +26,7 @@ import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +50,7 @@ import com.nodetalk.client.data.model.Channel
 import com.nodetalk.client.data.model.CreateChannelRequest
 import com.nodetalk.client.data.model.ExploreChannel
 import com.nodetalk.client.data.model.UserSummary
+import com.nodetalk.client.ui.components.AppLanguage
 import com.nodetalk.client.ui.components.ErrorBanner
 import com.nodetalk.client.ui.components.FieldLabel
 import com.nodetalk.client.ui.components.InitialsAvatar
@@ -229,9 +230,9 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             androidx.compose.ui.text.buildAnnotatedString {
-                                append("DESCRIPTION ")
+                                append(AppLanguage.translate("DESCRIPTION "))
                                 pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Normal))
-                                append("(optional)")
+                                append(AppLanguage.translate("(optional)"))
                             },
                             color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold
                         )

@@ -1,5 +1,6 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.components.I18nToast
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -31,7 +32,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -228,7 +229,7 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
                         val data = loadAttachment(channelId, meta)
                         busy = false
                         if (data == null) {
-                            Toast.makeText(context, "Couldn't download or decrypt the file.", Toast.LENGTH_SHORT).show()
+                            I18nToast.make(context, "Couldn't download or decrypt the file.", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
                         // Written to the app cache only on demand, then handed to a viewer via FileProvider.
@@ -238,7 +239,7 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
                         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                         val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, meta.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         runCatching { context.startActivity(Intent.createChooser(view, meta.name)) }
-                            .onFailure { Toast.makeText(context, "No app can open this file.", Toast.LENGTH_SHORT).show() }
+                            .onFailure { I18nToast.make(context, "No app can open this file.", Toast.LENGTH_SHORT).show() }
                     }
                 }
                 .padding(12.dp),

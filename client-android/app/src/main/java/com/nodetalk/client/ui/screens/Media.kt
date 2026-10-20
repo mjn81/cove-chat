@@ -1,5 +1,6 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.components.I18nToast
 import android.content.Context
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -30,7 +31,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -135,7 +136,7 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
         scope.launch {
             val data = loadAttachment(channelId, meta)
             if (data == null) {
-                Toast.makeText(context, "Couldn't load the voice message.", Toast.LENGTH_SHORT).show()
+                I18nToast.make(context, "Couldn't load the voice message.", Toast.LENGTH_SHORT).show()
                 loading = false
                 return@launch
             }
@@ -150,7 +151,7 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
                     start()
                 }
             }.onSuccess { player = it; playing = true }
-                .onFailure { Toast.makeText(context, "This audio format can't be played.", Toast.LENGTH_SHORT).show() }
+                .onFailure { I18nToast.make(context, "This audio format can't be played.", Toast.LENGTH_SHORT).show() }
             loading = false
         }
     }
@@ -200,7 +201,7 @@ fun VideoBubble(channelId: String, meta: FileMeta) {
                 scope.launch {
                     val data = loadAttachment(channelId, meta)
                     if (data == null) {
-                        Toast.makeText(context, "Couldn't load the video message.", Toast.LENGTH_SHORT).show()
+                        I18nToast.make(context, "Couldn't load the video message.", Toast.LENGTH_SHORT).show()
                     } else {
                         val ext = if (meta.mime.contains("webm")) "webm" else "mp4"
                         val f = File(context.cacheDir, "attachments").apply { mkdirs() }.let { File(it, "video_${meta.fileId}.$ext") }
@@ -234,7 +235,7 @@ fun VideoBubble(channelId: String, meta: FileMeta) {
                             setVideoPath(file)
                             setOnPreparedListener { start() }
                             setOnErrorListener { _, _, _ ->
-                                Toast.makeText(ctx, "This video can't be played.", Toast.LENGTH_SHORT).show()
+                                I18nToast.make(ctx, "This video can't be played.", Toast.LENGTH_SHORT).show()
                                 path = null
                                 true
                             }

@@ -21,7 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -44,6 +44,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.ui.components.AppLanguage
 import com.nodetalk.client.ui.components.NTTextField
 import com.nodetalk.client.ui.components.OpenSourceFooter
 import com.nodetalk.client.ui.theme.NodeTalkTheme
@@ -161,7 +162,7 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = buildAnnotatedString {
-                        append("SERVER ADDRESS")
+                        append(AppLanguage.translate("SERVER ADDRESS"))
                         withStyle(SpanStyle(color = NTDestructive)) { append(" *") }
                     },
                     color = c.textMuted,

@@ -57,6 +57,11 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("join_calls_muted", false)
         set(value) = prefs.edit().putBoolean("join_calls_muted", value).apply()
 
+    /** UI language: "en", "fa" or "ar". */
+    var language: String
+        get() = prefs.getString("language", "en") ?: "en"
+        set(value) = prefs.edit().putString("language", value).apply()
+
     var authToken: String?
         get() = prefs.getString("auth_token", null)
         set(value) = prefs.edit().putString("auth_token", value).apply()

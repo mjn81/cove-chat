@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
         handleOpenIntent(intent)
 
         ThemeSettings.dark = NodeTalkApp.instance.preferencesManager.darkTheme
+        com.nodetalk.client.ui.components.AppLanguage.code = NodeTalkApp.instance.preferencesManager.language
 
         setContent {
             NodeTalkTheme {

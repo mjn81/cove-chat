@@ -1,5 +1,6 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.components.I18nToast
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -28,7 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,7 +109,7 @@ fun MembersDialog(channel: Channel, me: String, onDismiss: () -> Unit, onChanged
     }.filter { it.third.isNotEmpty() }
 
     fun report(r: Result<Unit>) {
-        r.onFailure { Toast.makeText(context, it.message ?: "Action failed.", Toast.LENGTH_SHORT).show() }
+        r.onFailure { I18nToast.make(context, it.message ?: "Action failed.", Toast.LENGTH_SHORT).show() }
         r.onSuccess { onChanged() }
     }
 
@@ -267,7 +268,7 @@ fun ChannelSettingsDialog(
                         modifier = Modifier.clickable {
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Invite link", channel.inviteLink))
-                            Toast.makeText(context, "Invite link copied", Toast.LENGTH_SHORT).show()
+                            I18nToast.make(context, "Invite link copied", Toast.LENGTH_SHORT).show()
                         }.padding(start = 12.dp)
                     )
                 }

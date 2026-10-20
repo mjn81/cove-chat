@@ -162,7 +162,11 @@ fun NodeTalkTheme(
         }
     }
 
-    CompositionLocalProvider(LocalNodeTalkExtendedColors provides extendedColors) {
+    val direction = if (com.nodetalk.client.ui.components.AppLanguage.isRtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
+    CompositionLocalProvider(
+        LocalNodeTalkExtendedColors provides extendedColors,
+        androidx.compose.ui.platform.LocalLayoutDirection provides direction
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = nodeTalkTypography(),

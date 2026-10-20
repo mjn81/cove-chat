@@ -29,7 +29,8 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
+import com.nodetalk.client.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -156,7 +157,7 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
         Column(Modifier.fillMaxWidth().background(NTWhisperCard).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(52.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = NTWhisperPrimary, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = NTWhisperPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
                 UserAvatar(session.peerId, size = 36.dp)
                 Spacer(Modifier.width(10.dp))

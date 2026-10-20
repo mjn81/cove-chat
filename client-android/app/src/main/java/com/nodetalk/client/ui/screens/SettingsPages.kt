@@ -1,5 +1,6 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.components.I18nToast
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -25,7 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -163,7 +164,7 @@ fun AccountSettings(onLogout: () -> Unit) {
     }
     LaunchedEffect(Unit) { api.getMe().onSuccess { apply(it) } }
 
-    fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
 
     val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -284,7 +285,7 @@ fun PrivacySettings() {
 
     fun save(req: UpdateProfileRequest, rollback: () -> Unit) {
         scope.launch {
-            api.updateProfile(req).onFailure { rollback(); Toast.makeText(context, it.message ?: "Couldn't save.", Toast.LENGTH_SHORT).show() }
+            api.updateProfile(req).onFailure { rollback(); I18nToast.make(context, it.message ?: "Couldn't save.", Toast.LENGTH_SHORT).show() }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.components.I18nToast
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,7 +52,8 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.nodetalk.client.ui.components.Text
+import com.nodetalk.client.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -161,7 +163,7 @@ fun ChatScreen(
     var showSettings by remember { mutableStateOf(false) }
     val pageSize = 50
 
-    fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
 
     // Opening a chat marks it read and silences its notification; the chat counts as "active" while shown.
     DisposableEffect(channelId) {
@@ -316,7 +318,7 @@ fun ChatScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
                 if (isDm) {
                     UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 36.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
