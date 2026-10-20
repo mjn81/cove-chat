@@ -30,6 +30,33 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("dark_theme", true)
         set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
 
+    /** Own avatar file id (from /api/me), cached so the footer can draw it before any network call. */
+    var avatarId: String?
+        get() = prefs.getString("avatar_id", null)
+        set(value) = prefs.edit().putString("avatar_id", value).apply()
+
+    /** Local notification preferences (Settings > Notifications). */
+    var notificationsEnabled: Boolean
+        get() = prefs.getBoolean("notifications_enabled", true)
+        set(value) = prefs.edit().putBoolean("notifications_enabled", value).apply()
+
+    var notificationSound: Boolean
+        get() = prefs.getBoolean("notification_sound", true)
+        set(value) = prefs.edit().putBoolean("notification_sound", value).apply()
+
+    /** Audio processing used when joining calls (Settings > Voice & Video). */
+    var noiseSuppression: Boolean
+        get() = prefs.getBoolean("noise_suppression", true)
+        set(value) = prefs.edit().putBoolean("noise_suppression", value).apply()
+
+    var echoCancellation: Boolean
+        get() = prefs.getBoolean("echo_cancellation", true)
+        set(value) = prefs.edit().putBoolean("echo_cancellation", value).apply()
+
+    var joinCallsMuted: Boolean
+        get() = prefs.getBoolean("join_calls_muted", false)
+        set(value) = prefs.edit().putBoolean("join_calls_muted", value).apply()
+
     var authToken: String?
         get() = prefs.getString("auth_token", null)
         set(value) = prefs.edit().putString("auth_token", value).apply()
@@ -47,6 +74,7 @@ class PreferencesManager(context: Context) {
             .remove("auth_token")
             .remove("user_id")
             .remove("username")
+            .remove("avatar_id")
             .apply()
     }
 }

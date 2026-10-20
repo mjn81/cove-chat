@@ -141,7 +141,11 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                 when (current) {
                     SettingsPage.Appearance -> AppearancePage()
                     SettingsPage.Friends -> FriendsPage(onOpenChat)
-                    SettingsPage.Account -> AccountPage(onLogout = { logout() })
+                    SettingsPage.Account -> AccountSettings(onLogout = { logout() })
+                    SettingsPage.Privacy -> PrivacySettings()
+                    SettingsPage.Notifications -> NotificationSettings()
+                    SettingsPage.Voice -> VoiceSettings()
+                    SettingsPage.Storage -> StorageSettings()
                     else -> Text("This section isn't available on mobile yet.", color = c.textMuted, fontSize = 15.sp)
                 }
             }

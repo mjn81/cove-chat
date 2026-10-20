@@ -21,6 +21,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
+import com.nodetalk.client.data.remote.AvatarCache
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,8 +95,24 @@ private fun miniHash(seed: String): Long {
     return (h and 0xFFFFFFFFL) shr 2
 }
 
+/**
+ * Profile photo when [avatarId] is set (loaded and cached from the server), otherwise the identicon.
+ */
 @Composable
-fun UserAvatar(userId: String, size: Dp = 36.dp, modifier: Modifier = Modifier) {
+fun UserAvatar(userId: String, size: Dp = 36.dp, modifier: Modifier = Modifier, avatarId: String? = null) {
+    if (!avatarId.isNullOrBlank()) {
+        var photo by remember(avatarId) { mutableStateOf(AvatarCache.peek(avatarId)) }
+        LaunchedEffect(avatarId) { if (photo == null) photo = AvatarCache.load(avatarId) }
+        photo?.let {
+            androidx.compose.foundation.Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = modifier.size(size).clip(CircleShape)
+            )
+            return
+        }
+    }
     val hash = miniHash(userId)
     val color = Color.hsl(((hash % 9) * 40).toFloat(), 0.8f, 0.5f)
     Canvas(modifier = modifier.size(size).clip(CircleShape)) {

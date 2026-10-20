@@ -97,7 +97,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
         NTTextField(query, { query = it }, placeholder = "Search by username")
         results.forEach { u ->
             val already = relationships.any { it.toUserId == u.id && (it.type == "friend" || it.type == "requested") }
-            PersonRow(u.id, u.username) {
+            PersonRow(u.id, u.username, u.avatarId) {
                 if (already) Text("Added", color = c.textMuted, fontSize = 13.sp)
                 else Action("Add", NTPrimary) { act(u.id, "request", "Friend request sent to ${u.username}.") }
             }
@@ -129,7 +129,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
                 if (friends.isEmpty()) Empty("No friends yet. Search above to add someone.")
                 friends.forEach { f ->
                     val name = f.user?.username ?: "Unknown"
-                    PersonRow(f.toUserId, name) {
+                    PersonRow(f.toUserId, name, f.user?.avatarId) {
                         Action("Message", NTPrimary) { startDm(f.toUserId, name) }
                         Action("Remove", NTDestructive) { act(f.toUserId, "remove") }
                     }
@@ -138,7 +138,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
             FriendsTab.Pending -> {
                 if (incoming.isEmpty()) Empty("No pending requests.")
                 incoming.forEach { r ->
-                    PersonRow(r.fromUserId, r.user?.username ?: "Unknown") {
+                    PersonRow(r.fromUserId, r.user?.username ?: "Unknown", r.user?.avatarId) {
                         Action("Accept", NTPrimary) { act(r.fromUserId, "accept") }
                         Action("Decline", NTDestructive) { act(r.fromUserId, "decline") }
                     }
@@ -147,7 +147,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
             FriendsTab.Sent -> {
                 if (sent.isEmpty()) Empty("No outgoing requests.")
                 sent.forEach { r ->
-                    PersonRow(r.toUserId, r.user?.username ?: "Unknown") {
+                    PersonRow(r.toUserId, r.user?.username ?: "Unknown", r.user?.avatarId) {
                         Action("Cancel", NTDestructive) { act(r.toUserId, "cancel") }
                     }
                 }
@@ -155,7 +155,7 @@ fun FriendsPage(onOpenChat: (channelId: String, name: String) -> Unit) {
             FriendsTab.Blocked -> {
                 if (blocked.isEmpty()) Empty("You haven't blocked anyone.")
                 blocked.forEach { r ->
-                    PersonRow(r.toUserId, r.user?.username ?: "Unknown") {
+                    PersonRow(r.toUserId, r.user?.username ?: "Unknown", r.user?.avatarId) {
                         Action("Unblock", NTPrimary) { act(r.toUserId, "unblock") }
                     }
                 }
@@ -170,9 +170,9 @@ private fun Empty(text: String) {
 }
 
 @Composable
-private fun PersonRow(userId: String, name: String, actions: @Composable () -> Unit) {
+private fun PersonRow(userId: String, name: String, avatarId: String? = null, actions: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        UserAvatar(userId, size = 36.dp)
+        UserAvatar(userId, size = 36.dp, avatarId = avatarId)
         Spacer(Modifier.width(12.dp))
         Text(name, color = NodeTalkTheme.extendedColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         actions()

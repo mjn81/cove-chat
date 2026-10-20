@@ -271,7 +271,7 @@ fun ChatScreen(
                     Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp))
                 }
                 if (isDm) {
-                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 36.dp)
+                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 36.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
                 } else {
                     InitialsAvatar(channelId, title, size = 36.dp)
                 }
@@ -313,6 +313,7 @@ fun ChatScreen(
                     MessageRow(
                         m = m,
                         author = nameOf(m.senderId),
+                        avatarId = channel?.memberAvatars?.get(m.senderId),
                         showHeader = !sameBlock,
                         selected = selectedId == m.id,
                         quoted = m.replyToId?.let { rid -> messages.firstOrNull { it.id == rid } },
@@ -499,6 +500,7 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
 private fun MessageRow(
     m: Message,
     author: String,
+    avatarId: String?,
     showHeader: Boolean,
     selected: Boolean,
     quoted: Message?,
@@ -522,7 +524,7 @@ private fun MessageRow(
             .padding(horizontal = 16.dp, vertical = if (showHeader) 6.dp else 1.dp)
     ) {
         Row(Modifier.fillMaxWidth()) {
-            Box(Modifier.width(42.dp)) { if (showHeader) UserAvatar(m.senderId, size = 32.dp) }
+            Box(Modifier.width(42.dp)) { if (showHeader) UserAvatar(m.senderId, size = 32.dp, avatarId = avatarId) }
             Column(Modifier.weight(1f)) {
                 if (showHeader) {
                     Row(verticalAlignment = Alignment.Bottom) {

@@ -55,6 +55,8 @@ class NotificationHelper(private val app: Application) {
 
     /** Shows (or replaces) the notification for [channelId]. Message bodies are decrypted client-side first. */
     fun showMessage(channelId: String, channelName: String, body: String) {
+        val prefs = (app as com.nodetalk.client.NodeTalkApp).preferencesManager
+        if (!prefs.notificationsEnabled) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
@@ -75,6 +77,7 @@ class NotificationHelper(private val app: Application) {
             .setAutoCancel(true)
             .setContentIntent(pi)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setSilent(!prefs.notificationSound)
             .build()
         manager.notify(channelId.hashCode(), n)
     }

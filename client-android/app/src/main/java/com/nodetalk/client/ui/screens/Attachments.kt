@@ -235,3 +235,6 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
         }
     }
 }
+
+/** Drops decoded attachment images held in memory (used by Settings > Data & Storage). */
+fun clearImageCache() = imageCache.evictAll()

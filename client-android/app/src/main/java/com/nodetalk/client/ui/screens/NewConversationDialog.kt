@@ -179,7 +179,7 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, o
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    UserAvatar(u.id, size = 32.dp)
+                                    UserAvatar(u.id, size = 32.dp, avatarId = u.avatarId)
                                     Spacer(Modifier.width(12.dp))
                                     Text(u.username, color = c.textPrimary, fontSize = 15.sp)
                                 }

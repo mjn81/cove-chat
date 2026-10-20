@@ -132,7 +132,7 @@ fun MembersDialog(channel: Channel, me: String, onDismiss: () -> Unit, onChanged
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box {
-                                    UserAvatar(id, size = 32.dp)
+                                    UserAvatar(id, size = 32.dp, avatarId = channel.memberAvatars[id])
                                     Box(Modifier.align(Alignment.BottomEnd)) {
                                         StatusDot(online = channel.memberStatuses[id] == "online", size = 8.dp, ring = c.chatCanvas)
                                     }
@@ -278,7 +278,7 @@ fun ChannelSettingsDialog(
                 NTTextField(query, { query = it }, placeholder = "Search by username")
                 results.forEach { u ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        UserAvatar(u.id, size = 32.dp)
+                        UserAvatar(u.id, size = 32.dp, avatarId = u.avatarId)
                         Spacer(Modifier.width(12.dp))
                         Text(u.username, color = c.textPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
                         Text(

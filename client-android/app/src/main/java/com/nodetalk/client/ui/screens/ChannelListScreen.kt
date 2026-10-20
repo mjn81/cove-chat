@@ -221,7 +221,7 @@ fun ChannelListScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box {
-                UserAvatar(me ?: "?", size = 32.dp)
+                UserAvatar(me ?: "?", size = 32.dp, avatarId = prefs.avatarId)
                 Box(Modifier.align(Alignment.BottomEnd)) { StatusDot(online = connected, size = 8.dp, ring = c.card) }
             }
             Spacer(Modifier.width(12.dp))
@@ -260,7 +260,7 @@ private fun ConversationRow(ch: Channel, name: String, preview: String, onClick:
     ) {
         if (ch.isDirectMessage) {
             val other = ch.members.firstOrNull { it != NodeTalkApp.instance.preferencesManager.userId } ?: ch.id
-            UserAvatar(other, size = 40.dp)
+            UserAvatar(other, size = 40.dp, avatarId = ch.memberAvatars[other])
         } else {
             InitialsAvatar(ch.id, name, size = 40.dp)
         }

@@ -33,6 +33,7 @@ import com.nodetalk.client.data.model.AddMembersRequest
 import com.nodetalk.client.data.model.Relationship
 import com.nodetalk.client.data.model.RelationshipActionRequest
 import com.nodetalk.client.data.model.UpdateChannelRequest
+import com.nodetalk.client.data.model.UpdateProfileRequest
 import com.nodetalk.client.data.model.UpdateMemberRequest
 import com.nodetalk.client.data.model.UploadedFile
 import io.ktor.client.request.setBody
@@ -90,6 +91,7 @@ class ApiClient(private val prefs: PreferencesManager) {
         resp.token?.let { prefs.authToken = it }
         prefs.userId = resp.id
         prefs.username = resp.username
+        prefs.avatarId = resp.avatarId?.takeIf { it.isNotBlank() }
         resp
     }
 
@@ -227,5 +229,28 @@ class ApiClient(private val prefs: PreferencesManager) {
     /** Downloads the encrypted blob of a file. */
     suspend fun downloadFile(fileId: String): Result<ByteArray> = runCatching {
         client.get(url("/api/files/$fileId")) { bearer() }.ok().body<ByteArray>()
+    }
+
+    // ── Profile ─────────────────────────────────────────────────────────────
+
+    suspend fun updateProfile(req: UpdateProfileRequest): Result<AuthUser> = runCatching {
+        client.patch(url("/api/users/me")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(req)
+        }.ok().body()
+    }
+
+    /** Uploads an unencrypted, channel-less file (profile avatars are public to signed-in users). */
+    suspend fun uploadAvatar(bytes: ByteArray, mime: String): Result<UploadedFile> = runCatching {
+        client.post(url("/api/files")) {
+            bearer()
+            setBody(MultiPartFormDataContent(formData {
+                append("file", bytes, Headers.build {
+                    append(HttpHeaders.ContentType, mime)
+                    append(HttpHeaders.ContentDisposition, "filename=\"avatar.webp\"")
+                })
+            }))
+        }.ok().body()
     }
 }

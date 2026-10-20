@@ -14,6 +14,11 @@ data class AuthUser(
     @SerialName("status_preference") val statusPreference: String = "auto",
     @SerialName("avatar_id") val avatarId: String? = null,
     @SerialName("custom_msg") val customMsg: String? = null,
+    @SerialName("avatar_ids") val avatarIds: List<String>? = null,
+    @SerialName("banner_color") val bannerColor: String? = null,
+    @SerialName("allow_channel_adds") val allowChannelAdds: String? = null,
+    @SerialName("dm_permission") val dmPermission: String? = null,
+    @SerialName("friend_request_permission") val friendRequestPermission: String? = null,
     val token: String? = null
 )
 
@@ -31,7 +36,9 @@ data class UserSummary(
     val username: String,
     val domain: String = "localhost",
     val status: String = "offline",
-    @SerialName("avatar_id") val avatarId: String? = null
+    @SerialName("avatar_id") val avatarId: String? = null,
+    @SerialName("custom_msg") val customMsg: String? = null,
+    @SerialName("banner_color") val bannerColor: String? = null
 )
 
 @Serializable
@@ -67,6 +74,7 @@ data class Channel(
     @SerialName("user_role") val userRole: Int = 0,
     val members: List<String> = emptyList(),
     @SerialName("member_names") val memberNames: Map<String, String> = emptyMap(),
+    @SerialName("member_avatars") val memberAvatars: Map<String, String> = emptyMap(),
     @SerialName("member_roles") val memberRoles: Map<String, Int> = emptyMap(),
     @SerialName("member_statuses") val memberStatuses: Map<String, String> = emptyMap(),
     @SerialName("created_at") val createdAt: String = "",
@@ -256,4 +264,20 @@ data class FileMeta(
     @SerialName("thumb_ciphertext") val thumbCiphertext: String? = null,
     @SerialName("thumb_nonce") val thumbNonce: String? = null,
     @SerialName("as_document") val asDocument: Boolean? = null
+)
+
+/** Body of `PATCH /api/users/me`; only non-null fields are sent (backend treats them as optional). */
+@Serializable
+data class UpdateProfileRequest(
+    val username: String? = null,
+    val password: String? = null,
+    @SerialName("old_password") val oldPassword: String? = null,
+    @SerialName("avatar_id") val avatarId: String? = null,
+    @SerialName("avatar_ids") val avatarIds: List<String>? = null,
+    @SerialName("banner_color") val bannerColor: String? = null,
+    @SerialName("custom_msg") val customMsg: String? = null,
+    @SerialName("status_preference") val statusPreference: String? = null,
+    @SerialName("allow_channel_adds") val allowChannelAdds: String? = null,
+    @SerialName("dm_permission") val dmPermission: String? = null,
+    @SerialName("friend_request_permission") val friendRequestPermission: String? = null
 )
