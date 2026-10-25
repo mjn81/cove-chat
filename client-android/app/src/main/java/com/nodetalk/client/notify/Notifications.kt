@@ -50,7 +50,7 @@ class NotificationHelper(private val app: Application) {
 
     /** One line of a conversation notification (kept in memory only; cleared when the chat is read). */
     private class Line(val sender: String?, val text: String, val time: Long)
-    private class Conversation(var title: String, var isGroup: Boolean) { val lines = ArrayList<Line>() }
+    private class Conversation(var title: String, var isGroup: Boolean) { val lines = ArrayList<Line>(); var unread = 0 }
     private val conversations = LinkedHashMap<String, Conversation>()
 
     init {
@@ -122,6 +122,7 @@ class NotificationHelper(private val app: Application) {
         val convo = conversations.getOrPut(channelId) { Conversation(title, isGroup) }
         convo.title = title; convo.isGroup = isGroup
         convo.lines.add(Line(sender, text, System.currentTimeMillis()))
+        convo.unread++
         while (convo.lines.size > MAX_LINES) convo.lines.removeAt(0)
         post(channelId, convo, alert = !silent && prefs.notificationSound)
     }
@@ -161,6 +162,8 @@ class NotificationHelper(private val app: Application) {
             .addAction(reply).addAction(markRead)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setNumber(convo.unread) // launcher icon badge count (shown by Pixel/Samsung/etc. launchers)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setGroup(GROUP_MESSAGES)
             .setOnlyAlertOnce(!alert)
@@ -183,6 +186,7 @@ class NotificationHelper(private val app: Application) {
             .setContentTitle("NodeTalk")
             .setContentText("${conversations.size} conversations")
             .setGroup(GROUP_MESSAGES).setGroupSummary(true)
+            .setNumber(conversations.values.sumOf { it.unread })
             .setAutoCancel(true)
             .setContentIntent(PendingIntent.getActivity(app, 0, Intent(app, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             .build()
