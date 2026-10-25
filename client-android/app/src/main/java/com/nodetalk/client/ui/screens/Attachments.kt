@@ -97,6 +97,28 @@ private fun compressImage(bytes: ByteArray): ByteArray? {
     return out.toByteArray().takeIf { it.size < bytes.size }
 }
 
+/** <=48px WebP preview of an image (the web client shows it blurred until the full file loads). */
+fun thumbnailWebp(imageBytes: ByteArray): ByteArray? {
+    val bmp = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return null
+    return thumbnailWebp(bmp)
+}
+
+fun thumbnailWebp(bmp: Bitmap): ByteArray {
+    val scale = 48f / maxOf(bmp.width, bmp.height)
+    val w = maxOf(1, (bmp.width * scale).toInt()); val h = maxOf(1, (bmp.height * scale).toInt())
+    val out = ByteArrayOutputStream()
+    val format = if (Build.VERSION.SDK_INT >= 30) Bitmap.CompressFormat.WEBP_LOSSY else @Suppress("DEPRECATION") Bitmap.CompressFormat.WEBP
+    Bitmap.createScaledBitmap(bmp, w, h, true).compress(format, 50, out)
+    return out.toByteArray()
+}
+
+/** Decrypts the encrypted preview attached to a media message, or null when absent/undecryptable. */
+fun decryptPreview(channelId: String, meta: FileMeta): ByteArray? {
+    val c = meta.thumbCiphertext ?: return null
+    val n = meta.thumbNonce ?: return null
+    return runCatching { CryptoManager.decryptBytes(channelId, Base64.decode(c, Base64.NO_WRAP), Base64.decode(n, Base64.NO_WRAP)) }.getOrNull()
+}
+
 /**
  * Compress (zstd) -> encrypt (AES-256-GCM with the channel key) -> upload -> send a `file` message
  * whose body is the JSON metadata. Mirrors `ChatInputArea` + `encryptAndCompressFile` in client-web.
@@ -117,7 +139,8 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
                 name = name.substringBeforeLast('.') + ".webp"
             }
         }
-        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto)
+        val preview = if (mime.startsWith("image/") && mime != "image/gif") thumbnailWebp(bytes) else null
+        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto, preview = preview)
     }
 }
 
@@ -132,18 +155,25 @@ suspend fun sendPrepared(
     name: String,
     type: String,
     asDocument: Boolean = false,
-    durationSec: Int? = null
+    durationSec: Int? = null,
+    preview: ByteArray? = null
 ) {
     val app = NodeTalkApp.instance
     val originalSize = bytes.size.toLong()
     val compressed = if (mime.startsWith("audio/")) bytes else Zstd.compress(bytes, 10)
     val (cipher, nonce) = CryptoManager.encryptBytes(channelId, compressed) ?: error("Channel key not available yet. Try again in a moment.")
-    val uploaded = app.apiClient.uploadFile(cipher, mime, channelId, isVideo = type == "video").getOrThrow()
+    // Preview (<=48px WebP or waveform peaks) is encrypted with the channel key too, never sent in clear.
+    val thumb = preview?.let { CryptoManager.encryptBytes(channelId, it) }
+    val thumbCipher = thumb?.let { Base64.encodeToString(it.first, Base64.NO_WRAP) }
+    val thumbNonce = thumb?.let { Base64.encodeToString(it.second, Base64.NO_WRAP) }
+    val uploaded = app.apiClient.uploadFile(cipher, mime, channelId, isVideo = type == "video", thumbCipher = thumbCipher, thumbNonce = thumbNonce).getOrThrow()
     val meta = FileMeta(
         fileId = uploaded.id, name = name, mime = mime, size = originalSize,
         nonce = Base64.encodeToString(nonce, Base64.NO_WRAP),
         asDocument = if (asDocument) true else null,
         duration = durationSec,
+        thumbCiphertext = thumbCipher,
+        thumbNonce = thumbNonce,
         processingStatus = if (type == "video") "processing" else null
     )
     val ok = app.webSocketManager.sendChatMessage(channelId, metaJson.encodeToString(meta), type = type, compression = "zstd")
@@ -258,3 +288,19 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
 
 /** Drops decoded attachment images held in memory (used by Settings > Data & Storage). */
 fun clearImageCache() = imageCache.evictAll()
+
+/** Decrypts an attachment into the private cache and hands it to an installed viewer (the "download" action). */
+suspend fun openAttachment(context: Context, channelId: String, meta: FileMeta) {
+    val data = loadAttachment(channelId, meta)
+    if (data == null) {
+        I18nToast.make(context, "Couldn't download or decrypt the file.", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val dir = File(context.cacheDir, "attachments").apply { mkdirs() }
+    val file = File(dir, meta.name.replace(Regex("[^A-Za-z0-9._-]"), "_"))
+    withContext(Dispatchers.IO) { file.writeBytes(data) }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, meta.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    runCatching { context.startActivity(Intent.createChooser(view, meta.name)) }
+        .onFailure { I18nToast.make(context, "No app can open this file.", Toast.LENGTH_SHORT).show() }
+}

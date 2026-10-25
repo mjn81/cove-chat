@@ -283,7 +283,7 @@ fun ChatScreen(
         if (result == null) { toast("Recording too short."); return }
         uploading = true
         scope.launch {
-            runCatching { sendVoiceFile(result.first, result.second, channelId) }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
+            runCatching { sendVoiceFile(result, channelId) }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
             uploading = false
         }
     }
@@ -449,18 +449,18 @@ private fun BarIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
 @Composable
 private fun DaySeparator(label: String) {
     val c = NodeTalkTheme.extendedColors
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.weight(1f).height(1.dp).background(c.border))
+    // Web: a 1px border-border/50 rule with a bg-background pill (border-border/50) centred on it.
+    val hairline = c.border.copy(alpha = 0.5f)
+    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(hairline))
         Text(
-            label, color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+            label, color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .padding(horizontal = 8.dp)
                 .clip(RoundedCornerShape(50))
-                .border(1.dp, c.border, RoundedCornerShape(50))
                 .background(c.chatCanvas)
-                .padding(horizontal = 12.dp, vertical = 3.dp)
+                .border(1.dp, hairline, RoundedCornerShape(50))
+                .padding(horizontal = 12.dp, vertical = 2.dp)
         )
-        Box(Modifier.weight(1f).height(1.dp).background(c.border))
     }
 }
 
@@ -543,7 +543,7 @@ private fun MessageRow(
                 if (fileMeta != null) {
                     when (m.type) {
                         "voice" -> VoiceBubble(m.channelId, fileMeta, keyVersion)
-                        "video" -> VideoBubble(m.channelId, fileMeta)
+                        "video" -> VideoBubble(m.channelId, fileMeta, keyVersion)
                         else -> FileBubble(m.channelId, fileMeta, keyVersion)
                     }
                 } else Row(verticalAlignment = Alignment.Bottom) {
