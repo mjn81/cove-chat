@@ -10,6 +10,7 @@ import { wsEditMessage, wsDeleteMessage } from '@/ws';
 import { JoinPreview } from './JoinPreview';
 import { ConfirmModal } from '../ConfirmModal';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { tokenizeMessage } from '@/utils/linkify';
 
 interface MessageItemProps {
 	msg: Message & { text?: string };
@@ -139,11 +140,9 @@ export const MessageItem = memo(
 
 		const renderText = (text: string) => {
 			if (!text) return text;
-			const parts = text.split(/(@\w+)/g);
-			return parts.map((part, i) => {
-				if (part.startsWith('@')) {
-					const username = part.substring(1);
-					const isMe = user?.username === username;
+			return tokenizeMessage(text).map((token, i) => {
+				if (token.type === 'mention') {
+					const isMe = user?.username === token.value.substring(1);
 					return (
 						<span
 							key={i}
@@ -153,11 +152,25 @@ export const MessageItem = memo(
 									: 'text-primary hover:underline'
 							}`}
 						>
-							{part}
+							{token.value}
 						</span>
 					);
 				}
-				return part;
+				if (token.type === 'url' || token.type === 'email') {
+					// noopener/noreferrer: the target page must not reach window.opener or learn which chat linked it.
+					return (
+						<a
+							key={i}
+							href={token.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-primary hover:underline break-all"
+						>
+							{token.value}
+						</a>
+					);
+				}
+				return token.value;
 			});
 		};
 
