@@ -125,7 +125,8 @@ object VoicePlayerController {
                 }
             }.onSuccess { mp ->
                 player = mp
-                durationMs = mp.duration.toLong()
+                // Browser MediaRecorder webm files carry no duration header, so MediaPlayer reports 0 / -1: use the sent length.
+                durationMs = mp.duration.toLong().takeIf { it > 0 } ?: ((t.meta.duration ?: 0) * 1000L)
                 positionMs = 0
                 isLoading = false
                 startPlayback()
