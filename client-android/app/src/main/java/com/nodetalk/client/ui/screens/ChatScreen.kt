@@ -350,6 +350,9 @@ fun ChatScreen(
             }
         }
 
+        // Persistent voice-note player (shown while a voice note is loaded), like the web top player bar
+        VoicePlayerBar()
+
         // Messages (reversed: index 0 is the newest, drawn at the bottom)
         LazyColumn(
             state = listState,
@@ -542,7 +545,7 @@ private fun MessageRow(
                 val fileMeta = remember(m.id, m.ciphertext, keyVersion) { m.fileMeta() }
                 if (fileMeta != null) {
                     when (m.type) {
-                        "voice" -> VoiceBubble(m.channelId, fileMeta, keyVersion)
+                        "voice" -> VoiceBubble(m.channelId, fileMeta, keyVersion, author)
                         "video" -> VideoBubble(m.channelId, fileMeta, keyVersion)
                         else -> if (fileMeta.mime.startsWith("video/")) VideoBubble(m.channelId, fileMeta, keyVersion) else FileBubble(m.channelId, fileMeta, keyVersion)
                     }

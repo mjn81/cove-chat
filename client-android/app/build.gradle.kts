@@ -92,5 +92,9 @@ dependencies {
     // Image & Avatar Loading
     implementation(libs.coil.compose)
 
+    // Inline + fullscreen video message playback (hardware decoders, texture surface so it clips to rounded tiles)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
