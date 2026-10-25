@@ -54,6 +54,7 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import com.nodetalk.client.ui.components.Text
+import com.nodetalk.client.ui.components.linkifiedText
 import com.nodetalk.client.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -550,7 +551,8 @@ private fun MessageRow(
                         else -> if (fileMeta.mime.startsWith("video/")) VideoBubble(m.channelId, fileMeta, keyVersion) else FileBubble(m.channelId, fileMeta, keyVersion)
                     }
                 } else Row(verticalAlignment = Alignment.Bottom) {
-                    Text(text, color = c.textPrimary, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
+                    val body = remember(text) { linkifiedText(text, NTPrimary) }
+                    Text(body, color = c.textPrimary, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
                     if (m.editedAt != null) {
                         Spacer(Modifier.width(6.dp))
                         Text("(edited)", color = c.textMuted, fontSize = 10.sp)
