@@ -40,6 +40,7 @@ Native Android client for **NodeTalk**, built with Kotlin, Jetpack Compose, Ktor
 ## Build notes
 
 - Use the Makefile from the repo root: `make android/compile`, `make android/build`, `make android/install`. It runs the checked-in `gradlew` on a JDK 17-23 it finds in `~/.jdks` / Program Files (override with `ANDROID_JDK=...`), because Gradle 8.11 and Kotlin 2.0 cannot start on JDK 24+ (Android Studio 2025 bundles JDK 25). In Android Studio set Settings > Build > Gradle > Gradle JDK to a 17-23 JDK.
+- AGP 8.13 / Gradle 8.14 / Kotlin 2.0.21. Native libs (`stream-webrtc-android` 1.3.10, `zstd-jni` 1.5.7-6) are 16 KB page-size aligned for 64-bit ABIs, as Google Play requires; check a new build with `zipalign -c -P 16 4 app-debug.apk` or by inspecting the `.so` LOAD segments. Do not bump `zstd-jni` past 1.5.7-6 without raising `compileSdk` (newer releases need API 37).
 - The emulator reaches the host machine at `10.0.2.2`; the server-select step rewrites `localhost` to that automatically.
 - `zstd-jni` must be the `@aar` artifact; the plain JVM jar has no Android native libs.
 - `design-reference/` holds the web-client screenshots and tokens the UI is matched against.
