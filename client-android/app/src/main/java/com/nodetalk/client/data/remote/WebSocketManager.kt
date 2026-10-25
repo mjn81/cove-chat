@@ -75,7 +75,11 @@ class WebSocketManager(private val prefs: PreferencesManager) {
     private val _channelsChangedFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
     val channelsChangedFlow: SharedFlow<Unit> = _channelsChangedFlow.asSharedFlow()
 
-    private val _signalingFlow = MutableSharedFlow<Pair<String, JsonElement>>(extraBufferCapacity = 64)
+    /** (channelId, user ids currently in that channel's call) from `voice_update`. */
+    private val _voiceFlow = MutableSharedFlow<Pair<String, List<String>>>(extraBufferCapacity = 64)
+    val voiceFlow: SharedFlow<Pair<String, List<String>>> = _voiceFlow.asSharedFlow()
+
+    private val _signalingFlow =MutableSharedFlow<Pair<String, JsonElement>>(extraBufferCapacity = 64)
     val signalingFlow: SharedFlow<Pair<String, JsonElement>> = _signalingFlow.asSharedFlow()
 
     private val _connectionState = MutableSharedFlow<Boolean>(replay = 1)
@@ -150,6 +154,12 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                 "message_update" -> _messageUpdateFlow.emit(json.decodeFromJsonElement<Message>(payload))
                 "message_delete" -> _messageDeleteFlow.emit(json.decodeFromJsonElement<MessageDeletePayload>(payload))
                 "channel_update", "channel_delete" -> _channelsChangedFlow.emit(Unit)
+                "voice_update" -> {
+                    val obj = payload.jsonObject
+                    val ch = obj["channel_id"]?.jsonPrimitive?.content ?: return
+                    val users = (obj["users"] as? kotlinx.serialization.json.JsonArray)?.map { it.jsonPrimitive.content }.orEmpty()
+                    _voiceFlow.emit(ch to users)
+                }
                 "whisper_init", "whisper_accept", "whisper_reject", "whisper_msg", "whisper_close", "whisper_error" ->
                     _whisperFlow.emit(Pair(type, payload))
                 // WebRTC signaling events (names match backend/internal/rtc)

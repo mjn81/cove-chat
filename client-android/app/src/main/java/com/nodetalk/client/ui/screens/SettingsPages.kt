@@ -311,6 +311,7 @@ fun NotificationSettings() {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(prefs.notificationsEnabled) }
     var sound by remember { mutableStateOf(prefs.notificationSound) }
+    var keepConnected by remember { mutableStateOf(prefs.keepConnected) }
     fun granted() = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     var systemAllowed by remember { mutableStateOf(granted()) }
@@ -321,6 +322,10 @@ fun NotificationSettings() {
             enabled = it; prefs.notificationsEnabled = it
         }
         ToggleRow("Sound", "Play a sound with each notification.", sound) { sound = it; prefs.notificationSound = it }
+        ToggleRow("Stay connected in the background", "Keeps a quiet notification so messages and incoming calls reach you even when NodeTalk is closed.", keepConnected) {
+            keepConnected = it; prefs.keepConnected = it
+            com.nodetalk.client.service.BackgroundConnection.sync(context)
+        }
         if (!systemAllowed) {
             Text("Android notification permission is off.", color = NTDestructive, fontSize = 13.sp)
             Text(
@@ -328,7 +333,7 @@ fun NotificationSettings() {
                 modifier = Modifier.clickable { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ask.launch(Manifest.permission.POST_NOTIFICATIONS) }.padding(vertical = 8.dp)
             )
         } else {
-            Text("Notifications arrive while NodeTalk is running; there is no push service on a self-hosted server.", color = c.textMuted, fontSize = 12.sp)
+            Text("There is no push service on a self-hosted server, so NodeTalk keeps its own connection open to notify you.", color = c.textMuted, fontSize = 12.sp)
         }
     }
 }

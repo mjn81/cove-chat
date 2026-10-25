@@ -7,7 +7,9 @@ import com.nodetalk.client.data.remote.WebSocketManager
 import com.nodetalk.client.rtc.RawUdpVoiceManager
 import com.nodetalk.client.data.model.previewText
 import com.nodetalk.client.notify.ActiveChat
+import com.nodetalk.client.notify.CallCoordinator
 import com.nodetalk.client.notify.NotificationHelper
+import com.nodetalk.client.service.BackgroundConnection
 import com.nodetalk.client.rtc.WebRTCManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,15 +58,16 @@ class NodeTalkApp : Application() {
                 // The channel list gives the display name (DM partner or channel name).
                 val channel = apiClient.getChannels().getOrNull()?.firstOrNull { it.id == m.channelId }
                 val title = channel?.displayName(me) ?: "NodeTalk"
-                val sender = channel?.memberNames?.get(m.senderId)
-                val text = m.previewText()
-                notificationHelper.showMessage(m.channelId, title, if (sender != null && channel?.isDirectMessage == false) "$sender: $text" else text)
+                val sender = channel?.memberNames?.get(m.senderId) ?: title
+                notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText())
             }
         }
+        CallCoordinator.start(this)
 
         // Auto-connect WebSocket if auth token exists
         if (!preferencesManager.authToken.isNullOrBlank()) {
             webSocketManager.connect()
+            BackgroundConnection.sync(this)
         }
     }
 }

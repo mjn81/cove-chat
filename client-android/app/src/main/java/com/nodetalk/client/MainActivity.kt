@@ -48,7 +48,13 @@ class MainActivity : ComponentActivity() {
     /** Notification taps carry the chat to open; NavGraph observes [OpenChatRequest]. */
     private fun handleOpenIntent(intent: android.content.Intent?) {
         val id = intent?.getStringExtra(NotificationHelper.EXTRA_CHANNEL_ID) ?: return
-        OpenChatRequest.channelName = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME).orEmpty()
+        val name = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME).orEmpty()
+        if (intent.action == NotificationHelper.ACTION_ANSWER_CALL) {
+            // Answer tapped on the ringing notification (or its full-screen version).
+            com.nodetalk.client.notify.CallCoordinator.answer(NodeTalkApp.instance, com.nodetalk.client.notify.IncomingCall(id, "", name))
+            return
+        }
+        OpenChatRequest.channelName = name
         OpenChatRequest.channelId = id
     }
 

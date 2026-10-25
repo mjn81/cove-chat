@@ -88,6 +88,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
             app.apiClient.logout()
             app.webSocketManager.disconnect()
             app.preferencesManager.clearAuth()
+            com.nodetalk.client.service.BackgroundConnection.sync(app)
             onLogout()
         }
     }

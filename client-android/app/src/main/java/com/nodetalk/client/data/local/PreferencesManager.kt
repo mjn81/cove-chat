@@ -40,6 +40,11 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("notifications_enabled", true)
         set(value) = prefs.edit().putBoolean("notifications_enabled", value).apply()
 
+    /** Keep the socket alive in the background (foreground service) so notifications work with the app closed. */
+    var keepConnected: Boolean
+        get() = prefs.getBoolean("keep_connected", true)
+        set(value) = prefs.edit().putBoolean("keep_connected", value).apply()
+
     var notificationSound: Boolean
         get() = prefs.getBoolean("notification_sound", true)
         set(value) = prefs.edit().putBoolean("notification_sound", value).apply()
