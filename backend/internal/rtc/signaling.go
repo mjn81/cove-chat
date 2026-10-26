@@ -77,18 +77,15 @@ func (m *Manager) handleJoin(userID, username, channelID string) error {
 		return nil
 	}
 
+	// A user has at most one call session. A second call_join means the client lost its own state (page reload
+	// while the SharedWorker kept the WebSocket, or a missed leave), so the stale session is torn down and replaced
+	// instead of rejecting the join and stranding the client without a PeerConnection.
 	m.mu.Lock()
-	if existingChannel, inCall := m.userRooms[userID]; inCall {
-		m.mu.Unlock()
-		m.metricsState.joinsRejected.Add(1)
-		if existingChannel == channelID {
-			m.sendError(userID, channelID, "already in this call")
-		} else {
-			m.sendError(userID, channelID, "already in another call")
-		}
-		return nil
-	}
+	existingChannel, inCall := m.userRooms[userID]
 	m.mu.Unlock()
+	if inCall {
+		m.handleLeave(userID, existingChannel)
+	}
 
 	room := m.getOrCreateRoom(channelID)
 	if room.size() >= m.cfg.MaxParticipantsPerCall {

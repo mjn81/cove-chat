@@ -1173,3 +1173,86 @@ func TestSFU_InspectSubscriberSDPOffer(t *testing.T) {
 		t.Fatal("no subscribe offer for bob")
 	}
 }
+
+// TestSFU_RejoinReplacesStaleSession guards the reload bug: the web client's
+// SharedWorker keeps the WebSocket (and so the server-side participant) alive
+// across a page reload, so the fresh page's call_join must replace the stale
+// session and get a call_joined, not "already in this call" (which left the
+// page with no PeerConnection and dead call buttons).
+func TestSFU_RejoinReplacesStaleSession(t *testing.T) {
+	channelID := "chan-rejoin"
+	sender := newFakeSender()
+	membership := &fakeMembership{allowed: map[string]bool{"u1:" + channelID: true}}
+
+	mgr, err := NewManager(Config{MaxParticipantsPerCall: 10}, membership, sender)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	defer mgr.Stop()
+
+	inbox := sender.register("u1")
+	body, _ := json.Marshal(JoinPayload{ChannelID: channelID})
+	for i := 0; i < 2; i++ {
+		if err := mgr.HandleSignal("u1", "u1", MsgJoin, body); err != nil {
+			t.Fatalf("HandleSignal: %v", err)
+		}
+		joined := false
+		deadline := time.After(2 * time.Second)
+		for !joined {
+			select {
+			case msg := <-inbox:
+				if msg.Type == MsgError {
+					t.Fatalf("join #%d rejected: %+v", i+1, msg.Payload)
+				}
+				joined = msg.Type == MsgJoined
+			case <-deadline:
+				t.Fatalf("join #%d never produced %s", i+1, MsgJoined)
+			}
+		}
+	}
+
+	room, ok := mgr.getRoom(channelID)
+	if !ok || room.size() != 1 {
+		t.Fatalf("expected exactly one participant after rejoin, got ok=%v", ok)
+	}
+}
+
+// TestSFU_JoinedPayloadNeverHasNullLists guards the wire contract the web client relies on: with TURN disabled the
+// server used to send "ice_servers": null, which crashed the client's join and left the call UI inert.
+func TestSFU_JoinedPayloadNeverHasNullLists(t *testing.T) {
+	channelID := "chan-null"
+	sender := newFakeSender()
+	membership := &fakeMembership{allowed: map[string]bool{"u1:" + channelID: true}}
+	mgr, err := NewManager(Config{MaxParticipantsPerCall: 10}, membership, sender)
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	defer mgr.Stop()
+
+	inbox := sender.register("u1")
+	body, _ := json.Marshal(JoinPayload{ChannelID: channelID})
+	if err := mgr.HandleSignal("u1", "u1", MsgJoin, body); err != nil {
+		t.Fatalf("HandleSignal: %v", err)
+	}
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case msg := <-inbox:
+			if msg.Type != MsgJoined {
+				continue
+			}
+			var raw map[string]json.RawMessage
+			if err := json.Unmarshal(msg.Payload, &raw); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			for _, key := range []string{"ice_servers", "participants"} {
+				if string(raw[key]) == "null" {
+					t.Fatalf("%s must be [] not null", key)
+				}
+			}
+			return
+		case <-deadline:
+			t.Fatal("never received call_joined")
+		}
+	}
+}

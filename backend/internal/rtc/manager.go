@@ -173,12 +173,12 @@ func (m *Manager) webrtcConfig() webrtc.Configuration {
 
 func (m *Manager) mintICEServers(userID string) []ICEServerInfo {
 	if m.turn == nil {
-		return nil
+		return []ICEServerInfo{}
 	}
 	username, password, err := m.turn.mintCredentials(userID)
 	if err != nil {
 		logger.Errorf("rtc: mint TURN credentials for %s: %v", userID, err)
-		return nil
+		return []ICEServerInfo{}
 	}
 	return []ICEServerInfo{
 		{URLs: []string{fmt.Sprintf("stun:%s:%d", m.cfg.PublicIP, m.cfg.TURNPort)}},
