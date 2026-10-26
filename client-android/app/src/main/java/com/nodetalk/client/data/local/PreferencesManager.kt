@@ -30,6 +30,11 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("dark_theme", true)
         set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
 
+    /** Chat background pattern id (`none`, `animals`, `space`, `games`, `sweets`), same ids as the web setting. */
+    var chatBackground: String
+        get() = prefs.getString("chat_background", "none") ?: "none"
+        set(value) = prefs.edit().putString("chat_background", value).apply()
+
     /** Own avatar file id (from /api/me), cached so the footer can draw it before any network call. */
     var avatarId: String?
         get() = prefs.getString("avatar_id", null)

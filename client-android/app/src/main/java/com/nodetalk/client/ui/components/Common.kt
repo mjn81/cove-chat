@@ -90,8 +90,7 @@ fun InitialsAvatar(id: String, name: String, size: Dp = 40.dp, modifier: Modifie
         }
         val ink = android.graphics.Rect().also { paint.getTextBounds(text, 0, text.length, it) }
         val x = this.size.width / 2f - ink.exactCenterX()
-        // Nudged below the geometric centre: capital initials read as centred when they sit slightly low.
-        val y = this.size.height / 2f - ink.exactCenterY() + this.size.height * 0.03f
+        val y = this.size.height / 2f - ink.exactCenterY()
         drawContext.canvas.nativeCanvas.drawText(text, x, y, paint)
     }
 }
@@ -205,4 +204,13 @@ fun OpenSourceFooter(modifier: Modifier = Modifier) {
 @Composable
 fun SectionDivider(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(1.dp).background(CoveTheme.extendedColors.border))
+}
+
+/** The bare Cove mark (speech bubble with two waves) with no tile or background, as on the web server-select page. */
+@Composable
+fun CoveMark(size: Dp = 64.dp, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(com.nodetalk.client.R.drawable.ic_cove_mark),
+        contentDescription = null, modifier = modifier.size(size)
+    )
 }

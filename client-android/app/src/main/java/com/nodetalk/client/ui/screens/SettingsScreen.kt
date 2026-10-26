@@ -1,5 +1,9 @@
 package com.nodetalk.client.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
+import com.nodetalk.client.ui.components.ChatBackgroundIds
+import com.nodetalk.client.ui.components.ChatBackgroundSettings
+import com.nodetalk.client.ui.components.chatBackgroundPattern
 import com.nodetalk.client.ui.theme.CoveShapes
 import com.nodetalk.client.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
@@ -99,6 +103,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
         scope.launch {
             app.apiClient.logout()
             app.webSocketManager.disconnect()
+            app.whisperManager.reset()
             app.preferencesManager.clearAuth()
             com.nodetalk.client.service.BackgroundConnection.sync(app)
             onLogout()
@@ -194,6 +199,23 @@ private fun AppearancePage() {
         }
         ThemeCard("Light", dark = false, selected = !ThemeSettings.dark, Modifier.weight(1f)) {
             ThemeSettings.dark = false; prefs.darkTheme = false
+        }
+    }
+    Spacer(Modifier.height(32.dp))
+    Text("CHAT BACKGROUND", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(12.dp))
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        ChatBackgroundIds.forEach { id ->
+            val on = ChatBackgroundSettings.id == id
+            Column(
+                Modifier.width(88.dp).clip(CoveShapes.lg).border(2.dp, if (on) MaterialTheme.colorScheme.primary else c.border, CoveShapes.lg)
+                    .clickable { ChatBackgroundSettings.id = id; prefs.chatBackground = id }.padding(Spacing.sm),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.fillMaxWidth().height(64.dp).clip(CoveShapes.md).background(c.chatCanvas).chatBackgroundPattern(id, alpha = 0.12f))
+                Spacer(Modifier.height(Spacing.xs))
+                Text(id.replaceFirstChar { it.uppercase() }, color = if (on) c.textPrimary else c.textMuted, style = CoveType.label, maxLines = 1)
+            }
         }
     }
     Spacer(Modifier.height(32.dp))

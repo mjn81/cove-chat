@@ -141,6 +141,8 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            com.nodetalk.client.ui.components.CoveMark(size = 72.dp)
+            Spacer(Modifier.height(16.dp))
             Text(
                 text = "Select a Server",
                 color = c.textPrimary,

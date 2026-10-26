@@ -28,6 +28,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.material.icons.automirrored.outlined.Forward
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -167,6 +172,8 @@ fun ChatScreen(
     var searching by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var showMembers by remember { mutableStateOf(false) }
+    var showProfile by remember { mutableStateOf(false) }
+    var forwardMsg by remember { mutableStateOf<Message?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     var profileMention by remember { mutableStateOf<MentionMember?>(null) }
     val mentionMembers = remember(channel) {
@@ -256,6 +263,9 @@ fun ChatScreen(
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
 
     val recorder = remember { VoiceRecorder(context) }
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) toast("Allow microphone access in Settings to record voice messages.")
+    }
     var recording by remember { mutableStateOf(false) }
     var elapsed by remember { mutableStateOf(0) }
     LaunchedEffect(recording) {
@@ -325,21 +335,24 @@ fun ChatScreen(
         // Top bar: the card colour also fills the status-bar inset so it blends into the system bar.
         Column(Modifier.fillMaxWidth().background(c.chatCanvas).statusBarsPadding()) {
             Row(
-                Modifier.fillMaxWidth().padding(vertical = Spacing.xs).height(52.dp).padding(end = 4.dp),
+                Modifier.fillMaxWidth().height(56.dp).padding(end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
+                // Avatar + title open the profile (person for a DM, group profile otherwise), like the web header.
+                Row(Modifier.weight(1f).fillMaxHeight().clickable { showProfile = true }, verticalAlignment = Alignment.CenterVertically) {
                 if (isDm) {
-                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 30.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
+                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 38.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
                 } else {
-                    InitialsAvatar(channelId, title, size = 30.dp)
+                    InitialsAvatar(channelId, title, size = 38.dp)
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                     Text(title, color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 1.2.em, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (!isDm) Text("${channel?.members?.size ?: 0} members", color = c.textMuted, fontSize = CoveType.caption.fontSize, lineHeight = 1.2.em, maxLines = 1)
+                }
                 }
                 CoveIconButton(Icons.Outlined.Search, "Search", { searching = !searching; if (!searching) search = "" }, iconSize = 21.dp)
                 if (!isDm) {
@@ -391,6 +404,16 @@ fun ChatScreen(
                         onMention = { u -> mentionMembers.firstOrNull { it.username.equals(u, ignoreCase = true) }?.let { profileMention = it } },
                         onToggle = { selectedId = if (selectedId == m.id) null else m.id },
                         onReply = { replyTo = m; editing = null; selectedId = null },
+                        onForward = {
+                            selectedId = null
+                            if (m.type == "text") forwardMsg = m else toast("Only text messages can be forwarded.")
+                        },
+                        onCopy = {
+                            selectedId = null
+                            (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                                .setPrimaryClip(android.content.ClipData.newPlainText("message", bodyOf(m)))
+                            toast("Copied")
+                        },
                         onEdit = { editing = m; replyTo = null; input = bodyOf(m); selectedId = null },
                         onDelete = {
                             selectedId = null
@@ -425,11 +448,34 @@ fun ChatScreen(
             onPickMedia = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
             onPickAudio = { pickAudio.launch("audio/*") },
             onPickFile = { pickFile.launch("*/*") },
-            onStartRecording = { if (!uploading && recorder.start()) recording = true else toast("Couldn't start the microphone.") },
+            onStartRecording = {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                } else if (!uploading && recorder.start()) recording = true else toast("Couldn't start the microphone.")
+            },
             onCancelRecording = { recording = false; recorder.cancel() },
             onFinishRecording = { finishRecording() },
             onVideo = { if (!uploading) startVideo() }
         )
+    }
+
+    if (showProfile) {
+        val peer = channel?.members?.firstOrNull { it != me }
+        if (isDm && peer != null) {
+            MemberProfileDialog(
+                userId = peer, username = title, avatarId = channel?.memberAvatars?.get(peer),
+                onDismiss = { showProfile = false },
+                onOpenChat = { id, name -> showProfile = false; if (id != channelId) onOpenChat(id, name) }
+            )
+        } else channel?.let { ch ->
+            ChannelProfileDialog(ch, me, onDismiss = { showProfile = false }, onMembers = { showProfile = false; showMembers = true }, onSettings = { showProfile = false; showSettings = true })
+        }
+    }
+    forwardMsg?.let { fm ->
+        ForwardDialog(channelId, onDismiss = { forwardMsg = null }, onPick = { target ->
+            forwardMsg = null
+            scope.launch { if (ws.sendChatMessage(target, bodyOf(fm))) toast("Forwarded") else toast("Couldn't forward the message.") }
+        })
     }
 
     profileMention?.let { m ->
@@ -522,15 +568,50 @@ private fun MessageRow(
     onMention: (username: String) -> Unit,
     onToggle: () -> Unit,
     onReply: () -> Unit,
+    onForward: () -> Unit,
+    onCopy: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val c = CoveTheme.extendedColors
     // keyVersion forces a re-decrypt once the channel key has arrived over the socket.
     val text = remember(m.id, m.ciphertext, keyVersion) { bodyOf(m) }
+    // Swipe towards the end edge = reply, towards the start edge = forward (mirrored in RTL); springs back on release.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val trigger = with(density) { 64.dp.toPx() }
+    val maxDrag = with(density) { 96.dp.toPx() }
+    val swipe = remember { androidx.compose.animation.core.Animatable(0f) }
+    val swipeScope = rememberCoroutineScope()
+    val sign = if (com.nodetalk.client.ui.components.AppLanguage.isRtl) -1f else 1f
+    val primary = MaterialTheme.colorScheme.primary
+    Box(Modifier.fillMaxWidth()) {
+    val pull = (kotlin.math.abs(swipe.value) / trigger).coerceIn(0f, 1f)
+    if (swipe.value != 0f) {
+        Icon(
+            if (swipe.value * sign > 0) Icons.AutoMirrored.Outlined.Reply else Icons.AutoMirrored.Outlined.Forward,
+            null, tint = primary.copy(alpha = pull),
+            modifier = Modifier.align(if (swipe.value * sign > 0) Alignment.CenterStart else Alignment.CenterEnd).padding(horizontal = 20.dp).size(20.dp + 6.dp * pull)
+        )
+    }
     Box(
         Modifier
             .fillMaxWidth()
+            .offset { androidx.compose.ui.unit.IntOffset(swipe.value.toInt(), 0) }
+            .pointerInput(sign) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        val v = swipe.value * sign
+                        swipeScope.launch {
+                            if (v > trigger) onReply() else if (v < -trigger) onForward()
+                            swipe.animateTo(0f)
+                        }
+                    },
+                    onDragCancel = { swipeScope.launch { swipe.animateTo(0f) } }
+                ) { change, drag ->
+                    change.consume()
+                    swipeScope.launch { swipe.snapTo((swipe.value + drag * 0.7f).coerceIn(-maxDrag, maxDrag)) }
+                }
+            }
             .background(if (selected) c.accent.copy(alpha = 0.35f) else Color.Transparent)
             // Long-press is reserved for copying the text (MessageText); tapping still toggles the action bar.
             .clickable(onClick = onToggle)
@@ -588,10 +669,13 @@ private fun MessageRow(
                     .background(c.card)
             ) {
                 CoveIconButton(Icons.AutoMirrored.Outlined.Reply, "Reply", onReply, size = 40.dp, iconSize = 18.dp)
+                CoveIconButton(Icons.AutoMirrored.Outlined.Forward, "Forward", onForward, size = 40.dp, iconSize = 18.dp)
+                if (m.type == "text") CoveIconButton(Icons.Outlined.ContentCopy, "Copy", onCopy, size = 40.dp, iconSize = 18.dp)
                 if (canEdit) CoveIconButton(Icons.Outlined.Edit, "Edit", onEdit, size = 40.dp, iconSize = 18.dp)
                 if (canDelete) CoveIconButton(Icons.Outlined.Delete, "Delete", onDelete, size = 40.dp, iconSize = 18.dp)
             }
         }
+    }
     }
 }
 

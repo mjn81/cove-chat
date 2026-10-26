@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.RemoteInput
 import com.nodetalk.client.CoveApp
+import com.nodetalk.client.service.CallService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,6 +15,16 @@ import kotlinx.coroutines.launch
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext as? CoveApp ?: return
+        // The ongoing-call notification buttons carry no channel id.
+        when (intent.action) {
+            CallService.ACTION_MUTE -> { app.webRTCManager.toggleMute(); return }
+            NotificationHelper.ACTION_DECLINE_WHISPER -> {
+                val sid = intent.getStringExtra(NotificationHelper.EXTRA_WHISPER_ID) ?: return
+                app.whisperManager.declineById(sid)
+                return
+            }
+            CallService.ACTION_LEAVE -> { app.webRTCManager.leaveCall(); CallService.stop(context); return }
+        }
         val channelId = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_ID) ?: return
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {

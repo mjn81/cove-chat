@@ -85,6 +85,7 @@ fun NavGraph() {
         WhisperStartDialog(
             peerName = peerName,
             onDismiss = { startWhisperFor = null },
+            onOpenSaved = whisper.savedSessionForPeer(peerId)?.let { saved -> { startWhisperFor = null; navController.navigate("whisper/${saved.id}") } },
             onStart = { mode ->
                 val id = whisper.start(peerId, peerName, mode)
                 startWhisperFor = null
@@ -92,6 +93,15 @@ fun NavGraph() {
             }
         )
     }
+
+    // Accepted from the notification (or tapped "New Whisper message"): open that session once signed in.
+    val openWhisper = whisper.openRequest
+    LaunchedEffect(openWhisper) {
+        val sid = openWhisper ?: return@LaunchedEffect
+        whisper.openRequest = null
+        if (!prefs.authToken.isNullOrBlank()) navController.navigate("whisper/$sid") { launchSingleTop = true }
+    }
+    LaunchedEffect(Unit) { if (!prefs.authToken.isNullOrBlank()) whisper.loadPersisted() }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable(
@@ -129,6 +139,7 @@ fun NavGraph() {
         }
 
         composable("channels") {
+            LaunchedEffect(Unit) { whisper.loadPersisted() }
             ChannelListScreen(
                 onChannelSelected = { channelId, channelName ->
                     val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
@@ -170,6 +181,10 @@ fun NavGraph() {
                 channelName = channelName,
                 onBack = { navController.popBackStack() },
                 onStartWhisper = { id, name -> startWhisperFor = id to name },
+                onOpenChat = { id, name ->
+                    val enc = java.net.URLEncoder.encode(name, "UTF-8")
+                    navController.navigate("chat/$id/$enc") { launchSingleTop = true }
+                },
                 onStartCall = { withVideo ->
                     val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
                     navController.navigate("call/$channelId/$encodedName/$withVideo")

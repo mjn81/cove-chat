@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -68,7 +69,7 @@
 
         <service
             android:name=".service.CallService"
-            android:foregroundServiceType="microphone|camera"
+            android:foregroundServiceType="microphone|camera|mediaProjection"
             android:exported="false" />
 
         <!-- Keeps the socket open in the background so message/call notifications work without push. -->

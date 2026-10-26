@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Cove mark (branding/cove-mark.svg) scaled into the adaptive-icon safe zone. -->
+<!-- Cove mark (branding/cove-mark.svg) as a bare terracotta bubble, large in the adaptive-icon safe zone (no tile). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:translateX="23.6"
-        android:translateY="23.1"
-        android:scaleX="0.95"
-        android:scaleY="0.95">
+        android:translateX="28.4"
+        android:translateY="30"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
         <path
-            android:fillColor="#FFFFFF"
+            android:fillColor="#FFF6F1"
             android:pathData="M22,6H42C54,6 60,12 60,22V32C60,43 54,49 42,49H30L16,59V48.5C9,46 4,40 4,32V22C4,12 10,6 22,6z" />
         <path
             android:strokeColor="#C4624A"

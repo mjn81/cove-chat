@@ -18,7 +18,7 @@ Native Android client for **Cove**, built with Kotlin, Jetpack Compose, Ktor, St
   - **Compression**: Zstandard (`com.github.luben:zstd-jni` Level 10).
   - **Tokens & Secrets**: Android `EncryptedSharedPreferences` backed by `MasterKey` in Android KeyStore.
 - **Background Lifecycle**:
-  - Foreground Service (`CallService`) with `microphone|camera` service types for uninterrupted calling on Android 14+.
+  - Foreground Service (`CallService`) with `microphone|camera|mediaProjection` service types (the last only while sharing the screen) for uninterrupted calling on Android 14+.
 
 ---
 
@@ -49,9 +49,51 @@ Native Android client for **Cove**, built with Kotlin, Jetpack Compose, Ktor, St
 
 Server select, login/register, conversations (DMs and channels), live encrypted chat with replies, edits and deletes,
 photos/files, voice and video messages, friends, channel management, explore/join, read receipts and local notifications,
-Whisper (zero-persistence E2EE), WebRTC group calls (audio + camera), profile and settings, light/dark theme and
-English/Persian/Arabic (Arabic is RTL). Not on mobile yet: screen sharing, the raw-UDP air-gapped voice mode (untested),
-and file attachments inside Whispers.
+Whisper, WebRTC group calls, profile and settings, light/dark theme, chat background patterns and English/Persian/Arabic
+(Arabic is RTL). Not on mobile yet: the raw-UDP air-gapped voice mode (untested), a queued-upload list in
+the composer (uploads show a spinner on the "+" button), and screen-share audio.
+
+### Chat input and backgrounds
+
+- **Composer** (`ui/screens/ChatInputBar.kt`): large "+" opens a bottom sheet (`AttachmentSheet.kt`) with photo/video, audio,
+  file and video message; the emoji toggle lives inside the field; one trailing button is a mic when the field is empty
+  (tap = hands-free recording, hold = push-to-talk, slide towards the start edge = cancel, slide up = lock) and a send
+  button once there is text. 48dp targets, 24dp icons, 16sp text.
+- **Chat backgrounds** (`ui/components/ChatBackground.kt`): the four web patterns (`animals`, `space`, `games`, `sweets`, ids
+  shared with the web `chatBackground` setting) are converted from `client-web/src/assets/patterns/*.svg` by
+  `tools/convert_patterns.py` into `app/src/main/assets/patterns/*.txt` (path data with transforms baked in). One 360x740dp tile
+  is rasterised once (cached, <= 2x) and painted behind the message list as a tinted `BitmapShader`, so scrolling never
+  redraws paths. Picked in Settings > Appearance, stored in `PreferencesManager.chatBackground`. Re-run the script when the
+  web SVGs change.
+
+### Calls
+
+`rtc/WebRTCManager.kt` follows `client-web/src/rtc/WebRTCManager.ts` and `backend/internal/rtc/signaling.go` (publish + subscribe
+PeerConnections, one publish offer at a time, camera/mic stream id = user id, screen stream id `screen` which the SFU forwards as
+`<userId>:screen`). Added: MediaProjection screen sharing (foreground service type `mediaProjection`, started before capture;
+no screen audio), camera front/back switch, deafen, `rtc/CallAudio.kt` audio routing (earpiece / speaker / Bluetooth / wired),
+speaking indicator from audio levels, camera and screen quality presets with sender bitrate/fps caps, adaptive degradation on
+`qualityLimitationReason`/RTT, keyframe requests on join, on screen start and when decoded frames stall, receive-quality for shared
+screens (render-side only: the SFU has no simulcast), reconnect (rejoin on network change, socket reconnect or PeerConnection
+failure, keeping mic/camera/screen). `CallService` shows a call-style notification with timer, Mute and Leave. `CallScreen.kt`
+has grid and spotlight layouts (portrait and landscape), a full-screen shared-screen viewer with pinch-zoom, and a "More" sheet.
+
+### Whisper
+
+`whisper/WhisperManager.kt` implements the web flow: ECDH P-256 + HKDF + AES-GCM (`WhisperCrypto.kt`), safety number with a
+verified mark, expiry modes `persistent / 5m / 1h / 24h / session_only` with per-message countdowns, burn, ended/declined
+states, text, files, voice and video messages (10 MB cap; the relay frame limit is 20 MB). Nothing is stored server-side.
+Non-`session_only` sessions keep the session key and wire ciphertext in `whisper/WhisperStore.kt` (per-user, `EncryptedFile`,
+the Android analogue of the web IndexedDB); ended sessions stay readable until deleted. Requests also arrive as a system
+notification with Accept/Decline (`notify/Notifications.kt`, works from the background through `ConnectionService`); message
+notifications never contain Whisper text. Decrypted attachments are written to `cacheDir/whisper` only when opened and deleted
+with their message/session.
+
+### Icons
+
+`res/drawable/ic_cove_mark.xml` is the bare mark (used on the server-select and login screens through `CoveMark`).
+The adaptive launcher icon is the terracotta bubble on a cream background; `ic_launcher_monochrome.xml` (even-odd bubble with
+the waves cut out, generated from the mark geometry) is the Android 13+ themed icon.
 
 ## Architecture Overview
 
@@ -62,8 +104,8 @@ client-android/app/src/main/java/com/nodetalk/client/
 ├── crypto/CryptoManager.kt    # AES-256-GCM channel encryption & zstd
 ├── data/                      # models, encrypted prefs, Ktor REST + WebSocket clients, avatar cache
 ├── notify/Notifications.kt    # Local message notifications and open-chat requests
-├── whisper/                   # ECDH/HKDF/AES-GCM primitives and the in-memory session manager
-├── rtc/                       # WebRTC SFU client (and the untested raw-UDP fallback)
+├── whisper/                   # ECDH/HKDF/AES-GCM primitives, session manager, encrypted local store
+├── rtc/                       # WebRTC SFU client, audio routing and quality presets (and the untested raw-UDP fallback)
 ├── service/CallService.kt     # Foreground service for calls
 └── ui/                        # theme, shared components (incl. i18n), navigation, screens
 ```

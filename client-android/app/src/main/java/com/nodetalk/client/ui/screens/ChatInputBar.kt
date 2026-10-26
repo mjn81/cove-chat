@@ -42,8 +42,17 @@ import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,12 +83,15 @@ import com.nodetalk.client.ui.theme.CoveTheme
 /** What the reply/edit banner above the input shows. */
 class InputContext(val isEdit: Boolean, val author: String, val snippet: String)
 
+
 /**
- * Message composer matching client-web `ChatInputArea` on a small screen (design-reference/24..27): a flat
- * `bg-secondary` box with a hairline border and 8dp radius, a translucent round "+" attachment button, a
- * borderless auto-growing text area and four plain 18dp outline icons (mic, video, emoji, send) on the right.
- * The reply banner sits flush on top, and the voice recorder takes over the row while recording.
+ * Mobile-first message composer. Everything the web `ChatInputArea` offers is still here, but reorganised for one
+ * hand: a large "+" opens a bottom sheet with big labelled actions (photo/video, audio, file, video message), the
+ * text field carries the emoji toggle, and one trailing button is a mic while the field is empty (tap = hands-free
+ * recording, hold = push-to-talk, slide towards the start edge = cancel, slide up = lock) and a send button once
+ * there is text. All targets are 48dp, icons 24dp and text 16sp.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatInputBar(
     input: String,
@@ -100,85 +112,165 @@ fun ChatInputBar(
     onVideo: () -> Unit
 ) {
     val c = CoveTheme.extendedColors
-    val small = LocalConfiguration.current.screenWidthDp <= 400
-    var menuOpen by remember { mutableStateOf(false) }
+    val primary = MaterialTheme.colorScheme.primary
+    var sheetOpen by remember { mutableStateOf(false) }
     var emojiOpen by remember { mutableStateOf(false) }
-    val canSend = input.isNotBlank() && !uploading
-    val shape = RoundedCornerShape(topStart = if (context != null) 0.dp else Radius.md, topEnd = if (context != null) 0.dp else Radius.md, bottomStart = Radius.md, bottomEnd = Radius.md)
+    var locked by remember { mutableStateOf(false) }
+    var dragHint by remember { mutableStateOf(0f) } // 0..1: how close the hold gesture is to cancelling
+    val hasText = input.isNotBlank()
+    val canSend = hasText && !uploading
+    val topRadius = if (context != null) 0.dp else Radius.md
+    val fieldShape = RoundedCornerShape(topStart = topRadius, topEnd = topRadius, bottomStart = Radius.md, bottomEnd = Radius.md)
+    val rtl = AppLanguage.isRtl
+    LaunchedEffect(recording) { if (!recording) { locked = false; dragHint = 0f } }
 
-    Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)) {
-        if (emojiOpen) {
+    if (sheetOpen) {
+        AttachmentSheet(
+            listOf(
+                AttachAction(Icons.Outlined.Image, "Photo or Video", onPickMedia),
+                AttachAction(Icons.Outlined.MusicNote, "Audio", onPickAudio),
+                AttachAction(Icons.Outlined.Description, "Document / File", onPickFile),
+                AttachAction(Icons.Outlined.Videocam, "Video message", onVideo)
+            ),
+            container = c.popover, accent = primary, labelColor = c.textPrimary, onDismiss = { sheetOpen = false }
+        )
+    }
+
+    Column(Modifier.fillMaxWidth().padding(start = Spacing.sm, end = Spacing.sm, top = Spacing.xs, bottom = Spacing.sm)) {
+        if (emojiOpen && !recording) {
             EmojiPanel(onPick = { onInputChange(input + it) }, onDismiss = { emojiOpen = false })
             Spacer(Modifier.height(6.dp))
         }
         context?.let { ReplyBanner(it, onCancelContext) }
 
-        Column(
-            Modifier.fillMaxWidth().clip(shape).background(c.card).border(1.dp, c.border, shape)
-        ) {
-            if (recording) {
-                Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CoveIconButton(Icons.Outlined.Delete, "Cancel recording", onCancelRecording, size = 26.dp, iconSize = 18.dp)
-                    Spacer(Modifier.width(8.dp))
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Recording  %d:%02d".format(elapsedSeconds / 60, elapsedSeconds % 60), color = c.textPrimary, fontSize = CoveType.label.fontSize, modifier = Modifier.weight(1f))
-                    CoveIconButton(Icons.AutoMirrored.Outlined.Send, "Send voice message", onFinishRecording, tint = MaterialTheme.colorScheme.primary, size = 26.dp, iconSize = 18.dp, mirrorInRtl = true)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            if (recording && locked) {
+                Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onCancelRecording), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Delete, "Cancel recording", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(26.dp))
                 }
-            } else {
-                Row(
-                    Modifier.fillMaxWidth().padding(if (small) 8.dp else 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
+            } else if (!recording) {
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape).background(c.textMuted.copy(alpha = 0.1f)).clickable(enabled = !uploading) { emojiOpen = false; sheetOpen = true },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(Modifier.padding(top = 2.dp)) {
-                        Box(
-                            Modifier.size(20.dp).clip(CircleShape).background(c.textMuted.copy(alpha = 0.1f)).clickable(enabled = !uploading) { menuOpen = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (uploading) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(12.dp))
-                            else Icon(Icons.Outlined.Add, "Add attachment", tint = c.textMuted, modifier = Modifier.size(12.dp))
-                        }
-                        DropdownMenu(
-                            expanded = menuOpen, onDismissRequest = { menuOpen = false },
-                            shape = CoveShapes.lg, containerColor = c.popover
-                        ) {
-                            CoveListRow("Photo or Video", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.Image, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickMedia() })
-                            CoveListRow("Audio", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.MusicNote, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickAudio() })
-                            CoveListRow("Document / File", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.Description, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickFile() })
-                        }
-                    }
+                    if (uploading) CircularProgressIndicator(color = primary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                    else Icon(Icons.Outlined.Add, "Add attachment", tint = c.textMuted, modifier = Modifier.size(28.dp))
+                }
+            }
 
-                    Box(Modifier.weight(1f).heightIn(min = 24.dp, max = 140.dp), contentAlignment = Alignment.CenterStart) {
+            Row(
+                Modifier.weight(1f).heightIn(min = 48.dp).clip(fieldShape).background(c.card).border(1.dp, c.border, fieldShape),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (recording) {
+                    Spacer(Modifier.width(Spacing.lg))
+                    Box(Modifier.size(12.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(mmss(elapsedSeconds), color = c.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Spacer(Modifier.weight(1f))
+                    if (!locked) {
+                        Text(if (rtl) "Slide right to cancel" else "Slide left to cancel", color = c.textMuted.copy(alpha = 1f - dragHint * 0.6f), fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(end = Spacing.md))
+                    } else {
+                        Text("Recording", color = c.textMuted, fontSize = 14.sp, modifier = Modifier.padding(end = Spacing.md))
+                    }
+                } else {
+                    Box(Modifier.weight(1f).padding(start = Spacing.lg, top = 12.dp, bottom = 12.dp).heightIn(max = 140.dp), contentAlignment = Alignment.CenterStart) {
                         if (input.isEmpty()) {
-                            Text(
-                                if (small) "Message..." else "Message $targetLabel",
-                                color = c.textMuted.copy(alpha = 0.6f), fontSize = CoveType.body.fontSize, lineHeight = 24.sp, maxLines = 1
-                            )
+                            Text("Message $targetLabel", color = c.textMuted.copy(alpha = 0.7f), fontSize = 16.sp, lineHeight = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         BasicTextField(
                             value = input,
                             onValueChange = onInputChange,
                             textStyle = TextStyle(
-                                color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 24.sp,
-                                textDirection = TextDirection.Content,
+                                color = c.textPrimary, fontSize = 16.sp, lineHeight = 24.sp, textDirection = TextDirection.Content,
                                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
                             ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            cursorBrush = SolidColor(primary),
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(if (small) 2.dp else 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        CoveIconButton(Icons.Outlined.Mic, "Record voice message", onStartRecording, size = 26.dp, iconSize = 18.dp)
-                        CoveIconButton(Icons.Outlined.Videocam, "Record video message", onVideo, size = 26.dp, iconSize = 18.dp)
-                        CoveIconButton(Icons.Outlined.EmojiEmotions, "Add emoji", { emojiOpen = !emojiOpen }, size = 26.dp, iconSize = 18.dp)
-                        CoveIconButton(Icons.AutoMirrored.Outlined.Send, "Send message", { if (canSend) onSend() }, enabled = canSend, size = 26.dp, iconSize = 18.dp, mirrorInRtl = true)
-                    }
+                    CoveIconButton(
+                        Icons.Outlined.EmojiEmotions, "Add emoji", { emojiOpen = !emojiOpen },
+                        tint = if (emojiOpen) primary else c.textMuted, size = 48.dp, iconSize = 24.dp
+                    )
                 }
             }
+
+            // One trailing button: send when there is text (or while a locked recording is running), mic otherwise.
+            val showSend = hasText || (recording && locked)
+            if (showSend) {
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape).background(if (canSend || recording) primary else c.textMuted.copy(alpha = 0.2f))
+                        .clickable(enabled = canSend || recording) { if (recording) onFinishRecording() else onSend() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.Send, if (recording) "Send voice message" else "Send message", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp).mirrorInRtl())
+                }
+            } else {
+                MicButton(
+                    enabled = !uploading, recording = recording, rtl = rtl,
+                    onStart = { emojiOpen = false; onStartRecording() },
+                    onCancel = onCancelRecording, onFinish = onFinishRecording,
+                    onLock = { locked = true }, onDrag = { dragHint = it }
+                )
+            }
         }
+    }
+}
+
+/**
+ * Mic button with the gesture state machine: press starts recording; releasing after a long press sends it,
+ * releasing after a short tap locks it hands-free, dragging towards the start edge past 80dp cancels, dragging
+ * up past 64dp locks.
+ */
+@Composable
+private fun MicButton(
+    enabled: Boolean, recording: Boolean, rtl: Boolean,
+    onStart: () -> Unit, onCancel: () -> Unit, onFinish: () -> Unit, onLock: () -> Unit, onDrag: (Float) -> Unit
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val density = LocalDensity.current
+    val cancelPx = with(density) { 80.dp.toPx() }
+    val lockPx = with(density) { 64.dp.toPx() }
+    val currentEnabled by rememberUpdatedState(enabled)
+    val start by rememberUpdatedState(onStart)
+    val cancel by rememberUpdatedState(onCancel)
+    val finish by rememberUpdatedState(onFinish)
+    val lock by rememberUpdatedState(onLock)
+    val drag by rememberUpdatedState(onDrag)
+    Box(
+        Modifier.size(48.dp).clip(CircleShape).background(if (recording) MaterialTheme.colorScheme.error else androidx.compose.ui.graphics.Color.Transparent)
+            .pointerInput(rtl, cancelPx, lockPx) {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    if (!currentEnabled) return@awaitEachGesture
+                    down.consume()
+                    start()
+                    val t0 = System.currentTimeMillis()
+                    var resolved = false
+                    while (true) {
+                        val ev = awaitPointerEvent()
+                        val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                        val dx = ch.position.x - down.position.x
+                        val dy = ch.position.y - down.position.y
+                        val towardsCancel = if (rtl) dx else -dx
+                        drag((towardsCancel / cancelPx).coerceIn(0f, 1f))
+                        if (!resolved && towardsCancel > cancelPx) { resolved = true; cancel(); drag(0f) }
+                        else if (!resolved && -dy > lockPx) { resolved = true; lock(); drag(0f) }
+                        ch.consume()
+                        if (!ch.pressed) break
+                    }
+                    if (!resolved) {
+                        // A quick tap leaves the recorder running hands-free; a held press is push-to-talk.
+                        if (System.currentTimeMillis() - t0 < 350) lock() else finish()
+                        drag(0f)
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Outlined.Mic, "Record voice message", tint = if (recording) MaterialTheme.colorScheme.onError else CoveTheme.extendedColors.textMuted, modifier = Modifier.size(24.dp))
     }
 }
 

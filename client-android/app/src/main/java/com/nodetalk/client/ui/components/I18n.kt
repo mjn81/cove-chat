@@ -179,6 +179,7 @@ object Translations {
         "Incoming call" to "تماس ورودی", "is calling you…" to "با شما تماس می‌گیرد…", "Answer" to "پاسخ", "Decline" to "رد",
         "Stay connected in the background" to "اتصال در پس‌زمینه", "Keeps a quiet notification so messages and incoming calls reach you even when Cove is closed." to "با یک اعلان بی‌صدا، پیام‌ها و تماس‌ها حتی با بسته بودن Cove به شما می‌رسند.",
         "There is no push service on a self-hosted server, so Cove keeps its own connection open to notify you." to "سرور شخصی سرویس پوش ندارد؛ بنابراین Cove اتصال خودش را برای اطلاع‌رسانی باز نگه می‌دارد.",
+        "Copied" to "کپی شد", "No members found" to "عضوی پیدا نشد",
         "Idle" to "غیرفعال","Invisible" to "نامرئی", "Invite link copied" to "پیوند دعوت کپی شد", "Invite link" to "پیوند دعوت",
         "Join Cove and start chatting." to "به Cove بپیوندید و گفتگو را شروع کنید.", "Join calls muted" to "ورود به تماس با میکروفون بسته",
         "Join with invite link" to "پیوستن با پیوند دعوت", "Join" to "پیوستن", "Keep until closed" to "نگه‌داشتن تا بسته شدن", "LANGUAGE" to "زبان",
@@ -222,7 +223,7 @@ object Translations {
         "Couldn't read the image." to "خواندن تصویر ممکن نشد.", "Sent" to "ارسال شد", "Attach" to "پیوست", "Chat" to "گفتگو", "Close" to "بستن", "Change password" to "تغییر گذرواژه",
         "Cancel" to "لغو", "Waiting…" to "در انتظار…", "Safety number" to "عدد ایمنی", "Your request was declined." to "درخواست شما رد شد.", "The other person ended the session." to "طرف مقابل نشست را پایان داد.",
         "Couldn't establish the encrypted session." to "برقراری نشست رمزنگاری‌شده ممکن نشد."
-    )
+    ) + ExtraFa
 
     val ar: Map<String, String> = mapOf(
         "ADMIN" to "مشرف", "OWNER" to "المالك", "MEMBER" to "عضو",
@@ -258,6 +259,7 @@ object Translations {
         "Incoming call" to "مكالمة واردة", "is calling you…" to "يتصل بك…", "Answer" to "إجابة", "Decline" to "رفض",
         "Stay connected in the background" to "البقاء متصلاً في الخلفية", "Keeps a quiet notification so messages and incoming calls reach you even when Cove is closed." to "يُبقي إشعارًا هادئًا ليصلك الرسائل والمكالمات حتى عند إغلاق Cove.",
         "There is no push service on a self-hosted server, so Cove keeps its own connection open to notify you." to "لا يوجد خدمة دفع على الخادم المستضاف ذاتيًا، لذا يُبقي Cove اتصاله مفتوحًا لإشعارك.",
+        "Copied" to "تم النسخ", "No members found" to "لم يتم العثور على أعضاء",
         "Idle" to "خامل","Invisible" to "غير مرئي", "Invite link copied" to "تم نسخ رابط الدعوة", "Invite link" to "رابط الدعوة",
         "Join Cove and start chatting." to "انضم إلى Cove وابدأ المحادثة.", "Join calls muted" to "الانضمام للمكالمات والميكروفون مكتوم",
         "Join with invite link" to "الانضمام برابط دعوة", "Join" to "انضمام", "Keep until closed" to "الاحتفاظ حتى الإغلاق", "LANGUAGE" to "اللغة",
@@ -301,5 +303,5 @@ object Translations {
         "Couldn't read the image." to "تعذرت قراءة الصورة.", "Sent" to "تم الإرسال", "Attach" to "إرفاق", "Chat" to "محادثة", "Change password" to "تغيير كلمة المرور",
         "Waiting…" to "في الانتظار…", "Your request was declined." to "تم رفض طلبك.", "The other person ended the session." to "أنهى الطرف الآخر الجلسة.",
         "Couldn't establish the encrypted session." to "تعذر إنشاء الجلسة المشفرة."
-    )
+    ) + ExtraAr
 }

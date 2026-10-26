@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
         handleOpenIntent(intent)
 
         ThemeSettings.dark = CoveApp.instance.preferencesManager.darkTheme
+        com.nodetalk.client.ui.components.ChatBackgroundSettings.id = CoveApp.instance.preferencesManager.chatBackground
         com.nodetalk.client.ui.components.AppLanguage.code = CoveApp.instance.preferencesManager.language
 
         setContent {
@@ -47,6 +48,16 @@ class MainActivity : ComponentActivity() {
 
     /** Notification taps carry the chat to open; NavGraph observes [OpenChatRequest]. */
     private fun handleOpenIntent(intent: android.content.Intent?) {
+        // Whisper notification actions: Accept (also tapping the request) and opening a session.
+        val whisperId = intent?.getStringExtra(NotificationHelper.EXTRA_WHISPER_ID)
+        if (whisperId != null) {
+            val whisper = CoveApp.instance.whisperManager
+            when (intent.action) {
+                NotificationHelper.ACTION_ACCEPT_WHISPER -> { whisper.acceptById(whisperId)?.let { whisper.openRequest = it } }
+                NotificationHelper.ACTION_OPEN_WHISPER -> whisper.openRequest = whisperId
+            }
+            return
+        }
         val id = intent?.getStringExtra(NotificationHelper.EXTRA_CHANNEL_ID) ?: return
         val name = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME).orEmpty()
         if (intent.action == NotificationHelper.ACTION_ANSWER_CALL) {

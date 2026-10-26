@@ -120,6 +120,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            com.nodetalk.client.ui.components.CoveMark(size = 72.dp)
+            Spacer(Modifier.height(16.dp))
             Text(
                 if (isRegister) "Create an account" else "Welcome back!",
                 color = c.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center

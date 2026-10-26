@@ -337,7 +337,7 @@ fun VoiceSettings() {
 
 private fun dirSize(f: File): Long = if (f.isFile) f.length() else f.listFiles()?.sumOf { dirSize(it) } ?: 0L
 
-private fun formatBytes(b: Long): String = when {
+internal fun formatBytes(b: Long): String = when {
     b >= 1 shl 20 -> "%.1f MB".format(b / 1048576.0)
     b >= 1 shl 10 -> "%.0f KB".format(b / 1024.0)
     else -> "$b B"

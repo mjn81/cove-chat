@@ -106,7 +106,7 @@ class VoiceRecorder(private val context: Context) {
         startedAt = SystemClock.elapsedRealtime()
         handler.post(sampler)
         true
-    }.getOrDefault(false)
+    }.onFailure { android.util.Log.e("VoiceRecorder", "start failed", it) }.getOrDefault(false)
 
     /** A finished recording: the file, its length in seconds and 60 peak values (0-100) for the waveform. */
     class Result(val file: File, val seconds: Int, val peaks: ByteArray)

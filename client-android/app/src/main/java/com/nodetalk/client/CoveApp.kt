@@ -49,7 +49,16 @@ class CoveApp : Application() {
         rawUdpVoiceManager = RawUdpVoiceManager()
 
         notificationHelper = NotificationHelper(this)
-        whisperManager = com.nodetalk.client.whisper.WhisperManager(webSocketManager) { preferencesManager.userId }
+        whisperManager = com.nodetalk.client.whisper.WhisperManager(this, webSocketManager, { preferencesManager.userId }, { preferencesManager.username })
+        whisperManager.notifier = object : com.nodetalk.client.whisper.WhisperNotifier {
+            override fun request(invite: com.nodetalk.client.whisper.WhisperInvite) {
+                if (preferencesManager.notificationsEnabled) notificationHelper.showWhisperRequest(invite)
+            }
+            override fun cancelRequest(sessionId: String) = notificationHelper.cancelWhisperRequest(sessionId)
+            override fun message(session: com.nodetalk.client.whisper.WhisperSession) {
+                if (preferencesManager.notificationsEnabled) notificationHelper.showWhisperMessage(session.id, session.peerName)
+            }
+        }
         appScope.launch {
             webSocketManager.messageFlow.collect { m ->
                 val me = preferencesManager.userId

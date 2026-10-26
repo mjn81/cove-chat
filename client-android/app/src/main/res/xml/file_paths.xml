@@ -4,4 +4,6 @@
     <cache-path name="attachments" path="attachments/" />
     <!-- Camera output for video messages, deleted after sending. -->
     <cache-path name="video" path="video/" />
+    <!-- Decrypted Whisper attachments, deleted with their message or session. -->
+    <cache-path name="whisper" path="whisper/" />
 </paths>

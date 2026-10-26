@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The bare Cove mark (branding/cove-mark.svg): terracotta speech bubble with two white waves, no background tile. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#C4624A"
+        android:pathData="M22,6H42C54,6 60,12 60,22V32C60,43 54,49 42,49H30L16,59V48.5C9,46 4,40 4,32V22C4,12 10,6 22,6z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M16,23q4,-5 8,0t8,0t8,0t8,0" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M21,33q2.75,-4 5.5,0t5.5,0t5.5,0t5.5,0" />
+</vector>

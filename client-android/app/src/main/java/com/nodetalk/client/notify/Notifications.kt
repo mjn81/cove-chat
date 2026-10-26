@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
+import com.nodetalk.client.whisper.WhisperInvite
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
@@ -240,6 +241,63 @@ class NotificationHelper(private val app: Application) {
 
     fun cancelIncomingCall(channelId: String) = manager.cancel(CALL_ID_BASE + channelId.hashCode())
 
+    // ── Whisper ──────────────────────────────────────────────────────────────
+
+    /**
+     * Heads-up notification for a Whisper request with Accept (opens the app on the new session) and Decline
+     * (answered from the notification without opening the app). Works from the background through ConnectionService.
+     */
+    fun showWhisperRequest(inv: WhisperInvite) {
+        if (!canNotify()) return
+        val accept = Intent(app, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = ACTION_ACCEPT_WHISPER
+            putExtra(EXTRA_WHISPER_ID, inv.sessionId)
+        }
+        val acceptPi = PendingIntent.getActivity(app, ("wa" + inv.sessionId).hashCode(), accept, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val decline = Intent(app, NotificationActionReceiver::class.java).setAction(ACTION_DECLINE_WHISPER).putExtra(EXTRA_WHISPER_ID, inv.sessionId)
+        val declinePi = PendingIntent.getBroadcast(app, ("wd" + inv.sessionId).hashCode(), decline, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setColor(0xFFC4624A.toInt())
+            .setContentTitle(t("Whisper request"))
+            .setContentText("${inv.initiatorName} ${t("wants to start an end-to-end encrypted Whisper.")}")
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setAutoCancel(true)
+            .setContentIntent(acceptPi)
+            .addAction(NotificationCompat.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, t("Decline"), declinePi).build())
+            .addAction(NotificationCompat.Action.Builder(android.R.drawable.ic_menu_send, t("Accept"), acceptPi).build())
+            .build()
+        manager.notify(WHISPER_ID_BASE + inv.sessionId.hashCode(), n)
+    }
+
+    fun cancelWhisperRequest(sessionId: String) = manager.cancel(WHISPER_ID_BASE + sessionId.hashCode())
+
+    /** "New Whisper message" with no text: Whisper content must never reach the notification shade. */
+    fun showWhisperMessage(sessionId: String, peerName: String) {
+        if (!canNotify()) return
+        val open = Intent(app, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = ACTION_OPEN_WHISPER
+            putExtra(EXTRA_WHISPER_ID, sessionId)
+        }
+        val pi = PendingIntent.getActivity(app, ("wo" + sessionId).hashCode(), open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setColor(0xFFC4624A.toInt())
+            .setContentTitle(peerName)
+            .setContentText(t("New Whisper message"))
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .setContentIntent(pi)
+            .build()
+        manager.notify(WHISPER_ID_BASE + 1 + sessionId.hashCode(), n)
+    }
+
     companion object {
         const val CHANNEL_MESSAGES = "messages"
         const val CHANNEL_CALLS = "calls"
@@ -247,6 +305,7 @@ class NotificationHelper(private val app: Application) {
         const val GROUP_MESSAGES = "nodetalk_messages"
         const val SUMMARY_ID = 1
         const val CALL_ID_BASE = 100_000
+        const val WHISPER_ID_BASE = 200_000
         const val MAX_LINES = 8
         const val CALL_RING_TIMEOUT_MS = 45_000L
 
@@ -258,5 +317,9 @@ class NotificationHelper(private val app: Application) {
         const val ACTION_DISMISSED = "com.nodetalk.client.DISMISSED"
         const val ACTION_DECLINE_CALL = "com.nodetalk.client.DECLINE_CALL"
         const val ACTION_ANSWER_CALL = "com.nodetalk.client.ANSWER_CALL"
+        const val ACTION_ACCEPT_WHISPER = "com.nodetalk.client.ACCEPT_WHISPER"
+        const val ACTION_DECLINE_WHISPER = "com.nodetalk.client.DECLINE_WHISPER"
+        const val ACTION_OPEN_WHISPER = "com.nodetalk.client.OPEN_WHISPER"
+        const val EXTRA_WHISPER_ID = "whisper_session_id"
     }
 }
