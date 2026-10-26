@@ -7,7 +7,7 @@ import { BANNER_PRESETS } from '../utils/banner-presets';
 import { sanitizeHexInput } from '../utils/profile-validation';
 
 interface BannerColorPickerProps {
-	/** Current colour as `#RRGGBB` (may be partially typed). */
+	/** Current colour as `#RRGGBB` (may be partially typed); empty means the theme default. */
 	value: string;
 	onChange: (color: string) => void;
 	onClose: () => void;
@@ -49,16 +49,19 @@ export const BannerColorPicker = ({ value, onChange, onClose }: BannerColorPicke
 			</div>
 
 			<div className="flex items-center gap-2 border-t border-border/50 pt-2">
-				<div className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ backgroundColor: value }} />
+				<div className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ backgroundColor: value || 'hsl(var(--primary))' }} />
 				<div dir="ltr" className="flex flex-1 items-center rounded-md border border-border bg-background px-2 py-1 text-xs">
 					<span className="me-1 font-mono text-muted-foreground">#</span>
 					<input
 						type="text"
 						maxLength={6}
 						value={value.replace('#', '')}
-						onChange={(e) => onChange('#' + sanitizeHexInput(e.target.value))}
+						onChange={(e) => {
+							const hex = sanitizeHexInput(e.target.value);
+							onChange(hex ? '#' + hex : '');
+						}}
 						aria-label={t('settings.banner_color')}
-						placeholder="5865F2"
+						placeholder="D9826A"
 						className="w-full border-none bg-transparent font-mono text-xs uppercase text-foreground outline-none"
 						autoComplete="off"
 						spellCheck={false}

@@ -142,7 +142,7 @@ export const WhisperComposer = ({
 					<textarea
 						ref={textareaRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] flex-1 resize-none border-none bg-transparent py-0 text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
 						placeholder={
 							isClosed ? t('whisper.chat.session_ended') : t('composer.message_to', { target: peerUsername })
 						}

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 
 import { useAuthStore } from '@/store/store';
 import { logger } from '@/utils/logger';
-import { DEFAULT_BANNER_COLOR } from '../utils/banner-presets';
 import { validateUsername } from '../utils/profile-validation';
 
 /**
@@ -17,7 +16,7 @@ export function useProfileForm() {
 
 	const [username, setUsernameState] = useState(user?.username || '');
 	const [customMsg, setCustomMsg] = useState(user?.custom_msg || '');
-	const [bannerColor, setBannerColor] = useState(user?.banner_color || DEFAULT_BANNER_COLOR);
+	const [bannerColor, setBannerColor] = useState(user?.banner_color || '');
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -27,11 +26,11 @@ export function useProfileForm() {
 		/* eslint-disable react-hooks/set-state-in-effect */
 		setUsernameState(user.username || '');
 		setCustomMsg(user.custom_msg || '');
-		setBannerColor(user.banner_color || DEFAULT_BANNER_COLOR);
+		setBannerColor(user.banner_color || '');
 		/* eslint-enable react-hooks/set-state-in-effect */
 	}, [user]);
 
-	const savedBanner = user?.banner_color || DEFAULT_BANNER_COLOR;
+	const savedBanner = user?.banner_color || '';
 	const isDirty =
 		username.trim() !== (user?.username || '') ||
 		customMsg !== (user?.custom_msg || '') ||
@@ -45,7 +44,7 @@ export function useProfileForm() {
 	const reset = useCallback(() => {
 		setUsernameState(user?.username || '');
 		setCustomMsg(user?.custom_msg || '');
-		setBannerColor(user?.banner_color || DEFAULT_BANNER_COLOR);
+		setBannerColor(user?.banner_color || '');
 		setError(null);
 	}, [user]);
 

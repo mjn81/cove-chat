@@ -84,7 +84,7 @@ export const AccountTab = () => {
 			<div className="mb-6 overflow-hidden rounded-lg border border-border/50 bg-secondary/50">
 				<div
 					onClick={() => setShowColorPicker((v) => !v)}
-					style={{ backgroundColor: profile.bannerColor }}
+					style={{ backgroundColor: profile.bannerColor || 'hsl(var(--primary))' }}
 					className="group relative flex h-28 w-full cursor-pointer select-none items-start justify-end p-2.5 transition-colors"
 					title={t('settings.change_banner_color')}
 				>

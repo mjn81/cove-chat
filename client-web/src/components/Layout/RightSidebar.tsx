@@ -1,4 +1,5 @@
 import { useState, Profiler, useMemo, memo } from 'react';
+import { IconButton } from '@/components/icon-button';
 import { statusDotClass } from '@/domains/users/utils/status';
 import { logProfiler } from '@/utils/profiler';
 
@@ -266,39 +267,40 @@ export default function RightSidebar({
 					</div>
 				</ScrollArea>
 
-				{/* Leave Channel Footer */}
+				{/* Leave Channel footer: same strip and destructive styling as the left sidebar's log-out. */}
 				{!isDM && (
 					<div
-						className={`border-t border-border/50 bg-background/20 shrink-0 ${isCollapsed ? 'flex items-center justify-center h-14' : 'p-4'}`}
+						className={`relative z-10 shrink-0 border-t border-border/50 bg-secondary ${
+							isCollapsed ? 'flex items-center justify-center py-2.5' : 'flex h-[52px] items-center px-2'
+						}`}
 					>
 						{isCollapsed ? (
 							<TooltipProvider delayDuration={0}>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<button
+										<IconButton
+											label="Leave Channel"
+											tone="destructive"
 											disabled={loading}
 											onClick={() => setShowLeaveConfirm(true)}
-											className="w-10 h-10 flex items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20 active:scale-[0.98]"
 										>
-											<LogOut size={20} />
-										</button>
+											<LogOut className="h-4 w-4 pointer-events-none" />
+										</IconButton>
 									</TooltipTrigger>
-									<TooltipContent side="left" className="font-bold">
+									<TooltipContent side="left" className="font-bold text-destructive">
 										Leave Channel
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
 						) : (
 							<button
+								type="button"
 								disabled={loading}
 								onClick={() => setShowLeaveConfirm(true)}
-								className="flex items-center justify-center w-full gap-2 py-2.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 transition-all font-bold border border-transparent hover:border-destructive/20 active:scale-[0.98] overflow-hidden px-2"
-								title="Leave Channel"
+								className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md px-2 text-[13px] font-bold text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
 							>
-								<LogOut size={16} className="shrink-0" />
-								<span className="truncate whitespace-nowrap">
-									Leave Channel
-								</span>
+								<LogOut className="pointer-events-none h-4 w-4 shrink-0" />
+								<span className="truncate whitespace-nowrap">Leave Channel</span>
 							</button>
 						)}
 					</div>
