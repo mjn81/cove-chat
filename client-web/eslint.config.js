@@ -23,4 +23,9 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
     }
   },
+  {
+    // Shadcn primitives export their cva variants next to the component by design.
+    files: ['src/components/ui/**/*.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])
