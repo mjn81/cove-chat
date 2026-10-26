@@ -1,7 +1,9 @@
+// guardrail-allow hexOrRgbLiteral: avatar/banner colours are user data stored as hex, not theme colours.
 import { useMemo, memo } from 'react';
 import { minidenticon } from 'minidenticons';
 import { Avatar as RadixAvatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCachedAvatar } from '@/lib/avatarCache';
+import { getFileUrl } from '@/api/client';
 
 interface AvatarProps {
   userId: string;
@@ -105,9 +107,37 @@ export function ChannelInitialsAvatar({
 				fontSize: `${fontSize}px`,
 			}}
 		>
-			<span className="leading-none select-none pointer-events-none flex items-center justify-center -translate-y-[0.5px]">
+			<span style={{ transform: `translateY(${Math.round(size * 0.06)}px)` }} className="leading-none select-none pointer-events-none flex items-center justify-center ">
 				{text}
 			</span>
+		</div>
+	);
+}
+
+/**
+ * Round avatar for a channel: its uploaded picture when it has one, otherwise
+ * coloured initials. Shared by the sidebar, search and pickers.
+ *
+ * @param avatarId - File id of the channel picture, if any.
+ */
+export function ChannelAvatar({
+	id,
+	name,
+	avatarId,
+	size,
+}: {
+	id?: string;
+	name: string;
+	avatarId?: string;
+	size: number;
+}) {
+	if (!avatarId) return <ChannelInitialsAvatar id={id} name={name} size={size} />;
+	return (
+		<div
+			className="shrink-0 overflow-hidden rounded-full border border-border/40 bg-secondary"
+			style={{ width: size, height: size }}
+		>
+			<img src={getFileUrl(avatarId)} alt={name} className="h-full w-full object-cover" draggable={false} />
 		</div>
 	);
 }

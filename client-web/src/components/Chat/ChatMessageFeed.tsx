@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { formatClockTime, formatDayLabel } from '@/utils/datetime';
 import { useRef, useMemo, memo, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown } from 'lucide-react';
@@ -35,27 +37,6 @@ function isGrouped(
 	);
 }
 
-function formatTime(iso: string): string {
-	return new Date(iso).toLocaleTimeString([], {
-		hour: '2-digit',
-		minute: '2-digit',
-	});
-}
-
-function formatDate(iso: string): string {
-	const d = new Date(iso);
-	const today = new Date();
-	const yesterday = new Date(today);
-	yesterday.setDate(today.getDate() - 1);
-	if (d.toDateString() === today.toDateString()) return 'Today';
-	if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-	return d.toLocaleDateString([], {
-		weekday: 'long',
-		month: 'long',
-		day: 'numeric',
-	});
-}
-
 export const ChatMessageFeed = memo(
 	({
 		messages,
@@ -66,7 +47,12 @@ export const ChatMessageFeed = memo(
 		hasNextPage,
 		isFetchingNextPage,
 	}: ChatMessageFeedProps) => {
+		const { t } = useTranslation();
 		const feedRef = useRef<HTMLDivElement>(null);
+		const dayLabels = useMemo(
+			() => ({ today: t('chat.today'), yesterday: t('chat.yesterday') }),
+			[t],
+		);
 
 		const renderedItems = useMemo(() => {
 			const items: Array<
@@ -86,9 +72,9 @@ export const ChatMessageFeed = memo(
 				const grouped = isGrouped(olderMsg, msg);
 				items.push({ type: 'msg', msg, grouped, id: msg.id });
 
-				const dateLabel = formatDate(msg.sent_at);
+				const dateLabel = formatDayLabel(msg.sent_at, dayLabels);
 				const nextMsg = messages[i + 1]; // next in array = older in time
-				const nextDateLabel = nextMsg ? formatDate(nextMsg.sent_at) : '';
+				const nextDateLabel = nextMsg ? formatDayLabel(nextMsg.sent_at, dayLabels) : '';
 
 				if (dateLabel !== nextDateLabel) {
 					items.push({
@@ -108,7 +94,7 @@ export const ChatMessageFeed = memo(
 			}
 
 			return items;
-		}, [messages, hasNextPage]);
+		}, [messages, hasNextPage, dayLabels]);
 
 		const user = useAuthStore((state) => state.user);
 		const isDM = isDirectMessage(channel);
@@ -253,7 +239,7 @@ export const ChatMessageFeed = memo(
 									msg={item.msg}
 									channel={channel}
 									grouped={item.grouped}
-									formatTime={formatTime}
+									formatTime={formatClockTime}
 									onReply={onReply}
 									onForward={onForward}
 									replyTarget={
@@ -293,7 +279,7 @@ export const ChatMessageFeed = memo(
 				type="button"
 				onClick={scrollToBottom}
 				aria-label="Scroll to latest messages"
-				className={`absolute bottom-4 right-4 z-20 w-9 h-9 rounded-full bg-secondary border border-border shadow-md flex items-center justify-center text-foreground transition-all duration-200 hover:bg-accent ${
+				className={`absolute bottom-4 end-4 z-20 w-9 h-9 rounded-full bg-secondary border border-border shadow-md flex items-center justify-center text-foreground transition-all duration-200 hover:bg-accent ${
 					isAtBottom
 						? 'opacity-0 scale-90 pointer-events-none'
 						: 'opacity-100 scale-100'

@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Volume2, VolumeX, Maximize2, X } from 'lucide-react';
+import { Play, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 import type { WhisperMessageFile } from '@/store/whisperStore';
 import { CustomVideoPlayer } from './CustomVideoPlayer';
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { ModalShell } from '@/components/modal-shell';
 
 interface WhisperVideoBubbleProps {
 	file: WhisperMessageFile;
 }
 
 export const WhisperVideoBubble: React.FC<WhisperVideoBubbleProps> = ({ file }) => {
+	const { t } = useTranslation();
 	const [isMuted, setIsMuted] = useState(true);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(file.duration || 0);
@@ -116,7 +114,7 @@ export const WhisperVideoBubble: React.FC<WhisperVideoBubbleProps> = ({ file }) 
 				) : (
 					<div className="w-full h-full bg-secondary/80 flex items-center justify-center">
 						<div className="w-14 h-14 rounded-2xl bg-primary/90 flex items-center justify-center text-primary-foreground shadow-lg group-hover:scale-110 transition">
-							<Play size={26} fill="currentColor" className="ml-1" />
+							<Play size={26} fill="currentColor" className="ms-1" />
 						</div>
 					</div>
 				)}
@@ -186,25 +184,18 @@ export const WhisperVideoBubble: React.FC<WhisperVideoBubbleProps> = ({ file }) 
 			</div>
 
 			{/* Modal Player Dialog */}
-			<Dialog open={isPlayerOpen} onOpenChange={setIsPlayerOpen}>
-				<DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-border shadow-2xl rounded-2xl">
-					<DialogTitle className="sr-only">Video Message</DialogTitle>
-					<div className="relative">
-						<button
-							type="button"
-							onClick={() => setIsPlayerOpen(false)}
-							className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition cursor-pointer"
-						>
-							<X size={20} />
-						</button>
-						<CustomVideoPlayer
-							src={file.blobUrl || ''}
-							autoPlay
-							className="w-full max-h-[80vh]"
-						/>
-					</div>
-				</DialogContent>
-			</Dialog>
+			<ModalShell
+				open={isPlayerOpen}
+				onOpenChange={setIsPlayerOpen}
+				title={t('chat.video.player_title')}
+				size="media"
+			>
+				<CustomVideoPlayer
+					src={file.blobUrl || ''}
+					autoPlay
+					className="max-h-[80vh] w-full"
+				/>
+			</ModalShell>
 		</div>
 	);
 };

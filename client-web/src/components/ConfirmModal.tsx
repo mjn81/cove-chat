@@ -1,11 +1,9 @@
 import React from 'react';
-import { X, AlertTriangle } from 'lucide-react';
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { 
-	Dialog, 
-	DialogPortal, 
-	DialogOverlay,
-} from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { TriangleAlert } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { ModalShell } from '@/components/modal-shell';
 
 interface ConfirmModalProps {
 	isOpen: boolean;
@@ -18,72 +16,55 @@ interface ConfirmModalProps {
 	variant?: 'danger' | 'primary';
 }
 
+/**
+ * Small confirmation dialog. `onConfirm` runs first, then `onClose`.
+ *
+ * @param variant - `danger` shows a warning icon and a destructive confirm button.
+ * @param confirmText - Defaults to the translated "Confirm".
+ * @param cancelText - Defaults to the translated "Cancel".
+ */
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 	isOpen,
 	onClose,
 	onConfirm,
 	title,
 	message,
-	confirmText = 'Confirm',
-	cancelText = 'Cancel',
+	confirmText,
+	cancelText,
 	variant = 'primary',
 }) => {
+	const { t } = useTranslation();
+
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<DialogPortal>
-				<DialogOverlay className="z-[1000] backdrop-blur-[2px]" />
-				<DialogPrimitive.Content 
-					className="fixed left-[50%] top-[50%] z-[1001] w-full max-w-md translate-x-[-50%] translate-y-[-50%] outline-none animate-in zoom-in-95 duration-200"
-				>
-					<div 
-						className="bg-card w-full rounded-xl shadow-2xl border border-border overflow-hidden"
-						onClick={(e) => e.stopPropagation()}
+		<ModalShell
+			open={isOpen}
+			onOpenChange={(open) => !open && onClose()}
+			title={title}
+			size="sm"
+			footer={
+				<>
+					<Button type="button" variant="ghost" onClick={onClose}>
+						{cancelText ?? t('common.cancel')}
+					</Button>
+					<Button
+						type="button"
+						variant={variant === 'danger' ? 'destructive' : 'default'}
+						onClick={() => {
+							onConfirm();
+							onClose();
+						}}
 					>
-						{/* Header */}
-						<div className="flex items-center justify-between px-6 py-4 border-b border-border bg-accent/30">
-							<div className="flex items-center gap-2">
-								{variant === 'danger' && <AlertTriangle className="text-destructive" size={20} />}
-								<DialogPrimitive.Title className="text-lg font-bold text-foreground">
-									{title}
-								</DialogPrimitive.Title>
-							</div>
-							<DialogPrimitive.Close className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground transition-colors outline-none">
-								<X size={20} />
-							</DialogPrimitive.Close>
-						</div>
-
-						{/* Content */}
-						<div className="px-6 py-8">
-							<DialogPrimitive.Description className="text-[15px] text-muted-foreground leading-relaxed">
-								{message}
-							</DialogPrimitive.Description>
-						</div>
-
-						{/* Footer */}
-						<div className="px-6 py-4 bg-accent/30 flex justify-end gap-3">
-							<button
-								onClick={onClose}
-								className="px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-accent rounded-lg transition-colors outline-none"
-							>
-								{cancelText}
-							</button>
-							<button
-								onClick={() => {
-									onConfirm();
-									onClose();
-								}}
-								className={`px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all shadow-sm outline-none ${
-									variant === 'danger' 
-										? 'bg-destructive hover:bg-destructive/90 active:scale-95' 
-										: 'bg-primary hover:bg-primary/90 active:scale-95'
-								}`}
-							>
-								{confirmText}
-							</button>
-						</div>
-					</div>
-				</DialogPrimitive.Content>
-			</DialogPortal>
-		</Dialog>
+						{confirmText ?? t('common.confirm')}
+					</Button>
+				</>
+			}
+		>
+			<div className="flex items-start gap-3">
+				{variant === 'danger' && (
+					<TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+				)}
+				<p className="text-sm leading-relaxed text-muted-foreground">{message}</p>
+			</div>
+		</ModalShell>
 	);
 };

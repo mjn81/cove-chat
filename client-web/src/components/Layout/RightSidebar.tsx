@@ -1,4 +1,5 @@
 import { useState, Profiler, useMemo, memo } from 'react';
+import { statusDotClass } from '@/domains/users/utils/status';
 import { logProfiler } from '@/utils/profiler';
 
 import { Avatar } from '@/components/Avatar';
@@ -154,13 +155,13 @@ export default function RightSidebar({
 	};
 
 	if (!activeChannel) {
-		return <div className="h-full bg-secondary"></div>;
+		return <div className="h-full bg-popover"></div>;
 	}
 
 	return (
 		<Profiler id="RightSidebar" onRender={logProfiler}>
 			<div
-				className="flex flex-col h-full bg-secondary"
+				className="flex flex-col h-full bg-popover"
 				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}
 			>
@@ -174,7 +175,7 @@ export default function RightSidebar({
 						{isMobile ? (
 							<button
 								onClick={() => setRightSidebarOpen(false)}
-								className="p-1 -ml-2 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+								className="p-1 -ms-2 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
 							>
 								<ChevronLeft size={26} />
 							</button>
@@ -411,9 +412,9 @@ const MemberRow = memo(
 			!isDM && isOwner(myRole) && member.role === ChannelRole.ADMIN && !isMe;
 
 		const roleColor = isOwner(member.role)
-			? 'text-amber-400'
+			? 'text-warning'
 			: member.role === ChannelRole.ADMIN
-				? 'text-blue-400'
+				? 'text-primary'
 				: 'text-foreground';
 
 		return (
@@ -434,15 +435,7 @@ const MemberRow = memo(
 											className="shrink-0"
 										/>
 										<div
-											className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-[3px] border-secondary group-hover:border-accent/50 transition-colors ${
-												member.status === 'online'
-													? 'bg-green-500'
-													: member.status === 'away'
-														? 'bg-yellow-500'
-														: member.status === 'dnd'
-															? 'bg-red-500'
-															: 'bg-gray-500'
-											}`}
+											className={`absolute -bottom-0.5 -end-0.5 w-3.5 h-3.5 rounded-full border-[3px] border-secondary group-hover:border-accent/50 transition-colors ${statusDotClass(member.status)}`}
 										/>
 									</div>
 									{!isCollapsed && (
@@ -482,7 +475,7 @@ const MemberRow = memo(
 									className="gap-2 cursor-pointer"
 									onClick={() => onUpdateRole(member.id, ChannelRole.ADMIN)}
 								>
-									<Shield size={16} className="text-blue-400" />
+									<Shield size={16} className="text-primary" />
 									Promote to Admin
 								</ContextMenuItem>
 							)}

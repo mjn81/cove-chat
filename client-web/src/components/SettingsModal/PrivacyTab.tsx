@@ -66,7 +66,7 @@ export const PrivacyTab = () => {
 		<div className="w-full max-w-[560px] mx-auto animate-in fade-in slide-in-from-right-4 duration-300 pb-8">
 			<div className="flex items-center justify-between mb-6">
 				<div className="flex items-center gap-2.5">
-					<div className="w-9 h-9 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+					<div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
 						<Shield size={20} />
 					</div>
 					<div>
@@ -80,14 +80,14 @@ export const PrivacyTab = () => {
 				</div>
 
 				{savedRecently && (
-					<div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/40 border border-emerald-900/50 px-3 py-1 rounded-full text-xs font-medium animate-in fade-in zoom-in-95">
+					<div className="flex items-center gap-1.5 text-success bg-success/10 border border-success/30 px-3 py-1 rounded-full text-xs font-medium animate-in fade-in zoom-in-95">
 						<Check size={14} />
 						<span>Saved</span>
 					</div>
 				)}
 				{isSaving && (
 					<div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium">
-						<Loader2 size={14} className="animate-spin text-indigo-400" />
+						<Loader2 size={14} className="animate-spin text-primary" />
 						<span>Saving...</span>
 					</div>
 				)}
@@ -97,7 +97,7 @@ export const PrivacyTab = () => {
 				{/* 1. Channel Add Permissions */}
 				<div className="bg-card/60 border border-border/70 rounded-2xl p-5 shadow-sm hover:border-border transition flex flex-col gap-3">
 					<div className="flex items-start gap-3">
-						<div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
 							<Users size={18} />
 						</div>
 						<div className="flex-1">
@@ -115,10 +115,10 @@ export const PrivacyTab = () => {
 							<DropdownMenuTrigger asChild>
 								<button
 									type="button"
-									className="w-full bg-secondary/80 border border-border/80 hover:border-indigo-500/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
+									className="w-full bg-secondary/80 border border-border/80 hover:border-primary/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
 								>
 									<span className="truncate">{channelAddLabels[allowChannelAdds]}</span>
-									<ChevronDown size={16} className="text-muted-foreground ml-2 shrink-0" />
+									<ChevronDown size={16} className="text-muted-foreground ms-2 shrink-0" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-popover border-border text-foreground p-1 rounded-xl shadow-xl z-50">
@@ -148,7 +148,7 @@ export const PrivacyTab = () => {
 				{/* 2. Direct Message Permissions */}
 				<div className="bg-card/60 border border-border/70 rounded-2xl p-5 shadow-sm hover:border-border transition flex flex-col gap-3">
 					<div className="flex items-start gap-3">
-						<div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0 mt-0.5">
 							<MessageSquare size={18} />
 						</div>
 						<div className="flex-1">
@@ -166,10 +166,10 @@ export const PrivacyTab = () => {
 							<DropdownMenuTrigger asChild>
 								<button
 									type="button"
-									className="w-full bg-secondary/80 border border-border/80 hover:border-indigo-500/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
+									className="w-full bg-secondary/80 border border-border/80 hover:border-primary/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
 								>
 									<span className="truncate">{dmPermissionLabels[dmPermission]}</span>
-									<ChevronDown size={16} className="text-muted-foreground ml-2 shrink-0" />
+									<ChevronDown size={16} className="text-muted-foreground ms-2 shrink-0" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-popover border-border text-foreground p-1 rounded-xl shadow-xl z-50">
@@ -199,7 +199,7 @@ export const PrivacyTab = () => {
 				{/* 3. Friend Request Permissions */}
 				<div className="bg-card/60 border border-border/70 rounded-2xl p-5 shadow-sm hover:border-border transition flex flex-col gap-3">
 					<div className="flex items-start gap-3">
-						<div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+						<div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
 							<UserPlus size={18} />
 						</div>
 						<div className="flex-1">
@@ -217,10 +217,10 @@ export const PrivacyTab = () => {
 							<DropdownMenuTrigger asChild>
 								<button
 									type="button"
-									className="w-full bg-secondary/80 border border-border/80 hover:border-indigo-500/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
+									className="w-full bg-secondary/80 border border-border/80 hover:border-primary/60 text-foreground text-sm rounded-xl px-3.5 py-2.5 outline-none transition cursor-pointer font-medium flex items-center justify-between"
 								>
 									<span className="truncate">{friendRequestLabels[friendRequestPermission]}</span>
-									<ChevronDown size={16} className="text-muted-foreground ml-2 shrink-0" />
+									<ChevronDown size={16} className="text-muted-foreground ms-2 shrink-0" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] bg-popover border-border text-foreground p-1 rounded-xl shadow-xl z-50">

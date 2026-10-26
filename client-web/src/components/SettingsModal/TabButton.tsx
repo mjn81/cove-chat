@@ -36,7 +36,7 @@ export const TabButton = ({
 			<span className="pointer-events-none truncate">{label}</span>
 		</div>
 		{badge !== undefined && (
-			<span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-600 text-white font-bold font-mono">
+			<span className="text-[10px] px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground font-bold font-mono">
 				{badge}
 			</span>
 		)}

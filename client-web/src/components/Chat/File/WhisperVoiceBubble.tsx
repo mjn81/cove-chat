@@ -88,7 +88,7 @@ export const WhisperVoiceBubble: React.FC<WhisperVoiceBubbleProps> = ({ file }) 
 					{isPlaying ? (
 						<Pause size={20} fill="currentColor" />
 					) : (
-						<Play size={20} fill="currentColor" className="ml-0.5" />
+						<Play size={20} fill="currentColor" className="ms-0.5" />
 					)}
 				</button>
 

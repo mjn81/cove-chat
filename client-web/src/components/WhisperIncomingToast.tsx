@@ -24,7 +24,7 @@ export const WhisperIncomingToast: React.FC = () => {
 				animate={{ opacity: 1, y: 0, scale: 1 }}
 				exit={{ opacity: 0, y: -16, scale: 0.96 }}
 				transition={{ duration: 0.18, ease: 'easeOut' }}
-				className="fixed top-5 right-5 z-50 w-80 sm:w-88 bg-card/95 dark:bg-[#141416]/95 backdrop-blur-xl border border-border/80 shadow-2xl rounded-2xl p-4 text-foreground pointer-events-auto"
+				className="fixed top-5 end-5 z-50 w-80 sm:w-88 bg-card/95 backdrop-blur-xl border border-border/80 shadow-2xl rounded-2xl p-4 text-foreground pointer-events-auto"
 			>
 				{/* Top Header Row */}
 				<div className="flex items-start gap-3">
@@ -34,13 +34,13 @@ export const WhisperIncomingToast: React.FC = () => {
 							userId={incomingInvite.initiatorId}
 							size={42}
 						/>
-						<div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground shadow-xs">
+						<div className="absolute -bottom-1 -end-1 w-4 h-4 rounded-full bg-background border border-border flex items-center justify-center text-muted-foreground shadow-xs">
 							<Lock size={9} />
 						</div>
 					</div>
 
 					{/* Information */}
-					<div className="flex-1 min-w-0 pr-5">
+					<div className="flex-1 min-w-0 pe-5">
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<span className="text-sm font-semibold text-foreground truncate">
 								{incomingInvite.initiatorUsername}
@@ -60,7 +60,7 @@ export const WhisperIncomingToast: React.FC = () => {
 					<button
 						type="button"
 						onClick={dismissInvite}
-						className="absolute top-3.5 right-3.5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition cursor-pointer"
+						className="absolute top-3.5 end-3.5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition cursor-pointer"
 						title="Dismiss"
 					>
 						<X size={14} />

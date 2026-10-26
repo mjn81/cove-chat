@@ -48,14 +48,14 @@ export const AppearanceTab = () => {
 									: 'border-transparent bg-secondary hover:bg-secondary/80'
 							}`}
 						>
-							<div className="h-12 w-full bg-[#1e1f22] rounded flex items-center justify-center overflow-hidden relative">
-								<div className="absolute top-2 left-2 w-4 h-4 bg-[#2b2d31] rounded-full" />
+							<div className="dark h-12 w-full bg-popover rounded flex items-center justify-center overflow-hidden relative">
+								<div className="absolute top-2 start-2 w-4 h-4 bg-card rounded-full" />
 								<div className="flex flex-col gap-1 w-full px-8">
-									<div className="h-1.5 w-full bg-[#3f4147] rounded-full" />
-									<div className="h-1.5 w-2/3 bg-[#3f4147] rounded-full" />
+									<div className="h-1.5 w-full bg-accent rounded-full" />
+									<div className="h-1.5 w-2/3 bg-accent rounded-full" />
 								</div>
 								{theme === 'dark' && (
-									<div className="absolute bottom-2 right-2 bg-primary rounded-full p-0.5">
+									<div className="absolute bottom-2 end-2 bg-primary rounded-full p-0.5">
 										<Check size={12} className="text-white" />
 									</div>
 								)}
@@ -71,17 +71,17 @@ export const AppearanceTab = () => {
 							className={`flex flex-col gap-2 p-3 rounded-lg border-2 transition-all cursor-pointer select-none ${
 								theme === 'light'
 									? 'border-primary bg-white shadow-md'
-									: 'border-transparent bg-[#f2f3f5] hover:bg-[#ebedef]'
+									: 'border-transparent bg-secondary hover:bg-secondary/80'
 							}`}
 						>
-							<div className="h-12 w-full bg-[#f2f3f5] rounded flex items-center justify-center overflow-hidden relative">
-								<div className="absolute top-2 left-2 w-4 h-4 bg-white rounded-full border border-[#e3e5e8]" />
+							<div className="light h-12 w-full bg-card rounded flex items-center justify-center overflow-hidden relative">
+								<div className="absolute top-2 start-2 w-4 h-4 bg-background rounded-full border border-border" />
 								<div className="flex flex-col gap-1 w-full px-8">
-									<div className="h-1.5 w-full bg-[#e3e5e8] rounded-full" />
-									<div className="h-1.5 w-2/3 bg-[#e3e5e8] rounded-full" />
+									<div className="h-1.5 w-full bg-accent rounded-full" />
+									<div className="h-1.5 w-2/3 bg-accent rounded-full" />
 								</div>
 								{theme === 'light' && (
-									<div className="absolute bottom-2 right-2 bg-primary rounded-full p-0.5">
+									<div className="absolute bottom-2 end-2 bg-primary rounded-full p-0.5">
 										<Check size={12} className="text-white" />
 									</div>
 								)}
@@ -127,8 +127,8 @@ export const AppearanceTab = () => {
 													WebkitMaskRepeat: 'repeat',
 													backgroundColor:
 														theme === 'dark'
-															? 'rgba(255, 255, 255, 0.15)'
-															: 'rgba(0, 0, 0, 0.12)',
+															? 'hsl(var(--foreground) / 0.15)'
+															: 'hsl(var(--foreground) / 0.12)',
 												}}
 											/>
 										) : (
@@ -137,7 +137,7 @@ export const AppearanceTab = () => {
 											</span>
 										)}
 										{isSelected && (
-											<div className="absolute bottom-1 right-1 bg-primary rounded-full p-0.5 z-10 shadow-sm">
+											<div className="absolute bottom-1 end-1 bg-primary rounded-full p-0.5 z-10 shadow-sm">
 												<Check size={10} className="text-white" />
 											</div>
 										)}

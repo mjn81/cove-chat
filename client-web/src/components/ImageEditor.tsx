@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RotateCw, ZoomIn, ZoomOut, Check } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { RotateCw, ZoomIn, ZoomOut, Check, X, FileImage } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { IconButton } from '@/components/icon-button';
+import { ModalShell } from '@/components/modal-shell';
 
 interface ImageEditorProps {
 	open: boolean;
@@ -31,6 +35,13 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
 	);
 }
 
+/**
+ * Crop / zoom / rotate dialog for avatars and banners. Calls `onSave` with the
+ * edited blob; SVGs that were not touched are passed through as vectors.
+ *
+ * @param file - Image chosen by the user; `null` clears the editor.
+ * @param maxSizeMB - Larger files show an error instead of loading.
+ */
 export const ImageEditor: React.FC<ImageEditorProps> = ({
 	open,
 	onOpenChange,
@@ -40,6 +51,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 	circularCrop = true,
 	maxSizeMB = 5,
 }) => {
+	const { t } = useTranslation();
 	const [imgSrc, setImgSrc] = useState<string>('');
 	const [crop, setCrop] = useState<Crop>();
 	const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -57,7 +69,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 		}
 
 		if (file.size > maxSizeMB * 1024 * 1024) {
-			setError(`File exceeds maximum size of ${maxSizeMB}MB`);
+			setError(t('image_editor.too_large', { size: maxSizeMB }));
 			return;
 		}
 
@@ -71,7 +83,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 			setImgSrc(reader.result?.toString() || '');
 		});
 		reader.readAsDataURL(file);
-	}, [file, maxSizeMB]);
+	}, [file, maxSizeMB, t]);
 
 	function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
 		const { width, height } = e.currentTarget;
@@ -156,105 +168,84 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 text-zinc-100 p-6 rounded-2xl shadow-2xl">
-				<DialogHeader>
-					<DialogTitle className="text-lg font-semibold flex items-center gap-2">
-						<FileImage className="w-5 h-5 text-indigo-400" />
-						Edit Photo
-					</DialogTitle>
-				</DialogHeader>
-
-				{error ? (
-					<div className="p-4 rounded-xl bg-red-950/40 border border-red-900/50 text-red-300 text-sm">
-						{error}
-					</div>
-				) : (
-					<div className="flex flex-col items-center gap-4 my-2">
-						{isSvg && (
-							<div className="w-full text-xs text-zinc-400 bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between">
-								<span>Vector SVG file detected</span>
-								<span className="text-indigo-400">Scale / Rotate converts to HD raster</span>
-							</div>
-						)}
-
-						<div className="relative max-h-[340px] max-w-full overflow-hidden flex items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80 p-2">
-							{imgSrc && (
-								<ReactCrop
-									crop={crop}
-									onChange={(_, percentCrop) => setCrop(percentCrop)}
-									onComplete={(c) => setCompletedCrop(c)}
-									aspect={aspectRatio}
-									circularCrop={circularCrop}
-									className="max-h-[300px]"
-								>
-									<img
-										ref={imgRef}
-										src={imgSrc}
-										alt="Crop preview"
-										onLoad={onImageLoad}
-										style={{
-											transform: `scale(${scale}) rotate(${rotate}deg)`,
-											maxHeight: '300px',
-											objectFit: 'contain',
-										}}
-										crossOrigin="anonymous"
-									/>
-								</ReactCrop>
-							)}
+		<ModalShell
+			open={open}
+			onOpenChange={onOpenChange}
+			title={t('image_editor.title')}
+			footer={
+				<>
+					<Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+						{t('common.cancel')}
+					</Button>
+					<Button type="button" onClick={handleApply} disabled={!!error || !imgSrc}>
+						<Check className="h-4 w-4" />
+						{t('image_editor.apply')}
+					</Button>
+				</>
+			}
+		>
+			{error ? (
+				<div
+					role="alert"
+					className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+				>
+					{error}
+				</div>
+			) : (
+				<div className="flex flex-col items-center gap-4">
+					{isSvg && (
+						<div className="flex w-full flex-col gap-0.5 rounded-md border border-border bg-muted p-2.5 text-xs">
+							<span className="text-foreground">{t('image_editor.svg_detected')}</span>
+							<span className="text-muted-foreground">{t('image_editor.svg_hint')}</span>
 						</div>
+					)}
 
-						{/* Controls: Zoom slider & Rotate */}
-						<div className="w-full flex items-center gap-4 px-2">
-							<div className="flex items-center gap-2 flex-1">
-								<ZoomOut className="w-4 h-4 text-zinc-500" />
-								<input
-									type="range"
-									min={0.5}
-									max={3}
-									step={0.1}
-									value={scale}
-									onChange={(e) => setScale(parseFloat(e.target.value))}
-									className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-								/>
-								<ZoomIn className="w-4 h-4 text-zinc-500" />
-							</div>
-
-							<Button
-								type="button"
-								variant="outline"
-								size="icon"
-								onClick={handleRotate}
-								className="h-8 w-8 rounded-lg bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800"
-								title="Rotate 90 degrees"
+					<div className="relative flex max-h-[340px] max-w-full items-center justify-center overflow-hidden rounded-md border border-border bg-muted p-2">
+						{imgSrc && (
+							<ReactCrop
+								crop={crop}
+								onChange={(_, percentCrop) => setCrop(percentCrop)}
+								onComplete={(c) => setCompletedCrop(c)}
+								aspect={aspectRatio}
+								circularCrop={circularCrop}
+								className="max-h-[300px]"
 							>
-								<RotateCw className="w-4 h-4" />
-							</Button>
-						</div>
+								<img
+									ref={imgRef}
+									src={imgSrc}
+									alt={t('image_editor.preview_alt')}
+									onLoad={onImageLoad}
+									style={{
+										transform: `scale(${scale}) rotate(${rotate}deg)`,
+										maxHeight: '300px',
+										objectFit: 'contain',
+									}}
+									crossOrigin="anonymous"
+								/>
+							</ReactCrop>
+						)}
 					</div>
-				)}
 
-				<DialogFooter className="flex items-center justify-end gap-2 pt-2">
-					<Button
-						type="button"
-						variant="ghost"
-						onClick={() => onOpenChange(false)}
-						className="text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-					>
-						<X className="w-4 h-4 mr-1.5" />
-						Cancel
-					</Button>
-					<Button
-						type="button"
-						onClick={handleApply}
-						disabled={!!error || !imgSrc}
-						className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/20"
-					>
-						<Check className="w-4 h-4 mr-1.5" />
-						Apply Photo
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+					<div className="flex w-full items-center gap-4">
+						<div className="flex flex-1 items-center gap-2">
+							<ZoomOut className="h-4 w-4 shrink-0 text-muted-foreground" />
+							<Slider
+								min={0.5}
+								max={3}
+								step={0.1}
+								value={[scale]}
+								onValueChange={([v]) => setScale(v)}
+								aria-label={t('image_editor.zoom')}
+							/>
+							<ZoomIn className="h-4 w-4 shrink-0 text-muted-foreground" />
+						</div>
+
+						<IconButton label={t('image_editor.rotate')} onClick={handleRotate}>
+							<RotateCw className="h-4 w-4" />
+						</IconButton>
+					</div>
+				</div>
+			)}
+		</ModalShell>
 	);
 };

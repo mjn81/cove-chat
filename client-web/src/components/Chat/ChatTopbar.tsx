@@ -1,4 +1,5 @@
 import { useState, Profiler } from 'react';
+import { statusDotClass } from '@/domains/users/utils/status';
 import { logProfiler } from '@/utils/profiler';
 
 import { Avatar, ChannelInitialsAvatar } from '../Avatar';
@@ -117,7 +118,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 					{isMobile && (
 						<button
 							onClick={() => setActiveChannel(null)}
-							className="p-1 -ml-2 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+							className="p-1 -ms-2 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
 						>
 							<ChevronLeft size={26} />
 						</button>
@@ -127,25 +128,17 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							<button
 								type="button"
 								onClick={() => setShowUserProfile(true)}
-								className="flex items-center gap-3 text-left hover:opacity-85 transition min-w-0 cursor-pointer group"
+								className="flex items-center gap-3 text-start hover:opacity-85 transition min-w-0 cursor-pointer group"
 								title="View profile"
 							>
 								<div className="relative shrink-0 pointer-events-none">
 									<Avatar
 										userId={otherMemberId}
 										avatarId={liveChannel.member_avatars?.[otherMemberId]}
-										size={40}
+										size={30}
 									/>
 									<div
-										className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[2px] border-background z-10 ${
-											otherStatus === 'online'
-												? 'bg-green-500'
-												: otherStatus === 'away'
-													? 'bg-yellow-500'
-													: otherStatus === 'dnd'
-														? 'bg-red-500'
-														: 'bg-gray-500'
-										}`}
+										className={`absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full border-[2px] border-background z-10 ${statusDotClass(otherStatus)}`}
 									/>
 								</div>
 								<div className="flex flex-col min-w-0 pointer-events-none">
@@ -161,11 +154,11 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							<button
 								type="button"
 								onClick={() => setShowChannelInfo(true)}
-								className="flex items-center gap-3 text-left hover:opacity-85 transition min-w-0 cursor-pointer group"
+								className="flex items-center gap-3 text-start hover:opacity-85 transition min-w-0 cursor-pointer group"
 								title="View channel info"
 							>
 								{liveChannel.avatar_id ? (
-									<div className="w-10 h-10 rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0 pointer-events-none">
+									<div className="w-[30px] h-[30px] rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0 pointer-events-none">
 										<img
 											src={getFileUrl(liveChannel.avatar_id)}
 											alt={liveChannel.name}
@@ -174,7 +167,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										/>
 									</div>
 								) : (
-									<ChannelInitialsAvatar id={liveChannel.id} name={liveChannel.name} size={40} />
+									<ChannelInitialsAvatar id={liveChannel.id} name={liveChannel.name} size={30} />
 								)}
 								<div className="flex flex-col min-w-0 pointer-events-none">
 									<div
@@ -204,7 +197,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 								className="w-9 h-9 flex items-center justify-center text-muted-foreground select-none"
 								title="Friend request pending"
 							>
-								<Clock size={20} className="text-amber-500 opacity-80" />
+								<Clock size={20} className="text-warning opacity-80" />
 							</div>
 						) : incomingReq ? (
 							<button
@@ -220,7 +213,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										setIsSendingFriendReq(false);
 									}
 								}}
-								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-emerald-400 text-emerald-500 transition-colors cursor-pointer"
+								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-success text-success transition-colors cursor-pointer"
 								title="Accept Friend Request"
 							>
 								{isSendingFriendReq ? (
@@ -280,7 +273,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										setIsSearching(false);
 									}
 								}}
-								className="bg-transparent border-none outline-none text-sm w-full ml-1 text-foreground placeholder:text-muted-foreground/50"
+								className="bg-transparent border-none outline-none text-sm w-full ms-1 text-foreground placeholder:text-muted-foreground/50"
 								onBlur={() => {
 									if (!searchQuery) setIsSearching(false);
 								}}
@@ -359,7 +352,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						>
 							<Lock size={19} className={isWhisperActiveHere || hasIncomingInviteForPeer ? 'text-current' : 'opacity-80 hover:opacity-100'} />
 							{hasIncomingInviteForPeer && (
-								<span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
+								<span className="absolute top-1 end-1 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
 							)}
 						</button>
 					)}
@@ -396,7 +389,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => stopVoice()}
-							className="w-9 h-9 flex items-center justify-center rounded-lg text-[#23a55a] hover:text-[#da373c] hover:bg-secondary/60 transition-colors cursor-pointer group"
+							className="w-9 h-9 flex items-center justify-center rounded-lg text-success hover:text-destructive hover:bg-secondary/60 transition-colors cursor-pointer group"
 							title="Connected to voice call (Click to disconnect)"
 						>
 							<PhoneCall size={18} className="animate-pulse group-hover:hidden" />
@@ -406,11 +399,11 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => startVoice(liveChannel.id)}
-							className="relative w-9 h-9 flex items-center justify-center rounded-lg text-[#23a55a] hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
+							className="relative w-9 h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
 							title={`Join ongoing voice call (${participantCount} active)`}
 						>
 							<PhoneCall size={18} className="animate-pulse" />
-							<span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#23a55a] text-white text-[10px] font-bold flex items-center justify-center border-2 border-background tabular-nums">
+							<span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-success text-success-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background tabular-nums">
 								{participantCount}
 							</span>
 						</button>

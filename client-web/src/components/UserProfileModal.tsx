@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from '@/components/ui/dialog';
+import { useOpenDirectMessage } from '@/domains/channels/hooks/use-open-direct-message';
+import { getRelationState } from '@/domains/relationships/utils/relation-state';
+import { statusDotClass } from '@/domains/users/utils/status';
+import { useTranslation } from 'react-i18next';
+import { IconButton } from '@/components/icon-button';
+import { ModalShell } from '@/components/modal-shell';
+import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/store';
-import { useChannelStore } from '@/store/channels.slice';
 import { apiGetUser, getFileUrl } from '@/api/client';
 import { Avatar as MinidenticonAvatar } from '@/components/Avatar';
 import { ProfilePhotoViewerModal } from '@/components/ProfilePhotoViewerModal';
@@ -37,13 +39,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 	open,
 	onOpenChange,
 }) => {
+	const { t } = useTranslation();
 	const currentUser = useAuthStore((state) => state.user);
 	const relationships = useAuthStore((state) => state.relationships);
 	const incomingRequests = useAuthStore((state) => state.incomingRequests);
 	const relationshipAction = useAuthStore((state) => state.relationshipAction);
-	const channels = useChannelStore((state) => state.channels);
-	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
-	const createChannel = useChannelStore((state) => state.createChannel);
+	const openDirectMessage = useOpenDirectMessage();
 
 	const [targetUser, setTargetUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -53,15 +54,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
 	const isMe = currentUser?.id === userId;
 
-	// Determine relationship status from store
-	const outgoingRel = relationships.find((r) => r.to_user_id === userId);
-	const incomingReq = incomingRequests.find((r) => r.from_user_id === userId);
-
-	let relStatus: 'none' | 'friend' | 'requested' | 'incoming' | 'blocked' = 'none';
-	if (outgoingRel?.type === 'friend') relStatus = 'friend';
-	else if (outgoingRel?.type === 'requested') relStatus = 'requested';
-	else if (outgoingRel?.type === 'blocked') relStatus = 'blocked';
-	else if (incomingReq) relStatus = 'incoming';
+	const relStatus = userId ? getRelationState(userId, relationships, incomingRequests) : 'none';
 
 	useEffect(() => {
 		if (!open || !userId) {
@@ -99,7 +92,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 				}
 			})
 			.catch((err) => {
-				console.error('Failed to load user profile', err);
+				logger.error('Failed to load user profile', { error: String(err) });
 			})
 			.finally(() => {
 				if (isMounted) setIsLoading(false);
@@ -130,7 +123,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 		try {
 			await relationshipAction(userId, action);
 		} catch (err) {
-			console.error(`Failed to execute ${action}`, err);
+			logger.error(`Failed to execute ${action}`, { error: String(err) });
 		} finally {
 			setActionLoading(false);
 		}
@@ -139,20 +132,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 	const handleStartDM = async () => {
 		if (!userId) return;
 		try {
-			const existingDM = channels.find((c) => {
-				if (c.name !== '') return false;
-				return c.members.includes(userId) && c.members.length === 2;
-			});
-
-			if (existingDM) {
-				setActiveChannel(existingDM);
-			} else {
-				const newCh = await createChannel('', [userId], true);
-				setActiveChannel(newCh);
-			}
+			await openDirectMessage(userId);
 			onOpenChange(false);
 		} catch (err) {
-			console.error('Failed to start DM', err);
+			logger.error('Failed to start DM', { error: String(err) });
 		}
 	};
 
@@ -162,38 +145,42 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
 	return (
 		<>
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-[420px] p-0 bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-3xl overflow-hidden shadow-2xl">
-				<DialogTitle className="sr-only">User Profile</DialogTitle>
-
-				{/* Profile Banner */}
+			<ModalShell
+				open={open}
+				onOpenChange={onOpenChange}
+				title={t('profile.title')}
+				size="sm"
+				chromeless
+			>
+				{/* Profile Banner: user-chosen colour, falls back to the theme primary */}
 				<div
-					style={{ backgroundColor: targetUser?.banner_color || '#5865F2' }}
-					className="h-28 w-full relative transition-colors"
+					style={{ backgroundColor: targetUser?.banner_color || 'hsl(var(--primary))' }}
+					className="relative h-28 w-full transition-colors"
 				/>
 
-				<div className="px-6 pb-6 -mt-14 flex flex-col gap-4">
-					{/* Avatar Carousel Container */}
+				<div className="-mt-14 flex flex-col gap-4 px-6 pb-6">
+					{/* Avatar carousel */}
 					<div className="flex items-end justify-between">
-						<div className="relative group/avatar">
+						<div className="group/avatar relative">
 							<div
 								onClick={() => currentPhotoId && setIsFullscreenOpen(true)}
-								className={`w-24 h-24 rounded-full border-[5px] border-zinc-950 bg-zinc-900 overflow-hidden shadow-xl flex items-center justify-center relative ${
-									currentPhotoId ? 'cursor-pointer' : ''
-								}`}
-								title={currentPhotoId ? 'Click to view full screen' : undefined}
+								className={cn(
+									'relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-[5px] border-card bg-muted',
+									currentPhotoId && 'cursor-pointer',
+								)}
+								title={currentPhotoId ? t('profile.view_fullscreen') : undefined}
 							>
 								{isLoading ? (
-									<Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+									<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 								) : currentPhotoId ? (
 									<>
 										<img
 											src={getFileUrl(currentPhotoId)}
 											alt={targetUser?.username}
-											className="w-full h-full object-cover transition-opacity duration-200"
+											className="h-full w-full object-cover transition-opacity duration-200"
 										/>
-										<div className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center rounded-full pointer-events-none">
-											<Maximize2 size={20} className="text-white drop-shadow-md" />
+										<div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-overlay/40 opacity-0 transition-opacity group-hover/avatar:opacity-100">
+											<Maximize2 size={20} className="text-overlay-foreground" />
 										</div>
 									</>
 								) : (
@@ -204,36 +191,34 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 									/>
 								)}
 
-								{/* Telegram Style Photo Carousel Controls */}
 								{photos.length > 1 && (
 									<>
-										<button
-											type="button"
+										<IconButton
+											label={t('profile.previous_photo')}
+											tone="overlay"
 											onClick={handlePrevPhoto}
-											className="absolute left-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer z-10"
+											className="absolute start-1 top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-full opacity-0 group-hover/avatar:opacity-100"
 										>
-											<ChevronLeft size={14} />
-										</button>
-										<button
-											type="button"
+											<ChevronLeft size={14} className="rtl:rotate-180" />
+										</IconButton>
+										<IconButton
+											label={t('profile.next_photo')}
+											tone="overlay"
 											onClick={handleNextPhoto}
-											className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer z-10"
+											className="absolute end-1 top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-full opacity-0 group-hover/avatar:opacity-100"
 										>
-											<ChevronRight size={14} />
-										</button>
+											<ChevronRight size={14} className="rtl:rotate-180" />
+										</IconButton>
 									</>
 								)}
 							</div>
 
-							{/* Status Indicator */}
+							{/* Status indicator */}
 							<div
-								className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-[3px] border-zinc-950 ${
-									targetUser?.status === 'online'
-										? 'bg-emerald-500'
-										: targetUser?.status === 'away'
-										? 'bg-amber-500'
-										: 'bg-zinc-600'
-								}`}
+								className={cn(
+									'absolute bottom-1 end-1 h-4 w-4 rounded-full border-[3px] border-card',
+									statusDotClass(targetUser?.status),
+								)}
 							/>
 						</div>
 
@@ -244,44 +229,42 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 									<button
 										key={idx}
 										type="button"
+										aria-label={t('profile.photo_n', { n: idx + 1 })}
 										onClick={() => setActivePhotoIndex(idx)}
-										className={`h-1.5 rounded-full transition-all cursor-pointer ${
+										className={cn(
+											'h-1.5 cursor-pointer rounded-full transition-all',
 											activePhotoIndex === idx
-												? 'w-4 bg-indigo-500'
-												: 'w-1.5 bg-zinc-700 hover:bg-zinc-500'
-										}`}
+												? 'w-4 bg-primary'
+												: 'w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground',
+										)}
 									/>
 								))}
 							</div>
 						)}
 					</div>
 
-					{/* Username & Domain */}
+					{/* Username & domain */}
 					<div className="flex flex-col gap-0.5">
-						<div className="text-xl font-bold text-zinc-100 flex items-center gap-2">
-							{targetUser?.username || 'User Profile'}
-							<span className="text-xs font-medium text-zinc-500">
+						<div className="flex items-center gap-2 text-xl font-bold text-foreground">
+							{targetUser?.username || t('profile.user_fallback')}
+							<span className="text-xs font-medium text-muted-foreground">
 								~{targetUser?.domain || 'localhost'}
 							</span>
 						</div>
 						{targetUser?.custom_msg && (
-							<p className="text-sm text-zinc-400 mt-1 italic">
+							<p className="mt-1 text-sm italic text-muted-foreground">
 								"{targetUser.custom_msg}"
 							</p>
 						)}
 					</div>
 
-					{/* Action Buttons */}
+					{/* Actions */}
 					{!isMe && (
-						<div className="flex flex-col gap-2 pt-2 border-t border-zinc-800/80">
+						<div className="flex flex-col gap-2 border-t border-border pt-3">
 							<div className="flex items-center gap-2">
-								<Button
-									type="button"
-									onClick={handleStartDM}
-									className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl h-10 shadow-lg shadow-indigo-600/20 gap-2 cursor-pointer"
-								>
+								<Button type="button" onClick={handleStartDM} className="flex-1">
 									<MessageSquare size={16} />
-									<span>Message</span>
+									<span>{t('profile.message')}</span>
 								</Button>
 
 								{relStatus === 'friend' && (
@@ -290,11 +273,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 										variant="secondary"
 										disabled={actionLoading}
 										onClick={() => handleAction('remove')}
-										className="bg-zinc-800 hover:bg-red-950/40 hover:text-red-400 text-zinc-300 font-semibold rounded-xl h-10 gap-1.5 cursor-pointer border border-zinc-700/60"
-										title="Remove Friend"
+										className="hover:bg-destructive/10 hover:text-destructive"
+										title={t('profile.remove_friend')}
 									>
-										<UserCheck size={16} className="text-emerald-400" />
-										<span>Friends</span>
+										<UserCheck size={16} className="text-success" />
+										<span>{t('profile.friends')}</span>
 									</Button>
 								)}
 
@@ -304,11 +287,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 										variant="secondary"
 										disabled={actionLoading}
 										onClick={() => handleAction('cancel')}
-										className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl h-10 gap-1.5 cursor-pointer border border-zinc-700/60"
-										title="Cancel Friend Request"
+										title={t('profile.cancel_request')}
 									>
-										<Clock size={16} className="text-amber-400" />
-										<span>Requested</span>
+										<Clock size={16} className="text-warning" />
+										<span>{t('profile.requested')}</span>
 									</Button>
 								)}
 
@@ -317,10 +299,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 										type="button"
 										disabled={actionLoading}
 										onClick={() => handleAction('accept')}
-										className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl h-10 gap-1.5 cursor-pointer shadow-md shadow-emerald-600/20"
+										className="bg-success text-success-foreground hover:bg-success/90"
 									>
 										<Check size={16} />
-										<span>Accept Request</span>
+										<span>{t('profile.accept_request')}</span>
 									</Button>
 								)}
 
@@ -330,51 +312,53 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 										variant="secondary"
 										disabled={actionLoading}
 										onClick={() => handleAction('request')}
-										className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold rounded-xl h-10 gap-1.5 cursor-pointer border border-zinc-700/60"
 									>
 										<UserPlus size={16} />
-										<span>Add Friend</span>
+										<span>{t('profile.add_friend')}</span>
 									</Button>
 								)}
 							</div>
 
-							{/* Block / Unblock action */}
-							<div className="flex justify-end pt-1">
+							{/* Block / Unblock */}
+							<div className="flex justify-end">
 								{relStatus === 'blocked' ? (
-									<button
+									<Button
 										type="button"
+										variant="ghost"
+										size="sm"
 										disabled={actionLoading}
 										onClick={() => handleAction('unblock')}
-										className="text-xs text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+										className="h-7 gap-1 px-2 text-xs text-primary"
 									>
 										<ShieldCheck size={13} />
-										<span>Unblock User</span>
-									</button>
+										<span>{t('profile.unblock')}</span>
+									</Button>
 								) : (
-									<button
+									<Button
 										type="button"
+										variant="ghost"
+										size="sm"
 										disabled={actionLoading}
 										onClick={() => handleAction('block')}
-										className="text-xs text-zinc-500 hover:text-red-400 flex items-center gap-1 cursor-pointer transition font-medium"
+										className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
 									>
 										<ShieldAlert size={13} />
-										<span>Block User</span>
-									</button>
+										<span>{t('profile.block')}</span>
+									</Button>
 								)}
 							</div>
 						</div>
 					)}
 				</div>
-			</DialogContent>
-		</Dialog>
+			</ModalShell>
 
-		<ProfilePhotoViewerModal
-			open={isFullscreenOpen}
-			onOpenChange={setIsFullscreenOpen}
-			photos={photos}
-			initialIndex={activePhotoIndex}
-			username={targetUser?.username}
-		/>
+			<ProfilePhotoViewerModal
+				open={isFullscreenOpen}
+				onOpenChange={setIsFullscreenOpen}
+				photos={photos}
+				initialIndex={activePhotoIndex}
+				username={targetUser?.username}
+			/>
 		</>
 	);
 };

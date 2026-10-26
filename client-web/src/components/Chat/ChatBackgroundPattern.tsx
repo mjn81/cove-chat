@@ -22,7 +22,6 @@ const PATTERN_HEIGHT = 740;
 
 export const ChatBackgroundPattern: React.FC = () => {
 	const chatBackground = useAppStore((s) => s.chatBackground);
-	const theme = useAppStore((s) => s.theme);
 
 	if (!chatBackground || chatBackground === 'none' || !(chatBackground in PATTERNS)) {
 		return null;
@@ -32,7 +31,7 @@ export const ChatBackgroundPattern: React.FC = () => {
 
 	return (
 		<div
-			className="absolute top-0 left-0 pointer-events-none z-0 overflow-hidden"
+			className="absolute top-0 start-0 pointer-events-none z-0 overflow-hidden"
 			style={{
 				width: '100vw',
 				height: '100vh',
@@ -42,10 +41,9 @@ export const ChatBackgroundPattern: React.FC = () => {
 				WebkitMaskSize: `${PATTERN_WIDTH}px ${PATTERN_HEIGHT}px`,
 				maskRepeat: 'repeat',
 				WebkitMaskRepeat: 'repeat',
-				// Ultra-faint ambient watermark that seamlessly melts into the background:
-				// In dark mode: softly blends with #313338 at 1.8% white tint
-				// In light mode: softly blends with white at 2.5% dark tint
-				backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.018)' : 'rgba(0, 0, 0, 0.025)',
+				// Ultra-faint ambient watermark: a 2.5% tint of the foreground token melts into the
+				// background in both themes (light tint on dark, dark tint on light).
+				backgroundColor: 'hsl(var(--foreground) / 0.025)',
 				transform: 'translateZ(0)',
 				willChange: 'transform',
 				contain: 'strict',

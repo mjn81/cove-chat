@@ -4,7 +4,14 @@ import { useChannelStore, useAuthStore } from '@/store/store';
 import { Avatar } from '../Avatar';
 import { type Message } from '@/types/api';
 import { decryptMessage, wsSendMessage, getChannelKey } from '@/ws';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/empty-state';
+import { ListRow } from '@/components/list-row';
+import { ModalShell } from '@/components/modal-shell';
+import { logger } from '@/utils/logger';
 import { getChannelDisplayName } from '@/store/store';
 import { isDirectMessage } from '@/utils/channel';
 import { apiGetFile } from '@/api/client';
@@ -20,6 +27,7 @@ interface ForwardModalProps {
 }
 
 export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) => {
+	const { t } = useTranslation();
 	const { channels } = useChannelStore();
 	const { user } = useAuthStore();
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -111,7 +119,7 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 							processed.originalSize,
 						);
 					} catch (cacheErr) {
-						console.warn('Failed to pre-cache forwarded file:', cacheErr);
+						logger.warn('Failed to pre-cache forwarded file', { error: String(cacheErr) });
 					}
 
 					const newMeta = JSON.stringify({
@@ -130,110 +138,110 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 
 			onClose();
 		} catch (err) {
-			console.error('Forwarding failed:', err);
-			alert('Failed to forward message. Encryption keys might be missing.');
+			logger.error('Forwarding failed', { error: String(err) });
+			toast.error(t('chat.forward.failed'));
 		} finally {
 			setSending(false);
 		}
 	};
 
 	return (
-		<Dialog open onOpenChange={onClose}>
-			<DialogContent className="sm:max-w-[425px] p-0 overflow-hidden gap-0">
-				<DialogHeader className="p-4 border-b border-border bg-accent/30">
-					<DialogTitle className="text-xl font-bold flex items-center gap-2">
-						Forward Message
-					</DialogTitle>
-				</DialogHeader>
-
-				<div className="p-4 bg-accent/10 border-b border-border">
-					<div className="relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-						<input
-							autoFocus
-							className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-							placeholder="Search for a person or group..."
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-					</div>
-				</div>
-
-				<div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
-					{filteredChannels.map((channel) => {
-						const isSelected = selectedIds.includes(channel.id);
-						const isDM = isDirectMessage(channel);
-						const otherId = isDM ? channel.members.find(m => m !== user?.id) || channel.id : channel.id;
-						
-						return (
-							<button
-								key={channel.id}
-								onClick={() => handleToggle(channel.id)}
-								className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${
-									isSelected ? 'bg-primary/10' : 'hover:bg-accent'
-								}`}
-							>
-								<div className="flex items-center gap-3 min-w-0">
-									<Avatar
-										userId={otherId}
-										avatarId={isDM ? channel.member_avatars?.[otherId] : undefined}
-										size={36}
-									/>
-									<div className="flex flex-col items-start min-w-0">
-										<span className="font-semibold text-foreground truncate">
-											{getChannelDisplayName(channel, user?.id || '')}
-										</span>
-										<span className="text-xs text-muted-foreground">
-											{isDM ? 'Direct Message' : `${channel.members.length} members`}
-										</span>
-									</div>
-								</div>
-								{isSelected ? (
-									<CheckCircle2 size={20} className="text-primary fill-primary/10" />
-								) : (
-									<Circle size={20} className="text-muted-foreground opacity-40" />
-								)}
-							</button>
-						);
-					})}
-					{filteredChannels.length === 0 && (
-						<div className="p-8 text-center text-muted-foreground italic">
-							No channels found matching your search.
-						</div>
-					)}
-				</div>
-
-				<div className="p-4 border-t border-border flex items-center justify-between bg-accent/30">
-					<span className="text-sm text-muted-foreground font-medium">
-						{selectedIds.length} selected
+		<ModalShell
+			open
+			onOpenChange={onClose}
+			title={t('chat.forward.title')}
+			bodyClassName="p-0"
+			footer={
+				<div className="flex w-full items-center justify-between gap-2">
+					<span className="text-sm font-medium text-muted-foreground">
+						{t('chat.forward.selected', { count: selectedIds.length })}
 					</span>
 					<div className="flex gap-2">
-						<button
-							onClick={onClose}
-							className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-accent rounded-lg transition-colors"
-						>
-							Cancel
-						</button>
-						<button
+						<Button type="button" variant="ghost" onClick={onClose}>
+							{t('common.cancel')}
+						</Button>
+						<Button
+							type="button"
 							disabled={selectedIds.length === 0 || sending}
 							onClick={handleForward}
-							className="px-6 py-2 text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-lg transition-all flex items-center gap-2 shadow-lg active:scale-95"
 						>
 							{sending ? (
 								<>
 									<Loader2 size={16} className="animate-spin" />
-									Sending...
+									{t('chat.forward.sending')}
 								</>
 							) : (
 								<>
-									<Send size={16} />
-									Forward
+									<Send size={16} className="rtl:-scale-x-100" />
+									{t('chat.forward.forward')}
 								</>
 							)}
-						</button>
+						</Button>
 					</div>
 				</div>
-			</DialogContent>
-		</Dialog>
+			}
+		>
+			<div className="border-b border-border bg-muted p-4">
+				<div className="relative">
+					<Search
+						className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+						size={18}
+					/>
+					<Input
+						autoFocus
+						className="ps-10"
+						placeholder={t('chat.forward.search_placeholder')}
+						aria-label={t('chat.forward.search_placeholder')}
+						autoComplete="off"
+						autoCapitalize="off"
+						autoCorrect="off"
+						spellCheck={false}
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+					/>
+				</div>
+			</div>
+
+			<div className="max-h-[300px] space-y-1 overflow-y-auto p-2">
+				{filteredChannels.map((channel) => {
+					const isSelected = selectedIds.includes(channel.id);
+					const isDM = isDirectMessage(channel);
+					const otherId = isDM
+						? channel.members.find((m) => m !== user?.id) || channel.id
+						: channel.id;
+
+					return (
+						<ListRow
+							key={channel.id}
+							selected={isSelected}
+							onClick={() => handleToggle(channel.id)}
+							leading={
+								<Avatar
+									userId={otherId}
+									avatarId={isDM ? channel.member_avatars?.[otherId] : undefined}
+									size={36}
+								/>
+							}
+							title={getChannelDisplayName(channel, user?.id || '')}
+							subtitle={
+								isDM
+									? t('chat.forward.direct_message')
+									: t('chat.forward.members', { count: channel.members.length })
+							}
+							trailing={
+								isSelected ? (
+									<CheckCircle2 size={20} className="text-primary" />
+								) : (
+									<Circle size={20} className="text-muted-foreground opacity-40" />
+								)
+							}
+						/>
+					);
+				})}
+				{filteredChannels.length === 0 && (
+					<EmptyState title={t('chat.forward.no_results')} />
+				)}
+			</div>
+		</ModalShell>
 	);
 };

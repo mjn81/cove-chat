@@ -133,35 +133,35 @@ export const StorageTab = () => {
 					<div className="w-full h-2 rounded-full overflow-hidden bg-background/50 flex gap-0.5 mt-4">
 						{stats.images.bytes > 0 && (
 							<div
-								className="bg-blue-500 h-full rounded-full transition-all duration-300"
+								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.images.bytes)}%` }}
 								title={`Images: ${formatBytes(stats.images.bytes)}`}
 							/>
 						)}
 						{stats.videos.bytes > 0 && (
 							<div
-								className="bg-purple-500 h-full rounded-full transition-all duration-300"
+								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.videos.bytes)}%` }}
 								title={`Videos: ${formatBytes(stats.videos.bytes)}`}
 							/>
 						)}
 						{stats.voices.bytes > 0 && (
 							<div
-								className="bg-amber-500 h-full rounded-full transition-all duration-300"
+								className="bg-warning h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.voices.bytes)}%` }}
 								title={`Voice Notes: ${formatBytes(stats.voices.bytes)}`}
 							/>
 						)}
 						{stats.otherFiles.bytes > 0 && (
 							<div
-								className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+								className="bg-success h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.otherFiles.bytes)}%` }}
 								title={`Files: ${formatBytes(stats.otherFiles.bytes)}`}
 							/>
 						)}
 						{stats.messages.bytes > 0 && (
 							<div
-								className="bg-indigo-400 h-full rounded-full transition-all duration-300"
+								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.messages.bytes)}%` }}
 								title={`Messages: ${formatBytes(stats.messages.bytes)}`}
 							/>
@@ -179,7 +179,7 @@ export const StorageTab = () => {
 				{/* Images */}
 				<div className="flex items-center justify-between p-3.5 bg-secondary/40 border border-border/50 rounded-lg hover:bg-secondary/60 transition">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-md bg-blue-500/10 text-blue-500 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
 							<ImageIcon size={18} />
 						</div>
 						<div>
@@ -210,7 +210,7 @@ export const StorageTab = () => {
 				{/* Videos */}
 				<div className="flex items-center justify-between p-3.5 bg-secondary/40 border border-border/50 rounded-lg hover:bg-secondary/60 transition">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-md bg-purple-500/10 text-purple-500 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
 							<Film size={18} />
 						</div>
 						<div>
@@ -241,7 +241,7 @@ export const StorageTab = () => {
 				{/* Voice Notes */}
 				<div className="flex items-center justify-between p-3.5 bg-secondary/40 border border-border/50 rounded-lg hover:bg-secondary/60 transition">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-md bg-amber-500/10 text-amber-500 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-md bg-warning/10 text-warning flex items-center justify-center">
 							<Mic size={18} />
 						</div>
 						<div>
@@ -272,7 +272,7 @@ export const StorageTab = () => {
 				{/* Other Files */}
 				<div className="flex items-center justify-between p-3.5 bg-secondary/40 border border-border/50 rounded-lg hover:bg-secondary/60 transition">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-md bg-success/10 text-success flex items-center justify-center">
 							<FileText size={18} />
 						</div>
 						<div>
@@ -303,7 +303,7 @@ export const StorageTab = () => {
 				{/* Messages */}
 				<div className="flex items-center justify-between p-3.5 bg-secondary/40 border border-border/50 rounded-lg hover:bg-secondary/60 transition">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-md bg-indigo-400/10 text-indigo-400 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
 							<MessageSquare size={18} />
 						</div>
 						<div>

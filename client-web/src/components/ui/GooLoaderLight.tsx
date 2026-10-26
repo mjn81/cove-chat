@@ -4,7 +4,7 @@ export const GooLoaderLight: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="goo" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
     <style>{`
       /* Two knobs: color is the ink, --rate multiplies every duration. */
-      svg { color: #060607; --rate: 1; }
+      svg { color: hsl(var(--foreground)); --rate: 1; }
 
       .goo-bound { stroke: currentColor; stroke-width: 1; opacity: .14; }
 

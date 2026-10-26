@@ -2,6 +2,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mic, Play, Square } from 'lucide-react';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 import { useAppStore } from '@/store/store';
 
 export const VoiceTab = () => {
@@ -107,26 +114,25 @@ export const VoiceTab = () => {
 					<h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
 						{t('settings.input_device')}
 					</h3>
-					<div className="relative group">
-						<select
-							id="mic-select"
-							value={selectedId}
-							onChange={(e) => handleDeviceChange(e.target.value)}
-							className="w-full bg-secondary border border-border/50 rounded-lg px-4 py-2.5 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all hover:bg-secondary/80 text-foreground font-medium pr-10"
-						>
+					<Select value={selectedId || 'default'} onValueChange={handleDeviceChange}>
+						<SelectTrigger id="mic-select" aria-label={t('settings.input_device')}>
+							<span className="flex min-w-0 items-center gap-2">
+								<Mic size={16} className="shrink-0 text-muted-foreground" />
+								<SelectValue />
+							</span>
+						</SelectTrigger>
+						<SelectContent>
 							{devices.length === 0 && (
-								<option value="default">Default</option>
+								<SelectItem value="default">{t('settings.default_device')}</SelectItem>
 							)}
 							{devices.map((device) => (
-								<option key={device.deviceId} value={device.deviceId}>
-									{device.label || `Microphone ${device.deviceId.slice(0, 5)}`}
-								</option>
+								<SelectItem key={device.deviceId} value={device.deviceId || 'default'}>
+									{device.label ||
+										t('settings.microphone_n', { id: device.deviceId.slice(0, 5) })}
+								</SelectItem>
 							))}
-						</select>
-						<div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-							<Mic size={18} />
-						</div>
-					</div>
+						</SelectContent>
+					</Select>
 					<p className="text-[11px] text-muted-foreground mt-2 px-1">
 						{t('settings.mic_help')}
 					</p>
@@ -160,7 +166,7 @@ export const VoiceTab = () => {
 							// Color shifts: 0-16 primary, 16-20 yellow, 20-24 red
 							let colorClass = 'bg-primary';
 							if (i > 20) colorClass = 'bg-destructive';
-							else if (i > 16) colorClass = 'bg-yellow-500';
+							else if (i > 16) colorClass = 'bg-warning';
 
 							return (
 								<div 

@@ -188,10 +188,10 @@ export const MessageItem = memo(
 					!grouped ? (isMobile ? 'mt-2' : 'mt-4') : ''
 				} ${
 					isMentioned
-						? 'bg-mention border-l-2 border-mention-border hover:opacity-90'
+						? 'bg-mention border-s-2 border-mention-border hover:opacity-90'
 						: showMobileMenu && isMobile
-							? 'bg-primary/5 border-l-2 border-primary/30'
-							: 'hover:bg-accent/30 border-l-2 border-transparent'
+							? 'bg-primary/5 border-s-2 border-primary/30'
+							: 'hover:bg-accent/30 border-s-2 border-transparent'
 				}`}
 				style={{ touchAction: 'pan-y' }}
 			>
@@ -199,7 +199,7 @@ export const MessageItem = memo(
 				<div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
 					{/* Swipe to Reply Indicator (revealed when sliding LEFT) */}
 					<div 
-						className="absolute right-0 top-0 bottom-0 flex items-center justify-center transition-all"
+						className="absolute end-0 top-0 bottom-0 flex items-center justify-center transition-all"
 						style={{ 
 							width: '80px',
 							opacity: dragX < 0 ? Math.min(Math.abs(dragX) / 60, 1) : 0,
@@ -213,7 +213,7 @@ export const MessageItem = memo(
 	
 					{/* Swipe to Forward Indicator (revealed when sliding RIGHT) */}
 					<div 
-						className="absolute left-0 top-0 bottom-0 flex items-center justify-center transition-all"
+						className="absolute start-0 top-0 bottom-0 flex items-center justify-center transition-all"
 						style={{ 
 							width: '80px',
 							opacity: dragX > 0 ? Math.min(dragX / 60, 1) : 0,
@@ -233,7 +233,7 @@ export const MessageItem = memo(
 					{/* Action Menu */}
 					{!isEditing && !msg.pending && (
 						<div
-							className={`absolute right-4 -top-3 items-center gap-0.5 bg-background border border-border rounded-md shadow-lg overflow-hidden z-20 ${
+							className={`absolute end-4 -top-3 items-center gap-0.5 bg-background border border-border rounded-md shadow-lg overflow-hidden z-20 ${
 								showMobileMenu && isMobile
 									? 'flex animate-in zoom-in-95 duration-150'
 									: 'hidden group-hover:flex'
@@ -259,7 +259,7 @@ export const MessageItem = memo(
 									setIsEditing(true);
 									if (isMobile) setShowMobileMenu(false);
 								}}
-								className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors border-l border-border"
+								className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors border-s border-border"
 								title="Edit Message"
 							>
 								<Pencil size={14} />
@@ -272,7 +272,7 @@ export const MessageItem = memo(
 									setShowDeleteConfirm(true);
 									if (isMobile) setShowMobileMenu(false);
 								}}
-								className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors border-l border-border"
+								className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors border-s border-border"
 								title="Delete Message"
 							>
 								<Trash2 size={14} />
@@ -315,7 +315,7 @@ export const MessageItem = memo(
 						<div className="flex items-center gap-1 mb-1 h-5 select-none relative group/reply-target">
 							<CornerUpLeft
 								size={14}
-								className={`text-muted-foreground/40 shrink-0 ${isMobile ? 'ml-[-13px]' : 'ml-[-17px]'}`}
+								className={`text-muted-foreground/40 shrink-0 ${isMobile ? 'ms-[-13px]' : 'ms-[-17px]'}`}
 							/>
 
 							<div className="flex items-center gap-1.5 min-w-0 opacity-70 hover:opacity-100 transition-opacity">
@@ -411,7 +411,7 @@ export const MessageItem = memo(
 								>
 									{msg.text ? renderText(msg.text) : '[encrypted]'}
 									{msg.edited_at && (
-										<span className="text-[10px] text-muted-foreground ml-1 inline-block select-none">
+										<span className="text-[10px] text-muted-foreground ms-1 inline-block select-none">
 											(edited)
 										</span>
 									)}

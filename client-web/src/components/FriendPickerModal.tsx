@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from '@/components/ui/dialog';
+import { findDirectChannel } from '@/domains/channels/utils/direct-message';
+import { useTranslation } from 'react-i18next';
+import { Search, Send, Check, Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ListRow } from '@/components/list-row';
+import { ModalShell } from '@/components/modal-shell';
+import { EmptyState } from '@/components/empty-state';
+import { Avatar as MinidenticonAvatar } from '@/components/Avatar';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/store';
 import { useChannelStore } from '@/store/channels.slice';
-import { Avatar as MinidenticonAvatar } from '@/components/Avatar';
-import { Search, Send, Check, Loader2, Users } from 'lucide-react';
 import { wsSendMessage } from '@/ws';
+import { logger } from '@/utils/logger';
 
 interface FriendPickerModalProps {
 	open: boolean;
@@ -21,13 +23,19 @@ interface FriendPickerModalProps {
 	inviteLink?: string;
 }
 
+/**
+ * Lets the user pick friends and DM each of them a channel invite link.
+ *
+ * @param inviteLink - Channel invite code; the picker does nothing without it.
+ * @param channelName - Shown in the invite text sent to each friend.
+ */
 export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 	open,
 	onOpenChange,
-	channelId: _channelId,
 	channelName,
 	inviteLink,
 }) => {
+	const { t } = useTranslation();
 	const relationships = useAuthStore((state) => state.relationships);
 	const channels = useChannelStore((state) => state.channels);
 	const createChannel = useChannelStore((state) => state.createChannel);
@@ -54,19 +62,14 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 		setIsSending(true);
 		try {
 			const linkUrl = `${window.location.origin}/join/${inviteLink}`;
-			const inviteText = `Join my channel "${channelName || 'channel'}": ${linkUrl}`;
+			const inviteText = t('channel.invite.message', {
+				name: channelName || t('channel.invite.default_channel'),
+				link: linkUrl,
+			});
 
 			for (const friendId of selectedUserIds) {
-				// Find existing DM channel with friend or create new one
-				let dmChannel = channels.find((c) => {
-					if (c.name !== '') return false;
-					return c.members.includes(friendId) && c.members.length === 2;
-				});
-
-				if (!dmChannel) {
-					dmChannel = await createChannel('', [friendId], true);
-				}
-
+				const dmChannel =
+					findDirectChannel(channels, friendId) ?? (await createChannel('', [friendId], true));
 				if (dmChannel) {
 					await wsSendMessage(dmChannel.id, inviteText, 'text');
 				}
@@ -79,124 +82,111 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 				onOpenChange(false);
 			}, 1500);
 		} catch (err) {
-			console.error('Failed to send invite links', err);
+			logger.error('Failed to send invite links', { error: String(err) });
 		} finally {
 			setIsSending(false);
 		}
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 text-zinc-100 p-6 rounded-2xl shadow-2xl">
-				<DialogHeader>
-					<DialogTitle className="text-lg font-semibold flex items-center gap-2">
-						<Users className="w-5 h-5 text-indigo-400" />
-						Send Channel Link to Friends
-					</DialogTitle>
-				</DialogHeader>
-
-				<div className="flex flex-col gap-3 my-2">
-					<div className="relative">
-						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-						<input
-							type="text"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search friends..."
-							className="w-full bg-zinc-900 border border-zinc-800 text-zinc-100 text-sm rounded-xl pl-9 pr-3 py-2 outline-none focus:border-indigo-500"
-						/>
-					</div>
-
-					<div className="max-h-60 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1">
-						{filteredFriends.length === 0 ? (
-							<div className="text-center py-8 text-xs text-zinc-500">
-								{search ? 'No friends match your search.' : 'You have no friends to invite.'}
-							</div>
-						) : (
-							filteredFriends.map((f) => {
-								const isSelected = selectedUserIds.includes(f.to_user_id);
-								return (
-									<div
-										key={f.to_user_id}
-										onClick={() => toggleSelect(f.to_user_id)}
-										className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition border ${
-											isSelected
-												? 'bg-indigo-950/30 border-indigo-500/50 text-white'
-												: 'bg-zinc-900/40 border-zinc-850 hover:bg-zinc-900 text-zinc-300'
-										}`}
-									>
-										<div className="flex items-center gap-3">
-											<MinidenticonAvatar
-												userId={f.to_user_id}
-												avatarId={f.user?.avatar_id}
-												size={36}
-											/>
-											<div>
-												<div className="text-sm font-semibold">
-													{f.user?.username || 'Friend'}
-												</div>
-												<div className="text-xs text-zinc-500">
-													~{f.user?.domain || 'localhost'}
-												</div>
-											</div>
-										</div>
-
-										<div
-											className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${
-												isSelected
-													? 'bg-indigo-600 border-indigo-500 text-white'
-													: 'border-zinc-700 bg-zinc-800'
-											}`}
-										>
-											{isSelected && <Check size={12} />}
-										</div>
-									</div>
-								);
-							})
-						)}
-					</div>
-				</div>
-
-				<DialogFooter className="flex items-center justify-between pt-2">
-					<span className="text-xs text-zinc-400">
-						{selectedUserIds.length} friend{selectedUserIds.length === 1 ? '' : 's'} selected
+		<ModalShell
+			open={open}
+			onOpenChange={onOpenChange}
+			title={t('channel.invite.title')}
+			footer={
+				<div className="flex w-full items-center justify-between gap-2">
+					<span className="text-xs text-muted-foreground">
+						{t('channel.invite.selected_count', { count: selectedUserIds.length })}
 					</span>
 					<div className="flex items-center gap-2">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => onOpenChange(false)}
-							className="text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-						>
-							Cancel
+						<Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+							{t('common.cancel')}
 						</Button>
 						<Button
 							type="button"
 							disabled={selectedUserIds.length === 0 || isSending || sentSuccess}
 							onClick={handleSendInviteLinks}
-							className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium gap-1.5 shadow-md shadow-indigo-600/20"
 						>
 							{sentSuccess ? (
 								<>
-									<Check size={14} className="text-emerald-400" />
-									<span>Sent!</span>
+									<Check size={14} />
+									<span>{t('channel.invite.sent')}</span>
 								</>
 							) : isSending ? (
 								<>
 									<Loader2 size={14} className="animate-spin" />
-									<span>Sending...</span>
+									<span>{t('channel.invite.sending')}</span>
 								</>
 							) : (
 								<>
-									<Send size={14} />
-									<span>Send Link</span>
+									<Send size={14} className="rtl:-scale-x-100" />
+									<span>{t('channel.invite.send')}</span>
 								</>
 							)}
 						</Button>
 					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</div>
+			}
+		>
+			<div className="flex flex-col gap-3">
+				<div className="relative">
+					<Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<Input
+						type="text"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder={t('channel.invite.search_placeholder')}
+						aria-label={t('channel.invite.search_placeholder')}
+						autoComplete="off"
+						autoCapitalize="off"
+						autoCorrect="off"
+						spellCheck={false}
+						className="ps-9"
+					/>
+				</div>
+
+				<div className="flex max-h-60 flex-col gap-1 overflow-y-auto">
+					{filteredFriends.length === 0 ? (
+						<EmptyState
+							title={search ? t('channel.invite.no_match') : t('channel.invite.no_friends')}
+						/>
+					) : (
+						filteredFriends.map((f) => {
+							const isSelected = selectedUserIds.includes(f.to_user_id);
+							return (
+								<ListRow
+									key={f.to_user_id}
+									selected={isSelected}
+									onClick={() => toggleSelect(f.to_user_id)}
+									leading={
+										<MinidenticonAvatar
+											userId={f.to_user_id}
+											avatarId={f.user?.avatar_id}
+											size={36}
+										/>
+									}
+									title={f.user?.username || t('channel.invite.friend_fallback')}
+									subtitle={`~${f.user?.domain || 'localhost'}`}
+									trailing={
+										<span
+											aria-hidden="true"
+											className={cn(
+												'flex h-5 w-5 items-center justify-center rounded border',
+												isSelected
+													? 'border-primary bg-primary text-primary-foreground'
+													: 'border-input',
+											)}
+										>
+											{isSelected && <Check size={12} />}
+										</span>
+									}
+								/>
+							);
+						})
+					)}
+				</div>
+			</div>
+		</ModalShell>
 	);
 };
 

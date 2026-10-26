@@ -20,7 +20,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 	return (
-		<div className={`${isMobile ? 'w-full px-6' : 'w-[220px] border-r border-border/50 px-4'} bg-secondary flex flex-col pt-8 h-full ${isMobile ? 'pt-safe' : ''}`}>
+		<div className={`${isMobile ? 'w-full px-6' : 'w-[220px] border-e border-border/50 px-4'} bg-secondary flex flex-col pt-8 h-full ${isMobile ? 'pt-safe' : ''}`}>
 			<div className="space-y-6">
 				<div>
 					<div className="text-[11px] font-bold text-muted-foreground uppercase px-3 mb-1.5 tracking-wider">

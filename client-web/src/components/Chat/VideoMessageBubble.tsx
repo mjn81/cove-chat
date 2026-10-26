@@ -6,7 +6,6 @@ import {
 	Loader2,
 	AlertCircle,
 	Maximize2,
-	X,
 } from 'lucide-react';
 import type { Message } from '@/types/api';
 import { decryptMessage, getChannelKey, base64ToBytes, onWS } from '@/ws';
@@ -14,11 +13,8 @@ import { decryptAndDecompressFile } from '@/utils/file';
 import { apiGetFile } from '@/api/client';
 import { db } from '@/lib/db';
 import { CustomVideoPlayer } from './File/CustomVideoPlayer';
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { ModalShell } from '@/components/modal-shell';
 
 interface VideoMessageBubbleProps {
 	msg: Message;
@@ -37,6 +33,7 @@ interface VideoMetadata {
 }
 
 export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) => {
+	const { t } = useTranslation();
 	const [meta, setMeta] = useState<VideoMetadata | null>(null);
 	const [videoUrl, setVideoUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -173,10 +170,10 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 
 	const progress = duration > 0 ? currentTime / duration : 0;
 
-	// Perimeter for squircle with width=248, height=248, rx=32
+	// Ring is inset 4px inside the 32px-radius tile, so its corner radius is 32 - 4 = 28 to stay concentric with the edge.
 	const w = 248;
 	const h = 248;
-	const r = 32;
+	const r = 28;
 	const sqPerimeter = 2 * (w - 2 * r + h - 2 * r) + 2 * Math.PI * r;
 	const sqDashoffset = sqPerimeter * (1 - progress);
 
@@ -224,7 +221,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 							</div>
 						) : (
 							<div className="w-14 h-14 rounded-2xl bg-primary/90 flex items-center justify-center text-primary-foreground shadow-lg group-hover:scale-110 transition">
-								<Play size={26} fill="currentColor" className="ml-1" />
+								<Play size={26} fill="currentColor" className="ms-1" />
 							</div>
 						)}
 					</div>
@@ -297,7 +294,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 
 				{/* Processing badge overlay */}
 				{isProcessing && !videoUrl && (
-					<div className="absolute top-3 left-1/2 -translate-x-1/2 bg-amber-500/80 backdrop-blur-sm text-black font-semibold text-[10px] px-2.5 py-0.5 rounded-full shadow">
+					<div className="absolute top-3 left-1/2 -translate-x-1/2 bg-warning/80 backdrop-blur-sm text-warning-foreground font-semibold text-[10px] px-2.5 py-0.5 rounded-full shadow">
 						Converting...
 					</div>
 				)}
@@ -312,34 +309,21 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 			</div>
 
 			{/* Fullscreen Video Player Modal */}
-			<Dialog open={isPlayerOpen} onOpenChange={setIsPlayerOpen}>
-				<DialogContent className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-md border-none outline-none max-w-none w-screen h-screen translate-x-0 translate-y-0 [&>button:last-child]:hidden">
-					<DialogTitle className="sr-only">Video Message Player</DialogTitle>
-
-					{/* Close Button */}
-					<button
-						type="button"
-						onClick={() => setIsPlayerOpen(false)}
-						className="absolute top-4 right-4 z-50 p-2 text-white/70 hover:text-white bg-black/50 hover:bg-black/75 rounded-full backdrop-blur-sm transition cursor-pointer"
-						title="Close Player"
-					>
-						<X size={24} />
-					</button>
-
-					{videoUrl && (
-						<div
-							className="w-full max-w-3xl max-h-[80vh] flex items-center justify-center"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<CustomVideoPlayer
-								src={videoUrl}
-								autoPlay
-								className="rounded-2xl overflow-hidden shadow-2xl border border-white/15"
-							/>
-						</div>
-					)}
-				</DialogContent>
-			</Dialog>
+			<ModalShell
+				open={isPlayerOpen}
+				onOpenChange={setIsPlayerOpen}
+				title={t('chat.video.player_title')}
+				size="media"
+				bodyClassName="flex items-center justify-center p-4"
+			>
+				{videoUrl && (
+					<CustomVideoPlayer
+						src={videoUrl}
+						autoPlay
+						className="max-h-[80vh] w-full overflow-hidden rounded-lg"
+					/>
+				)}
+			</ModalShell>
 		</div>
 	);
 };

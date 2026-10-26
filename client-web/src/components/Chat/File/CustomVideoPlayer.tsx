@@ -1,3 +1,4 @@
+// guardrail-allow physicalClass: media timelines, scrubbers and waveforms run left-to-right in RTL UIs too.
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
 	Play,

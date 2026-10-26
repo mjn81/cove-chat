@@ -30,7 +30,7 @@ export function NavStrip({ activeTab, onChange, orientation = 'vertical' }: NavS
 				className={
 					isHorizontal
 						? 'flex flex-row items-center justify-around w-full px-2 py-1.5 bg-secondary border-b border-border/50 shrink-0 select-none gap-2'
-						: 'flex flex-col items-center gap-1 w-12 py-3 bg-secondary border-r border-border/50 shrink-0 select-none'
+						: 'flex flex-col items-center gap-1 w-12 py-3 bg-secondary border-e border-border/50 shrink-0 select-none'
 				}
 			>
 				{TABS.map(({ id, icon: Icon, label }) => (
