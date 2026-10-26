@@ -11,75 +11,90 @@
 }
 
 @layer base {
-  :root {
-    --background: 223 7% 21%; /* #313338 (Discord main chat) */
-    --foreground: 220 13% 95%; /* #F2F3F5 */
+  :root,
+  .dark {
+    --background: 20 6% 13%; /* #23201F */
+    --foreground: 25 10% 90%; /* #E8E5E3 */
 
-    --card: 220 6% 18%; /* #2b2d31 */
-    --card-foreground: 220 13% 95%;
+    --card: 20 6% 17%; /* #2E2A29 */
+    --card-foreground: 25 10% 90%; /* #E8E5E3 */
 
-    --popover: 225 6% 13%; /* #1e1f22 */
-    --popover-foreground: 220 13% 95%;
+    --popover: 20 6% 10%; /* #1B1918 */
+    --popover-foreground: 25 10% 90%; /* #E8E5E3 */
 
-    --primary: 235 86% 65%; /* #5865F2 (Discord blurple) */
-    --primary-foreground: 0 0% 100%;
+    --primary: 13 59% 63%; /* #D9826A terracotta */
+    --primary-foreground: 14 53% 11%; /* #2A140D */
 
-    --secondary: 220 6% 18%; /* #2b2d31 */
-    --secondary-foreground: 220 13% 95%;
+    --secondary: 20 6% 17%; /* #2E2A29 */
+    --secondary-foreground: 25 10% 90%; /* #E8E5E3 */
 
-    --muted: 220 6% 18%; /* #2b2d31 */
-    --muted-foreground: 215 14% 65%; /* #949BA4 */
+    --muted: 20 6% 17%; /* #2E2A29 */
+    --muted-foreground: 22 6% 66%; /* #AEA7A3 */
 
-    --accent: 220 6% 26%; /* #3f4147 hover */
-    --accent-foreground: 220 13% 95%;
+    --accent: 20 6% 22%; /* #3B3735 */
+    --accent-foreground: 25 10% 90%; /* #E8E5E3 */
 
-    --destructive: 359 83% 66%; /* #FA777C */
+    --destructive: 355 83% 66%; /* #F0616D */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 225 6% 13%; /* #1e1f22 */
-    --input: 225 6% 13%; /* #1e1f22 */
-    --ring: 235 86% 65%;
-    
-    --mention-background: 38 48% 16%;
-    --mention-foreground: 40 86% 57%;
-    --mention-border: 40 86% 57%;
-    
+    --border: 20 6% 26%; /* #46413E */
+    --input: 20 6% 26%; /* #46413E */
+    --ring: 13 59% 63%;
+
+    --mention-background: 38 44% 16%; /* #3B2E17 */
+    --mention-foreground: 39 88% 68%; /* #F5C265 */
+    --mention-border: 39 88% 68%;
+
+    --success: 148 48% 56%; /* #58C48A online / enabled / confirmed */
+    --success-foreground: 149 53% 9%;
+    --warning: 39 88% 68%; /* #F5C265 idle / caution */
+    --warning-foreground: 40 100% 8%;
+    --overlay: 0 0% 0%; /* scrim / controls drawn over video and images; use with an opacity suffix, e.g. bg-overlay/60 */
+    --overlay-foreground: 0 0% 100%;
+
     --radius: 0.5rem;
   }
 
   .light {
     color-scheme: light;
     --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 240 10% 2%; /* #060607 */
+    --foreground: 24 19% 11%; /* #201A16 */
 
-    --card: 220 15% 96%; /* #F2F3F5 */
-    --card-foreground: 240 10% 2%;
+    --card: 30 36% 96%; /* #F8F4F0 sidebar / panels */
+    --card-foreground: 24 19% 11%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 2%;
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 24 19% 11%;
 
-    --primary: 235 86% 65%; /* #5865F2 */
-    --primary-foreground: 0 0% 100%;
+    --primary: 12 51% 53%; /* #C4624A terracotta */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 220 15% 96%; /* #F2F3F5 */
-    --secondary-foreground: 225 6% 32%; /* #4E5058 */
+    --secondary: 30 36% 96%; /* #F8F4F0 */
+    --secondary-foreground: 24 19% 11%;
 
-    --muted: 220 15% 96%; /* #F2F3F5 */
-    --muted-foreground: 225 6% 32%; /* #4E5058 */
+    --muted: 30 36% 96%; /* #F8F4F0 */
+    --muted-foreground: 26 9% 44%; /* #7A6E65 */
 
-    --accent: 220 13% 91%; /* #E3E5E8 */
-    --accent-foreground: 240 10% 2%;
+    --accent: 30 30% 91%; /* #EFE8E1 hover */
+    --accent-foreground: 24 19% 11%;
 
-    --destructive: 359 83% 66%;
+    --destructive: 0 66% 53%; /* #D63A3A */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%; /* #E3E5E8 */
-    --input: 220 13% 91%;
-    --ring: 235 86% 65%;
+    --border: 30 28% 87%; /* #E8DFD6 */
+    --input: 30 28% 87%;
+    --ring: 12 51% 53%;
 
-    --mention-background: 40 100% 90%;
-    --mention-foreground: 40 86% 57%;
-    --mention-border: 40 86% 57%;
+    --mention-background: 45 100% 88%; /* #FFF0C2 */
+    --mention-foreground: 39 100% 27%; /* #8A5A00 */
+    --mention-border: 39 100% 27%;
+
+    --success: 142 54% 39%; /* #2E9A55 online / enabled / confirmed */
+    --success-foreground: 0 0% 100%;
+    --warning: 39 100% 27%; /* #8A5A00 idle / caution */
+    --warning-foreground: 0 0% 100%;
+    --overlay: 0 0% 0%; /* scrim / controls drawn over video and images; use with an opacity suffix, e.g. bg-overlay/60 */
+    --overlay-foreground: 0 0% 100%;
   }
 
   .whisper-mode {
@@ -167,20 +182,30 @@
   }
 }
 
-/* Base custom scrollbar for Discord feel */
+/* Slim scrollbars: invisible track, thumb that darkens on hover. Chromium/WebView2 use the -webkit rules;
+   other engines (Firefox) fall back to the standard properties, which would otherwise override them in Chromium. */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
-::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(225 6% 13%);
-  border-radius: 4px;
+  background-color: hsl(var(--muted-foreground) / 0.25);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 6% 26%);
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
 }
 
 @layer utilities {
