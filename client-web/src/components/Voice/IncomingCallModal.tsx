@@ -109,13 +109,13 @@ export const IncomingCallModal: React.FC = () => {
 				animate={{ opacity: 1, y: 0, scale: 1 }}
 				exit={{ opacity: 0, y: -20, scale: 0.95 }}
 				transition={{ duration: 0.2, ease: 'easeOut' }}
-				className="fixed top-6 end-6 z-50 w-80 sm:w-92 bg-[#1e1f22]/95 backdrop-blur-xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.8)] rounded-2xl p-4 sm:p-5 text-white pointer-events-auto select-none"
+				className="fixed top-6 end-6 z-50 w-80 sm:w-92 bg-card border border-border shadow-[0_16px_48px_rgba(0,0,0,0.8)] rounded-2xl p-4 sm:p-5 text-foreground pointer-events-auto select-none"
 			>
 				<div className="flex items-center gap-3.5">
 					{/* Caller Avatar with animated ringing halos */}
 					<div className="relative shrink-0 flex items-center justify-center">
-						<span className="absolute -inset-1 rounded-full bg-[#23a55a]/30 animate-ping" />
-						<div className="relative rounded-full ring-3 ring-[#23a55a] shadow-[0_0_16px_rgba(35,165,90,0.6)]">
+						<span className="absolute -inset-1 rounded-full bg-success/30 animate-ping" />
+						<div className="relative rounded-full ring-3 ring-success shadow-[0_0_16px_hsl(var(--success)/0.6)]">
 							<Avatar
 								userId={incomingCall.callerId}
 								avatarId={incomingCall.callerAvatarId}
@@ -125,12 +125,12 @@ export const IncomingCallModal: React.FC = () => {
 					</div>
 
 					{/* Caller Information */}
-					<div className="flex-1 min-w-0 pr-1">
-						<h4 className="text-sm font-bold text-white truncate">
+					<div className="flex-1 min-w-0 pe-1">
+						<h4 className="text-sm font-bold text-foreground truncate">
 							{incomingCall.callerUsername}
 						</h4>
-						<p className="text-xs text-[#23a55a] font-medium flex items-center gap-1.5 mt-0.5">
-							<span className="w-2 h-2 rounded-full bg-[#23a55a] animate-pulse" />
+						<p className="text-xs text-success font-medium flex items-center gap-1.5 mt-0.5">
+							<span className="w-2 h-2 rounded-full bg-success animate-pulse" />
 							Incoming Voice Call...
 						</p>
 					</div>
@@ -141,7 +141,7 @@ export const IncomingCallModal: React.FC = () => {
 					<button
 						type="button"
 						onClick={handleDecline}
-						className="flex-1 py-2.5 px-3 bg-[#da373c] hover:bg-[#be3135] text-white font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
+						className="flex-1 py-2.5 px-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
 					>
 						<PhoneOff size={15} />
 						<span>Decline</span>
@@ -150,7 +150,7 @@ export const IncomingCallModal: React.FC = () => {
 					<button
 						type="button"
 						onClick={handleAccept}
-						className="flex-1 py-2.5 px-3 bg-[#23a55a] hover:bg-[#1f9250] text-white font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
+						className="flex-1 py-2.5 px-3 bg-success hover:bg-success/90 text-success-foreground font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
 					>
 						<Phone size={15} />
 						<span>Accept</span>

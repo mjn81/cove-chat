@@ -118,9 +118,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 	const userVolumes = useVoiceStore((state) => state.userVolumes);
 	const userMutes = useVoiceStore((state) => state.userMutes);
 
-	if (!isActive) return null;
-
 	const spotlightStreamId = useVoiceStore((state) => state.spotlightStreamId);
+
+	if (!isActive) return null;
 
 	// Check if someone (local or remote) is sharing screen
 	const activeScreenStream =
@@ -156,7 +156,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
 	return (
 		<div
-			className={`fixed transition-all duration-300 ease-in-out z-50 flex flex-col bg-[#111214] border border-[#232428] shadow-[0_12px_48px_rgba(0,0,0,0.8)] overflow-hidden ${
+			className={`fixed transition-all duration-300 ease-in-out z-50 flex flex-col bg-popover border border-border shadow-[0_12px_48px_rgba(0,0,0,0.8)] overflow-hidden ${
 				isExpanded
 					? 'inset-3 sm:inset-6 rounded-3xl'
 					: 'bottom-6 end-6 w-[380px] sm:w-[460px] h-[580px] rounded-2xl'
@@ -184,25 +184,25 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 				})}
 
 			{/* Discord Top Header */}
-			<div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-[#18191c] shrink-0 select-none">
+			<div className="px-4 py-3 flex items-center justify-between border-b border-border/50 bg-popover shrink-0 select-none">
 				<div className="flex items-center gap-2.5">
-					<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#23a55a]/15 text-[#23a55a] border border-[#23a55a]/30">
+					<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">
 						<Radio size={12} className="animate-pulse" />
 						<span className="text-[11px] font-bold tracking-wide uppercase">Voice Connected</span>
 					</div>
 					<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-						<Wifi size={13} className="text-[#23a55a]" />
-						<span className="font-medium text-white/80">
+						<Wifi size={13} className="text-success" />
+						<span className="font-medium text-foreground">
 							{members.length} {members.length === 1 ? 'member' : 'members'}
 						</span>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1 text-white/70">
+				<div className="flex items-center gap-1 text-muted-foreground">
 					<button
 						type="button"
 						onClick={() => setIsExpanded(!isExpanded)}
-						className="p-1.5 hover:bg-[#2b2d31] hover:text-white rounded-lg transition-colors cursor-pointer"
+						className="p-1.5 hover:bg-card hover:text-foreground rounded-lg transition-colors cursor-pointer"
 						title={isExpanded ? 'Restore' : 'Maximize'}
 					>
 						{isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -210,7 +210,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 					<button
 						type="button"
 						onClick={onDisconnect}
-						className="p-1.5 hover:bg-[#da373c]/20 hover:text-[#da373c] rounded-lg transition-colors cursor-pointer"
+						className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-lg transition-colors cursor-pointer"
 						title="Disconnect"
 					>
 						<PhoneOff size={16} />
@@ -219,10 +219,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 			</div>
 
 			{/* Discord Main Stage / Grid */}
-			<div className="relative flex-1 p-3.5 flex flex-col gap-3 min-h-0 bg-[#111214] overflow-hidden">
+			<div className="relative flex-1 p-3.5 flex flex-col gap-3 min-h-0 bg-popover overflow-hidden">
 				{/* Screen Share Spotlight (if active) */}
 				{activeScreenStream && (
-					<div className="relative flex-1 min-h-[220px] bg-black rounded-2xl overflow-hidden border border-[#2b2d31] flex items-center justify-center shadow-lg">
+					<div className="relative flex-1 min-h-[220px] bg-black rounded-2xl overflow-hidden border border-border flex items-center justify-center shadow-lg">
 						<StreamVideo
 							stream={activeScreenStream}
 							isLocal={false}
@@ -230,10 +230,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 							className="w-full h-full"
 						/>
 						{presenterName && (
-							<div className="absolute top-3 start-3 px-3 py-1 rounded-md bg-[#111214]/85 backdrop-blur-md text-xs font-semibold text-white border border-white/10 flex items-center gap-2 shadow-md">
-								<Monitor size={14} className="text-[#23a55a]" />
+							<div className="absolute top-3 start-3 px-3 py-1 rounded-md bg-popover/85 text-xs font-semibold text-foreground border border-border flex items-center gap-2 shadow-md">
+								<Monitor size={14} className="text-success" />
 								<span>{presenterName}</span>
-								<span className="px-1.5 py-0.2 rounded bg-[#da373c] text-[10px] font-bold uppercase tracking-wider text-white">
+								<span className="px-1.5 py-0.2 rounded bg-destructive text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
 									LIVE
 								</span>
 							</div>
@@ -274,12 +274,12 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
 						const tileContent = (
 							<div
-								className={`group relative flex flex-col items-center justify-center rounded-2xl transition-all duration-150 overflow-hidden bg-[#2b2d31] select-none ${
+								className={`group relative flex flex-col items-center justify-center rounded-2xl transition-all duration-150 overflow-hidden bg-card select-none ${
 									activeScreenStream ? 'w-40 h-28 shrink-0' : 'w-full h-full min-h-[140px]'
 								} ${
 									isSpeaking
-										? 'border-2 border-[#23a55a] shadow-[0_0_12px_rgba(35,165,90,0.35)]'
-										: 'border border-white/5 hover:border-white/10'
+										? 'border-2 border-success shadow-[0_0_12px_hsl(var(--success)/0.35)]'
+										: 'border border-border/50 hover:border-border'
 								}`}
 							>
 								{hasVideoTrack ? (
@@ -294,7 +294,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 											<div
 												className={`rounded-full transition-all duration-150 ${
 													isSpeaking
-														? 'ring-4 ring-[#23a55a] shadow-[0_0_16px_rgba(35,165,90,0.65)]'
+														? 'ring-4 ring-success shadow-[0_0_16px_hsl(var(--success)/0.65)]'
 														: ''
 												}`}
 											>
@@ -309,7 +309,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 								)}
 
 								{/* Discord Bottom-Left Username Tag Pill */}
-								<div className="absolute bottom-2.5 start-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#111214]/85 backdrop-blur-md text-[12px] font-semibold text-white/95 shadow-md pointer-events-none max-w-[85%] border border-white/5">
+								<div className="absolute bottom-2.5 start-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-popover/85 text-[12px] font-semibold text-foreground shadow-md pointer-events-none max-w-[85%] border border-border/50">
 									<span className="truncate">
 										{memberNames[userId] || (isMe ? currentUser?.username : `User ${userId.slice(0, 6)}`)}
 										{isMe && ' (You)'}
@@ -317,17 +317,17 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
 									{/* Status indicators inside badge */}
 									{isUserMuted && (
-										<div className="text-[#da373c] shrink-0" title="Muted">
+										<div className="text-destructive shrink-0" title="Muted">
 											<MicOff size={12} />
 										</div>
 									)}
 									{isMe && isDeafened && (
-										<div className="text-[#da373c] shrink-0" title="Deafened">
+										<div className="text-destructive shrink-0" title="Deafened">
 											<Headphones size={12} />
 										</div>
 									)}
 									{isLocalMuted && (
-										<div className="text-[#da373c] shrink-0" title="Muted locally">
+										<div className="text-destructive shrink-0" title="Muted locally">
 											<VolumeX size={12} />
 										</div>
 									)}
@@ -344,16 +344,16 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 								<ContextMenuTrigger className="w-full h-full cursor-context-menu">
 									{tileContent}
 								</ContextMenuTrigger>
-								<ContextMenuContent className="w-60 bg-[#111214] border-[#2b2d31] text-white">
-									<ContextMenuLabel className="flex items-center gap-2 text-white/90">
-										<Settings2 size={14} className="text-[#23a55a]" />
+								<ContextMenuContent className="w-60 bg-popover border-border text-foreground">
+									<ContextMenuLabel className="flex items-center gap-2 text-foreground">
+										<Settings2 size={14} className="text-success" />
 										{memberNames[userId] || `User ${userId.slice(0, 6)}`}
 									</ContextMenuLabel>
-									<ContextMenuSeparator className="bg-white/10" />
+									<ContextMenuSeparator className="bg-border" />
 									<div className="px-3 py-2.5">
 										<div className="flex items-center justify-between mb-2">
-											<span className="text-xs font-medium text-white/80">User Volume</span>
-											<span className="text-[11px] font-bold text-[#23a55a] tabular-nums">
+											<span className="text-xs font-medium text-foreground">User Volume</span>
+											<span className="text-[11px] font-bold text-success tabular-nums">
 												{Math.round(volume * 100)}%
 											</span>
 										</div>
@@ -367,10 +367,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 											}
 										/>
 									</div>
-									<ContextMenuSeparator className="bg-white/10" />
+									<ContextMenuSeparator className="bg-border" />
 									<ContextMenuItem
 										onClick={() => webRTCManager.toggleParticipantMute(userId)}
-										className={`cursor-pointer ${isLocalMuted ? 'text-[#23a55a]' : 'text-[#da373c]'}`}
+										className={`cursor-pointer ${isLocalMuted ? 'text-success' : 'text-destructive'}`}
 									>
 										{isLocalMuted ? (
 											<>
@@ -392,15 +392,15 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
 				{/* Discord Floating Bottom Pill Dock */}
 				<div className="w-full flex items-center justify-center shrink-0 pt-2 pb-1">
-					<div className="bg-[#1e1f22]/95 backdrop-blur-md rounded-2xl px-5 py-2.5 shadow-2xl border border-white/10 flex items-center justify-center gap-3.5 z-20">
+					<div className="bg-card rounded-2xl px-5 py-2.5 shadow-2xl border border-border flex items-center justify-center gap-3.5 z-20">
 						{/* Camera Toggle Button */}
 						<button
 							type="button"
 							onClick={() => webRTCManager.toggleVideo()}
 							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
 								isVideoEnabled
-									? 'bg-white text-[#111214] hover:bg-white/90 shadow-md'
-									: 'bg-[#2b2d31] hover:bg-[#35373c] text-white/90'
+									? 'bg-foreground text-background hover:bg-foreground/90 shadow-md'
+									: 'bg-card hover:bg-accent text-foreground'
 							}`}
 							title={isVideoEnabled ? 'Turn Off Camera' : 'Turn On Camera'}
 						>
@@ -413,8 +413,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 							onClick={() => webRTCManager.toggleScreenShare()}
 							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
 								isScreenSharing
-									? 'bg-[#23a55a] text-white hover:bg-[#1f9250] shadow-md'
-									: 'bg-[#2b2d31] hover:bg-[#35373c] text-white/90'
+									? 'bg-success text-success-foreground hover:bg-success/90 shadow-md'
+									: 'bg-card hover:bg-accent text-foreground'
 							}`}
 							title={isScreenSharing ? 'Stop Screen Share' : 'Share Your Screen'}
 						>
@@ -427,8 +427,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 							onClick={onMuteToggle}
 							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
 								isMuted
-									? 'bg-[#da373c] text-white hover:bg-[#be3135] shadow-md'
-									: 'bg-[#2b2d31] hover:bg-[#35373c] text-white/90'
+									? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md'
+									: 'bg-card hover:bg-accent text-foreground'
 							}`}
 							title={isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
 						>
@@ -441,21 +441,21 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 							onClick={onDeafenToggle}
 							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
 								isDeafened
-									? 'bg-[#da373c] text-white hover:bg-[#be3135] shadow-md'
-									: 'bg-[#2b2d31] hover:bg-[#35373c] text-white/90'
+									? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md'
+									: 'bg-card hover:bg-accent text-foreground'
 							}`}
 							title={isDeafened ? 'Undeafen' : 'Deafen'}
 						>
 							{isDeafened ? <VolumeX size={19} /> : <Headphones size={19} />}
 						</button>
 
-						<div className="w-px h-6 bg-white/10 mx-0.5" />
+						<div className="w-px h-6 bg-border mx-0.5" />
 
 						{/* Disconnect Button (Discord Red) */}
 						<button
 							type="button"
 							onClick={onDisconnect}
-							className="w-11 h-11 rounded-full bg-[#da373c] hover:bg-[#be3135] text-white shadow-lg flex items-center justify-center transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer"
+							className="w-11 h-11 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg flex items-center justify-center transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer"
 							title="Disconnect"
 						>
 							<PhoneOff size={19} />
