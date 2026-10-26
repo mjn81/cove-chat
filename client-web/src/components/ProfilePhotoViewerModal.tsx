@@ -41,11 +41,13 @@ export const ProfilePhotoViewerModal: React.FC<ProfilePhotoViewerModalProps> = (
 	const { t } = useTranslation();
 	const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-	useEffect(() => {
-		if (open) {
-			setCurrentIndex(Math.max(0, Math.min(initialIndex, photos.length - 1)));
-		}
-	}, [open, initialIndex, photos.length]);
+	// Re-clamp the index whenever the viewer opens or its inputs change (state adjusted during render, not in an effect).
+	const resetKey = `${open}|${initialIndex}|${photos.length}`;
+	const [prevResetKey, setPrevResetKey] = useState(resetKey);
+	if (resetKey !== prevResetKey) {
+		setPrevResetKey(resetKey);
+		if (open) setCurrentIndex(Math.max(0, Math.min(initialIndex, photos.length - 1)));
+	}
 
 	const currentPhoto = photos[currentIndex] || '';
 	const direct = isDirectUrl(currentPhoto);

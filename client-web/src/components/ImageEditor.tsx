@@ -63,6 +63,8 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
 
 	useEffect(() => {
 		if (!file) {
+			// Resetting editor state when the source file is cleared; there is no render-time equivalent for the FileReader flow below.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setImgSrc('');
 			setError(null);
 			return;

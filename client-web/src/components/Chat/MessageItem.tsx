@@ -5,12 +5,15 @@ import { Avatar } from '../Avatar';
 import { type Message, type Channel } from '@/types/api';
 import { FileBubble } from './FileBubble';
 import { VideoMessageBubble } from './VideoMessageBubble';
-import { Reply, Pencil, Trash2, CornerUpLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Reply, Pencil, Trash2, CornerUpLeft, Loader2, AlertCircle, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { wsEditMessage, wsDeleteMessage } from '@/ws';
 import { JoinPreview } from './JoinPreview';
 import { ConfirmModal } from '../ConfirmModal';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { tokenizeMessage } from '@/utils/linkify';
+import { useLongPress } from '@/hooks/use-long-press';
+import { UserProfileModal } from '../UserProfileModal';
 
 interface MessageItemProps {
 	msg: Message & { text?: string };
@@ -138,6 +141,37 @@ export const MessageItem = memo(
 			wsDeleteMessage(channel.id, msg.id);
 		};
 
+		const { t } = useTranslation();
+		const [copied, setCopied] = useState(false);
+		const [profileUserId, setProfileUserId] = useState<string | null>(null);
+
+		useEffect(() => {
+			if (!copied) return;
+			const id = setTimeout(() => setCopied(false), 1400);
+			return () => clearTimeout(id);
+		}, [copied]);
+
+		/** Long-press copies the pressed link (without its mailto: prefix) or, anywhere else, the whole message. */
+		const copyPressed = useCallback(
+			async (target: EventTarget | null) => {
+				const link = (target as Element | null)?.closest?.('a[href]');
+				const value = link ? (link.getAttribute('href') ?? '').replace(/^mailto:/, '') : msg.text;
+				if (!value) return;
+				try {
+					await navigator.clipboard.writeText(value);
+					setCopied(true);
+				} catch {
+					// Clipboard can be unavailable (insecure context / denied permission); nothing useful to show.
+				}
+			},
+			[msg.text],
+		);
+		const longPress = useLongPress(copyPressed);
+
+		/** Resolves a typed @username to a channel member id (names are unique, compared case-insensitively). */
+		const memberIdForMention = (username: string) =>
+			Object.entries(channel.member_names ?? {}).find(([, name]) => name.toLowerCase() === username.toLowerCase())?.[0] ?? null;
+
 		const renderText = (text: string) => {
 			if (!text) return text;
 			return tokenizeMessage(text).map((token, i) => {
@@ -146,6 +180,17 @@ export const MessageItem = memo(
 					return (
 						<span
 							key={i}
+							role="button"
+							tabIndex={0}
+							onClick={() => {
+								const id = memberIdForMention(token.value.substring(1));
+								if (id) setProfileUserId(id);
+							}}
+							onKeyDown={(e) => {
+								if (e.key !== 'Enter') return;
+								const id = memberIdForMention(token.value.substring(1));
+								if (id) setProfileUserId(id);
+							}}
 							className={`rounded-[3px] px-[2px] font-medium transition-colors cursor-pointer ${
 								isMe
 									? 'bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground'
@@ -406,9 +451,19 @@ export const MessageItem = memo(
 								</div>
 							) : (
 								<div
-									className={`text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 ${msg.pending ? 'opacity-60' : ''}`}
+									className={`relative text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 rounded-sm ${msg.pending ? 'opacity-60' : ''} ${copied ? 'animate-copy-flash' : ''}`}
 									dir="auto"
+									{...longPress}
 								>
+									{copied && (
+										<span
+											role="status"
+											className="animate-copy-pop pointer-events-none absolute -top-7 end-0 z-10 flex items-center gap-1 rounded-md border border-border bg-popover px-2 py-1 text-xs font-medium text-foreground"
+										>
+											<Check size={12} className="text-success" />
+											{t('chat.copied')}
+										</span>
+									)}
 									{msg.text ? renderText(msg.text) : '[encrypted]'}
 									{msg.edited_at && (
 										<span className="text-[10px] text-muted-foreground ms-1 inline-block select-none">
@@ -447,6 +502,13 @@ export const MessageItem = memo(
 					)}
 				</div>
 			</div>
+			{profileUserId && (
+				<UserProfileModal
+					userId={profileUserId}
+					open
+					onOpenChange={(open) => !open && setProfileUserId(null)}
+				/>
+			)}
 		</div>
 	);
 });

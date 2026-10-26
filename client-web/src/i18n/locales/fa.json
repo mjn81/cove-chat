@@ -73,6 +73,7 @@
     "account_menu": "منوی حساب"
   },
   "chat": {
+  	"copied": "کپی شد",
     "message_placeholder": "پیام…",
     "today": "امروز",
     "yesterday": "دیروز",

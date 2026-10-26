@@ -27,11 +27,14 @@ export function useMentions(channelId: string, inputRef: React.RefObject<HTMLTex
 			.catch((err) => logger.error('Failed to load channel members', { error: String(err) }));
 	}, [channelId]);
 
-	// Click outside the textarea closes the picker.
+	// Click outside the textarea closes the picker. Presses inside the popup itself must not: unmounting it on
+	// mousedown would remove the suggestion before its click event fires, so picking by mouse silently did nothing.
 	useEffect(() => {
 		if (!isOpen) return;
 		const onMouseDown = (e: MouseEvent) => {
-			if (!inputRef.current?.contains(e.target as Node)) setIsOpen(false);
+			const target = e.target as Element | null;
+			if (target?.closest?.("[data-mention-popup]")) return;
+			if (!inputRef.current?.contains(target as Node)) setIsOpen(false);
 		};
 		window.addEventListener('mousedown', onMouseDown);
 		return () => window.removeEventListener('mousedown', onMouseDown);

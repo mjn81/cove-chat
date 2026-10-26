@@ -52,6 +52,40 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 	}, [meta]);
 
 	// Load and decrypt metadata & video file
+	const downloadAndDecrypt = async (metadata: VideoMetadata, key: Uint8Array) => {
+		setIsLoading(true);
+		setError(null);
+		try {
+			const encryptedBuffer = await apiGetFile(metadata.file_id, (p) => {
+				if (p.total) setDownloadProgress(Math.round((p.loaded * 100) / p.total));
+			});
+
+			const decryptedBytes = await decryptAndDecompressFile(
+				new Uint8Array(encryptedBuffer),
+				base64ToBytes(metadata.nonce),
+				key,
+				false,
+			);
+
+			await db.cacheFile(
+				metadata.file_id,
+				decryptedBytes,
+				metadata.mime || 'video/mp4',
+				metadata.size,
+			);
+
+			const blob = new Blob([decryptedBytes as any], {
+				type: metadata.mime || 'video/mp4',
+			});
+			setVideoUrl(URL.createObjectURL(blob));
+		} catch (err: any) {
+			console.error('Failed to download/decrypt video message:', err);
+			setError(err.message || 'Failed to load video');
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		let isMounted = true;
 		const loadMeta = async () => {
@@ -105,41 +139,9 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 			isMounted = false;
 			unsub();
 		};
+		// Keyed on the message identity/ciphertext only; `msg` itself changes on every parent render.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [msg.id, msg.channel_id, msg.ciphertext]);
-
-	const downloadAndDecrypt = async (metadata: VideoMetadata, key: Uint8Array) => {
-		setIsLoading(true);
-		setError(null);
-		try {
-			const encryptedBuffer = await apiGetFile(metadata.file_id, (p) => {
-				if (p.total) setDownloadProgress(Math.round((p.loaded * 100) / p.total));
-			});
-
-			const decryptedBytes = await decryptAndDecompressFile(
-				new Uint8Array(encryptedBuffer),
-				base64ToBytes(metadata.nonce),
-				key,
-				false,
-			);
-
-			await db.cacheFile(
-				metadata.file_id,
-				decryptedBytes,
-				metadata.mime || 'video/mp4',
-				metadata.size,
-			);
-
-			const blob = new Blob([decryptedBytes as any], {
-				type: metadata.mime || 'video/mp4',
-			});
-			setVideoUrl(URL.createObjectURL(blob));
-		} catch (err: any) {
-			console.error('Failed to download/decrypt video message:', err);
-			setError(err.message || 'Failed to load video');
-		} finally {
-			setIsLoading(false);
-		}
-	};
 
 	// Open in Custom Video Player modal when clicked
 	const handleBubbleClick = () => {

@@ -58,6 +58,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
 	useEffect(() => {
 		if (!open || !userId) {
+			// Clearing the previous profile when the modal closes.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setTargetUser(null);
 			setActivePhotoIndex(0);
 			setIsFullscreenOpen(false);
@@ -101,6 +103,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 		return () => {
 			isMounted = false;
 		};
+		// targetUser is only read to diff avatars of the previous profile; refetching on its change would loop.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [userId, open]);
 
 	const photos: string[] = targetUser?.avatar_ids && targetUser.avatar_ids.length > 0

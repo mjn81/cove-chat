@@ -19,7 +19,11 @@ export const MentionPopup = ({ query, members, selectedIndex, onHover, onPick }:
 	const { t } = useTranslation();
 
 	return (
-		<div className="absolute bottom-full start-4 z-[100] mb-2 w-64 overflow-hidden rounded-lg border border-border bg-popover animate-in slide-in-from-bottom-2 duration-150">
+		<div
+			data-mention-popup
+			// Keep focus (and the caret) in the textarea while pressing a suggestion.
+			onMouseDown={(e) => e.preventDefault()}
+			className="absolute bottom-full start-4 z-[100] mb-2 w-64 overflow-hidden rounded-lg border border-border bg-popover animate-in slide-in-from-bottom-2 duration-150">
 			<div className="flex items-center gap-2 border-b border-border p-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
 				<AtSign size={14} />
 				{t('composer.mention_header', { query: query ?? '' })}

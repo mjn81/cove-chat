@@ -73,6 +73,7 @@
     "account_menu": "قائمة الحساب"
   },
   "chat": {
+  	"copied": "تم النسخ",
     "message_placeholder": "رسالة…",
     "today": "اليوم",
     "yesterday": "أمس",

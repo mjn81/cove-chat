@@ -61,6 +61,8 @@ export default function AppPage() {
 				autoJoin();
 			}
 		}
+		// Runs once on mount to handle an invite link in the URL.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {
@@ -90,7 +92,7 @@ export default function AppPage() {
 			setLeftSidebarOpen(false);
 			setRightSidebarOpen(false);
 		}
-	}, [activeChannel?.id, isMobile]);
+	}, [activeChannel?.id, isMobile, setLeftSidebarOpen, setRightSidebarOpen]);
 
 	const toggleLeftCollapse = () => {
 		const panel = leftPanelRef.current;

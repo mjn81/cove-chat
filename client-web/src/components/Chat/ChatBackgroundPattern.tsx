@@ -6,7 +6,7 @@ import spaceSvg from '@/assets/patterns/space.svg?url';
 import gamesSvg from '@/assets/patterns/games.svg?url';
 import sweetsSvg from '@/assets/patterns/sweets.svg?url';
 
-export const PATTERNS = {
+const PATTERNS = {
 	animals: { src: animalsSvg, label: 'Animals' },
 	space: { src: spaceSvg, label: 'Space' },
 	games: { src: gamesSvg, label: 'Games' },

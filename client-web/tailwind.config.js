@@ -73,6 +73,15 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        // Brief highlight on a message whose text was just copied, plus the "Copied" pill popping in.
+        "copy-flash": { "0%": { backgroundColor: "hsl(var(--primary) / 0.28)" }, "100%": { backgroundColor: "hsl(var(--primary) / 0)" } },
+        "copy-pop": { "0%": { opacity: "0", transform: "translateY(6px) scale(0.9)" }, "15%": { opacity: "1", transform: "translateY(0) scale(1)" }, "80%": { opacity: "1" }, "100%": { opacity: "0", transform: "translateY(-2px)" } },
+      },
+      animation: {
+        "copy-flash": "copy-flash 900ms ease-out",
+        "copy-pop": "copy-pop 1400ms ease-out forwards",
+      },
       fontFamily: {
         sans: ["Vazirmatn", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif"],
       },

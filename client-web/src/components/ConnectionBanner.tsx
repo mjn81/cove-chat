@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { WifiOff, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/store/store';
 
@@ -9,9 +9,8 @@ export function ConnectionBanner() {
 	const wsState = useAppStore((state) => state.wsState);
 	const [everConnected, setEverConnected] = useState(false);
 
-	useEffect(() => {
-		if (wsState === 'connected') setEverConnected(true);
-	}, [wsState]);
+	// Latch during render (allowed for a component's own state) instead of syncing through an effect.
+	if (wsState === 'connected' && !everConnected) setEverConnected(true);
 
 	if (!everConnected || wsState === 'connected') return null;
 

@@ -80,6 +80,7 @@
 		"account_menu": "Account menu"
 	},
 	"chat": {
+		"copied": "Copied",
 		"message_placeholder": "Message…",
 		"today": "Today",
 		"yesterday": "Yesterday",

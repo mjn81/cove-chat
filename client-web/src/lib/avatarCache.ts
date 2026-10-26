@@ -71,7 +71,7 @@ export async function loadAvatar(avatarId: string): Promise<string | null> {
 					memoryCache.set(avatarId, url);
 					return url;
 				}
-			} catch (_) {
+			} catch {
 				// IndexedDB might not be available or throw in restricted environments
 			}
 
@@ -85,7 +85,7 @@ export async function loadAvatar(avatarId: string): Promise<string | null> {
 			// Persist to IndexedDB if available
 			try {
 				await db.cacheFile(avatarId, bytes, mime, bytes.byteLength);
-			} catch (_) {
+			} catch {
 				// Ignore storage error
 			}
 
@@ -119,7 +119,7 @@ export async function invalidateAvatar(avatarId: string): Promise<void> {
 
 	try {
 		await db.clearFileCache(avatarId);
-	} catch (_) {
+	} catch {
 		// Ignore if IndexedDB is not available
 	}
 }
@@ -163,6 +163,8 @@ export function useCachedAvatar(avatarId?: string) {
 
 	useEffect(() => {
 		if (!avatarId) {
+			// Syncing local state with the (possibly cleared) id before the async load below.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setUrl(null);
 			setIsLoading(false);
 			return;

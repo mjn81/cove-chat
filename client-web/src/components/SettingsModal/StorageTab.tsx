@@ -42,6 +42,8 @@ export const StorageTab = () => {
 	};
 
 	useEffect(() => {
+		// One-off fetch on mount; loadStats flips the loading flag itself.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		loadStats();
 	}, []);
 
