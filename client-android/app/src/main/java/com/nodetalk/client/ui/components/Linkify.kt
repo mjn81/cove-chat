@@ -67,10 +67,17 @@ fun tokenizeMessage(text: String): List<MessageToken> {
  * Builds the displayed message: links are tappable (the default handler opens the browser/mail app) and styled in
  * [linkColor] with an underline; `@mentions` are bold in the same colour, like the web client.
  */
-fun linkifiedText(text: String, linkColor: Color): AnnotatedString = buildAnnotatedString {
+fun linkifiedText(text: String, linkColor: Color, onMention: ((username: String) -> Unit)? = null): AnnotatedString = buildAnnotatedString {
     for (t in tokenizeMessage(text)) when (t) {
         is MessageToken.Plain -> append(t.value)
-        is MessageToken.Mention -> withStyle(SpanStyle(color = linkColor, fontWeight = FontWeight.Medium)) { append(t.value) }
+        is MessageToken.Mention -> if (onMention == null) {
+            withStyle(SpanStyle(color = linkColor, fontWeight = FontWeight.Medium)) { append(t.value) }
+        } else {
+            // Tapping a mention opens that member's profile.
+            withLink(
+                LinkAnnotation.Clickable(t.value, TextLinkStyles(SpanStyle(color = linkColor, fontWeight = FontWeight.Medium))) { onMention(t.value.removePrefix("@")) }
+            ) { append(t.value) }
+        }
         is MessageToken.Link -> withLink(
             LinkAnnotation.Url(t.href, TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)))
         ) { append(t.value) }

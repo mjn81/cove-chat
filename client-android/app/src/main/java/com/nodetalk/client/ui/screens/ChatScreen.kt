@@ -16,7 +16,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import com.nodetalk.client.ui.components.chatBackgroundPattern
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -58,7 +58,7 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.linkifiedText
+import com.nodetalk.client.ui.components.MessageText
 import com.nodetalk.client.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -142,7 +142,8 @@ fun ChatScreen(
     channelName: String,
     onBack: () -> Unit,
     onStartCall: (withVideo: Boolean) -> Unit,
-    onStartWhisper: (peerId: String, peerName: String) -> Unit = { _, _ -> }
+    onStartWhisper: (peerId: String, peerName: String) -> Unit = { _, _ -> },
+    onOpenChat: (channelId: String, name: String) -> Unit = { _, _ -> }
 ) {
     val app = CoveApp.instance
     val api = app.apiClient
@@ -167,6 +168,10 @@ fun ChatScreen(
     var search by remember { mutableStateOf("") }
     var showMembers by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var profileMention by remember { mutableStateOf<MentionMember?>(null) }
+    val mentionMembers = remember(channel) {
+        channel?.let { ch -> ch.memberNames.map { (id, name) -> MentionMember(id, name, ch.memberAvatars[id]) } }.orEmpty()
+    }
     val pageSize = 50
 
     fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
@@ -362,7 +367,7 @@ fun ChatScreen(
         LazyColumn(
             state = listState,
             reverseLayout = true,
-            modifier = Modifier.weight(1f).fillMaxWidth()
+            modifier = Modifier.weight(1f).fillMaxWidth().chatBackgroundPattern()
         ) {
             items(shown.size, key = { shown[it].id }) { i ->
                 val m = shown[i]
@@ -383,6 +388,7 @@ fun ChatScreen(
                         canEdit = m.senderId == me && m.type == "text",
                         canDelete = m.senderId == me || myRole >= 10,
                         keyVersion = keyVersion,
+                        onMention = { u -> mentionMembers.firstOrNull { it.username.equals(u, ignoreCase = true) }?.let { profileMention = it } },
                         onToggle = { selectedId = if (selectedId == m.id) null else m.id },
                         onReply = { replyTo = m; editing = null; selectedId = null },
                         onEdit = { editing = m; replyTo = null; input = bodyOf(m); selectedId = null },
@@ -394,6 +400,16 @@ fun ChatScreen(
                 }
             }
             item(key = "welcome") { WelcomeHeader(title, isDm) }
+        }
+
+        // @mention suggestions: tapping one inserts it (the web popup needed Enter).
+        val mentionQuery = detectMention(input)
+        if (mentionQuery != null) {
+            MentionSuggestions(
+                query = mentionQuery,
+                members = filterMentionMembers(mentionMembers, me, mentionQuery),
+                onPick = { input = applyMention(input, it.username) }
+            )
         }
 
         ChatInputBar(
@@ -413,6 +429,14 @@ fun ChatScreen(
             onCancelRecording = { recording = false; recorder.cancel() },
             onFinishRecording = { finishRecording() },
             onVideo = { if (!uploading) startVideo() }
+        )
+    }
+
+    profileMention?.let { m ->
+        MemberProfileDialog(
+            userId = m.id, username = m.username, avatarId = m.avatarId,
+            onDismiss = { profileMention = null },
+            onOpenChat = { id, name -> profileMention = null; if (id != channelId) onOpenChat(id, name) }
         )
     }
 
@@ -495,6 +519,7 @@ private fun MessageRow(
     canEdit: Boolean,
     canDelete: Boolean,
     keyVersion: Int,
+    onMention: (username: String) -> Unit,
     onToggle: () -> Unit,
     onReply: () -> Unit,
     onEdit: () -> Unit,
@@ -507,7 +532,8 @@ private fun MessageRow(
         Modifier
             .fillMaxWidth()
             .background(if (selected) c.accent.copy(alpha = 0.35f) else Color.Transparent)
-            .combinedClickable(onClick = onToggle, onLongClick = onToggle)
+            // Long-press is reserved for copying the text (MessageText); tapping still toggles the action bar.
+            .clickable(onClick = onToggle)
             .padding(horizontal = 16.dp, vertical = if (showHeader) 6.dp else 1.dp)
     ) {
         Row(Modifier.fillMaxWidth()) {
@@ -541,9 +567,10 @@ private fun MessageRow(
                         else -> if (fileMeta.mime.startsWith("video/")) VideoBubble(m.channelId, fileMeta, keyVersion) else FileBubble(m.channelId, fileMeta, keyVersion)
                     }
                 } else Row(verticalAlignment = Alignment.Bottom) {
-                    val linkColor = MaterialTheme.colorScheme.primary
-                    val body = remember(text, linkColor) { linkifiedText(text, linkColor) }
-                    Text(body, color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
+                    MessageText(
+                        text, color = c.textPrimary, fontSize = CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f, fill = false), onMention = onMention
+                    )
                     if (m.editedAt != null) {
                         Spacer(Modifier.width(6.dp))
                         Text("(edited)", color = c.textMuted, fontSize = 10.sp)
