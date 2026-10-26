@@ -5,7 +5,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import LeftSidebar from '@/components/Layout/LeftSidebar';
+import LeftSidebar from '@/domains/channels/components/left-sidebar';
 import RightSidebar from '@/components/Layout/RightSidebar';
 import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
@@ -123,7 +123,7 @@ export default function AppPage() {
 	};
 
 	const renderLeftSidebar = () => (
-		<div className="flex flex-col h-full overflow-hidden bg-secondary">
+		<div className="flex flex-col h-full overflow-hidden bg-popover">
 			<LeftSidebar
 				isCollapsed={isMobile ? false : isLeftCollapsed}
 				onToggleCollapse={isMobile ? undefined : toggleLeftCollapse}
@@ -132,7 +132,7 @@ export default function AppPage() {
 	);
 
 	const renderRightSidebar = () => (
-		<div className="flex flex-col h-full overflow-hidden bg-secondary">
+		<div className="flex flex-col h-full overflow-hidden bg-popover">
 			<RightSidebar
 				isCollapsed={isMobile ? false : isRightCollapsed}
 				onToggleCollapse={isMobile ? undefined : toggleRightCollapse}
@@ -173,7 +173,7 @@ export default function AppPage() {
 
 					{/* Right Sidebar Drawer (Members) - Only accessible from Chat View */}
 					<div
-						className={`fixed inset-y-0 right-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
+						className={`fixed inset-y-0 end-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
 							isRightSidebarOpen && activeChannel ? 'translate-x-0' : 'translate-x-full'
 						}`}
 					>
@@ -209,7 +209,7 @@ export default function AppPage() {
 							groupResizeBehavior="preserve-pixel-size"
 							onResize={(panelSize) => setIsLeftCollapsed(panelSize.inPixels <= 70)}
 							className={cn(
-								'bg-secondary flex flex-col overflow-hidden',
+								'bg-popover flex flex-col overflow-hidden',
 								isLeftTransitioning && 'transition-all duration-300 ease-in-out',
 							)}
 						>
@@ -238,7 +238,7 @@ export default function AppPage() {
 							groupResizeBehavior="preserve-pixel-size"
 							onResize={(panelSize) => setIsRightCollapsed(panelSize.inPixels <= 70)}
 							className={cn(
-								'bg-secondary flex flex-col',
+								'bg-popover flex flex-col',
 								isRightTransitioning && 'transition-all duration-300 ease-in-out',
 							)}
 						>

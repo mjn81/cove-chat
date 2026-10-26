@@ -20,11 +20,11 @@ import { isDirectMessage } from '@/utils/channel';
 import { Lock } from 'lucide-react';
 import { ChatTopbar } from './Chat/ChatTopbar';
 import { ChatMessageFeed } from './Chat/ChatMessageFeed';
-import { ChatInputArea } from './Chat/ChatInputArea';
+import { ChatInputArea } from '@/domains/messages/components/chat-input-area';
 import { VoicePlayer } from './Chat/VoicePlayer';
 import { ForwardModal } from './Chat/ForwardModal';
 import { ChatBackgroundPattern } from './Chat/ChatBackgroundPattern';
-import { WhisperChatArea } from './Chat/WhisperChatArea';
+import { WhisperChatArea } from '@/domains/whisper/components/whisper-chat-area';
 import { VoiceCallStage } from './Voice/VoiceCallStage';
 import { useVoiceStore } from '@/store/voiceStore';
 

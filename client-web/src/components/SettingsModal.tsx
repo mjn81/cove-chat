@@ -9,8 +9,8 @@ import {
 import { X, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { Sidebar } from './SettingsModal/Sidebar';
-import { AccountTab } from './SettingsModal/AccountTab';
-import { FriendsTab } from './SettingsModal/FriendsTab';
+import { AccountTab } from '@/domains/users/components/account-tab';
+import { FriendsTab } from '@/domains/relationships/components/friends-tab';
 import { AppearanceTab } from './SettingsModal/AppearanceTab';
 import { PrivacyTab } from './SettingsModal/PrivacyTab';
 import { NotificationsTab } from './SettingsModal/NotificationsTab';
@@ -63,7 +63,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 							{isMobile && !isViewingContent && (
 								<button
 									onClick={onClose}
-									className="absolute top-4 right-4 p-2 bg-background/50 rounded-full text-foreground pt-safe"
+									className="absolute top-4 end-4 p-2 bg-background/50 rounded-full text-foreground pt-safe"
 								>
 									<X size={20} />
 								</button>
@@ -109,7 +109,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 
 							{/* Floating Close Button - Desktop Only */}
 							{!isMobile && (
-								<div className="absolute top-6 right-6">
+								<div className="absolute top-6 end-6">
 									<button
 										onClick={onClose}
 										className="group flex flex-col items-center gap-1"
