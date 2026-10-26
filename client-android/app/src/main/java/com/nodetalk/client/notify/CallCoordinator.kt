@@ -3,7 +3,7 @@ package com.nodetalk.client.notify
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,7 +32,7 @@ object CallCoordinator {
     /** Set by an Answer tap (notification or dialog); the nav graph consumes it and opens the call screen. */
     var pendingAnswer by mutableStateOf<IncomingCall?>(null)
 
-    fun start(app: NodeTalkApp) {
+    fun start(app: CoveApp) {
         scope.launch {
             app.webSocketManager.voiceFlow.collect { (channelId, users) ->
                 if (users.isEmpty()) {
@@ -45,7 +45,7 @@ object CallCoordinator {
         }
     }
 
-    private suspend fun check(app: NodeTalkApp, channelId: String, users: List<String>) {
+    private suspend fun check(app: CoveApp, channelId: String, users: List<String>) {
         val me = app.preferencesManager.userId ?: return
         if (channelId in handled || incoming?.channelId == channelId) return
         if (me in users || app.webRTCManager.isInCall.value) return
@@ -65,24 +65,24 @@ object CallCoordinator {
     }
 
     /** User answered: stop ringing, remember it was handled, and ask the UI to open the call. */
-    fun answer(app: NodeTalkApp, call: IncomingCall) {
+    fun answer(app: CoveApp, call: IncomingCall) {
         handled.add(call.channelId)
         dismiss(app, call.channelId)
         pendingAnswer = call
     }
 
-    fun decline(app: NodeTalkApp, channelId: String) {
+    fun decline(app: CoveApp, channelId: String) {
         handled.add(channelId)
         dismiss(app, channelId)
     }
 
     /** Marks a call as handled when the user joins it from elsewhere (e.g. the phone button in the chat). */
-    fun joined(app: NodeTalkApp, channelId: String) {
+    fun joined(app: CoveApp, channelId: String) {
         handled.add(channelId)
         dismiss(app, channelId)
     }
 
-    private fun dismiss(app: NodeTalkApp, channelId: String) {
+    private fun dismiss(app: CoveApp, channelId: String) {
         ringTimeout?.cancel()
         if (incoming?.channelId == channelId) incoming = null
         app.notificationHelper.cancelIncomingCall(channelId)

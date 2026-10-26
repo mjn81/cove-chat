@@ -1,5 +1,15 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import androidx.compose.material3.MaterialTheme
+import com.nodetalk.client.ui.components.CoveChoiceList
+import com.nodetalk.client.ui.components.ButtonVariant
+import com.nodetalk.client.ui.components.CoveListRow
+import com.nodetalk.client.ui.components.CoveSwitchRow
+import com.nodetalk.client.ui.theme.CoveType
+import com.nodetalk.client.ui.theme.Spacing
+import androidx.compose.foundation.layout.PaddingValues
+import com.nodetalk.client.ui.components.ButtonSize
 import com.nodetalk.client.ui.components.I18nToast
 import android.Manifest
 import android.content.pm.PackageManager
@@ -43,18 +53,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.data.model.AuthUser
 import com.nodetalk.client.data.model.UpdateProfileRequest
 import com.nodetalk.client.data.remote.AvatarCache
 import com.nodetalk.client.ui.components.ErrorBanner
 import com.nodetalk.client.ui.components.FieldLabel
-import com.nodetalk.client.ui.components.NTPrimaryButton
-import com.nodetalk.client.ui.components.NTTextField
+import com.nodetalk.client.ui.components.CoveButton
+import com.nodetalk.client.ui.components.CoveTextField
 import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -69,51 +77,8 @@ private val StatusChoices = listOf(
     "auto" to "Auto", "online" to "Online", "away" to "Idle", "dnd" to "Do Not Disturb", "offline" to "Invisible"
 )
 
-private fun parseColor(hex: String?): Color =
-    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(NTPrimary)
-
-/** Row with a title, a caption and a switch (same switch colours as the web toggle). */
-@Composable
-private fun ToggleRow(title: String, caption: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = c.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(caption, color = c.textMuted, fontSize = 13.sp)
-        }
-        Switch(
-            checked = checked, onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = NTPrimary, checkedThumbColor = Color.White,
-                uncheckedTrackColor = c.accent, uncheckedThumbColor = Color.White,
-                uncheckedBorderColor = Color.Transparent, checkedBorderColor = Color.Transparent
-            )
-        )
-    }
-}
-
-/** Vertical list of radio-style options; the selected one is outlined in the primary colour. */
-@Composable
-private fun ChoiceList(options: List<Pair<String, String>>, selected: String, enabled: Boolean = true, onSelect: (String) -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        options.forEach { (id, label) ->
-            val on = id == selected
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .border(1.dp, if (on) NTPrimary else c.border, RoundedCornerShape(6.dp))
-                    .background(if (on) NTPrimary.copy(alpha = 0.12f) else Color.Transparent)
-                    .clickable(enabled = enabled) { onSelect(id) }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(label, color = if (on) c.textPrimary else c.textMuted, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            }
-        }
-    }
-}
+private fun parseColor(hex: String?, fallback: Color): Color =
+    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(fallback)
 
 /** Center-crops to a square, caps at 512px and re-encodes as WebP (what the web avatar cropper produces). */
 private fun squareAvatarBytes(source: ByteArray): ByteArray? {
@@ -133,8 +98,8 @@ private fun squareAvatarBytes(source: ByteArray): ByteArray? {
  */
 @Composable
 fun AccountSettings(onLogout: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    val app = NodeTalkApp.instance
+    val c = CoveTheme.extendedColors
+    val app = CoveApp.instance
     val prefs = app.preferencesManager
     val api = app.apiClient
     val context = LocalContext.current
@@ -191,20 +156,20 @@ fun AccountSettings(onLogout: () -> Unit) {
             }
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(prefs.username ?: "", color = c.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text(prefs.serverUrl, color = c.textMuted, fontSize = 13.sp)
+                Text(prefs.username ?: "", color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold)
+                Text(prefs.serverUrl, color = c.textMuted, fontSize = CoveType.label.fontSize)
                 Text(
-                    if (avatarBusy) "Uploading…" else "Change photo", color = NTPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                    if (avatarBusy) "Uploading…" else "Change photo", color = MaterialTheme.colorScheme.primary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable(enabled = !avatarBusy) { pickAvatar.launch("image/*") }.padding(vertical = 6.dp)
                 )
             }
         }
         // Banner colour preview, as on the web profile card
-        Box(Modifier.fillMaxWidth().height(36.dp).clip(RoundedCornerShape(6.dp)).background(parseColor(banner)))
+        Box(Modifier.fillMaxWidth().height(36.dp).clip(CoveShapes.md).background(parseColor(banner, MaterialTheme.colorScheme.primary)))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BannerPresets.forEach { hex ->
                 Box(
-                    Modifier.size(26.dp).clip(CircleShape).background(parseColor(hex))
+                    Modifier.size(26.dp).clip(CircleShape).background(parseColor(hex, MaterialTheme.colorScheme.primary))
                         .border(2.dp, if (hex.equals(banner, true)) c.textPrimary else Color.Transparent, CircleShape)
                         .clickable { banner = hex }
                 )
@@ -213,18 +178,18 @@ fun AccountSettings(onLogout: () -> Unit) {
 
         error?.let { ErrorBanner(it) }
         FieldLabel("Username")
-        NTTextField(username, { username = it })
+        CoveTextField(username, { username = it })
         FieldLabel("Custom status")
-        NTTextField(customMsg, { customMsg = it }, placeholder = "What's on your mind?")
+        CoveTextField(customMsg, { customMsg = it }, placeholder = "What's on your mind?")
 
         FieldLabel("Online status")
-        ChoiceList(StatusChoices, status) { choice ->
+        CoveChoiceList(StatusChoices, status) { choice ->
             val previous = status
             status = choice
             scope.launch { api.updateProfile(UpdateProfileRequest(statusPreference = choice)).onFailure { status = previous; toast(it.message ?: "Couldn't change status.") } }
         }
 
-        NTPrimaryButton("Save profile", loading = saving, onClick = {
+        CoveButton("Save profile", modifier = Modifier.fillMaxWidth(), size = ButtonSize.Lg, loading = saving, onClick = {
             saving = true
             error = null
             scope.launch {
@@ -239,9 +204,9 @@ fun AccountSettings(onLogout: () -> Unit) {
         })
 
         FieldLabel("Change password")
-        NTTextField(oldPassword, { oldPassword = it }, placeholder = "Current password", password = true)
-        NTTextField(newPassword, { newPassword = it }, placeholder = "New password (min 8 characters)", password = true)
-        NTPrimaryButton("Update password", enabled = oldPassword.isNotBlank() && newPassword.length >= 8, onClick = {
+        CoveTextField(oldPassword, { oldPassword = it }, placeholder = "Current password", password = true)
+        CoveTextField(newPassword, { newPassword = it }, placeholder = "New password (min 8 characters)", password = true)
+        CoveButton("Update password", modifier = Modifier.fillMaxWidth(), size = ButtonSize.Lg, enabled = oldPassword.isNotBlank() && newPassword.length >= 8, onClick = {
             scope.launch {
                 api.updateProfile(UpdateProfileRequest(password = newPassword, oldPassword = oldPassword)).fold(
                     onSuccess = { oldPassword = ""; newPassword = ""; error = null; toast("Password updated") },
@@ -251,7 +216,7 @@ fun AccountSettings(onLogout: () -> Unit) {
         })
 
         Text(
-            "Log Out", color = NTDestructive, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+            "Log Out", color = MaterialTheme.colorScheme.error, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Medium,
             modifier = Modifier.clickable(onClick = onLogout).padding(vertical = 8.dp)
         )
     }
@@ -265,8 +230,8 @@ private val PermissionAll2 = listOf("everyone" to "Everyone", "nobody" to "Nobod
 /** Settings > Privacy & Safety: who can add you to channels, DM you, or send friend requests. */
 @Composable
 fun PrivacySettings() {
-    val c = NodeTalkTheme.extendedColors
-    val api = NodeTalkApp.instance.apiClient
+    val c = CoveTheme.extendedColors
+    val api = CoveApp.instance.apiClient
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var channelAdds by remember { mutableStateOf("everyone") }
@@ -290,24 +255,24 @@ fun PrivacySettings() {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Choose who can reach you. Changes save immediately.", color = c.textMuted, fontSize = 14.sp)
+        Text("Choose who can reach you. Changes save immediately.", color = c.textMuted, fontSize = CoveType.label.fontSize)
         Spacer(Modifier.height(6.dp))
         FieldLabel("Who can add me to channels")
-        ChoiceList(PermissionAll3, channelAdds, enabled = loaded) { v -> val old = channelAdds; channelAdds = v; save(UpdateProfileRequest(allowChannelAdds = v)) { channelAdds = old } }
+        CoveChoiceList(PermissionAll3, channelAdds, enabled = loaded) { v -> val old = channelAdds; channelAdds = v; save(UpdateProfileRequest(allowChannelAdds = v)) { channelAdds = old } }
         Spacer(Modifier.height(10.dp))
         FieldLabel("Who can message me")
-        ChoiceList(PermissionAll3, dm, enabled = loaded) { v -> val old = dm; dm = v; save(UpdateProfileRequest(dmPermission = v)) { dm = old } }
+        CoveChoiceList(PermissionAll3, dm, enabled = loaded) { v -> val old = dm; dm = v; save(UpdateProfileRequest(dmPermission = v)) { dm = old } }
         Spacer(Modifier.height(10.dp))
         FieldLabel("Who can send me friend requests")
-        ChoiceList(PermissionAll2, friendReq, enabled = loaded) { v -> val old = friendReq; friendReq = v; save(UpdateProfileRequest(friendRequestPermission = v)) { friendReq = old } }
+        CoveChoiceList(PermissionAll2, friendReq, enabled = loaded) { v -> val old = friendReq; friendReq = v; save(UpdateProfileRequest(friendRequestPermission = v)) { friendReq = old } }
     }
 }
 
 /** Settings > Notifications: local notification switches plus the Android runtime permission. */
 @Composable
 fun NotificationSettings() {
-    val c = NodeTalkTheme.extendedColors
-    val prefs = NodeTalkApp.instance.preferencesManager
+    val c = CoveTheme.extendedColors
+    val prefs = CoveApp.instance.preferencesManager
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(prefs.notificationsEnabled) }
     var sound by remember { mutableStateOf(prefs.notificationSound) }
@@ -318,22 +283,22 @@ fun NotificationSettings() {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { systemAllowed = it }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        ToggleRow("Message notifications", "Show a notification for new messages while the app is in the background.", enabled) {
+        CoveSwitchRow("Message notifications", enabled, caption = "Show a notification for new messages while the app is in the background.") {
             enabled = it; prefs.notificationsEnabled = it
         }
-        ToggleRow("Sound", "Play a sound with each notification.", sound) { sound = it; prefs.notificationSound = it }
-        ToggleRow("Stay connected in the background", "Keeps a quiet notification so messages and incoming calls reach you even when NodeTalk is closed.", keepConnected) {
+        CoveSwitchRow("Sound", sound, caption = "Play a sound with each notification.") { sound = it; prefs.notificationSound = it }
+        CoveSwitchRow("Stay connected in the background", keepConnected, caption = "Keeps a quiet notification so messages and incoming calls reach you even when Cove is closed.") {
             keepConnected = it; prefs.keepConnected = it
             com.nodetalk.client.service.BackgroundConnection.sync(context)
         }
         if (!systemAllowed) {
-            Text("Android notification permission is off.", color = NTDestructive, fontSize = 13.sp)
+            Text("Android notification permission is off.", color = MaterialTheme.colorScheme.error, fontSize = CoveType.label.fontSize)
             Text(
-                "Allow notifications", color = NTPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+                "Allow notifications", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = CoveType.body.fontSize,
                 modifier = Modifier.clickable { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ask.launch(Manifest.permission.POST_NOTIFICATIONS) }.padding(vertical = 8.dp)
             )
         } else {
-            Text("There is no push service on a self-hosted server, so NodeTalk keeps its own connection open to notify you.", color = c.textMuted, fontSize = 12.sp)
+            Text("There is no push service on a self-hosted server, so Cove keeps its own connection open to notify you.", color = c.textMuted, fontSize = CoveType.caption.fontSize)
         }
     }
 }
@@ -341,8 +306,8 @@ fun NotificationSettings() {
 /** Settings > Voice & Video: call audio processing and permission status. */
 @Composable
 fun VoiceSettings() {
-    val c = NodeTalkTheme.extendedColors
-    val prefs = NodeTalkApp.instance.preferencesManager
+    val c = CoveTheme.extendedColors
+    val prefs = CoveApp.instance.preferencesManager
     val context = LocalContext.current
     var noise by remember { mutableStateOf(prefs.noiseSuppression) }
     var echo by remember { mutableStateOf(prefs.echoCancellation) }
@@ -353,24 +318,20 @@ fun VoiceSettings() {
     val askCam = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { camOk = it }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        ToggleRow("Noise suppression", "Filter background noise from your microphone.", noise) { noise = it; prefs.noiseSuppression = it }
-        ToggleRow("Echo cancellation", "Prevent your speakers from feeding back into the call.", echo) { echo = it; prefs.echoCancellation = it }
-        ToggleRow("Join calls muted", "Start every call with your microphone off.", muted) { muted = it; prefs.joinCallsMuted = it }
+        CoveSwitchRow("Noise suppression", noise, caption = "Filter background noise from your microphone.") { noise = it; prefs.noiseSuppression = it }
+        CoveSwitchRow("Echo cancellation", echo, caption = "Prevent your speakers from feeding back into the call.") { echo = it; prefs.echoCancellation = it }
+        CoveSwitchRow("Join calls muted", muted, caption = "Start every call with your microphone off.") { muted = it; prefs.joinCallsMuted = it }
         Spacer(Modifier.height(8.dp))
         FieldLabel("Permissions")
-        PermissionRow("Microphone", micOk) { askMic.launch(Manifest.permission.RECORD_AUDIO) }
-        PermissionRow("Camera", camOk) { askCam.launch(Manifest.permission.CAMERA) }
-        Text("Audio devices follow the system output; use Android's media controls to switch to Bluetooth or speaker.", color = c.textMuted, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun PermissionRow(name: String, granted: Boolean, onAsk: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, color = c.textPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        if (granted) Text("Allowed", color = c.statusOnline, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        else Text("Allow", color = NTPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onAsk).padding(8.dp))
+        CoveListRow("Microphone", contentPadding = PaddingValues(vertical = Spacing.xs), trailing = {
+            if (micOk) Text("Allowed", color = CoveTheme.extendedColors.statusOnline, style = CoveType.label)
+            else CoveButton("Allow", { askMic.launch(Manifest.permission.RECORD_AUDIO) }, variant = ButtonVariant.Ghost, size = ButtonSize.Sm)
+        })
+        CoveListRow("Camera", contentPadding = PaddingValues(vertical = Spacing.xs), trailing = {
+            if (camOk) Text("Allowed", color = CoveTheme.extendedColors.statusOnline, style = CoveType.label)
+            else CoveButton("Allow", { askCam.launch(Manifest.permission.CAMERA) }, variant = ButtonVariant.Ghost, size = ButtonSize.Sm)
+        })
+        Text("Audio devices follow the system output; use Android's media controls to switch to Bluetooth or speaker.", color = c.textMuted, fontSize = CoveType.caption.fontSize)
     }
 }
 
@@ -385,7 +346,7 @@ private fun formatBytes(b: Long): String = when {
 /** Settings > Data & Storage: size of the on-device cache and a clear action. */
 @Composable
 fun StorageSettings() {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var size by remember { mutableStateOf(0L) }
@@ -393,14 +354,14 @@ fun StorageSettings() {
     LaunchedEffect(tick) { size = withContext(Dispatchers.IO) { dirSize(context.cacheDir) } }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Opened attachments are decrypted into a private cache on this device. Messages and keys are never stored here.", color = c.textMuted, fontSize = 14.sp)
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).border(1.dp, c.border, RoundedCornerShape(6.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("Opened attachments are decrypted into a private cache on this device. Messages and keys are never stored here.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+        Row(Modifier.fillMaxWidth().clip(CoveShapes.md).border(1.dp, c.border, CoveShapes.md).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Cached data", color = c.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(formatBytes(size), color = c.textMuted, fontSize = 13.sp)
+                Text("Cached data", color = c.textPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Medium)
+                Text(formatBytes(size), color = c.textMuted, fontSize = CoveType.label.fontSize)
             }
             Text(
-                "Clear", color = NTDestructive, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                "Clear", color = MaterialTheme.colorScheme.error, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
                     scope.launch {
                         withContext(Dispatchers.IO) { context.cacheDir.listFiles()?.forEach { it.deleteRecursively() } }

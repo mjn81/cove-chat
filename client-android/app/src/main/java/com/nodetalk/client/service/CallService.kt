@@ -60,10 +60,10 @@ class CallService : Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "NodeTalk Active Call",
+                "Cove Active Call",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Shows persistent status while in a NodeTalk audio or video call"
+                description = "Shows persistent status while in a Cove audio or video call"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -79,7 +79,7 @@ class CallService : Service {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("NodeTalk Call Active")
+            .setContentTitle("Cove Call Active")
             .setContentText("Connected to $channelName")
             .setSmallIcon(android.R.drawable.stat_sys_phone_call)
             .setOngoing(true)

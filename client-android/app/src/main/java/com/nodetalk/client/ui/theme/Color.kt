@@ -2,51 +2,58 @@ package com.nodetalk.client.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── NodeTalk Dark Mode Tokens (1:1 from client-web/src/index.css) ─────────────
-val NTBackgroundDark = Color(0xFF313338)         // --background: 223 7% 21% (Main chat canvas)
-val NTCardDark = Color(0xFF2B2D31)               // --card / --secondary: 220 6% 18% (Channels, sidebar)
-val NTPopoverDark = Color(0xFF1E1F22)            // --popover: 225 6% 13% (Server rail, inputs, dialogs)
-val NTPrimary = Color(0xFF5865F2)                // --primary: 235 86% 65% (Discord / NodeTalk Blurple)
-val NTPrimaryForeground = Color(0xFFFFFFFF)      // --primary-foreground
-val NTAccentDark = Color(0xFF3F4147)             // --accent: 220 6% 26% (Hover / active item)
-val NTTextPrimaryDark = Color(0xFFF2F3F5)        // --foreground: 220 13% 95%
-val NTTextMutedDark = Color(0xFF949BA4)          // --muted-foreground: 215 14% 65% (Placeholders, subtle)
-val NTDestructive = Color(0xFFFA777C)            // --destructive: 359 83% 66% (Red / end call / danger)
-val NTBorderDark = Color(0xFF1E1F22)             // --border: 225 6% 13%
+// ── Cove Dark Mode Tokens (mirrors client-web/src/index.css) ─────────────
+val CoveBackgroundDark = Color(0xFF23201F)         // --background (Main chat canvas)
+val CoveCardDark = Color(0xFF2E2A29)               // --card / --secondary (Channels, sidebar)
+val CovePopoverDark = Color(0xFF1B1918)            // --popover (Server rail, inputs, dialogs)
+val CovePrimary = Color(0xFFD9826A)                // --primary (Terracotta (dark mode))
+val CovePrimaryForeground = Color(0xFF2A140D)      // --primary-foreground
+val CoveAccentDark = Color(0xFF3B3735)             // --accent (Hover / active item)
+val CoveTextPrimaryDark = Color(0xFFE8E5E3)        // --foreground
+val CoveTextMutedDark = Color(0xFFAEA7A3)          // --muted-foreground (Placeholders, subtle)
+val CoveDestructive = Color(0xFFE5707A)            // --destructive (Red / end call / danger)
+val CoveBorderDark = Color(0xFF46413E)             // --border
 
 // ── Status Indicators ─────────────────────────────────────────────────────────
-val NTStatusOnline = Color(0xFF23A55A)           // Online green
-val NTStatusIdle = Color(0xFFF0B232)             // Away / Idle yellow
-val NTStatusDnd = Color(0xFFF23F43)              // Do Not Disturb red
-val NTStatusOffline = Color(0xFF80848E)          // Offline gray
+val CoveStatusOnline = Color(0xFF23A55A)           // Online green
+val CoveStatusIdle = Color(0xFFF0B232)             // Away / Idle yellow
+val CoveStatusDnd = Color(0xFFF23F43)              // Do Not Disturb red
+val CoveStatusOffline = Color(0xFF80848E)          // Offline gray
 
 // ── Mention Colors ────────────────────────────────────────────────────────────
-val NTMentionBg = Color(0xFF3C2D13)
-val NTMentionBorder = Color(0xFFE5A33D)
+val CoveMentionBg = Color(0xFF3B2E17)
+val CoveMentionBorder = Color(0xFFF5C265)
 
-// ── NodeTalk Light Mode Tokens ────────────────────────────────────────────────
-val NTBackgroundLight = Color(0xFFFFFFFF)        // --background
-val NTCardLight = Color(0xFFF2F3F5)              // --card / --secondary
-val NTPopoverLight = Color(0xFFFFFFFF)           // --popover
-val NTTextPrimaryLight = Color(0xFF060607)       // --foreground
-val NTTextMutedLight = Color(0xFF4E5058)         // --muted-foreground
-val NTAccentLight = Color(0xFFE3E5E8)            // --accent
-val NTBorderLight = Color(0xFFE3E5E8)            // --border
+// ── Cove Light Mode Tokens ────────────────────────────────────────────────
+val CoveBackgroundLight = Color(0xFFFBF8F5)        // --background
+val CoveCardLight = Color(0xFFF3EEE9)              // --card / --secondary
+val CovePopoverLight = Color(0xFFFDFBF9)           // --popover
+val CoveTextPrimaryLight = Color(0xFF2B2420)       // --foreground
+val CoveTextMutedLight = Color(0xFF6F645B)         // --muted-foreground
+val CoveAccentLight = Color(0xFFE9E1D9)            // --accent
+val CoveBorderLight = Color(0xFFDDD3C9)            // --border
 
 // ── Whisper Mode (Zero-Persistence E2EE Pitch Black) ─────────────────────────
-val NTWhisperBg = Color(0xFF121212)
-val NTWhisperCard = Color(0xFF1C1C1C)
-val NTWhisperPopover = Color(0xFF141414)
-val NTWhisperAccent = Color(0xFF292929)
-val NTWhisperPrimary = Color(0xFFF2F2F2)
-val NTWhisperTextMuted = Color(0xFF8C8C8C)
+val CoveWhisperBg = Color(0xFF121212)
+val CoveWhisperCard = Color(0xFF1C1C1C)
+val CoveWhisperPopover = Color(0xFF141414)
+val CoveWhisperAccent = Color(0xFF292929)
+val CoveWhisperPrimary = Color(0xFFF2F2F2)
+val CoveWhisperTextMuted = Color(0xFF8C8C8C)
 
-// ── Backward-compatible Aliases ──────────────────────────────────────────────
-val NodeTalkDarkBg = NTBackgroundDark
-val NodeTalkSurface = NTCardDark
-val NodeTalkSurfaceElevated = NTAccentDark
-val NodeTalkPrimary = NTPrimary
-val NodeTalkTextPrimary = NTTextPrimaryDark
-val NodeTalkTextSecondary = NTTextMutedDark
-val NodeTalkOnline = NTStatusOnline
-val NodeTalkDestructive = NTDestructive
+// ── Light-mode brand colours (white text on the deeper terracotta stays legible) ─
+val CovePrimaryLight = Color(0xFFC4624A)           // --primary (light): #C4624A
+val CovePrimaryForegroundLight = Color(0xFFFFFFFF)
+val CoveDestructiveLight = Color(0xFFD63A3A)
+
+// ── Semantic status colours (mirror --success / --warning / overlay in client-web/src/index.css) ─
+val CoveSuccessDark = Color(0xFF58C48A)
+val CoveSuccessLight = Color(0xFF2E9A55)
+val CoveWarningDark = Color(0xFFF5C265)
+val CoveWarningLight = Color(0xFF8A5A00)
+/** Scrim over video / images; the same in both themes so white controls on top stay legible. */
+val CoveOverlay = Color(0x99000000)
+/** Icons / text drawn on top of [CoveOverlay] or live video. */
+val CoveOnOverlay = Color(0xFFFFFFFF)
+/** Letterbox behind video and full-screen photos. */
+val CoveMediaBackground = Color(0xFF000000)

@@ -1,5 +1,10 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
+import com.nodetalk.client.ui.components.CoveDialog
+import com.nodetalk.client.ui.components.DialogSize
 import com.nodetalk.client.ui.components.I18nToast
 import android.content.Context
 import android.content.Intent
@@ -55,11 +60,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.github.luben.zstd.Zstd
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.crypto.CryptoManager
 import com.nodetalk.client.data.model.FileMeta
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -126,7 +130,7 @@ fun decryptPreview(channelId: String, meta: FileMeta): ByteArray? {
  */
 suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhoto: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
     runCatching {
-        val app = NodeTalkApp.instance
+        val app = CoveApp.instance
         val resolver = context.contentResolver
         var bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Couldn't read the selected file.")
         if (bytes.size > MAX_ATTACHMENT_BYTES) error("File is too large for mobile (max 25 MB).")
@@ -158,7 +162,7 @@ suspend fun sendPrepared(
     durationSec: Int? = null,
     preview: ByteArray? = null
 ) {
-    val app = NodeTalkApp.instance
+    val app = CoveApp.instance
     val originalSize = bytes.size.toLong()
     val compressed = if (mime.startsWith("audio/")) bytes else Zstd.compress(bytes, 10)
     val (cipher, nonce) = CryptoManager.encryptBytes(channelId, compressed) ?: error("Channel key not available yet. Try again in a moment.")
@@ -182,7 +186,7 @@ suspend fun sendPrepared(
 
 /** Downloads and decrypts (then inflates) an attachment; null on any failure (wrong key, missing file...). */
 suspend fun loadAttachment(channelId: String, meta: FileMeta): ByteArray? = withContext(Dispatchers.IO) {
-    val dl = NodeTalkApp.instance.apiClient.downloadFile(meta.fileId)
+    val dl = CoveApp.instance.apiClient.downloadFile(meta.fileId)
     val blob = dl.getOrNull() ?: run { android.util.Log.e("Attach", "download failed", dl.exceptionOrNull()); return@withContext null }
     val nonce = runCatching { Base64.decode(meta.nonce, Base64.NO_WRAP) }.getOrNull() ?: run { android.util.Log.e("Attach", "bad nonce"); return@withContext null }
     val plain = CryptoManager.decryptBytes(channelId, blob, nonce) ?: run { android.util.Log.e("Attach", "decrypt failed blob=${blob.size} key=${CryptoManager.getChannelKey(channelId) != null}"); return@withContext null }
@@ -202,7 +206,7 @@ private fun formatSize(bytes: Long): String = when {
 /** Inline image or file card for a decrypted `file` message. */
 @Composable
 fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isImage = meta.mime.startsWith("image/") && !meta.mime.contains("svg")
@@ -223,7 +227,7 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
             Modifier
                 .padding(top = 4.dp)
                 .heightIn(max = 260.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(CoveShapes.md)
                 .background(c.card)
                 .clickable(enabled = bitmap != null) { viewer = true },
             contentAlignment = Alignment.Center
@@ -231,17 +235,16 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
             val b = bitmap
             when {
                 b != null -> Image(b.asImageBitmap(), meta.name, contentScale = ContentScale.Fit, modifier = Modifier.heightIn(max = 260.dp))
-                failed -> Text("Couldn't load image", color = c.textMuted, fontSize = 13.sp, modifier = Modifier.padding(16.dp))
+                failed -> Text("Couldn't load image", color = c.textMuted, fontSize = CoveType.label.fontSize, modifier = Modifier.padding(16.dp))
                 else -> Box(Modifier.size(width = 200.dp, height = 120.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NTPrimary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
                 }
             }
         }
         if (viewer && bitmap != null) {
-            Dialog(onDismissRequest = { viewer = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.92f)).clickable { viewer = false }, contentAlignment = Alignment.Center) {
+            CoveDialog(onDismiss = { viewer = false }, size = DialogSize.Media) {
+                Box(Modifier.fillMaxSize().clickable { viewer = false }, contentAlignment = Alignment.Center) {
                     Image(bitmap!!.asImageBitmap(), meta.name, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth())
-                    Icon(Icons.Outlined.Close, "Close", tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).size(26.dp))
                 }
             }
         }
@@ -250,8 +253,8 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
             Modifier
                 .padding(top = 4.dp)
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(6.dp))
-                .border(1.dp, c.border, RoundedCornerShape(6.dp))
+                .clip(CoveShapes.md)
+                .border(1.dp, c.border, CoveShapes.md)
                 .background(c.card)
                 .clickable(enabled = !busy) {
                     busy = true
@@ -275,12 +278,12 @@ fun FileBubble(channelId: String, meta: FileMeta, keyVersion: Int) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (busy) CircularProgressIndicator(color = NTPrimary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
-            else Icon(Icons.Outlined.InsertDriveFile, null, tint = NTPrimary, modifier = Modifier.size(28.dp))
+            if (busy) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+            else Icon(Icons.Outlined.InsertDriveFile, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(meta.name, color = c.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(formatSize(meta.size), color = c.textMuted, fontSize = 12.sp)
+                Text(meta.name, color = c.textPrimary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(formatSize(meta.size), color = c.textMuted, fontSize = CoveType.caption.fontSize)
             }
         }
     }

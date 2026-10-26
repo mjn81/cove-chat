@@ -1,5 +1,10 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
+import com.nodetalk.client.ui.components.CoveButton
+import com.nodetalk.client.ui.components.ButtonSize
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,16 +48,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.ui.components.AppLanguage
-import com.nodetalk.client.ui.components.NTTextField
+import com.nodetalk.client.ui.components.CoveTextField
 import com.nodetalk.client.ui.components.OpenSourceFooter
-import com.nodetalk.client.ui.theme.NodeTalkTheme
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPopoverDark
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NTPrimaryForeground
-import com.nodetalk.client.ui.theme.NTStatusOnline
+import com.nodetalk.client.ui.theme.CoveTheme
+import com.nodetalk.client.ui.theme.CovePopoverDark
+import com.nodetalk.client.ui.theme.CovePrimaryForeground
+import com.nodetalk.client.ui.theme.CoveStatusOnline
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -91,10 +94,10 @@ private fun isEmulator(): Boolean =
  */
 @Composable
 fun ServerSelectScreen(onServerConfigured: () -> Unit) {
-    val prefs = NodeTalkApp.instance.preferencesManager
-    val api = NodeTalkApp.instance.apiClient
+    val prefs = CoveApp.instance.preferencesManager
+    val api = CoveApp.instance.apiClient
     val scope = rememberCoroutineScope()
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
 
     var serverUrl by remember { mutableStateOf(prefs.serverUrl) }
     var status by remember { mutableStateOf(ConnectStatus.Idle) }
@@ -149,27 +152,27 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
             Text(
                 text = "Where are we heading today?",
                 color = c.textMuted,
-                fontSize = 16.sp,
+                fontSize = CoveType.body.fontSize,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(24.dp))
 
-            errorMessage?.let { StatusBanner(text = it, color = NTDestructive) }
+            errorMessage?.let { StatusBanner(text = it, color = MaterialTheme.colorScheme.error) }
             if (status == ConnectStatus.Success) {
-                StatusBanner(text = "Successfully connected!", color = NTStatusOnline)
+                StatusBanner(text = "Successfully connected!", color = CoveStatusOnline)
             }
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = buildAnnotatedString {
                         append(AppLanguage.translate("SERVER ADDRESS"))
-                        withStyle(SpanStyle(color = NTDestructive)) { append(" *") }
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.error)) { append(" *") }
                     },
                     color = c.textMuted,
-                    fontSize = 12.sp,
+                    fontSize = CoveType.caption.fontSize,
                     fontWeight = FontWeight.Bold
                 )
-                NTTextField(
+                CoveTextField(
                     value = serverUrl,
                     onValueChange = { serverUrl = it },
                     placeholder = "https://chat.example.com",
@@ -184,37 +187,21 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
             }
 
             Spacer(Modifier.height(16.dp))
-            Button(
+            CoveButton(
+                text = "Connect",
                 onClick = { connect() },
-                enabled = serverUrl.isNotBlank() && !busy,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = NTPrimary,
-                    contentColor = NTPrimaryForeground,
-                    disabledContainerColor = NTPrimary.copy(alpha = 0.5f),
-                    disabledContentColor = NTPrimaryForeground.copy(alpha = 0.5f)
-                )
-            ) {
-                if (status == ConnectStatus.Checking) {
-                    CircularProgressIndicator(
-                        color = NTPrimaryForeground,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp)
-                    )
-                } else {
-                    Text("Connect", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                }
-            }
+                modifier = Modifier.fillMaxWidth(),
+                size = ButtonSize.Lg,
+                loading = status == ConnectStatus.Checking,
+                enabled = serverUrl.isNotBlank() && !busy
+            )
 
             Spacer(Modifier.height(24.dp))
             Text(
-                text = "NodeTalk stores your messages securely, but relies on the server for key " +
+                text = "Cove stores your messages securely, but relies on the server for key " +
                     "management. Ensure you trust the host before sending sensitive data",
                 color = c.textMuted.copy(alpha = 0.6f),
-                fontSize = 11.sp,
+                fontSize = CoveType.caption.fontSize,
                 lineHeight = 18.sp,
                 fontStyle = FontStyle.Italic,
                 textAlign = TextAlign.Center
@@ -232,11 +219,11 @@ private fun StatusBanner(text: String, color: Color) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .background(color.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
-            .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+            .background(color.copy(alpha = 0.1f), CoveShapes.md)
+            .border(1.dp, color.copy(alpha = 0.2f), CoveShapes.md)
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = color, fontSize = 14.sp, textAlign = TextAlign.Center)
+        Text(text = text, color = color, fontSize = CoveType.label.fontSize, textAlign = TextAlign.Center)
     }
 }

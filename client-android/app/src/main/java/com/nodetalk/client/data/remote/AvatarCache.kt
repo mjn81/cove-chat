@@ -3,7 +3,7 @@ package com.nodetalk.client.data.remote
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,7 +27,7 @@ object AvatarCache {
         return mutex.withLock {
             cache.get(id)?.let { return@withLock it }
             if (id in failed) return@withLock null
-            val bytes = NodeTalkApp.instance.apiClient.downloadFile(id).getOrNull()
+            val bytes = CoveApp.instance.apiClient.downloadFile(id).getOrNull()
             val bmp = bytes?.let {
                 withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(it, 0, it.size) }
             }

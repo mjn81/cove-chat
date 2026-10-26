@@ -1,5 +1,8 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -55,8 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.nodetalk.client.data.model.FileMeta
 import com.nodetalk.client.ui.components.I18nToast
 import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -213,7 +215,7 @@ object VoicePlayerController {
  */
 @Composable
 fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int, author: String = "") {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val ctl = VoicePlayerController
@@ -229,21 +231,21 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int, author: Stri
             .padding(top = 8.dp)
             .widthIn(max = 320.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(CoveShapes.lg)
             .background(c.card.copy(alpha = 0.8f))
-            .border(1.dp, c.border, RoundedCornerShape(16.dp))
+            .border(1.dp, c.border, CoveShapes.lg)
             .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            Modifier.size(40.dp).clip(CircleShape).background(NTPrimary).clickable(enabled = !thisLoading) {
+            Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary).clickable(enabled = !thisLoading) {
                 ctl.play(context, VoiceTrack(channelId, meta, author.ifBlank { "Voice message" }))
             },
             contentAlignment = Alignment.Center
         ) {
-            if (thisLoading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-            else Icon(if (thisPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (thisPlaying) "Pause" else "Play", tint = Color.White, modifier = Modifier.size(22.dp))
+            if (thisLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+            else Icon(if (thisPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (thisPlaying) "Pause" else "Play", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth().height(32.dp).padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(1.5.dp), verticalAlignment = Alignment.Bottom) {
@@ -252,7 +254,7 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int, author: Stri
                         val played = active && progress > i.toFloat() / peaks.size
                         Box(
                             Modifier.weight(1f).fillMaxHeight(maxOf(15, peak) / 100f).clip(CircleShape)
-                                .background(if (played) NTPrimary else c.textMuted.copy(alpha = 0.3f))
+                                .background(if (played) MaterialTheme.colorScheme.primary else c.textMuted.copy(alpha = 0.3f))
                         )
                     }
                 } else {
@@ -279,7 +281,7 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int, author: Stri
 fun VoicePlayerBar(modifier: Modifier = Modifier) {
     val ctl = VoicePlayerController
     val t = ctl.track ?: return
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     var dragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(0f) }
     var volumeOpen by remember { mutableStateOf(false) }
@@ -291,38 +293,38 @@ fun VoicePlayerBar(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(Modifier.size(28.dp).clip(CircleShape).clickable(enabled = !ctl.isLoading) { ctl.toggle() }, contentAlignment = Alignment.Center) {
-            if (ctl.isLoading) CircularProgressIndicator(color = NTPrimary, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
-            else Icon(if (ctl.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (ctl.isPlaying) "Pause" else "Play", tint = NTPrimary, modifier = Modifier.size(22.dp))
+            if (ctl.isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+            else Icon(if (ctl.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (ctl.isPlaying) "Pause" else "Play", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         }
         Text(
             "${mmss((ctl.positionMs / 1000).toInt())} / ${mmss((ctl.durationMs / 1000).toInt())}",
-            color = c.textMuted, fontSize = 12.sp, fontFamily = FontFamily.Monospace
+            color = c.textMuted, fontSize = CoveType.caption.fontSize, fontFamily = FontFamily.Monospace
         )
         Slider(
             value = if (dragging) dragValue else fraction,
             onValueChange = { dragging = true; dragValue = it },
             onValueChangeFinished = { ctl.seek(dragValue); dragging = false },
             modifier = Modifier.weight(1f).height(24.dp),
-            thumb = { Box(Modifier.size(10.dp).clip(CircleShape).background(NTPrimary)) },
+            thumb = { Box(Modifier.size(10.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)) },
             track = { state ->
                 SliderDefaults.Track(
                     sliderState = state, modifier = Modifier.height(4.dp),
-                    colors = SliderDefaults.colors(activeTrackColor = NTPrimary, inactiveTrackColor = c.accent),
+                    colors = SliderDefaults.colors(activeTrackColor = MaterialTheme.colorScheme.primary, inactiveTrackColor = c.accent),
                     thumbTrackGapSize = 0.dp, trackInsideCornerSize = 0.dp, drawStopIndicator = {}
                 )
             }
         )
-        Box(Modifier.widthIn(min = 44.dp).height(28.dp).clip(RoundedCornerShape(6.dp)).clickable { ctl.cycleSpeed() }, contentAlignment = Alignment.Center) {
-            Text("%.1fx".format(ctl.speed), color = if (ctl.speed != 1f) NTPrimary else c.textMuted, fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+        Box(Modifier.widthIn(min = 44.dp).height(28.dp).clip(CoveShapes.md).clickable { ctl.cycleSpeed() }, contentAlignment = Alignment.Center) {
+            Text("%.1fx".format(ctl.speed), color = if (ctl.speed != 1f) MaterialTheme.colorScheme.primary else c.textMuted, fontSize = CoveType.caption.fontSize, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
         }
         Box {
             Box(Modifier.size(28.dp).clip(CircleShape).clickable { volumeOpen = true }, contentAlignment = Alignment.Center) {
                 Icon(
                     when { ctl.volume == 0f -> Icons.Outlined.VolumeOff; ctl.volume < 0.5f -> Icons.Outlined.VolumeDown; else -> Icons.Outlined.VolumeUp },
-                    "Volume", tint = if (ctl.volume == 0f) c.textMuted else NTPrimary, modifier = Modifier.size(18.dp)
+                    "Volume", tint = if (ctl.volume == 0f) c.textMuted else MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)
                 )
             }
-            DropdownMenu(expanded = volumeOpen, onDismissRequest = { volumeOpen = false }, containerColor = c.popover, shape = RoundedCornerShape(8.dp)) {
+            DropdownMenu(expanded = volumeOpen, onDismissRequest = { volumeOpen = false }, containerColor = c.popover, shape = CoveShapes.md) {
                 Row(Modifier.padding(horizontal = 12.dp).widthIn(min = 180.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.VolumeOff, "Mute", tint = c.textMuted, modifier = Modifier.size(18.dp).clickable { ctl.changeVolume(if (ctl.volume > 0f) 0f else 1f) })
                     Slider(value = ctl.volume, onValueChange = { ctl.changeVolume(it) }, modifier = Modifier.weight(1f).padding(start = 8.dp))
@@ -332,7 +334,7 @@ fun VoicePlayerBar(modifier: Modifier = Modifier) {
         Box(Modifier.size(28.dp).clip(CircleShape).clickable { ctl.cycleRepeat() }, contentAlignment = Alignment.Center) {
             Icon(
                 if (ctl.repeat == RepeatMode.Once) Icons.Outlined.RepeatOne else Icons.Outlined.Repeat,
-                "Repeat", tint = if (ctl.repeat == RepeatMode.None) c.textMuted else NTPrimary, modifier = Modifier.size(18.dp)
+                "Repeat", tint = if (ctl.repeat == RepeatMode.None) c.textMuted else MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)
             )
         }
         Box(Modifier.size(28.dp).clip(CircleShape).clickable { ctl.stop() }, contentAlignment = Alignment.Center) {

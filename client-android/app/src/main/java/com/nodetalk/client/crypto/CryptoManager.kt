@@ -14,7 +14,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Manages client-side encryption, decryption, and compression for NodeTalk.
+ * Manages client-side encryption, decryption, and compression for Cove.
  * Implements AES-256-GCM matching the web client (Web Crypto API) and Go backend.
  */
 object CryptoManager {

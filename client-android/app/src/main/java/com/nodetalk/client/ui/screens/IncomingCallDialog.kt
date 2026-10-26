@@ -1,5 +1,13 @@
 package com.nodetalk.client.ui.screens
 
+import androidx.compose.foundation.layout.size
+import com.nodetalk.client.ui.components.CoveButton
+import com.nodetalk.client.ui.components.ButtonVariant
+import com.nodetalk.client.ui.components.ButtonSize
+import com.nodetalk.client.ui.components.CoveDialog
+import com.nodetalk.client.ui.components.DialogSize
+import com.nodetalk.client.ui.theme.CoveType
+import com.nodetalk.client.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,42 +33,24 @@ import androidx.compose.ui.window.Dialog
 import com.nodetalk.client.notify.IncomingCall
 import com.nodetalk.client.ui.components.Text
 import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 
 /** In-app counterpart of the ringing notification (web `IncomingCallModal`): who is calling, Answer / Decline. */
 @Composable
 fun IncomingCallDialog(call: IncomingCall, onAnswer: () -> Unit, onDecline: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    Dialog(onDismissRequest = onDecline) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(c.chatCanvas)
-                .border(1.dp, c.border, RoundedCornerShape(8.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+    val c = CoveTheme.extendedColors
+    CoveDialog(onDismiss = onDecline, size = DialogSize.Sm, showClose = false) {
+        Column(Modifier.fillMaxWidth().padding(Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally) {
             UserAvatar(call.callerId, size = 72.dp)
-            Spacer(Modifier.height(16.dp))
-            Text(call.callerName, color = c.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(4.dp))
-            Text("is calling you…", color = c.textMuted, fontSize = 14.sp)
-            Spacer(Modifier.height(24.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CallButton("Decline", NTDestructive, Modifier.weight(1f), onDecline)
-                CallButton("Answer", NTPrimary, Modifier.weight(1f), onAnswer)
+            Spacer(Modifier.height(Spacing.lg))
+            Text(call.callerName, color = c.textPrimary, style = CoveType.title, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(Spacing.xs))
+            Text("is calling you…", color = c.textMuted, style = CoveType.label, fontWeight = FontWeight.Normal)
+            Spacer(Modifier.height(Spacing.xl))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                CoveButton("Decline", onDecline, Modifier.weight(1f), variant = ButtonVariant.Destructive, size = ButtonSize.Lg)
+                CoveButton("Answer", onAnswer, Modifier.weight(1f), size = ButtonSize.Lg)
             }
         }
     }
-}
-
-@Composable
-private fun CallButton(label: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Box(
-        modifier.height(44.dp).clip(RoundedCornerShape(6.dp)).background(color).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) { Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium) }
 }

@@ -1,6 +1,6 @@
-# NodeTalk Android Client (`client-android`)
+# Cove Android Client (`client-android`)
 
-Native Android client for **NodeTalk**, built with Kotlin, Jetpack Compose, Ktor, Stream WebRTC, and AES-256-GCM hardware-accelerated encryption.
+Native Android client for **Cove**, built with Kotlin, Jetpack Compose, Ktor, Stream WebRTC, and AES-256-GCM hardware-accelerated encryption.
 
 ---
 
@@ -26,7 +26,7 @@ Native Android client for **NodeTalk**, built with Kotlin, Jetpack Compose, Ktor
 
 ### 1. Open in Android Studio
 1. Launch **Android Studio**.
-2. Click **Open** and select the `client-android` folder (`d:\Projects\NodeTalk\client-android`).
+2. Click **Open** and select the `client-android` folder (`d:\Projects\Cove\client-android`).
 3. Android Studio will automatically sync the Gradle project using the included Gradle 8.11.1 distribution.
 
 ### 2. Connect to Local Backend
@@ -57,7 +57,7 @@ and file attachments inside Whispers.
 
 ```
 client-android/app/src/main/java/com/nodetalk/client/
-├── NodeTalkApp.kt             # Application singleton, notifications and Whisper wiring
+├── CoveApp.kt                 # Application singleton, notifications and Whisper wiring
 ├── MainActivity.kt            # Launcher Activity, edge-to-edge, runtime permissions
 ├── crypto/CryptoManager.kt    # AES-256-GCM channel encryption & zstd
 ├── data/                      # models, encrypted prefs, Ktor REST + WebSocket clients, avatar cache
@@ -67,3 +67,24 @@ client-android/app/src/main/java/com/nodetalk/client/
 ├── service/CallService.kt     # Foreground service for calls
 └── ui/                        # theme, shared components (incl. i18n), navigation, screens
 ```
+
+## UI kit and naming
+
+Kotlin symbols use the **Cove** name (`CoveTheme`, `CoveApp`, `Cove*` colours, `CoveFontFamily`); the Gradle
+`applicationId` and the `com.nodetalk.client` package are deliberately unchanged. The manifest theme is `Theme.Cove`.
+
+Screens are composed from one shared kit whose names and variants mirror the web client (see
+`docs/design/component-cleanup-plan.md`). Do not hand-roll dialogs, buttons or rows in a screen; extend the kit instead.
+
+| Piece | Where | Notes |
+|---|---|---|
+| Tokens | `ui/theme/Dimens.kt`, `Color.kt`, `Theme.kt` | `Spacing` (4-pt scale), `Radius`/`CoveShapes` (sm 4 / md 8 / lg 12), `CoveType` roles (title, body, caption, label), `Sizes`. Semantic colours via `CoveTheme.extendedColors`: `success`, `warning`, `overlay`/`onOverlay`/`mediaBackground`, plus status and mention. |
+| `CoveDialog` | `ui/components/CoveDialog.kt` | Sizes `Sm / Md / Lg / Media`, title + close, body, footer actions, `alignTop` for search. `CoveConfirmDialog` for yes/no (`destructive`). |
+| `CoveButton`, `CoveIconButton` | `CoveButton.kt` | Variants Default / Secondary / Outline / Ghost / Destructive, sizes Sm / Md / Lg, `loading`. Icon button: Ghost / Destructive / Filled / Scrim, `selected` toggles. |
+| `CoveTextField`, `FormField`, `FieldLabel` | `CoveFields.kt` | `FormField` adds the label, the red ` *` for `required`, hint and error. |
+| `CoveListRow`, `CoveBadge`, `CoveSwitchRow`, `CoveChip`, `CoveSegmented`, `CoveChoiceList`, `EmptyState`, `SectionHeader` | `CoveRows.kt` | `CoveListRow` replaces every conversation / person / result / menu / permission row. |
+| `UserAvatar`, `InitialsAvatar`, `StatusDot`, `ErrorBanner`, `SectionDivider` | `Common.kt` | Unchanged shared pieces. |
+
+Rules: user-facing strings go through `components/Text` (translated by `I18n.kt`); use theme colours
+(`MaterialTheme.colorScheme.primary/error`, `CoveTheme.extendedColors`) instead of `Color(0x..)`; only Whisper mode uses
+its own `CoveWhisper*` palette, passed to the kit via the `container` / `border` / `containerColor` overrides.

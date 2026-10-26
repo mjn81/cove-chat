@@ -27,7 +27,7 @@ import com.nodetalk.client.R
 import androidx.compose.ui.graphics.Color
 
 @Immutable
-data class NodeTalkExtendedColors(
+data class CoveExtendedColors(
     val chatCanvas: Color,
     val card: Color,
     val popover: Color,
@@ -40,73 +40,88 @@ data class NodeTalkExtendedColors(
     val statusDnd: Color,
     val statusOffline: Color,
     val mentionBg: Color,
-    val mentionBorder: Color
+    val mentionBorder: Color,
+    val success: Color,
+    val warning: Color,
+    val overlay: Color,
+    val onOverlay: Color,
+    val mediaBackground: Color
 )
 
-private val DarkExtendedColors = NodeTalkExtendedColors(
-    chatCanvas = NTBackgroundDark,
-    card = NTCardDark,
-    popover = NTPopoverDark,
-    accent = NTAccentDark,
-    textPrimary = NTTextPrimaryDark,
-    textMuted = NTTextMutedDark,
-    border = NTBorderDark,
-    statusOnline = NTStatusOnline,
-    statusIdle = NTStatusIdle,
-    statusDnd = NTStatusDnd,
-    statusOffline = NTStatusOffline,
-    mentionBg = NTMentionBg,
-    mentionBorder = NTMentionBorder
+private val DarkExtendedColors = CoveExtendedColors(
+    chatCanvas = CoveBackgroundDark,
+    card = CoveCardDark,
+    popover = CovePopoverDark,
+    accent = CoveAccentDark,
+    textPrimary = CoveTextPrimaryDark,
+    textMuted = CoveTextMutedDark,
+    border = CoveBorderDark,
+    statusOnline = CoveStatusOnline,
+    statusIdle = CoveStatusIdle,
+    statusDnd = CoveStatusDnd,
+    statusOffline = CoveStatusOffline,
+    mentionBg = CoveMentionBg,
+    mentionBorder = CoveMentionBorder,
+    success = CoveSuccessDark,
+    warning = CoveWarningDark,
+    overlay = CoveOverlay,
+    onOverlay = CoveOnOverlay,
+    mediaBackground = CoveMediaBackground
 )
 
-private val LightExtendedColors = NodeTalkExtendedColors(
-    chatCanvas = NTBackgroundLight,
-    card = NTCardLight,
-    popover = NTPopoverLight,
-    accent = NTAccentLight,
-    textPrimary = NTTextPrimaryLight,
-    textMuted = NTTextMutedLight,
-    border = NTBorderLight,
-    statusOnline = NTStatusOnline,
-    statusIdle = NTStatusIdle,
-    statusDnd = NTStatusDnd,
-    statusOffline = NTStatusOffline,
-    mentionBg = NTMentionBg,
-    mentionBorder = NTMentionBorder
+private val LightExtendedColors = CoveExtendedColors(
+    chatCanvas = CoveBackgroundLight,
+    card = CoveCardLight,
+    popover = CovePopoverLight,
+    accent = CoveAccentLight,
+    textPrimary = CoveTextPrimaryLight,
+    textMuted = CoveTextMutedLight,
+    border = CoveBorderLight,
+    statusOnline = CoveStatusOnline,
+    statusIdle = CoveStatusIdle,
+    statusDnd = CoveStatusDnd,
+    statusOffline = CoveStatusOffline,
+    mentionBg = CoveMentionBg,
+    mentionBorder = CoveMentionBorder,
+    success = CoveSuccessLight,
+    warning = CoveWarningLight,
+    overlay = CoveOverlay,
+    onOverlay = CoveOnOverlay,
+    mediaBackground = CoveMediaBackground
 )
 
-val LocalNodeTalkExtendedColors = staticCompositionLocalOf { DarkExtendedColors }
+val LocalCoveExtendedColors = staticCompositionLocalOf { DarkExtendedColors }
 
 private val DarkColorScheme = darkColorScheme(
-    primary = NTPrimary,
-    onPrimary = NTPrimaryForeground,
-    background = NTBackgroundDark,
-    onBackground = NTTextPrimaryDark,
-    surface = NTCardDark,
-    onSurface = NTTextPrimaryDark,
-    surfaceVariant = NTPopoverDark,
-    onSurfaceVariant = NTTextMutedDark,
-    outline = NTBorderDark,
-    error = NTDestructive
+    primary = CovePrimary,
+    onPrimary = CovePrimaryForeground,
+    background = CoveBackgroundDark,
+    onBackground = CoveTextPrimaryDark,
+    surface = CoveCardDark,
+    onSurface = CoveTextPrimaryDark,
+    surfaceVariant = CovePopoverDark,
+    onSurfaceVariant = CoveTextMutedDark,
+    outline = CoveBorderDark,
+    error = CoveDestructive
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = NTPrimary,
-    onPrimary = NTPrimaryForeground,
-    background = NTBackgroundLight,
-    onBackground = NTTextPrimaryLight,
-    surface = NTCardLight,
-    onSurface = NTTextPrimaryLight,
-    surfaceVariant = NTPopoverLight,
-    onSurfaceVariant = NTTextMutedLight,
-    outline = NTBorderLight,
-    error = NTDestructive
+    primary = CovePrimaryLight,
+    onPrimary = CovePrimaryForegroundLight,
+    background = CoveBackgroundLight,
+    onBackground = CoveTextPrimaryLight,
+    surface = CoveCardLight,
+    onSurface = CoveTextPrimaryLight,
+    surfaceVariant = CovePopoverLight,
+    onSurfaceVariant = CoveTextMutedLight,
+    outline = CoveBorderLight,
+    error = CoveDestructiveLight
 )
 
-object NodeTalkTheme {
-    val extendedColors: NodeTalkExtendedColors
+object CoveTheme {
+    val extendedColors: CoveExtendedColors
         @Composable
-        get() = LocalNodeTalkExtendedColors.current
+        get() = LocalCoveExtendedColors.current
 }
 
 /** App-wide theme choice (persisted by SettingsScreen); dark by default like the web client. */
@@ -116,7 +131,7 @@ object ThemeSettings {
 
 /** Vazirmatn variable font, the same face the web client ships (client-web/public). */
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
-val NodeTalkFontFamily = FontFamily(
+val CoveFontFamily = FontFamily(
     listOf(400, 500, 600, 700).map { w ->
         Font(
             R.font.vazirmatn,
@@ -126,10 +141,10 @@ val NodeTalkFontFamily = FontFamily(
     }
 )
 
-private fun nodeTalkTypography(): Typography {
+private fun coveTypography(): Typography {
     val base = Typography()
     fun TextStyle.f() = copy(
-        fontFamily = NodeTalkFontFamily,
+        fontFamily = CoveFontFamily,
         lineHeight = 1.35.em,
         // Vazirmatn has tall, asymmetric ascent/descent; centre glyphs in the line box so text sits centred in inputs and bars.
         lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
@@ -144,7 +159,7 @@ private fun nodeTalkTypography(): Typography {
 }
 
 @Composable
-fun NodeTalkTheme(
+fun CoveTheme(
     darkTheme: Boolean = ThemeSettings.dark,
     content: @Composable () -> Unit
 ) {
@@ -164,12 +179,12 @@ fun NodeTalkTheme(
 
     val direction = if (com.nodetalk.client.ui.components.AppLanguage.isRtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
     CompositionLocalProvider(
-        LocalNodeTalkExtendedColors provides extendedColors,
+        LocalCoveExtendedColors provides extendedColors,
         androidx.compose.ui.platform.LocalLayoutDirection provides direction
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = nodeTalkTypography(),
+            typography = coveTypography(),
             content = content
         )
     }

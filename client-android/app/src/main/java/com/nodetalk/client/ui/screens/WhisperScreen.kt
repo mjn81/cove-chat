@@ -1,5 +1,18 @@
 package com.nodetalk.client.ui.screens
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.ColumnScope
+import com.nodetalk.client.ui.components.CoveButton
+import com.nodetalk.client.ui.components.ButtonVariant
+import com.nodetalk.client.ui.components.ButtonSize
+import com.nodetalk.client.ui.components.CoveDialog
+import com.nodetalk.client.ui.components.DialogSize
+import com.nodetalk.client.ui.components.CoveListRow
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import com.nodetalk.client.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,14 +61,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTWhisperAccent
-import com.nodetalk.client.ui.theme.NTWhisperBg
-import com.nodetalk.client.ui.theme.NTWhisperCard
-import com.nodetalk.client.ui.theme.NTWhisperPrimary
-import com.nodetalk.client.ui.theme.NTWhisperTextMuted
+import com.nodetalk.client.ui.theme.CoveWhisperAccent
+import com.nodetalk.client.ui.theme.CoveWhisperBg
+import com.nodetalk.client.ui.theme.CoveWhisperCard
+import com.nodetalk.client.ui.theme.CoveWhisperPrimary
+import com.nodetalk.client.ui.theme.CoveWhisperTextMuted
 import com.nodetalk.client.whisper.WhisperInvite
 import com.nodetalk.client.whisper.WhisperStatus
 
@@ -71,30 +83,25 @@ private val ExpiryChoices = listOf(
 @Composable
 fun WhisperStartDialog(peerName: String, onDismiss: () -> Unit, onStart: (expiryMode: String) -> Unit) {
     var mode by remember { mutableStateOf("persistent") }
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(NTWhisperBg).border(1.dp, NTWhisperAccent, RoundedCornerShape(8.dp)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("Start a Whisper with $peerName", color = NTWhisperPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(
-                "Whispers are end-to-end encrypted and never stored on the server. Both of you must be online and friends.",
-                color = NTWhisperTextMuted, fontSize = 13.sp
+    WhisperDialog(
+        title = "Start a Whisper with $peerName", onDismiss = onDismiss,
+        footer = {
+            CoveButton("Cancel", onDismiss, variant = ButtonVariant.Ghost, size = ButtonSize.Sm, contentColor = CoveWhisperTextMuted)
+            WhisperPrimaryButton("Start") { onStart(mode) }
+        }
+    ) {
+        Text(
+            "Whispers are end-to-end encrypted and never stored on the server. Both of you must be online and friends.",
+            color = CoveWhisperTextMuted, style = CoveType.label, fontWeight = FontWeight.Normal
+        )
+        ExpiryChoices.forEach { (id, label) ->
+            val on = id == mode
+            CoveListRow(
+                title = label, onClick = { mode = id },
+                titleColor = if (on) CoveWhisperPrimary else CoveWhisperTextMuted,
+                contentPadding = PaddingValues(Spacing.md),
+                modifier = Modifier.border(1.dp, if (on) CoveWhisperPrimary else CoveWhisperAccent, CoveShapes.md)
             )
-            ExpiryChoices.forEach { (id, label) ->
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
-                        .border(1.dp, if (id == mode) NTWhisperPrimary else NTWhisperAccent, RoundedCornerShape(6.dp))
-                        .clickable { mode = id }.padding(12.dp)
-                ) { Text(label, color = if (id == mode) NTWhisperPrimary else NTWhisperTextMuted, fontSize = 14.sp) }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Text("Cancel", color = NTWhisperTextMuted, modifier = Modifier.clickable(onClick = onDismiss).padding(12.dp))
-                Text(
-                    "Start", color = Color.Black, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(NTWhisperPrimary).clickable { onStart(mode) }.padding(horizontal = 20.dp, vertical = 12.dp)
-                )
-            }
         }
     }
 }
@@ -102,29 +109,40 @@ fun WhisperStartDialog(peerName: String, onDismiss: () -> Unit, onStart: (expiry
 /** Incoming request prompt, shown over whatever screen is open. */
 @Composable
 fun WhisperInviteDialog(invite: WhisperInvite, onAccept: () -> Unit, onDecline: () -> Unit) {
-    Dialog(onDismissRequest = onDecline) {
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(NTWhisperBg).border(1.dp, NTWhisperAccent, RoundedCornerShape(8.dp)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Lock, null, tint = NTWhisperPrimary)
-                Spacer(Modifier.width(8.dp))
-                Text("Whisper request", color = NTWhisperPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-            Text(
-                "${invite.initiatorName} wants to start an end-to-end encrypted Whisper. Nothing is stored on the server.",
-                color = NTWhisperTextMuted, fontSize = 14.sp
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Text("Decline", color = NTDestructive, fontWeight = FontWeight.Medium, modifier = Modifier.clickable(onClick = onDecline).padding(12.dp))
-                Text(
-                    "Accept", color = Color.Black, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(NTWhisperPrimary).clickable(onClick = onAccept).padding(horizontal = 20.dp, vertical = 12.dp)
-                )
-            }
+    WhisperDialog(
+        title = "Whisper request", onDismiss = onDecline,
+        footer = {
+            CoveButton("Decline", onDecline, variant = ButtonVariant.Ghost, size = ButtonSize.Sm, contentColor = MaterialTheme.colorScheme.error)
+            WhisperPrimaryButton("Accept", onAccept)
         }
+    ) {
+        Text(
+            "${invite.initiatorName} wants to start an end-to-end encrypted Whisper. Nothing is stored on the server.",
+            color = CoveWhisperTextMuted, style = CoveType.body
+        )
     }
+}
+
+/** [CoveDialog] in the pitch-black Whisper palette (no close button; footer actions decide). */
+@Composable
+private fun WhisperDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    footer: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    CoveDialog(
+        onDismiss = onDismiss, title = title, size = DialogSize.Sm, showClose = false,
+        container = CoveWhisperBg, border = CoveWhisperAccent, titleColor = CoveWhisperPrimary, footerContainer = CoveWhisperCard,
+        footer = footer
+    ) {
+        Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md), content = content)
+    }
+}
+
+@Composable
+private fun WhisperPrimaryButton(text: String, onClick: () -> Unit) {
+    CoveButton(text, onClick, size = ButtonSize.Sm, containerColor = CoveWhisperPrimary, contentColor = Color.Black)
 }
 
 /**
@@ -133,8 +151,8 @@ fun WhisperInviteDialog(invite: WhisperInvite, onAccept: () -> Unit, onDecline: 
  */
 @Composable
 fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
-    val manager = NodeTalkApp.instance.whisperManager
-    val me = NodeTalkApp.instance.preferencesManager.userId.orEmpty()
+    val manager = CoveApp.instance.whisperManager
+    val me = CoveApp.instance.preferencesManager.userId.orEmpty()
     val session = manager.sessions[sessionId]
     var input by remember { mutableStateOf("") }
     var showSafety by remember { mutableStateOf(false) }
@@ -144,42 +162,42 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
 
     if (session == null) {
         // Session already ended and removed.
-        Box(Modifier.fillMaxSize().background(NTWhisperBg).statusBarsPadding(), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().background(CoveWhisperBg).statusBarsPadding(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("This Whisper has ended.", color = NTWhisperTextMuted)
-                Text("Back", color = NTWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onBack).padding(12.dp))
+                Text("This Whisper has ended.", color = CoveWhisperTextMuted)
+                Text("Back", color = CoveWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onBack).padding(12.dp))
             }
         }
         return
     }
 
-    Column(Modifier.fillMaxSize().background(NTWhisperBg).navigationBarsPadding().imePadding()) {
-        Column(Modifier.fillMaxWidth().background(NTWhisperCard).statusBarsPadding()) {
+    Column(Modifier.fillMaxSize().background(CoveWhisperBg).navigationBarsPadding().imePadding()) {
+        Column(Modifier.fillMaxWidth().background(CoveWhisperCard).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(52.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = NTWhisperPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
+                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = CoveWhisperPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
                 UserAvatar(session.peerId, size = 36.dp)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(session.peerName, color = NTWhisperPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(session.peerName, color = CoveWhisperPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Lock, null, tint = NTWhisperTextMuted, modifier = Modifier.size(12.dp))
+                        Icon(Icons.Outlined.Lock, null, tint = CoveWhisperTextMuted, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("End-to-end encrypted · not stored", color = NTWhisperTextMuted, fontSize = 11.sp)
+                        Text("End-to-end encrypted · not stored", color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize)
                     }
                 }
                 if (session.status == WhisperStatus.Active) {
                     Box(Modifier.size(36.dp).clickable { showSafety = true }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Shield, "Safety number", tint = NTWhisperTextMuted)
+                        Icon(Icons.Outlined.Shield, "Safety number", tint = CoveWhisperTextMuted)
                     }
                     Text(
-                        "End", color = NTDestructive, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                        "End", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = CoveType.label.fontSize,
                         modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(8.dp)
                     )
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(NTWhisperAccent))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(CoveWhisperAccent))
         }
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -187,30 +205,30 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
                 WhisperStatus.Pending -> Column(
                     Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator(color = NTWhisperPrimary, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = CoveWhisperPrimary, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.height(16.dp))
-                    Text("Waiting for ${session.peerName} to accept…", color = NTWhisperTextMuted, textAlign = TextAlign.Center)
-                    Text("Cancel", color = NTDestructive, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(16.dp))
+                    Text("Waiting for ${session.peerName} to accept…", color = CoveWhisperTextMuted, textAlign = TextAlign.Center)
+                    Text("Cancel", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(16.dp))
                 }
                 WhisperStatus.Closed -> Column(
                     Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(session.endedReason ?: "This Whisper has ended.", color = NTWhisperTextMuted, textAlign = TextAlign.Center)
-                    Text("Close", color = NTWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(16.dp))
+                    Text(session.endedReason ?: "This Whisper has ended.", color = CoveWhisperTextMuted, textAlign = TextAlign.Center)
+                    Text("Close", color = CoveWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(16.dp))
                 }
                 WhisperStatus.Active -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     item {
                         Text(
                             "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to.",
-                            color = NTWhisperTextMuted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                            color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                         )
                     }
                     items(session.messages.toList(), key = { it.id }) { m ->
                         val mine = m.senderId == me
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
                             Text(
-                                m.text, color = if (mine) Color.Black else NTWhisperPrimary, fontSize = 15.sp,
-                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (mine) NTWhisperPrimary else NTWhisperAccent).padding(horizontal = 12.dp, vertical = 8.dp)
+                                m.text, color = if (mine) Color.Black else CoveWhisperPrimary, fontSize = CoveType.body.fontSize,
+                                modifier = Modifier.clip(CoveShapes.md).background(if (mine) CoveWhisperPrimary else CoveWhisperAccent).padding(horizontal = 12.dp, vertical = 8.dp)
                             )
                         }
                     }
@@ -220,38 +238,34 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
 
         if (session.status == WhisperStatus.Active) {
             Row(
-                Modifier.fillMaxWidth().padding(8.dp).clip(RoundedCornerShape(4.dp)).background(NTWhisperCard).border(1.dp, NTWhisperAccent, RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().padding(8.dp).clip(CoveShapes.sm).background(CoveWhisperCard).border(1.dp, CoveWhisperAccent, CoveShapes.sm).padding(horizontal = 10.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.weight(1f).height(40.dp), contentAlignment = Alignment.CenterStart) {
-                    if (input.isEmpty()) Text("Whisper…", color = NTWhisperTextMuted, fontSize = 15.sp)
+                    if (input.isEmpty()) Text("Whisper…", color = CoveWhisperTextMuted, fontSize = CoveType.body.fontSize)
                     BasicTextField(
                         value = input, onValueChange = { input = it },
-                        textStyle = TextStyle(color = NTWhisperPrimary, fontSize = 15.sp),
-                        cursorBrush = SolidColor(NTWhisperPrimary), modifier = Modifier.fillMaxWidth()
+                        textStyle = TextStyle(color = CoveWhisperPrimary, fontSize = CoveType.body.fontSize),
+                        cursorBrush = SolidColor(CoveWhisperPrimary), modifier = Modifier.fillMaxWidth()
                     )
                 }
                 Box(
-                    Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)).background(if (input.isNotBlank()) NTWhisperPrimary else Color.Transparent)
+                    Modifier.size(36.dp).clip(CoveShapes.sm).background(if (input.isNotBlank()) CoveWhisperPrimary else Color.Transparent)
                         .clickable(enabled = input.isNotBlank()) { manager.send(sessionId, input.trim()); input = "" },
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.AutoMirrored.Outlined.Send, "Send", tint = if (input.isNotBlank()) Color.Black else NTWhisperTextMuted, modifier = Modifier.size(20.dp)) }
+                ) { Icon(Icons.AutoMirrored.Outlined.Send, "Send", tint = if (input.isNotBlank()) Color.Black else CoveWhisperTextMuted, modifier = Modifier.size(20.dp)) }
             }
         }
     }
 
     if (showSafety) {
-        Dialog(onDismissRequest = { showSafety = false }) {
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(NTWhisperBg).border(1.dp, NTWhisperAccent, RoundedCornerShape(8.dp)).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text("Safety number", color = NTWhisperPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("If this matches the number on ${session.peerName}'s device, nobody is intercepting your Whisper.", color = NTWhisperTextMuted, fontSize = 13.sp)
-                val groups = (session.safetyNumber ?: "").split(" ").chunked(4)
-                groups.forEach { row -> Text(row.joinToString("   "), color = NTWhisperPrimary, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) }
-                Text("Close", color = NTWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.End).clickable { showSafety = false }.padding(8.dp))
-            }
+        WhisperDialog(
+            title = "Safety number", onDismiss = { showSafety = false },
+            footer = { WhisperPrimaryButton("Close") { showSafety = false } }
+        ) {
+            Text("If this matches the number on ${session.peerName}'s device, nobody is intercepting your Whisper.", color = CoveWhisperTextMuted, style = CoveType.label, fontWeight = FontWeight.Normal)
+            val groups = (session.safetyNumber ?: "").split(" ").chunked(4)
+            groups.forEach { row -> Text(row.joinToString("   "), color = CoveWhisperPrimary, style = CoveType.title, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) }
         }
     }
 }

@@ -1,5 +1,13 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import com.nodetalk.client.ui.theme.Radius
+import com.nodetalk.client.ui.components.CoveIconButton
+import com.nodetalk.client.ui.components.CoveListRow
+import com.nodetalk.client.ui.theme.Spacing
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -61,9 +69,7 @@ import androidx.compose.ui.unit.sp
 import com.nodetalk.client.ui.components.AppLanguage
 import com.nodetalk.client.ui.components.Text
 import com.nodetalk.client.ui.components.mirrorInRtl
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 
 /** What the reply/edit banner above the input shows. */
 class InputContext(val isEdit: Boolean, val author: String, val snippet: String)
@@ -93,12 +99,12 @@ fun ChatInputBar(
     onFinishRecording: () -> Unit,
     onVideo: () -> Unit
 ) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val small = LocalConfiguration.current.screenWidthDp <= 400
     var menuOpen by remember { mutableStateOf(false) }
     var emojiOpen by remember { mutableStateOf(false) }
     val canSend = input.isNotBlank() && !uploading
-    val shape = RoundedCornerShape(topStart = if (context != null) 0.dp else 8.dp, topEnd = if (context != null) 0.dp else 8.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+    val shape = RoundedCornerShape(topStart = if (context != null) 0.dp else Radius.md, topEnd = if (context != null) 0.dp else Radius.md, bottomStart = Radius.md, bottomEnd = Radius.md)
 
     Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)) {
         if (emojiOpen) {
@@ -112,12 +118,12 @@ fun ChatInputBar(
         ) {
             if (recording) {
                 Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    PlainIcon(Icons.Outlined.Delete, "Cancel recording", onCancelRecording)
+                    CoveIconButton(Icons.Outlined.Delete, "Cancel recording", onCancelRecording, size = 26.dp, iconSize = 18.dp)
                     Spacer(Modifier.width(8.dp))
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(NTDestructive))
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
                     Spacer(Modifier.width(8.dp))
-                    Text("Recording  %d:%02d".format(elapsedSeconds / 60, elapsedSeconds % 60), color = c.textPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    PlainIcon(Icons.AutoMirrored.Outlined.Send, "Send voice message", onFinishRecording, tint = NTPrimary)
+                    Text("Recording  %d:%02d".format(elapsedSeconds / 60, elapsedSeconds % 60), color = c.textPrimary, fontSize = CoveType.label.fontSize, modifier = Modifier.weight(1f))
+                    CoveIconButton(Icons.AutoMirrored.Outlined.Send, "Send voice message", onFinishRecording, tint = MaterialTheme.colorScheme.primary, size = 26.dp, iconSize = 18.dp, mirrorInRtl = true)
                 }
             } else {
                 Row(
@@ -130,16 +136,16 @@ fun ChatInputBar(
                             Modifier.size(20.dp).clip(CircleShape).background(c.textMuted.copy(alpha = 0.1f)).clickable(enabled = !uploading) { menuOpen = true },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (uploading) CircularProgressIndicator(color = NTPrimary, strokeWidth = 2.dp, modifier = Modifier.size(12.dp))
+                            if (uploading) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(12.dp))
                             else Icon(Icons.Outlined.Add, "Add attachment", tint = c.textMuted, modifier = Modifier.size(12.dp))
                         }
                         DropdownMenu(
                             expanded = menuOpen, onDismissRequest = { menuOpen = false },
-                            shape = RoundedCornerShape(12.dp), containerColor = c.popover
+                            shape = CoveShapes.lg, containerColor = c.popover
                         ) {
-                            MenuRow(Icons.Outlined.Image, "Photo or Video") { menuOpen = false; onPickMedia() }
-                            MenuRow(Icons.Outlined.MusicNote, "Audio") { menuOpen = false; onPickAudio() }
-                            MenuRow(Icons.Outlined.Description, "Document / File") { menuOpen = false; onPickFile() }
+                            CoveListRow("Photo or Video", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.Image, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickMedia() })
+                            CoveListRow("Audio", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.MusicNote, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickAudio() })
+                            CoveListRow("Document / File", compact = true, contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm), leading = { Icon(Icons.Outlined.Description, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) }, onClick = { menuOpen = false; onPickFile() })
                         }
                     }
 
@@ -147,28 +153,28 @@ fun ChatInputBar(
                         if (input.isEmpty()) {
                             Text(
                                 if (small) "Message..." else "Message $targetLabel",
-                                color = c.textMuted.copy(alpha = 0.6f), fontSize = 15.sp, lineHeight = 24.sp, maxLines = 1
+                                color = c.textMuted.copy(alpha = 0.6f), fontSize = CoveType.body.fontSize, lineHeight = 24.sp, maxLines = 1
                             )
                         }
                         BasicTextField(
                             value = input,
                             onValueChange = onInputChange,
                             textStyle = TextStyle(
-                                color = c.textPrimary, fontSize = 15.sp, lineHeight = 24.sp,
+                                color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 24.sp,
                                 textDirection = TextDirection.Content,
                                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
                             ),
-                            cursorBrush = SolidColor(NTPrimary),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(if (small) 2.dp else 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        PlainIcon(Icons.Outlined.Mic, "Record voice message", onStartRecording)
-                        PlainIcon(Icons.Outlined.Videocam, "Record video message", onVideo)
-                        PlainIcon(Icons.Outlined.EmojiEmotions, "Add emoji", { emojiOpen = !emojiOpen })
-                        PlainIcon(Icons.AutoMirrored.Outlined.Send, "Send message", { if (canSend) onSend() }, enabled = canSend)
+                        CoveIconButton(Icons.Outlined.Mic, "Record voice message", onStartRecording, size = 26.dp, iconSize = 18.dp)
+                        CoveIconButton(Icons.Outlined.Videocam, "Record video message", onVideo, size = 26.dp, iconSize = 18.dp)
+                        CoveIconButton(Icons.Outlined.EmojiEmotions, "Add emoji", { emojiOpen = !emojiOpen }, size = 26.dp, iconSize = 18.dp)
+                        CoveIconButton(Icons.AutoMirrored.Outlined.Send, "Send message", { if (canSend) onSend() }, enabled = canSend, size = 26.dp, iconSize = 18.dp, mirrorInRtl = true)
                     }
                 }
             }
@@ -176,29 +182,11 @@ fun ChatInputBar(
     }
 }
 
-/** 18dp lucide-style icon in a 26dp tap target, like the web `p-1` icon buttons. */
-@Composable
-private fun PlainIcon(icon: ImageVector, desc: String, onClick: () -> Unit, enabled: Boolean = true, tint: androidx.compose.ui.graphics.Color = NodeTalkTheme.extendedColors.textMuted) {
-    Box(
-        Modifier.size(26.dp).clip(CircleShape).alpha(if (enabled) 1f else 0.5f).clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = tint, modifier = Modifier.size(18.dp).let { if (desc == "Send message" || desc == "Send voice message") it.mirrorInRtl() else it }) }
-}
-
-@Composable
-private fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = NodeTalkTheme.extendedColors.textPrimary) },
-        leadingIcon = { Icon(icon, null, tint = NTPrimary, modifier = Modifier.size(16.dp)) },
-        onClick = onClick
-    )
-}
-
 /** "Replying to **name**  | snippet" banner that sits flush on the composer (web `Reply Preview`). */
 @Composable
 private fun ReplyBanner(ctx: InputContext, onCancel: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    val shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+    val c = CoveTheme.extendedColors
+    val shape = RoundedCornerShape(topStart = Radius.md, topEnd = Radius.md)
     Row(
         Modifier.fillMaxWidth().clip(shape).background(c.card).border(1.dp, c.border, shape).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -206,15 +194,15 @@ private fun ReplyBanner(ctx: InputContext, onCancel: () -> Unit) {
         Icon(Icons.AutoMirrored.Outlined.Reply, null, tint = c.textMuted, modifier = Modifier.size(14.dp).mirrorInRtl())
         Spacer(Modifier.width(8.dp))
         if (ctx.isEdit) {
-            Text("Editing message", color = c.textMuted, fontSize = 13.sp)
+            Text("Editing message", color = c.textMuted, fontSize = CoveType.label.fontSize)
         } else {
-            Text("Replying to ", color = c.textMuted, fontSize = 13.sp, maxLines = 1)
-            Text(ctx.author, color = c.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text("Replying to ", color = c.textMuted, fontSize = CoveType.label.fontSize, maxLines = 1)
+            Text(ctx.author, color = c.textPrimary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         Spacer(Modifier.width(8.dp))
         Box(Modifier.width(1.dp).height(14.dp).background(c.border))
         Spacer(Modifier.width(8.dp))
-        Text(ctx.snippet, color = c.textMuted.copy(alpha = 0.7f), fontSize = 13.sp, fontStyle = FontStyle.Italic, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(ctx.snippet, color = c.textMuted.copy(alpha = 0.7f), fontSize = CoveType.label.fontSize, fontStyle = FontStyle.Italic, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Box(Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onCancel), contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Close, "Cancel", tint = c.textMuted, modifier = Modifier.size(14.dp))
         }
@@ -237,10 +225,10 @@ private val EmojiCategories = listOf(
 /** Compact emoji picker (web uses emoji-mart): category tabs along the bottom and a 9-column grid. */
 @Composable
 private fun EmojiPanel(onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     var selected by remember { mutableStateOf(0) }
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.popover).border(1.dp, c.border, RoundedCornerShape(12.dp))
+        Modifier.fillMaxWidth().clip(CoveShapes.lg).background(c.popover).border(1.dp, c.border, CoveShapes.lg)
     ) {
         LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.fillMaxWidth().height(220.dp).padding(8.dp)) {
             items(EmojiCategories[selected].emojis) { e ->
@@ -251,9 +239,9 @@ private fun EmojiPanel(onPick: (String) -> Unit, onDismiss: () -> Unit) {
             EmojiCategories.forEachIndexed { i, cat ->
                 Box(
                     Modifier.weight(1f).height(40.dp).clickable { selected = i }
-                        .background(if (i == selected) NTPrimary.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent),
+                        .background(if (i == selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent),
                     contentAlignment = Alignment.Center
-                ) { androidx.compose.material3.Text(cat.icon, fontSize = 18.sp, modifier = Modifier.alpha(if (i == selected) 1f else 0.6f)) }
+                ) { androidx.compose.material3.Text(cat.icon, fontSize = CoveType.title.fontSize, modifier = Modifier.alpha(if (i == selected) 1f else 0.6f)) }
             }
             Box(Modifier.size(40.dp).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.Close, "Close", tint = c.textMuted, modifier = Modifier.size(16.dp))

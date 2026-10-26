@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class NodeTalkApp : Application() {
+class CoveApp : Application() {
     lateinit var preferencesManager: PreferencesManager
         private set
     lateinit var apiClient: ApiClient
@@ -34,7 +34,7 @@ class NodeTalkApp : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     companion object {
-        lateinit var instance: NodeTalkApp
+        lateinit var instance: CoveApp
             private set
     }
 
@@ -57,7 +57,7 @@ class NodeTalkApp : Application() {
                 if (m.senderId == me || watching) return@collect
                 // The channel list gives the display name (DM partner or channel name).
                 val channel = apiClient.getChannels().getOrNull()?.firstOrNull { it.id == m.channelId }
-                val title = channel?.displayName(me) ?: "NodeTalk"
+                val title = channel?.displayName(me) ?: "Cove"
                 val sender = channel?.memberNames?.get(m.senderId) ?: title
                 notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText())
             }

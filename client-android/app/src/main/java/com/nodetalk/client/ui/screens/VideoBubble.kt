@@ -1,5 +1,12 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
+import com.nodetalk.client.ui.components.CoveIconButton
+import com.nodetalk.client.ui.components.IconButtonVariant
+import com.nodetalk.client.ui.components.CoveDialog
+import com.nodetalk.client.ui.components.DialogSize
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.LayoutInflater
@@ -64,8 +71,7 @@ import com.nodetalk.client.R
 import com.nodetalk.client.data.model.FileMeta
 import com.nodetalk.client.ui.components.I18nToast
 import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,7 +86,7 @@ import java.io.File
  */
 @Composable
 fun VideoBubble(channelId: String, meta: FileMeta, keyVersion: Int = 0) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val shape = RoundedCornerShape(32.dp)
@@ -156,7 +162,7 @@ fun VideoBubble(channelId: String, meta: FileMeta, keyVersion: Int = 0) {
             .padding(vertical = 4.dp)
             .size(256.dp)
             .clip(shape)
-            .background(Color.Black)
+            .background(CoveTheme.extendedColors.mediaBackground)
             .border(1.dp, c.border.copy(alpha = 0.5f), shape)
             .clickable(enabled = !loading) { toggle() },
         contentAlignment = Alignment.Center
@@ -184,23 +190,25 @@ fun VideoBubble(channelId: String, meta: FileMeta, keyVersion: Int = 0) {
         // Progress ring along the rounded edge (web uses an SVG stroke around the tile)
         val fraction = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
         if (player != null) {
+            val ringColor = MaterialTheme.colorScheme.primary
+            val trackColor = CoveTheme.extendedColors.mediaBackground.copy(alpha = 0.3f)
             Canvas(Modifier.fillMaxSize()) {
                 val sw = 4.dp.toPx()
                 val path = Path().apply {
                     addRoundRect(RoundRect(sw / 2, sw / 2, size.width - sw / 2, size.height - sw / 2, CornerRadius(32.dp.toPx() - sw / 2)))
                 }
-                drawPath(path, Color.Black.copy(alpha = 0.3f), style = Stroke(sw))
+                drawPath(path, trackColor, style = Stroke(sw))
                 val measure = PathMeasure().apply { setPath(path, false) }
                 val seg = Path()
                 measure.getSegment(0f, measure.length * fraction, seg, true)
-                drawPath(seg, NTPrimary, style = Stroke(sw, cap = StrokeCap.Round))
+                drawPath(seg, ringColor, style = Stroke(sw, cap = StrokeCap.Round))
             }
         }
 
         if (loading || !playing) {
-            Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(NTPrimary.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
-                if (loading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
-                else Icon(if (ended) Icons.Rounded.PlayArrow else Icons.Rounded.PlayArrow, "Play video", tint = Color.White, modifier = Modifier.size(30.dp))
+            Box(Modifier.size(56.dp).clip(CoveShapes.lg).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
+                if (loading) CircularProgressIndicator(color = CoveTheme.extendedColors.onOverlay, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
+                else Icon(if (ended) Icons.Rounded.PlayArrow else Icons.Rounded.PlayArrow, "Play video", tint = CoveTheme.extendedColors.onOverlay, modifier = Modifier.size(30.dp))
             }
         }
 
@@ -210,18 +218,18 @@ fun VideoBubble(channelId: String, meta: FileMeta, keyVersion: Int = 0) {
         ) {
             val time = if (player != null) "${mmss((positionMs / 1000).toInt())} / ${mmss((durationMs / 1000).toInt())}" else mmss((durationMs / 1000).toInt())
             Text(
-                time, color = Color.White.copy(alpha = 0.9f), fontSize = 11.sp, fontFamily = FontFamily.Monospace,
-                modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape).padding(horizontal = 10.dp, vertical = 2.dp)
+                time, color = CoveTheme.extendedColors.onOverlay.copy(alpha = 0.9f), fontSize = CoveType.caption.fontSize, fontFamily = FontFamily.Monospace,
+                modifier = Modifier.clip(CircleShape).background(CoveTheme.extendedColors.overlay).border(1.dp, CoveTheme.extendedColors.onOverlay.copy(alpha = 0.1f), CircleShape).padding(horizontal = 10.dp, vertical = 2.dp)
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (player != null) {
-                    RoundIconButton(if (muted) Icons.Outlined.VolumeOff else Icons.Outlined.VolumeUp, if (muted) "Unmute" else "Mute") {
+                    CoveIconButton(if (muted) Icons.Outlined.VolumeOff else Icons.Outlined.VolumeUp, if (muted) "Unmute" else "Mute", variant = IconButtonVariant.Scrim, size = 28.dp, iconSize = 14.dp, onClick = {
                         muted = !muted
                         player?.volume = if (muted) 0f else 1f
-                    }
-                    RoundIconButton(Icons.Outlined.Fullscreen, "Fullscreen") { fullscreen = true }
+                    })
+                    CoveIconButton(Icons.Outlined.Fullscreen, "Fullscreen", variant = IconButtonVariant.Scrim, size = 28.dp, iconSize = 14.dp, onClick = { fullscreen = true })
                 } else {
-                    RoundIconButton(Icons.Outlined.FileDownload, "Download") { scope.launch { openAttachment(context, channelId, meta) } }
+                    CoveIconButton(Icons.Outlined.FileDownload, "Download", variant = IconButtonVariant.Scrim, size = 28.dp, iconSize = 14.dp, onClick = { scope.launch { openAttachment(context, channelId, meta) } })
                 }
             }
         }
@@ -229,30 +237,17 @@ fun VideoBubble(channelId: String, meta: FileMeta, keyVersion: Int = 0) {
 
     val active = player
     if (fullscreen && active != null) {
-        Dialog(onDismissRequest = { fullscreen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
-                AndroidView(
-                    factory = { ctx ->
-                        val full = LayoutInflater.from(ctx).inflate(R.layout.view_player_fullscreen, null, false) as PlayerView
-                        PlayerView.switchTargetView(active, inlineView, full)
-                        full
-                    },
-                    onRelease = { full -> inlineView?.let { PlayerView.switchTargetView(active, full, it) } },
-                    modifier = Modifier.fillMaxSize()
-                )
-                Icon(
-                    Icons.Outlined.Close, "Close", tint = Color.White,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).size(32.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)).padding(4.dp).clickable { fullscreen = false }
-                )
-            }
+        CoveDialog(onDismiss = { fullscreen = false }, size = DialogSize.Media) {
+            AndroidView(
+                factory = { ctx ->
+                    val full = LayoutInflater.from(ctx).inflate(R.layout.view_player_fullscreen, null, false) as PlayerView
+                    PlayerView.switchTargetView(active, inlineView, full)
+                    full
+                },
+                onRelease = { full -> inlineView?.let { PlayerView.switchTargetView(active, full, it) } },
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
 
-@Composable
-private fun RoundIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit) {
-    Box(
-        Modifier.size(28.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(14.dp)) }
-}

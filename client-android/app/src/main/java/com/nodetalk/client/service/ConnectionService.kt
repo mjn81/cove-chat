@@ -11,7 +11,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.nodetalk.client.MainActivity
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.notify.NotificationHelper
 
 /**
@@ -23,13 +23,13 @@ class ConnectionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val app = application as NodeTalkApp
+        val app = application as CoveApp
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification: Notification = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_SERVICE)
             .setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
-            .setContentTitle("NodeTalk")
+            .setContentTitle("Cove")
             .setContentText("Connected — you'll get messages and calls")
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -61,7 +61,7 @@ class ConnectionService : Service() {
 /** Starts or stops [ConnectionService] to match "signed in" and the user's background-connection preference. */
 object BackgroundConnection {
     fun sync(context: Context) {
-        val app = context.applicationContext as NodeTalkApp
+        val app = context.applicationContext as CoveApp
         val prefs = app.preferencesManager
         if (!prefs.authToken.isNullOrBlank() && prefs.keepConnected) ConnectionService.start(app) else ConnectionService.stop(app)
     }

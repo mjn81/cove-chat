@@ -24,7 +24,7 @@ import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.nodetalk.client.MainActivity
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.ui.components.t
 
 /** What the user is looking at right now; used to suppress notifications for the open chat. */
@@ -40,7 +40,7 @@ object OpenChatRequest {
 }
 
 /**
- * Native notifications for NodeTalk. There is no push service on a self-hosted server, so these are raised by the
+ * Native notifications for Cove. There is no push service on a self-hosted server, so these are raised by the
  * app's own WebSocket (kept alive by `ConnectionService`). Messages use `MessagingStyle` with inline reply and
  * mark-as-read actions and are grouped; incoming DM calls raise a ringing, heads-up call notification with
  * Answer / Decline actions.
@@ -75,7 +75,7 @@ class NotificationHelper(private val app: Application) {
             )
             nm.createNotificationChannel(
                 NotificationChannel(CHANNEL_SERVICE, t("Background connection"), NotificationManager.IMPORTANCE_MIN).apply {
-                    description = "Keeps NodeTalk connected so messages and calls arrive while the app is closed"
+                    description = "Keeps Cove connected so messages and calls arrive while the app is closed"
                     setShowBadge(false)
                 }
             )
@@ -117,7 +117,7 @@ class NotificationHelper(private val app: Application) {
      * user's own lines); DMs read as a plain chat, groups get a conversation title.
      */
     fun showMessage(channelId: String, title: String, isGroup: Boolean, sender: String, text: String, silent: Boolean = false) {
-        val prefs = (app as NodeTalkApp).preferencesManager
+        val prefs = (app as CoveApp).preferencesManager
         if (!prefs.notificationsEnabled || !canNotify()) return
         val convo = conversations.getOrPut(channelId) { Conversation(title, isGroup) }
         convo.title = title; convo.isGroup = isGroup
@@ -153,7 +153,7 @@ class NotificationHelper(private val app: Application) {
 
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
             .setSmallIcon(android.R.drawable.sym_action_chat)
-            .setColor(0xFF5865F2.toInt())
+            .setColor(0xFFC4624A.toInt())
             .setStyle(style)
             .setContentTitle(convo.title)
             .setContentText(convo.lines.lastOrNull()?.text)
@@ -177,13 +177,13 @@ class NotificationHelper(private val app: Application) {
     /** Group summary so several conversations collapse into one expandable stack. */
     private fun postSummary() {
         if (conversations.size < 2) { manager.cancel(SUMMARY_ID); return }
-        val inbox = NotificationCompat.InboxStyle().setBigContentTitle("NodeTalk")
+        val inbox = NotificationCompat.InboxStyle().setBigContentTitle("Cove")
         conversations.values.forEach { inbox.addLine("${it.title}: ${it.lines.lastOrNull()?.text.orEmpty()}") }
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
             .setSmallIcon(android.R.drawable.sym_action_chat)
-            .setColor(0xFF5865F2.toInt())
+            .setColor(0xFFC4624A.toInt())
             .setStyle(inbox)
-            .setContentTitle("NodeTalk")
+            .setContentTitle("Cove")
             .setContentText("${conversations.size} conversations")
             .setGroup(GROUP_MESSAGES).setGroupSummary(true)
             .setNumber(conversations.values.sumOf { it.unread })
@@ -221,7 +221,7 @@ class NotificationHelper(private val app: Application) {
         val person = Person.Builder().setName(callerName).setImportant(true).build()
         val builder = NotificationCompat.Builder(app, CHANNEL_CALLS)
             .setSmallIcon(android.R.drawable.sym_call_incoming)
-            .setColor(0xFF5865F2.toInt())
+            .setColor(0xFFC4624A.toInt())
             .setContentTitle(t("Incoming call"))
             .setContentText("$callerName ${t("is calling you…")}")
             .setCategory(NotificationCompat.CATEGORY_CALL)

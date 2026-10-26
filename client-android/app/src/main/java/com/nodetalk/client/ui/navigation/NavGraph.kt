@@ -18,7 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.ui.screens.CallScreen
 import com.nodetalk.client.ui.screens.ChannelListScreen
 import com.nodetalk.client.ui.screens.ChatScreen
@@ -29,7 +29,7 @@ import com.nodetalk.client.ui.screens.SettingsScreen
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
-    val prefs = NodeTalkApp.instance.preferencesManager
+    val prefs = CoveApp.instance.preferencesManager
 
     val startDestination = when {
         !prefs.authToken.isNullOrBlank() -> "channels"
@@ -49,7 +49,7 @@ fun NavGraph() {
     }
 
     // Incoming DM call: in-app dialog while foregrounded; Answer (here or from the notification) opens the call screen.
-    val app = NodeTalkApp.instance
+    val app = CoveApp.instance
     CallCoordinator.incoming?.let { call ->
         if (!prefs.authToken.isNullOrBlank()) {
             IncomingCallDialog(
@@ -70,7 +70,7 @@ fun NavGraph() {
     }
 
     // Whisper: incoming requests anywhere in the app, and the expiry chooser when starting one.
-    val whisper = NodeTalkApp.instance.whisperManager
+    val whisper = CoveApp.instance.whisperManager
     var startWhisperFor by remember { mutableStateOf<Pair<String, String>?>(null) }
     whisper.invite?.let { inv ->
         if (!prefs.authToken.isNullOrBlank()) {
@@ -114,13 +114,13 @@ fun NavGraph() {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    BackgroundConnection.sync(NodeTalkApp.instance)
+                    BackgroundConnection.sync(CoveApp.instance)
                     navController.navigate("channels") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
                 onChangeServer = {
-                    NodeTalkApp.instance.webSocketManager.disconnect()
+                    CoveApp.instance.webSocketManager.disconnect()
                     navController.navigate("server") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -190,7 +190,7 @@ fun NavGraph() {
             val channelName = java.net.URLDecoder.decode(rawName, "UTF-8")
             val withVideo = backStackEntry.arguments?.getBoolean("withVideo") ?: false
             // Joining from anywhere stops any ringing for this channel.
-            LaunchedEffect(channelId) { CallCoordinator.joined(NodeTalkApp.instance, channelId) }
+            LaunchedEffect(channelId) { CallCoordinator.joined(CoveApp.instance, channelId) }
 
             CallScreen(
                 channelId = channelId,

@@ -3,7 +3,7 @@ package com.nodetalk.client.rtc
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.data.remote.WebSocketManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +49,7 @@ import kotlin.coroutines.resumeWithException
 data class CallParticipant(val userId: String, val username: String, val audio: Boolean, val video: Boolean)
 
 /**
- * Client side of NodeTalk's in-process WebRTC SFU. Mirrors client-web/src/rtc/WebRTCManager.ts and the
+ * Client side of Cove's in-process WebRTC SFU. Mirrors client-web/src/rtc/WebRTCManager.ts and the
  * protocol in backend/internal/rtc/signaling_types.go: two PeerConnections, one that publishes our mic/camera
  * and one that receives everyone else's forwarded tracks, with the server always the offerer on the latter.
  */
@@ -217,7 +217,7 @@ class WebRTCManager(
     private suspend fun onJoined(p: JsonObject) {
         _selfId.value = str(p, "self_id")
         val roster = (p["participants"] as? JsonArray)?.mapNotNull { parseParticipant(it as? JsonObject) }.orEmpty()
-        val me = NodeTalkApp.instance.preferencesManager
+        val me = CoveApp.instance.preferencesManager
         val self = CallParticipant(str(p, "self_id") ?: me.userId.orEmpty(), me.username ?: "me", audio = !_muted.value, video = _videoOn.value)
         _participants.value = roster.filter { it.userId != self.userId } + self
 

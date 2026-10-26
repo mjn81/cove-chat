@@ -1,5 +1,9 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
+import com.nodetalk.client.ui.components.CoveIconButton
 import com.nodetalk.client.ui.components.I18nToast
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -81,7 +85,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.crypto.CryptoManager
 import com.nodetalk.client.data.model.Channel
 import com.nodetalk.client.data.model.Message
@@ -89,13 +93,12 @@ import com.nodetalk.client.data.model.fileMeta
 import com.nodetalk.client.data.model.previewText
 import com.nodetalk.client.notify.ActiveChat
 import com.nodetalk.client.ui.components.InitialsAvatar
-import com.nodetalk.client.ui.components.NTTextField
+import com.nodetalk.client.ui.components.CoveTextField
 import com.nodetalk.client.ui.components.SectionDivider
 import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPrimary
 import kotlinx.coroutines.delay
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
+import com.nodetalk.client.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -104,7 +107,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
-private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy", Locale.ENGLISH)
+private val DateFormatThisYear: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH)
 
 private fun parseInstant(s: String): Instant? = runCatching { Instant.parse(s) }.getOrNull()
 
@@ -118,7 +122,7 @@ private fun dayLabel(d: LocalDate): String {
     return when (d) {
         today -> "Today"
         today.minusDays(1) -> "Yesterday"
-        else -> d.format(DateFormat)
+        else -> d.format(if (d.year == today.year) DateFormatThisYear else DateFormat)
     }
 }
 
@@ -140,11 +144,11 @@ fun ChatScreen(
     onStartCall: (withVideo: Boolean) -> Unit,
     onStartWhisper: (peerId: String, peerName: String) -> Unit = { _, _ -> }
 ) {
-    val app = NodeTalkApp.instance
+    val app = CoveApp.instance
     val api = app.apiClient
     val ws = app.webSocketManager
     val me = app.preferencesManager.userId.orEmpty()
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val listState = rememberLazyListState()
@@ -314,40 +318,40 @@ fun ChatScreen(
             .imePadding()
     ) {
         // Top bar: the card colour also fills the status-bar inset so it blends into the system bar.
-        Column(Modifier.fillMaxWidth().background(c.card).statusBarsPadding()) {
+        Column(Modifier.fillMaxWidth().background(c.chatCanvas).statusBarsPadding()) {
             Row(
-                Modifier.fillMaxWidth().height(52.dp).padding(end = 4.dp),
+                Modifier.fillMaxWidth().padding(vertical = Spacing.xs).height(52.dp).padding(end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
                 if (isDm) {
-                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 36.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
+                    UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 30.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
                 } else {
-                    InitialsAvatar(channelId, title, size = 36.dp)
+                    InitialsAvatar(channelId, title, size = 30.dp)
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-                    Text(title, color = c.textPrimary, fontSize = 16.sp, lineHeight = 1.2.em, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (!isDm) Text("${channel?.members?.size ?: 0} members", color = c.textMuted, fontSize = 12.sp, lineHeight = 1.2.em, maxLines = 1)
+                    Text(title, color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 1.2.em, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!isDm) Text("${channel?.members?.size ?: 0} members", color = c.textMuted, fontSize = CoveType.caption.fontSize, lineHeight = 1.2.em, maxLines = 1)
                 }
-                TopBarIcon(Icons.Outlined.Search, "Search") { searching = !searching; if (!searching) search = "" }
+                CoveIconButton(Icons.Outlined.Search, "Search", { searching = !searching; if (!searching) search = "" }, iconSize = 21.dp)
                 if (!isDm) {
-                    TopBarIcon(Icons.Outlined.Groups, "Show Members") { showMembers = true }
-                    TopBarIcon(Icons.Outlined.Tune, "Channel Settings") { showSettings = true }
+                    CoveIconButton(Icons.Outlined.Groups, "Show Members", { showMembers = true }, iconSize = 21.dp)
+                    CoveIconButton(Icons.Outlined.Tune, "Channel Settings", { showSettings = true }, iconSize = 21.dp)
                 }
                 if (isDm) channel?.members?.firstOrNull { it != me }?.let { peer ->
-                    TopBarIcon(Icons.Outlined.Lock, "Start Whisper") { onStartWhisper(peer, title) }
+                    CoveIconButton(Icons.Outlined.Lock, "Start Whisper", { onStartWhisper(peer, title) }, iconSize = 21.dp)
                 }
-                TopBarIcon(Icons.Outlined.Phone, "Start Voice Call") { onStartCall(false) }
+                CoveIconButton(Icons.Outlined.Phone, "Start Voice Call", { onStartCall(false) }, iconSize = 21.dp)
             }
             SectionDivider()
         }
 
         if (searching) {
             Box(Modifier.fillMaxWidth().padding(8.dp)) {
-                NTTextField(search, { search = it }, placeholder = "Search...", height = 36.dp)
+                CoveTextField(search, { search = it }, placeholder = "Search...", height = 36.dp)
             }
         }
 
@@ -435,34 +439,20 @@ fun ChatScreen(
     }
 }
 
-@Composable
-private fun TopBarIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    Box(Modifier.size(36.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, desc, tint = NodeTalkTheme.extendedColors.textMuted, modifier = Modifier.size(21.dp))
-    }
-}
-
-@Composable
-private fun BarIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    Box(Modifier.size(32.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, desc, tint = NodeTalkTheme.extendedColors.textMuted, modifier = Modifier.size(22.dp))
-    }
-}
-
 /** "Today" pill between two hairlines. */
 @Composable
 private fun DaySeparator(label: String) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     // Web: a 1px border-border/50 rule with a bg-background pill (border-border/50) centred on it.
     val hairline = c.border.copy(alpha = 0.5f)
     Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp), contentAlignment = Alignment.Center) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(hairline))
         Text(
-            label, color = c.textMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+            label, color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.SemiBold,
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(CircleShape)
                 .background(c.chatCanvas)
-                .border(1.dp, hairline, RoundedCornerShape(50))
+                .border(1.dp, hairline, CircleShape)
                 .padding(horizontal = 12.dp, vertical = 2.dp)
         )
     }
@@ -471,10 +461,10 @@ private fun DaySeparator(label: String) {
 /** Start-of-conversation banner ("Welcome to #general!"). */
 @Composable
 private fun WelcomeHeader(title: String, isDm: Boolean) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 48.dp, bottom = 16.dp)) {
-        Box(Modifier.size(64.dp).clip(CircleShape).background(NTPrimary.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-            Text(if (isDm) "@" else "#", color = NTPrimary, fontSize = 30.sp, fontWeight = FontWeight.Medium)
+        Box(Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+            Text(if (isDm) "@" else "#", color = MaterialTheme.colorScheme.primary, fontSize = 30.sp, fontWeight = FontWeight.Medium)
         }
         Spacer(Modifier.height(12.dp))
         Text(
@@ -485,7 +475,7 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
         Text(
             if (isDm) "This is the beginning of your direct message history with $title."
             else "This is the start of the #$title channel.",
-            color = c.textMuted, fontSize = 15.sp
+            color = c.textMuted, fontSize = CoveType.body.fontSize
         )
         Spacer(Modifier.height(24.dp))
         SectionDivider()
@@ -510,7 +500,7 @@ private fun MessageRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     // keyVersion forces a re-decrypt once the channel key has arrived over the socket.
     val text = remember(m.id, m.ciphertext, keyVersion) { bodyOf(m) }
     Box(
@@ -525,21 +515,21 @@ private fun MessageRow(
             Column(Modifier.weight(1f)) {
                 if (showHeader) {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(author, color = c.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(author, color = c.textPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(8.dp))
-                        Text(m.timeLabel(), color = c.textMuted, fontSize = 11.sp)
+                        Text(m.timeLabel(), color = c.textMuted, fontSize = CoveType.caption.fontSize)
                     }
                 }
                 if (m.replyToId != null) {
                     Row(
-                        Modifier.padding(vertical = 2.dp).clip(RoundedCornerShape(4.dp)).background(c.card).padding(horizontal = 8.dp, vertical = 4.dp),
+                        Modifier.padding(vertical = 2.dp).clip(CoveShapes.sm).background(c.card).padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(Modifier.width(3.dp).height(24.dp).background(NTPrimary))
+                        Box(Modifier.width(3.dp).height(24.dp).background(MaterialTheme.colorScheme.primary))
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(quotedAuthor ?: "Original message", color = c.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(quoted?.let { bodyOf(it) } ?: "Not loaded", color = c.textMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(quotedAuthor ?: "Original message", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
+                            Text(quoted?.let { bodyOf(it) } ?: "Not loaded", color = c.textMuted, fontSize = CoveType.caption.fontSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -551,8 +541,9 @@ private fun MessageRow(
                         else -> if (fileMeta.mime.startsWith("video/")) VideoBubble(m.channelId, fileMeta, keyVersion) else FileBubble(m.channelId, fileMeta, keyVersion)
                     }
                 } else Row(verticalAlignment = Alignment.Bottom) {
-                    val body = remember(text) { linkifiedText(text, NTPrimary) }
-                    Text(body, color = c.textPrimary, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
+                    val linkColor = MaterialTheme.colorScheme.primary
+                    val body = remember(text, linkColor) { linkifiedText(text, linkColor) }
+                    Text(body, color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 22.sp, modifier = Modifier.weight(1f, fill = false))
                     if (m.editedAt != null) {
                         Spacer(Modifier.width(6.dp))
                         Text("(edited)", color = c.textMuted, fontSize = 10.sp)
@@ -565,21 +556,15 @@ private fun MessageRow(
                 Modifier
                     .align(Alignment.TopEnd)
                     .offset(y = (-14).dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, c.border, RoundedCornerShape(8.dp))
+                    .clip(CoveShapes.md)
+                    .border(1.dp, c.border, CoveShapes.md)
                     .background(c.card)
             ) {
-                ToolbarButton(Icons.AutoMirrored.Outlined.Reply, "Reply", onReply)
-                if (canEdit) ToolbarButton(Icons.Outlined.Edit, "Edit", onEdit)
-                if (canDelete) ToolbarButton(Icons.Outlined.Delete, "Delete", onDelete)
+                CoveIconButton(Icons.AutoMirrored.Outlined.Reply, "Reply", onReply, size = 40.dp, iconSize = 18.dp)
+                if (canEdit) CoveIconButton(Icons.Outlined.Edit, "Edit", onEdit, size = 40.dp, iconSize = 18.dp)
+                if (canDelete) CoveIconButton(Icons.Outlined.Delete, "Delete", onDelete, size = 40.dp, iconSize = 18.dp)
             }
         }
     }
 }
 
-@Composable
-private fun ToolbarButton(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    Box(Modifier.size(width = 40.dp, height = 36.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, desc, tint = NodeTalkTheme.extendedColors.textMuted, modifier = Modifier.size(18.dp))
-    }
-}

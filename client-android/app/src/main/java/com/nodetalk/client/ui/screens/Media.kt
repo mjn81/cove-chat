@@ -64,8 +64,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.nodetalk.client.data.model.FileMeta
 import com.nodetalk.client.ui.components.I18nToast
 import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

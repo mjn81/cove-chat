@@ -1,37 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- NodeTalk Dark Mode Colors (1:1 Transferred from client-web/src/index.css) -->
-    <color name="nt_background">#313338</color>          <!-- background: 223 7% 21% (Main chat canvas) -->
-    <color name="nt_card">#2B2D31</color>                <!-- card: 220 6% 18% (Sidebar / channels / card) -->
-    <color name="nt_popover">#1E1F22</color>             <!-- popover: 225 6% 13% (Server rail / inputs / deepest) -->
-    <color name="nt_primary">#5865F2</color>             <!-- primary: 235 86% 65% (Discord / NodeTalk Blurple) -->
-    <color name="nt_primary_foreground">#FFFFFF</color>  <!-- primary-foreground -->
-    <color name="nt_accent">#3F4147</color>              <!-- accent: 220 6% 26% (Hover / active item) -->
-    <color name="nt_text_primary">#F2F3F5</color>        <!-- foreground: 220 13% 95% -->
-    <color name="nt_text_muted">#949BA4</color>          <!-- muted-foreground: 215 14% 65% -->
-    <color name="nt_destructive">#FA777C</color>         <!-- destructive: 359 83% 66% -->
-    <color name="nt_border">#1E1F22</color>              <!-- border: 225 6% 13% -->
+    <!-- Cove colours; hex values mirror client-web/src/index.css -->
+    <color name="ic_launcher_background">#C4624A</color>
+    <color name="nt_background">#23201F</color>          
+    <color name="nt_card">#2E2A29</color>
+    <color name="nt_popover">#1B1918</color>
+    <color name="nt_primary">#D9826A</color>
+    <color name="nt_primary_foreground">#2A140D</color>
+    <color name="nt_accent">#3B3735</color>
+    <color name="nt_text_primary">#E8E5E3</color>
+    <color name="nt_text_muted">#AEA7A3</color>
+    <color name="nt_destructive">#E5707A</color>
+    <color name="nt_border">#46413E</color>
 
-    <!-- Status Indicators -->
+    
     <color name="nt_status_online">#23A55A</color>
     <color name="nt_status_idle">#F0B232</color>
     <color name="nt_status_dnd">#F23F43</color>
     <color name="nt_status_offline">#80848E</color>
 
-    <!-- Mention Colors -->
-    <color name="nt_mention_bg">#3C2D13</color>
-    <color name="nt_mention_fg">#E5A33D</color>
+    
+    <color name="nt_mention_bg">#3B2E17</color>
+    <color name="nt_mention_fg">#F5C265</color>
 
-    <!-- Whisper Mode (Zero-Persistence E2EE) -->
+    
     <color name="nt_whisper_bg">#121212</color>
     <color name="nt_whisper_card">#1C1C1C</color>
     <color name="nt_whisper_popover">#141414</color>
     <color name="nt_whisper_accent">#292929</color>
 
-    <!-- Light Mode Alternates -->
+    
     <color name="nt_light_background">#FFFFFF</color>
-    <color name="nt_light_card">#F2F3F5</color>
-    <color name="nt_light_text_primary">#060607</color>
-    <color name="nt_light_text_muted">#4E5058</color>
-    <color name="nt_light_accent">#E3E5E8</color>
+    <color name="nt_light_card">#F8F4F0</color>
+    <color name="nt_light_text_primary">#201A16</color>
+    <color name="nt_light_text_muted">#7A6E65</color>
+    <color name="nt_light_accent">#EFE8E1</color>
 </resources>

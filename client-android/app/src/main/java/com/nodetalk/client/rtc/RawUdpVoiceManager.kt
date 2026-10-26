@@ -17,7 +17,7 @@ import java.net.InetAddress
 
 /**
  * Air-gapped fallback client for voice.mode = "raw_udp" on port 9090.
- * Implements the NodeTalk binary UDP packet protocol matching client-desktop/voice.go
+ * Implements the Cove binary UDP packet protocol matching client-desktop/voice.go
  * and backend/internal/voice/router.go.
  */
 class RawUdpVoiceManager {

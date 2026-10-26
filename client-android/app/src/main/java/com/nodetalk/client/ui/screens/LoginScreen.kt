@@ -1,5 +1,9 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveType
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.size
+import com.nodetalk.client.ui.components.ButtonSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,16 +42,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.data.model.LoginRequest
 import com.nodetalk.client.data.model.RegisterRequest
 import com.nodetalk.client.ui.components.ErrorBanner
 import com.nodetalk.client.ui.components.FieldLabel
-import com.nodetalk.client.ui.components.NTPrimaryButton
-import com.nodetalk.client.ui.components.NTTextField
+import com.nodetalk.client.ui.components.CoveButton
+import com.nodetalk.client.ui.components.CoveTextField
 import com.nodetalk.client.ui.components.OpenSourceFooter
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import kotlinx.coroutines.launch
 
 /**
@@ -59,12 +62,12 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
-    val app = NodeTalkApp.instance
+    val app = CoveApp.instance
     val api = app.apiClient
     val prefs = app.preferencesManager
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
 
     var isRegister by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
@@ -123,8 +126,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                if (isRegister) "Join NodeTalk and start chatting." else "We're so excited to see you again!",
-                color = c.textMuted, fontSize = 16.sp, textAlign = TextAlign.Center
+                if (isRegister) "Join Cove and start chatting." else "We're so excited to see you again!",
+                color = c.textMuted, fontSize = CoveType.body.fontSize, textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(24.dp))
 
@@ -134,7 +137,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FieldLabel("Username", required = true)
-                NTTextField(
+                CoveTextField(
                     value = username,
                     onValueChange = { username = it },
                     enabled = !loading,
@@ -147,7 +150,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FieldLabel("Password", required = true)
-                NTTextField(
+                CoveTextField(
                     value = password,
                     onValueChange = { password = it },
                     enabled = !loading,
@@ -169,19 +172,21 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             }
 
             Spacer(Modifier.height(16.dp))
-            NTPrimaryButton(
+            CoveButton(
                 text = if (isRegister) "Continue" else "Log In",
                 onClick = { submit() },
+                modifier = Modifier.fillMaxWidth(),
+                size = ButtonSize.Lg,
                 loading = loading
             )
 
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                if (!isRegister) Text("Need an account? ", color = c.textMuted, fontSize = 14.sp)
+                if (!isRegister) Text("Need an account? ", color = c.textMuted, fontSize = CoveType.label.fontSize)
                 Text(
                     text = if (isRegister) "Already have an account?" else "Register",
-                    color = NTPrimary,
-                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = CoveType.label.fontSize,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable(enabled = !loading) {
                         isRegister = !isRegister
@@ -199,14 +204,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                 Text(
                     "Connecting to: ${prefs.serverUrl}",
                     color = c.textMuted.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
+                    fontSize = CoveType.caption.fontSize,
                     fontStyle = FontStyle.Italic,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     "Change",
-                    color = NTPrimary,
-                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = CoveType.caption.fontSize,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable(onClick = onChangeServer).padding(start = 8.dp)
                 )

@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.RemoteInput
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 /** Handles the buttons on message and call notifications without opening the app. */
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val app = context.applicationContext as? NodeTalkApp ?: return
+        val app = context.applicationContext as? CoveApp ?: return
         val channelId = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_ID) ?: return
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
@@ -28,7 +28,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                                 app.notificationHelper.onReplySent(channelId, text)
                             } else {
                                 app.notificationHelper.showMessage(
-                                    channelId, "NodeTalk", false, "NodeTalk", "Couldn't send your reply. Open the app and try again."
+                                    channelId, "Cove", false, "Cove", "Couldn't send your reply. Open the app and try again."
                                 )
                             }
                         }

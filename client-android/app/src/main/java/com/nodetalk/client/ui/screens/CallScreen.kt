@@ -1,5 +1,10 @@
 package com.nodetalk.client.ui.screens
 
+import com.nodetalk.client.ui.theme.CoveShapes
+import com.nodetalk.client.ui.theme.CoveType
+import com.nodetalk.client.ui.components.CoveIconButton
+import com.nodetalk.client.ui.components.IconButtonVariant
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,13 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.nodetalk.client.NodeTalkApp
+import com.nodetalk.client.CoveApp
 import com.nodetalk.client.rtc.CallParticipant
 import com.nodetalk.client.service.CallService
 import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.NTDestructive
-import com.nodetalk.client.ui.theme.NTPrimary
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
@@ -65,8 +68,8 @@ fun CallScreen(
     onCallEnded: () -> Unit
 ) {
     val context = LocalContext.current
-    val c = NodeTalkTheme.extendedColors
-    val rtc = NodeTalkApp.instance.webRTCManager
+    val c = CoveTheme.extendedColors
+    val rtc = CoveApp.instance.webRTCManager
 
     val muted by rtc.isMuted.collectAsState()
     val videoOn by rtc.isVideoEnabled.collectAsState()
@@ -90,10 +93,10 @@ fun CallScreen(
 
     Column(Modifier.fillMaxSize().background(c.chatCanvas).navigationBarsPadding()) {
         Column(Modifier.fillMaxWidth().background(c.card).statusBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
-            Text(channelName, color = c.textPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(channelName, color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold)
             Text(
                 if (status.isNotBlank()) status else "${participants.size} in call",
-                color = if (status == "Connected") c.statusOnline else c.textMuted, fontSize = 13.sp
+                color = if (status == "Connected") c.statusOnline else c.textMuted, fontSize = CoveType.label.fontSize
             )
         }
 
@@ -115,27 +118,18 @@ fun CallScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ControlButton(if (muted) Icons.Outlined.MicOff else Icons.Outlined.Mic, "Mute", active = muted, activeColor = NTDestructive) { rtc.toggleMute() }
-            ControlButton(if (videoOn) Icons.Outlined.Videocam else Icons.Outlined.VideocamOff, "Camera", active = videoOn, activeColor = NTPrimary) { rtc.toggleVideo() }
-            ControlButton(Icons.Outlined.CallEnd, "Leave call", active = true, activeColor = NTDestructive) { onCallEnded() }
+            CoveIconButton(if (muted) Icons.Outlined.MicOff else Icons.Outlined.Mic, "Mute", { rtc.toggleMute() }, variant = IconButtonVariant.Filled, size = 56.dp, iconSize = 24.dp, selected = muted, selectedColor = MaterialTheme.colorScheme.error)
+            CoveIconButton(if (videoOn) Icons.Outlined.Videocam else Icons.Outlined.VideocamOff, "Camera", { rtc.toggleVideo() }, variant = IconButtonVariant.Filled, size = 56.dp, iconSize = 24.dp, selected = videoOn, selectedColor = MaterialTheme.colorScheme.primary)
+            CoveIconButton(Icons.Outlined.CallEnd, "Leave call", { onCallEnded() }, variant = IconButtonVariant.Filled, size = 56.dp, iconSize = 24.dp, selected = true, selectedColor = MaterialTheme.colorScheme.error)
         }
     }
 }
 
 @Composable
-private fun ControlButton(icon: ImageVector, desc: String, active: Boolean, activeColor: Color, onClick: () -> Unit) {
-    val c = NodeTalkTheme.extendedColors
-    Box(
-        Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(if (active) activeColor else c.card).border(1.dp, c.border, RoundedCornerShape(8.dp)).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = if (active) Color.White else c.textPrimary) }
-}
-
-@Composable
 private fun ParticipantTile(p: CallParticipant, isSelf: Boolean, track: VideoTrack?, egl: EglBase) {
-    val c = NodeTalkTheme.extendedColors
+    val c = CoveTheme.extendedColors
     Box(
-        Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(8.dp)),
+        Modifier.fillMaxWidth().aspectRatio(1f).clip(CoveShapes.md).background(c.card).border(1.dp, c.border, CoveShapes.md),
         contentAlignment = Alignment.Center
     ) {
         if (track != null) {
@@ -144,14 +138,14 @@ private fun ParticipantTile(p: CallParticipant, isSelf: Boolean, track: VideoTra
             UserAvatar(p.userId, size = 72.dp)
         }
         Row(
-            Modifier.align(Alignment.BottomStart).padding(8.dp).clip(RoundedCornerShape(4.dp)).background(Color.Black.copy(alpha = 0.55f)).padding(horizontal = 8.dp, vertical = 3.dp),
+            Modifier.align(Alignment.BottomStart).padding(8.dp).clip(CoveShapes.sm).background(CoveTheme.extendedColors.overlay).padding(horizontal = 8.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!p.audio) {
-                Icon(Icons.Outlined.MicOff, null, tint = NTDestructive, modifier = Modifier.size(14.dp))
+                Icon(Icons.Outlined.MicOff, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
             }
-            Text(p.username + if (isSelf) " (you)" else "", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            Text(p.username + if (isSelf) " (you)" else "", color = CoveTheme.extendedColors.onOverlay, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     }
 }

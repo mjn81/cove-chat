@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import com.nodetalk.client.notify.NotificationHelper
 import com.nodetalk.client.notify.OpenChatRequest
 import com.nodetalk.client.ui.navigation.NavGraph
-import com.nodetalk.client.ui.theme.NodeTalkTheme
+import com.nodetalk.client.ui.theme.CoveTheme
 import com.nodetalk.client.ui.theme.ThemeSettings
 
 class MainActivity : ComponentActivity() {
@@ -30,11 +30,11 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
         handleOpenIntent(intent)
 
-        ThemeSettings.dark = NodeTalkApp.instance.preferencesManager.darkTheme
-        com.nodetalk.client.ui.components.AppLanguage.code = NodeTalkApp.instance.preferencesManager.language
+        ThemeSettings.dark = CoveApp.instance.preferencesManager.darkTheme
+        com.nodetalk.client.ui.components.AppLanguage.code = CoveApp.instance.preferencesManager.language
 
         setContent {
-            NodeTalkTheme {
+            CoveTheme {
                 NavGraph()
             }
         }
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
         val name = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME).orEmpty()
         if (intent.action == NotificationHelper.ACTION_ANSWER_CALL) {
             // Answer tapped on the ringing notification (or its full-screen version).
-            com.nodetalk.client.notify.CallCoordinator.answer(NodeTalkApp.instance, com.nodetalk.client.notify.IncomingCall(id, "", name))
+            com.nodetalk.client.notify.CallCoordinator.answer(CoveApp.instance, com.nodetalk.client.notify.IncomingCall(id, "", name))
             return
         }
         OpenChatRequest.channelName = name
