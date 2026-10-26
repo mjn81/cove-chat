@@ -186,6 +186,8 @@ export const useVoiceStore = create<VoiceState>((set) => ({
 				activeChannelId: null,
 				isActive: false,
 				callStatus: 'idle',
+				isMuted: false,
+				isDeafened: false,
 				isVideoEnabled: false,
 				isScreenSharing: false,
 				localStream: null,

@@ -1,5 +1,5 @@
 /**
- * WebRTC Client Manager for NodeTalk group calling.
+ * WebRTC Client Manager for Cove group calling.
  *
  * Implements the dual-PeerConnection architecture matching backend/internal/rtc:
  * - publishPC: sends local microphone, camera, and screen share tracks to the SFU
@@ -27,6 +27,11 @@ import {
 import { useVoiceStore, type ScreenShareSettings } from '@/store/voiceStore';
 import { useAppStore } from '@/store/app.slice';
 import { useAuthStore } from '@/store/store';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
+
+/** How long to wait for the server's call_joined before giving up. */
+const CONNECT_TIMEOUT_MS = 12_000;
 
 export interface WebRTCOptions {
 	video?: boolean;
@@ -62,6 +67,14 @@ export class WebRTCManager {
 	private pendingSubscribeOffer: RTCSessionDescriptionInit | null = null;
 
 	private isConnecting = false;
+	/** Guards camera/mic toggles against double-clicks while getUserMedia or a renegotiation is in flight. */
+	private deviceBusy = false;
+	/** Screen track ids whose msid must be rewritten to `screen` in every publish offer, not just the one that added them. */
+	private screenTrackIds: string[] = [];
+	/** A publish offer was requested while a previous offer/answer round was still open. */
+	private renegotiationPending = false;
+	/** Fires when the server never answers call_join, so the UI cannot sit in "connecting" forever. */
+	private connectTimer: ReturnType<typeof setTimeout> | null = null;
 
 	/**
 	 * Ensures the AudioContext is initialized within a user gesture.
@@ -93,10 +106,11 @@ export class WebRTCManager {
 	 * @param options - Optional configuration (e.g., enable camera immediately)
 	 */
 	public async join(channelId: string, options?: WebRTCOptions): Promise<void> {
-		if (this.isConnecting || (this.channelId === channelId && this.publishPC)) {
+		if (this.channelId === channelId && (this.isConnecting || this.publishPC)) {
 			return;
 		}
 
+		// Switching calls (or retrying after a stuck connect) must tear the old one down first.
 		if (this.channelId) {
 			await this.leave();
 		}
@@ -127,6 +141,14 @@ export class WebRTCManager {
 
 		this.setupSignalingListeners(channelId, options);
 		wsSendCallJoin(channelId);
+		this.clearConnectTimer();
+		this.connectTimer = setTimeout(() => {
+			if (this.channelId === channelId && !this.publishPC) {
+				useVoiceStore.getState().addLog('[RTC] call_join was never answered');
+				toast.error(i18n.t('call.connectFailed'));
+				void this.leave();
+			}
+		}, CONNECT_TIMEOUT_MS);
 	}
 
 	/**
@@ -136,8 +158,12 @@ export class WebRTCManager {
 		if (!this.channelId) return;
 
 		const prevChannelId = this.channelId;
+		this.clearConnectTimer();
 		this.channelId = null;
 		this.isConnecting = false;
+		this.deviceBusy = false;
+		this.screenTrackIds = [];
+		this.renegotiationPending = false;
 		this.pendingSubscribeOffer = null;
 
 		wsSendCallLeave(prevChannelId);
@@ -182,17 +208,74 @@ export class WebRTCManager {
 	}
 
 	/**
-	 * Toggle local microphone mute state.
+	 * Toggle local microphone mute state. If the microphone could not be opened when joining (permission denied,
+	 * device plugged in later) this retries the capture so the button is never a silent no-op.
 	 */
-	public toggleMute(): void {
-		if (!this.localAudioTrack) return;
-		const currentMuted = useVoiceStore.getState().isMuted;
-		const nextMuted = !currentMuted;
-		this.localAudioTrack.enabled = !nextMuted;
+	public async toggleMute(): Promise<void> {
+		if (!this.channelId || !this.publishPC) return;
+		const store = useVoiceStore.getState();
+		const nextMuted = !store.isMuted;
 
-		useVoiceStore.getState()._setInternalState({ isMuted: nextMuted });
-		if (this.channelId) {
-			wsSendCallTrackState(this.channelId, 'audio', !nextMuted);
+		if (!this.localAudioTrack) {
+			if (nextMuted) {
+				store._setInternalState({ isMuted: true });
+				return;
+			}
+			if (this.deviceBusy) return;
+			this.deviceBusy = true;
+			try {
+				const ok = await this.acquireMicrophone(false);
+				if (!ok) return;
+				store._setInternalState({ isMuted: false });
+				wsSendCallTrackState(this.channelId, 'audio', true);
+				await this.renegotiatePublish();
+			} finally {
+				this.deviceBusy = false;
+			}
+			return;
+		}
+
+		this.localAudioTrack.enabled = !nextMuted;
+		store._setInternalState({ isMuted: nextMuted });
+		wsSendCallTrackState(this.channelId, 'audio', !nextMuted);
+	}
+
+	/**
+	 * Open the microphone and attach it to the publish connection.
+	 *
+	 * @param muted - initial mute state of the new track
+	 * @returns whether a track is now being sent; failures are surfaced as a toast
+	 */
+	private async acquireMicrophone(muted: boolean): Promise<boolean> {
+		if (!this.publishPC) return false;
+		const preferredMic = useAppStore.getState().preferredMicId;
+		const base: MediaTrackConstraints = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+		try {
+			let stream: MediaStream;
+			try {
+				stream = await navigator.mediaDevices.getUserMedia({
+					audio: preferredMic && preferredMic !== 'default' ? { ...base, deviceId: { exact: preferredMic } } : base,
+				});
+			} catch (err) {
+				// A remembered device that is unplugged must not block the default microphone.
+				if (err instanceof DOMException && err.name === 'OverconstrainedError') {
+					stream = await navigator.mediaDevices.getUserMedia({ audio: base });
+				} else {
+					throw err;
+				}
+			}
+			const track = stream.getAudioTracks()[0];
+			if (!track) return false;
+			this.localAudioTrack = track;
+			track.enabled = !muted;
+			this.localAudioSender = this.publishPC.addTrack(track, this.createLocalStream());
+			this.setupLocalAnalyser(track);
+			useVoiceStore.getState()._setInternalState({ localStream: this.createLocalStream() });
+			return true;
+		} catch (err) {
+			useVoiceStore.getState().addLog(`[RTC] Failed to acquire microphone: ${err}`);
+			toast.error(i18n.t('call.micError'));
+			return false;
 		}
 	}
 
@@ -204,8 +287,13 @@ export class WebRTCManager {
 		const nextDeafened = !currentDeafened;
 		useVoiceStore.getState()._setInternalState({ isDeafened: nextDeafened });
 
-		this.remoteAudioNodes.forEach(({ gainNode }) => {
-			gainNode.gain.value = nextDeafened ? 0 : 1;
+		const volumes = useVoiceStore.getState();
+		this.remoteAudioNodes.forEach(({ gainNode }, userId) => {
+			gainNode.gain.value = nextDeafened || volumes.userMutes.has(userId) ? 0 : (volumes.userVolumes[userId] ?? 1);
+		});
+		this.remoteScreenAudioNodes.forEach(({ gainNode }, userId) => {
+			gainNode.gain.value =
+				nextDeafened || volumes.screenShareMutes[userId] ? 0 : (volumes.screenShareVolumes[userId] ?? 1);
 		});
 	}
 
@@ -213,58 +301,75 @@ export class WebRTCManager {
 	 * Toggle local camera video stream.
 	 */
 	public async toggleVideo(): Promise<void> {
+		if (!this.publishPC || !this.channelId || this.deviceBusy) return;
+		this.deviceBusy = true;
+		try {
+			if (useVoiceStore.getState().isVideoEnabled) {
+				await this.stopCamera();
+			} else {
+				await this.startCamera();
+			}
+		} finally {
+			this.deviceBusy = false;
+		}
+	}
+
+	private async stopCamera(): Promise<void> {
 		if (!this.publishPC || !this.channelId) return;
-		const isCurrentlyEnabled = useVoiceStore.getState().isVideoEnabled;
-
-		if (isCurrentlyEnabled) {
-			// Stop and remove camera track
-			if (this.localVideoSender && this.publishPC) {
-				try {
-					this.publishPC.removeTrack(this.localVideoSender);
-				} catch {
-					/* ignore */
-				}
-				this.localVideoSender = null;
-			}
-			if (this.localVideoTrack) {
-				this.localVideoTrack.stop();
-				this.localVideoTrack = null;
-			}
-
-			useVoiceStore.getState()._setInternalState({
-				isVideoEnabled: false,
-				localStream: this.createLocalStream(),
-			});
-			wsSendCallTrackState(this.channelId, 'video', false);
-			await this.renegotiatePublish();
-		} else {
-			// Acquire camera track
+		if (this.localVideoSender) {
 			try {
-				const preferredCamera = useVoiceStore.getState().preferredCameraId;
-				const videoConstraints: MediaTrackConstraints = preferredCamera
-					? { deviceId: { exact: preferredCamera }, width: { ideal: 1280 }, height: { ideal: 720 } }
-					: { width: { ideal: 1280 }, height: { ideal: 720 } };
-
-				const videoStream = await navigator.mediaDevices.getUserMedia({
-					video: videoConstraints,
-				});
-				const track = videoStream.getVideoTracks()[0];
-				if (!track) return;
-
-				this.localVideoTrack = track;
-				const stream = this.createLocalStream();
-
-				this.localVideoSender = this.publishPC.addTrack(track, stream);
-
-				useVoiceStore.getState()._setInternalState({
-					isVideoEnabled: true,
-					localStream: stream,
-				});
-				wsSendCallTrackState(this.channelId, 'video', true);
-				await this.renegotiatePublish();
-			} catch (err) {
-				useVoiceStore.getState().addLog(`[RTC] Failed to access camera: ${err}`);
+				this.publishPC.removeTrack(this.localVideoSender);
+			} catch {
+				/* ignore */
 			}
+			this.localVideoSender = null;
+		}
+		if (this.localVideoTrack) {
+			this.localVideoTrack.stop();
+			this.localVideoTrack = null;
+		}
+		useVoiceStore.getState()._setInternalState({
+			isVideoEnabled: false,
+			localStream: this.createLocalStream(),
+		});
+		wsSendCallTrackState(this.channelId, 'video', false);
+		await this.renegotiatePublish();
+	}
+
+	private async startCamera(): Promise<void> {
+		if (!this.publishPC || !this.channelId) return;
+		const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+		const preferredCamera = useVoiceStore.getState().preferredCameraId;
+		try {
+			let videoStream: MediaStream;
+			try {
+				videoStream = await navigator.mediaDevices.getUserMedia({
+					video: preferredCamera ? { ...size, deviceId: { exact: preferredCamera } } : size,
+				});
+			} catch (err) {
+				if (preferredCamera && err instanceof DOMException && err.name === 'OverconstrainedError') {
+					videoStream = await navigator.mediaDevices.getUserMedia({ video: size });
+				} else {
+					throw err;
+				}
+			}
+			const track = videoStream.getVideoTracks()[0];
+			if (!track) return;
+			// A camera unplugged mid-call ends the track; keep the UI state truthful.
+			track.onended = () => {
+				if (this.localVideoTrack === track) void this.stopCamera();
+			};
+
+			this.localVideoTrack = track;
+			const stream = this.createLocalStream();
+			this.localVideoSender = this.publishPC.addTrack(track, stream);
+
+			useVoiceStore.getState()._setInternalState({ isVideoEnabled: true, localStream: stream });
+			wsSendCallTrackState(this.channelId, 'video', true);
+			await this.renegotiatePublish();
+		} catch (err) {
+			useVoiceStore.getState().addLog(`[RTC] Failed to access camera: ${err}`);
+			toast.error(i18n.t('call.cameraError'));
 		}
 	}
 
@@ -320,6 +425,7 @@ export class WebRTCManager {
 						: useVoiceStore.getState().spotlightStreamId,
 			});
 			wsSendCallTrackState(this.channelId, 'screen', false);
+			this.screenTrackIds = [];
 			await this.renegotiatePublish();
 		} else {
 			// Start screen share with configurable settings
@@ -373,7 +479,8 @@ export class WebRTCManager {
 				}
 
 				track.onended = () => {
-					this.toggleScreenShare();
+					// Fired by the browser's own "Stop sharing" bar; ignore it if we already stopped.
+					if (this.localScreenTrack === track) void this.toggleScreenShare();
 				};
 
 				this.localScreenSender = this.publishPC.addTrack(track, displayStream);
@@ -393,9 +500,13 @@ export class WebRTCManager {
 					spotlightStreamId: 'local',
 				});
 				wsSendCallTrackState(this.channelId, 'screen', true, track.id, displayStream.id);
-				await this.renegotiatePublish(track.id, screenAudioTrackId);
+				this.screenTrackIds = [track.id, ...(screenAudioTrackId ? [screenAudioTrackId] : [])];
+				await this.renegotiatePublish();
 			} catch (err) {
 				useVoiceStore.getState().addLog(`[RTC] Screen sharing cancelled or failed: ${err}`);
+				if (!(err instanceof DOMException && err.name === 'NotAllowedError')) {
+					toast.error(i18n.t('call.screenError'));
+				}
 			}
 		}
 	}
@@ -511,7 +622,14 @@ export class WebRTCManager {
 			onWS('call_joined', async (rawPayload: unknown) => {
 				const payload = rawPayload as CallJoinedPayload;
 				if (payload.channel_id !== this.channelId) return;
-				await this.handleCallJoined(payload, options);
+				try {
+					await this.handleCallJoined(payload, options);
+				} catch (err) {
+					// Never fail silently: a half-built call would leave dead buttons behind.
+					useVoiceStore.getState().addLog(`[RTC] Failed to set up call: ${err}`);
+					toast.error(i18n.t('call.connectFailed'));
+					void this.leave();
+				}
 			}),
 
 			onWS('call_publish_answer', async (rawPayload: unknown) => {
@@ -522,6 +640,11 @@ export class WebRTCManager {
 					this.flushPendingCandidates(this.publishPC, this.pendingPublishCandidates);
 				} catch (err) {
 					useVoiceStore.getState().addLog(`[RTC] setRemoteDescription error on publishPC: ${err}`);
+				}
+				// Changes requested while this offer was in flight go out now that the round is closed.
+				if (this.renegotiationPending) {
+					this.renegotiationPending = false;
+					await this.renegotiatePublish();
 				}
 			}),
 
@@ -601,23 +724,33 @@ export class WebRTCManager {
 		);
 	}
 
-	private async handleCallJoined(payload: CallJoinedPayload, options?: WebRTCOptions): Promise<void> {
-		const store = useVoiceStore.getState();
-		const rtcConfig: RTCConfiguration = {
-			iceServers: payload.ice_servers || [],
-		};
+	private clearConnectTimer(): void {
+		if (this.connectTimer) {
+			clearTimeout(this.connectTimer);
+			this.connectTimer = null;
+		}
+	}
 
-		store.addLog(`[RTC] Received call_joined. Initializing WebRTC with ${payload.ice_servers.length} ICE server(s)...`);
+	private async handleCallJoined(payload: CallJoinedPayload, options?: WebRTCOptions): Promise<void> {
+		this.clearConnectTimer();
+		const store = useVoiceStore.getState();
+		// The server serialises an empty list as null when TURN is not configured; indexing it used to throw here,
+		// which silently aborted the join and left no PeerConnection (every call button then did nothing).
+		const iceServers = payload.ice_servers ?? [];
+		const participants = payload.participants ?? [];
+		const rtcConfig: RTCConfiguration = { iceServers };
+
+		store.addLog(`[RTC] Received call_joined. Initializing WebRTC with ${iceServers.length} ICE server(s)...`);
 
 		// Build participant roster immediately
-		const participantIds = payload.participants.map(p => p.user_id);
+		const participantIds = participants.map(p => p.user_id);
 		const currentUserId = useAuthStore.getState().user?.id;
 		if (currentUserId && !participantIds.includes(currentUserId)) {
 			participantIds.push(currentUserId);
 		}
 		store.updateParticipants(payload.channel_id, participantIds);
 
-		for (const p of payload.participants) {
+		for (const p of participants) {
 			if (p.track_states) {
 				for (const [kind, enabled] of Object.entries(p.track_states)) {
 					store.setTrackState(p.user_id, kind as 'audio' | 'video' | 'screen', enabled);
@@ -717,29 +850,10 @@ export class WebRTCManager {
 			await this.handleSubscribeOffer(bufferedOffer);
 		}
 
-		// Acquire local microphone
-		try {
-			const preferredMic = useAppStore.getState().preferredMicId;
-			const audioConstraints: MediaTrackConstraints = preferredMic && preferredMic !== 'default'
-				? { deviceId: { exact: preferredMic }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-				: { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
-
-			const audioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
-			const audioTrack = audioStream.getAudioTracks()[0];
-			if (audioTrack) {
-				this.localAudioTrack = audioTrack;
-				const isMuted = store.isMuted;
-				audioTrack.enabled = !isMuted;
-				this.localAudioSender = this.publishPC.addTrack(audioTrack, this.createLocalStream());
-				if (this.channelId) {
-					wsSendCallTrackState(this.channelId, 'audio', !isMuted);
-				}
-
-				// Setup local analyser for instant local VAD
-				this.setupLocalAnalyser(audioTrack);
-			}
-		} catch (err) {
-			store.addLog(`[RTC] Failed to acquire microphone: ${err}`);
+		// Acquire local microphone (a failure leaves the call listen-only; the mic button retries)
+		const micOk = await this.acquireMicrophone(store.isMuted);
+		if (!micOk) {
+			store._setInternalState({ isMuted: true });
 		}
 
 		// Optionally acquire local video if requested
@@ -773,8 +887,10 @@ export class WebRTCManager {
 		// Initial publish offer negotiation
 		await this.renegotiatePublish();
 
+		this.isConnecting = false;
+
 		// Broadcast initial track states
-		wsSendCallTrackState(payload.channel_id, 'audio', !store.isMuted);
+		wsSendCallTrackState(payload.channel_id, 'audio', !useVoiceStore.getState().isMuted);
 		if (this.localVideoTrack) {
 			wsSendCallTrackState(payload.channel_id, 'video', true);
 		}
@@ -795,8 +911,17 @@ export class WebRTCManager {
 		}
 	}
 
-	private async renegotiatePublish(screenTrackId?: string, screenAudioTrackId?: string): Promise<void> {
+	/**
+	 * Send a fresh publish offer. Offers are strictly one-at-a-time: while a previous offer is waiting for its answer
+	 * the request is remembered and replayed from the `call_publish_answer` handler, otherwise two quick toggles
+	 * (camera then screen) race and the second setLocalDescription clobbers the first.
+	 */
+	private async renegotiatePublish(): Promise<void> {
 		if (!this.publishPC || !this.channelId) return;
+		if (this.publishPC.signalingState !== 'stable') {
+			this.renegotiationPending = true;
+			return;
+		}
 
 		try {
 			const offer = await this.publishPC.createOffer();
@@ -805,14 +930,13 @@ export class WebRTCManager {
 
 			let finalSdp = offer.sdp || '';
 
-			// If screen sharing, munge the msid of screen video and screen audio tracks to 'screen'
-			// to satisfy backend/internal/rtc classifyTrack contract
-			const screenTrackIds = [screenTrackId, screenAudioTrackId].filter(Boolean) as string[];
-			if (screenTrackIds.length > 0 && finalSdp) {
+			// Screen tracks must be tagged msid `screen` in EVERY offer while they exist (backend classifyTrack),
+			// not only in the offer that added them, or a later camera toggle would reclassify the screen as camera.
+			if (this.screenTrackIds.length > 0 && finalSdp) {
 				finalSdp = finalSdp
 					.split('\r\n')
 					.map((line) => {
-						for (const id of screenTrackIds) {
+						for (const id of this.screenTrackIds) {
 							if (line.startsWith('a=msid:') && line.includes(id)) {
 								return `a=msid:screen ${id}`;
 							}
