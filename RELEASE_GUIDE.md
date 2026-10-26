@@ -1,6 +1,6 @@
-# NodeTalk Release Guide
+# Cove Release Guide
 
-This guide explains how to perform a proper multi-platform release for NodeTalk on GitHub, covering the desktop clients (Windows, macOS, Linux) and the backend server.
+This guide explains how to perform a proper multi-platform release for Cove on GitHub, covering the desktop clients (Windows, macOS, Linux) and the backend server.
 
 ## 1. Prerequisites
 Before starting a release, ensure you have the following installed:
@@ -39,7 +39,7 @@ git push origin v0.1.0
 1.  Go to your repository on GitHub.
 2.  Click on **Releases** -> **Draft a new release**.
 3.  Select the tag you just pushed (`v0.1.0`).
-4.  Enter a release title (e.g., `NodeTalk v0.1.0 Beta`).
+4.  Enter a release title (e.g., `Cove v0.1.0 Beta`).
 5.  Write your release notes (describe new features and fixes).
 
 ### Step C: Upload Assets

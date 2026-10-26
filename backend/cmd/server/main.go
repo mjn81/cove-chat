@@ -1,11 +1,11 @@
-// NodeTalk API
+// Cove API
 //
-//	@title          NodeTalk API
+//	@title          Cove API
 //	@version        0.1.0
 //	@description    Self-hosted, end-to-end encrypted communication platform.
 //	@termsOfService http://nodetalk.local/terms
 //
-//	@contact.name  NodeTalk Support
+//	@contact.name  Cove Support
 //	@contact.url   https://github.com/nodetalk/backend/nodetalk
 //
 //	@license.name MIT
@@ -201,8 +201,8 @@ func main() {
 		host = "127.0.0.1"
 	}
 	logger.PrintBanner(logger.BannerConfig{
-		AppName:   "NodeTalk Server",
-		Version:   "NodeTalk v0.9.0",
+		AppName:   "Cove Server",
+		Version:   "Cove v0.9.0",
 		Host:      host,
 		Port:      cfg.Server.HTTPPort,
 		BoundHost: "0.0.0.0",
@@ -261,7 +261,7 @@ func main() {
 		logger.Warnf("Database close error: %v", err)
 	}
 
-	logger.Info("NodeTalk stopped.")
+	logger.Info("Cove stopped.")
 }
 
 // startUDPRouter opens a raw UDP socket for desktop voice routing.

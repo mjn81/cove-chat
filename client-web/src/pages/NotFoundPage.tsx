@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, HelpCircle, Compass } from 'lucide-react';
+import { APP_NAME } from '@/lib/brand';
 
 export default function NotFoundPage() {
 	return (
 		<div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground relative overflow-hidden">
 			{/* Subtle background icons with reduced opacity and no weird rotations */}
-			<div className="absolute top-[15%] left-[10%] opacity-5 select-none">
+			<div className="absolute top-[15%] start-[10%] opacity-5 select-none">
 				<HelpCircle size={160} strokeWidth={1.5} />
 			</div>
-			<div className="absolute bottom-[15%] right-[10%] opacity-5 select-none">
+			<div className="absolute bottom-[15%] end-[10%] opacity-5 select-none">
 				<Compass size={180} strokeWidth={1.5} />
 			</div>
 
@@ -33,7 +34,7 @@ export default function NotFoundPage() {
 				<div className="flex flex-col sm:flex-row gap-3 w-full">
 					<Button asChild className="flex-1 h-11 text-[14px] font-bold bg-primary hover:bg-primary/90 rounded-md transition-all active:scale-95 shadow-none">
 						<Link to="/">
-							<Home className="mr-2 h-4 w-4" />
+							<Home className="me-2 h-4 w-4" />
 							Take me home
 						</Link>
 					</Button>
@@ -48,7 +49,7 @@ export default function NotFoundPage() {
 			{/* Minimalist footer */}
 			<div className="absolute bottom-10 flex flex-col items-center gap-1 opacity-20">
 				<p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground select-none">
-					NodeTalk / 404 Error
+					{APP_NAME} / 404 Error
 				</p>
 			</div>
 		</div>

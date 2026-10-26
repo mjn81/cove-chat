@@ -1,9 +1,9 @@
 ---
-description: NodeTalk development guidelines (canonical copy in .agents/rules/)
+description: Cove development guidelines (canonical copy in .agents/rules/)
 alwaysApply: true
 ---
 
-Follow the NodeTalk development guidelines. The canonical rules are in `.agents/rules/` — read the relevant files before writing code:
+Follow the Cove development guidelines. The canonical rules are in `.agents/rules/` — read the relevant files before writing code:
 
 - @.agents/rules/00-project-overview.md — repo map, agent workflow, security model (always)
 - @.agents/rules/01-shared.md — Makefile, DRY, docs, typing, tests (always)

@@ -1,4 +1,4 @@
-# NodeTalk
+# Cove
 
 **Self-hosted, server-trusted encrypted communication platform.**
 
@@ -47,7 +47,7 @@ nodetalk/
 
 ### Security Architecture (Server-Trusted)
 
-NodeTalk uses a **Server-Trusted Encryption** model. While all communication is encrypted using industry-standard AES-256-GCM, the server acts as the central authority for key management and distribution.
+Cove uses a **Server-Trusted Encryption** model. While all communication is encrypted using industry-standard AES-256-GCM, the server acts as the central authority for key management and distribution.
 
 1.  **Master Password**: A server-side master password derives the **Key Encryption Key (KEK)** using Argon2id.
 2.  **Data at Rest**: The database (BadgerDB) is encrypted at rest using a **Data Encryption Key (DEK)** which is wrapped by the KEK.
@@ -62,7 +62,7 @@ NodeTalk uses a **Server-Trusted Encryption** model. While all communication is 
 ## Quick Start
 
 ### 1 — Docker (Recommended)
-The fastest way to deploy NodeTalk is using Docker.
+The fastest way to deploy Cove is using Docker.
 
 *   **Development**: Use the root `docker-compose.yml` to build from source.
 *   **Production**: Use our pre-built images. See the [Production Example](./examples/docker-compose/production/) for a ready-to-use setup.
@@ -127,4 +127,4 @@ STRESS_CONCURRENCY=20 STRESS_REQUESTS=100 go test -v ./tests -run TestStressBack
 ---
 
 ## License
-MIT © NodeTalk Contributors
+MIT © Cove Contributors

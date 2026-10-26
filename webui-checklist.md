@@ -1,4 +1,4 @@
-NodeTalk Web UI Checklist
+Cove Web UI Checklist
 
 Done Tasks
 
@@ -20,7 +20,7 @@ Pending Tasks
 
 Right Sidebar
 
-[ ] Rename the top label from "NodeTalk Server" to "NodeTalk Client".
+[ ] Rename the top label from "Cove Server" to "Cove Client".
 
 [ ] Add Server Version tag (e.g. V1.0.0) by referencing a REST API from the Go backend.
 

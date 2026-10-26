@@ -1,6 +1,6 @@
-# NodeTalk Future Roadmap & TODO
+# Cove Future Roadmap & TODO
 
-This document tracks planned features, performance optimizations, and upcoming architectural changes for NodeTalk.
+This document tracks planned features, performance optimizations, and upcoming architectural changes for Cove.
 
 ---
 
@@ -46,7 +46,7 @@ This document tracks planned features, performance optimizations, and upcoming a
 - **Custom Video Player**: Implementation of a native, secure video player for in-app media playback.
 
 ## 📱 Phase 9: Platform Expansion
-*Bringing NodeTalk to more devices.*
+*Bringing Cove to more devices.*
 
 - **PWA Support**: Enable Progressive Web App features for desktop-like experience on mobile browsers.
 - **Native Mobile Clients**: Specialized applications for **Android** and **iOS** using the same server-trusted encryption core.
@@ -59,12 +59,12 @@ This document tracks planned features, performance optimizations, and upcoming a
     - **Basic Stickers**: Support for custom sticker packs.
 - **Storage Scalability**: Add **S3-compatible** storage support for hosting large files on AWS, MinIO, or DigitalOcean.
 - **Telemetry & Versioning**:
-    - **Automated Update Checks**: Backend check for new versions against main NodeTalk servers.
+    - **Automated Update Checks**: Backend check for new versions against main Cove servers.
     - **Telemetry (V1.1)**: Optional, privacy-conscious backend metrics to improve performance.
 
 ## 🌐 Phase 11: Inter-Node Federation
 *Will implement later. Bridging isolated servers into a global network.*
 
-- **Server-to-Server Protocol**: Implementation of a secure handshake and routing protocol allowing independent NodeTalk instances to discover and trust each other.
+- **Server-to-Server Protocol**: Implementation of a secure handshake and routing protocol allowing independent Cove instances to discover and trust each other.
 - **Cross-Server Messaging**: Enable users on `server-a.com` to join channels and message users on `server-b.com` seamlessly.
 - **Global Identity Routing**: Resolve user presence and message delivery across the federated network while maintaining local data ownership.

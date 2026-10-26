@@ -1,6 +1,6 @@
 {
-	"name": "NodeTalk",
-	"outputfilename": "NodeTalk",
+	"name": "Cove",
+	"outputfilename": "Cove",
 	"frontend:install": "",
 	"frontend:build": "",
 	"frontend:dev:watcher": "",
@@ -8,10 +8,10 @@
 	"wailsjsdir": "../client-web/src",
 	"version": "2",
 	"info": {
-		"companyName": "NodeTalk",
-		"productName": "NodeTalk",
+		"companyName": "Cove",
+		"productName": "Cove",
 		"productVersion": "0.9.0",
-		"copyright": "Copyright © 2026 NodeTalk Contributors",
+		"copyright": "Copyright © 2026 Cove Contributors",
 		"comments": "Self-hosted, encrypted communication"
 	},
 	"debounceMS": 100,

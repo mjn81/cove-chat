@@ -238,13 +238,13 @@ type BannerConfig struct {
 	PID        int
 }
 
-// PrintBanner prints a terminal banner box matching the Fiber/NodeTalk style.
+// PrintBanner prints a terminal banner box matching the Fiber style.
 func PrintBanner(cfg BannerConfig) {
 	if cfg.AppName == "" {
-		cfg.AppName = "NodeTalk Server"
+		cfg.AppName = "Cove Server"
 	}
 	if cfg.Version == "" {
-		cfg.Version = "NodeTalk v0.9.0"
+		cfg.Version = "Cove v0.9.0"
 	}
 	if cfg.Host == "" {
 		cfg.Host = "127.0.0.1"

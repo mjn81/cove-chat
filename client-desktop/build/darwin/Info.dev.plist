@@ -65,6 +65,6 @@
             <true/>
         </dict>
         <key>NSMicrophoneUsageDescription</key>
-        <string>NodeTalk needs access to your microphone to record voice messages.</string>
+        <string>Cove needs access to your microphone to record voice messages.</string>
     </dict>
 </plist>

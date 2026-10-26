@@ -20,7 +20,7 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:            "NodeTalk",
+		Title:            "Cove",
 		Width:            1280,
 		Height:           820,
 		MinWidth:         800,

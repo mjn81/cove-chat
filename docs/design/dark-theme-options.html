@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cove dark theme options</title>
+<style>
+body{margin:0;padding:24px;background:#f4f1ee;font-family:system-ui,sans-serif;color:#222}
+h1{font-size:20px;font-weight:500;margin:0 0 16px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.o{background:#fff;border:1px solid #ddd;border-radius:12px;padding:12px}
+.t{font-size:15px;font-weight:600;margin:0 0 8px}
+.m{display:flex;height:190px;border-radius:8px;overflow:hidden;font-size:12px}
+.sb{width:84px;padding:8px 6px}
+.row{height:16px;border-radius:4px;margin-bottom:5px}
+.ch{flex:1;display:flex;flex-direction:column}
+.tb{height:30px;display:flex;align-items:center;padding:0 10px;font-weight:600}
+.bd{flex:1;padding:10px;display:flex;flex-direction:column;gap:7px;justify-content:flex-end}
+.b{padding:6px 10px;border-radius:8px;max-width:75%}
+.in{margin:8px;padding:9px 10px;border-radius:8px}
+.sw{font-size:12px;color:#555;margin-top:8px}
+.sw i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #999;vertical-align:-2px;margin:0 3px 0 8px}
+</style></head><body>
+<h1>Cove dark theme options</h1>
+<div class="g" id="g"></div>
+<script>
+var P=[
+{n:'A. Neutral charcoal',d:'Pure grey, ChatGPT/GitHub feel',bg:'#1F1F1F',c:'#282828',p:'#171717',a:'#323232',t:'#E6E6E6',m:'#9A9A9A',b:'#363636'},
+{n:'B. Cool slate',d:'Blue-grey, terracotta pops',bg:'#1B1F26',c:'#232832',p:'#151920',a:'#2D3340',t:'#E4E8EF',m:'#8F99AA',b:'#313846'},
+{n:'C. Soft espresso',d:'Warm brown, lighter than before',bg:'#251E1A',c:'#2E2622',p:'#1C1613',a:'#3B302A',t:'#EADFD6',m:'#A39387',b:'#43372F'},
+{n:'D. Dusk plum',d:'Muted violet-grey, calm',bg:'#221F27',c:'#2B2830',p:'#1A181E',a:'#363340',t:'#E7E3EC',m:'#9A94A6',b:'#3B3743'},
+{n:'Current (olive grey)',d:'What you dislike now',bg:'#262624',c:'#2E2D2B',p:'#1F1E1D',a:'#3A3936',t:'#E3E1DA',m:'#9C9A92',b:'#42413C'}
+];
+var h='';P.forEach(function(x){
+h+='<div class="o"><p class="t">'+x.n+'</p><div class="m" style="background:'+x.bg+';color:'+x.t+';border:1px solid '+x.b+'">'
++'<div class="sb" style="background:'+x.p+'"><div class="row" style="background:'+x.a+'"></div><div class="row" style="background:'+x.c+'"></div><div class="row" style="background:'+x.c+'"></div></div>'
++'<div class="ch"><div class="tb" style="border-bottom:1px solid '+x.b+'">public-demo</div>'
++'<div class="bd"><div class="b" style="background:'+x.c+'">Hey, is this readable?</div><div class="b" style="background:#C4624A;color:#fff;align-self:flex-end">Yes, much calmer</div>'
++'<div style="color:'+x.m+'">Muted caption text</div></div>'
++'<div class="in" style="background:'+x.c+';border:1px solid '+x.b+';color:'+x.m+'">Message #public-demo</div></div></div>'
++'<div class="sw">'+x.d+'<br><i style="background:'+x.bg+'"></i>'+x.bg+'<i style="background:'+x.c+'"></i>'+x.c+'<i style="background:'+x.t+'"></i>'+x.t+'</div></div>';});
+document.getElementById('g').innerHTML=h;
+</script></body></html>

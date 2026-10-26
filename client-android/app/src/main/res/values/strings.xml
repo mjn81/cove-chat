@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">NodeTalk</string>
+    <string name="app_name">Cove</string>
     <string name="server_url">Server URL</string>
     <string name="connect">Connect</string>
     <string name="username">Username</string>

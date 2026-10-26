@@ -1,0 +1,87 @@
+<!doctype html><meta charset=utf-8><title>Dusty Peach (coral, desaturated)</title><style>
+*{box-sizing:border-box;margin:0}body{font:14px/1.4 system-ui,Segoe UI,sans-serif;background:#8a8a8a;padding:16px;color:#111}
+h1{font-size:18px;margin-bottom:2px}.note{margin-bottom:12px;max-width:900px}
+.wrap{display:grid;gap:14px}.lab{font-weight:600;margin:4px 0}
+.app{display:grid;grid-template-columns:56px 190px 1fr 200px;height:430px;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+.app[data-mode=dark]{--bg:#1C1917;--side:#231F1C;--deep:#151210;--fg:#F5EFEA;--mfg:#A39A92;--hov:#2F2A26;--bd:#151210;--pri:#D69A82;--pfg:#2B1810;--dng:#F0616D;--mbg:#3B2E17;--mfgc:#F5C265;--ok:#58C48A;}.app[data-mode=light]{--bg:#FFFFFF;--side:#F8F4F0;--deep:#FFFFFF;--fg:#201A16;--mfg:#7A6E65;--hov:#EFE8E1;--bd:#E8DFD6;--pri:#BD7358;--pfg:#FFFFFF;--dng:#D63A3A;--mbg:#FFF0C2;--mfgc:#8A5A00;--ok:#2E9A55;}
+.rail{background:var(--deep);display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0}
+.logo{width:36px;height:36px;border-radius:12px;background:var(--pri);color:var(--pfg);display:grid;place-items:center;font-weight:800}
+.sv{width:36px;height:36px;border-radius:50%;background:var(--hov)}.sv.act{border-radius:12px;background:var(--side);outline:2px solid var(--pri)}
+.side{background:var(--side);padding:10px 8px;position:relative;border-inline-end:1px solid var(--bd)}
+.hd{font-weight:700;padding:4px 8px 8px;display:flex;justify-content:space-between}.plus{color:var(--mfg)}
+.ch{padding:5px 8px;border-radius:6px;color:var(--mfg);display:flex;align-items:center;gap:6px}.ch.act{background:var(--hov);color:var(--fg)}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mfg);padding:10px 8px 2px}
+.badge{margin-inline-start:auto;background:var(--dng);color:#fff;border-radius:99px;font-size:11px;padding:0 6px}
+.ok{color:var(--ok)}.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);margin-inline-start:auto}
+.av{width:22px;height:22px;border-radius:50%;display:inline-block;flex:none}.a1{background:#e08a5c}.a2{background:#6aa7d9}.a3{background:#9b7fd1}
+.me{position:absolute;bottom:0;inset-inline:0;background:var(--deep);padding:8px;display:flex;gap:8px;align-items:center}.me small{color:var(--mfg)}
+.main{display:flex;flex-direction:column;min-width:0}.top{padding:10px 14px;border-bottom:1px solid var(--bd);font-weight:700;display:flex;gap:8px;align-items:center}.top small{color:var(--mfg);font-weight:400}.sp{flex:1}
+.msgs{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.m{display:flex;gap:10px}.m .av{width:32px;height:32px}.m small{color:var(--mfg);font-size:11px}.m p{margin-top:1px}
+.me2{justify-content:flex-end}.bub{background:var(--pri);color:var(--pfg);padding:7px 12px;border-radius:14px;border-end-end-radius:4px}
+.mention{background:var(--mbg);color:var(--mfgc);padding:0 3px;border-radius:4px}
+.file{background:var(--side);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin-top:3px}
+.err{color:var(--dng);font-size:12px}
+.inp{display:flex;gap:8px;align-items:center;padding:10px 14px}.field{flex:1;background:var(--side);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;color:var(--mfg)}.field.sm{flex:none;margin:10px 0}
+.btn{background:var(--pri);color:var(--pfg);border:0;border-radius:8px;padding:7px 12px;font:inherit;font-weight:600}.btn.sec{background:var(--hov);color:var(--fg)}.btn.dng{background:var(--dng);color:#fff}
+.panel{background:var(--side);border-inline-start:1px solid var(--bd);padding:12px}.panel h4{margin-bottom:8px}.panel .btn{margin:0 4px 6px 0}
+.card{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}.card small{color:var(--mfg)}
+.sw{display:flex;margin-top:10px;flex-wrap:wrap;gap:3px}.sw i{width:20px;height:20px;border-radius:5px;border:1px solid var(--bd)}</style>
+<h1>Dusty Peach (coral, desaturated) <small style="font-weight:400">- inspired by Warm Coral, toned down</small></h1><p class=note>Least saturated: closest to a neutral with a warm tint.</p>
+<div class=wrap><div><div class=lab>Dark</div>
+<div class="app" data-mode="dark">
+ <div class="rail"><div class="logo">N</div><i class="sv act"></i><i class="sv"></i><i class="sv"></i></div>
+ <div class="side">
+  <div class="hd">Channels<span class="plus">+</span></div>
+  <div class="ch act"># general</div><div class="ch"># design <b class="badge">3</b></div><div class="ch"># random</div>
+  <div class="lbl">Voice</div><div class="ch"><span class="ok">●</span> Lounge</div>
+  <div class="lbl">Direct</div><div class="ch"><span class="av a1"></span>Sara <span class="dot"></span></div><div class="ch"><span class="av a2"></span>Omid</div>
+  <div class="me"><span class="av a3"></span><div><b>you</b><br><small>online</small></div></div>
+ </div>
+ <div class="main">
+  <div class="top"># general <small>· 12 members</small><span class="sp"></span><span>📞</span><span>🔍</span></div>
+  <div class="msgs">
+   <div class="m"><span class="av a1"></span><div><b>Sara</b> <small>10:21</small><p>Deploy is green. Can you check the new theme?</p></div></div>
+   <div class="m"><span class="av a2"></span><div><b>Omid</b> <small>10:22</small><p><span class="mention">@you</span> looks sharp, shipping it 🚀</p></div></div>
+   <div class="m me2"><div><div class="bub">Nice — checking dark mode now.</div></div></div>
+   <div class="m"><span class="av a1"></span><div><b>Sara</b> <small>10:24</small><div class="file">📎 palette-final.pdf <small>2.4 MB</small></div></div></div>
+   <div class="err">Message failed to send. <u>Retry</u></div>
+  </div>
+  <div class="inp"><span>＋</span><div class="field">Message #general</div><button class="btn">Send</button></div>
+ </div>
+ <div class="panel">
+  <h4>Components</h4>
+  <button class="btn">Primary</button> <button class="btn sec">Secondary</button> <button class="btn dng">Delete</button>
+  <div class="field sm">Input field</div>
+  <div class="card"><b>Card</b><br><small>Muted caption text</small></div>
+  <div class="sw"><i style="background:var(--bg)" title="bg"></i><i style="background:var(--side)" title="side"></i><i style="background:var(--deep)" title="deep"></i><i style="background:var(--fg)" title="fg"></i><i style="background:var(--mfg)" title="mfg"></i><i style="background:var(--hov)" title="hov"></i><i style="background:var(--bd)" title="bd"></i><i style="background:var(--pri)" title="pri"></i><i style="background:var(--pfg)" title="pfg"></i><i style="background:var(--dng)" title="dng"></i><i style="background:var(--mbg)" title="mbg"></i><i style="background:var(--mfgc)" title="mfgc"></i><i style="background:var(--ok)" title="ok"></i></div>
+ </div>
+</div></div><div><div class=lab>Light</div>
+<div class="app" data-mode="light">
+ <div class="rail"><div class="logo">N</div><i class="sv act"></i><i class="sv"></i><i class="sv"></i></div>
+ <div class="side">
+  <div class="hd">Channels<span class="plus">+</span></div>
+  <div class="ch act"># general</div><div class="ch"># design <b class="badge">3</b></div><div class="ch"># random</div>
+  <div class="lbl">Voice</div><div class="ch"><span class="ok">●</span> Lounge</div>
+  <div class="lbl">Direct</div><div class="ch"><span class="av a1"></span>Sara <span class="dot"></span></div><div class="ch"><span class="av a2"></span>Omid</div>
+  <div class="me"><span class="av a3"></span><div><b>you</b><br><small>online</small></div></div>
+ </div>
+ <div class="main">
+  <div class="top"># general <small>· 12 members</small><span class="sp"></span><span>📞</span><span>🔍</span></div>
+  <div class="msgs">
+   <div class="m"><span class="av a1"></span><div><b>Sara</b> <small>10:21</small><p>Deploy is green. Can you check the new theme?</p></div></div>
+   <div class="m"><span class="av a2"></span><div><b>Omid</b> <small>10:22</small><p><span class="mention">@you</span> looks sharp, shipping it 🚀</p></div></div>
+   <div class="m me2"><div><div class="bub">Nice — checking dark mode now.</div></div></div>
+   <div class="m"><span class="av a1"></span><div><b>Sara</b> <small>10:24</small><div class="file">📎 palette-final.pdf <small>2.4 MB</small></div></div></div>
+   <div class="err">Message failed to send. <u>Retry</u></div>
+  </div>
+  <div class="inp"><span>＋</span><div class="field">Message #general</div><button class="btn">Send</button></div>
+ </div>
+ <div class="panel">
+  <h4>Components</h4>
+  <button class="btn">Primary</button> <button class="btn sec">Secondary</button> <button class="btn dng">Delete</button>
+  <div class="field sm">Input field</div>
+  <div class="card"><b>Card</b><br><small>Muted caption text</small></div>
+  <div class="sw"><i style="background:var(--bg)" title="bg"></i><i style="background:var(--side)" title="side"></i><i style="background:var(--deep)" title="deep"></i><i style="background:var(--fg)" title="fg"></i><i style="background:var(--mfg)" title="mfg"></i><i style="background:var(--hov)" title="hov"></i><i style="background:var(--bd)" title="bd"></i><i style="background:var(--pri)" title="pri"></i><i style="background:var(--pfg)" title="pfg"></i><i style="background:var(--dng)" title="dng"></i><i style="background:var(--mbg)" title="mbg"></i><i style="background:var(--mfgc)" title="mfgc"></i><i style="background:var(--ok)" title="ok"></i></div>
+ </div>
+</div></div></div>

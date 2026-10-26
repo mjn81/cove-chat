@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { isWails } from '@/utils/wails';
 import { useAuthStore } from '@/store/store';
 import { BASE_URL } from '@/api/client';
+import { APP_NAME } from '@/lib/brand';
 
 export default function LoginPage() {
 	const { t } = useTranslation();
@@ -67,7 +68,7 @@ export default function LoginPage() {
 								className="text-xs uppercase font-bold text-muted-foreground"
 							>
 								{t('auth.username')}
-								<span className="text-destructive ml-1">*</span>
+								<span className="text-destructive ms-1">*</span>
 							</Label>
 							<Input
 								id="login-username"
@@ -89,13 +90,13 @@ export default function LoginPage() {
 								className="text-xs uppercase font-bold text-muted-foreground"
 							>
 								{t('auth.password')}
-								<span className="text-destructive ml-1">*</span>
+								<span className="text-destructive ms-1">*</span>
 							</Label>
 							<div className="relative">
 								<Input
 									id="login-password"
 									type={showPassword ? 'text' : 'password'}
-									className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+									className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 pe-10"
 									value={password}
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 										setPassword(e.target.value)
@@ -106,7 +107,7 @@ export default function LoginPage() {
 								<button
 									type="button"
 									onClick={() => setShowPassword((prev) => !prev)}
-									className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground focus:outline-none flex items-center justify-center transition-colors"
+									className="absolute end-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground focus:outline-none flex items-center justify-center transition-colors"
 									aria-label={showPassword ? 'Hide password' : 'Show password'}
 									tabIndex={-1}
 								>
@@ -155,7 +156,7 @@ export default function LoginPage() {
 
 			<div className="absolute bottom-8 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity duration-300">
 				<p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground select-none">
-					NodeTalk is open source
+					{APP_NAME} is open source
 				</p>
 				<p className="text-[10px] font-medium text-muted-foreground select-none">
 					made with ❤️ by <span className="text-foreground">mjn</span>

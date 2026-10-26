@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://nodetalk.local/terms",
         "contact": {
-            "name": "NodeTalk Support",
+            "name": "Cove Support",
             "url": "https://github.com/nodetalk/backend/nodetalk"
         },
         "license": {
@@ -454,7 +454,7 @@ const docTemplate = `{
         },
         "/api/register": {
             "post": {
-                "description": "Creates a new NodeTalk user account.",
+                "description": "Creates a new Cove user account.",
                 "consumes": [
                     "application/json"
                 ],
@@ -937,7 +937,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:4000",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "NodeTalk API",
+	Title:            "Cove API",
 	Description:      "Self-hosted, end-to-end encrypted communication platform.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

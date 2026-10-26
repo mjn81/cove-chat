@@ -1,4 +1,4 @@
-# CLAUDE.md — NodeTalk
+# CLAUDE.md — Cove
 
 Project guidelines are maintained in `.agents/rules/` (shared with other AI tools). They are imported here and apply to every task.
 

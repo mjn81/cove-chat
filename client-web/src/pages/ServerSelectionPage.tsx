@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { setApiBaseUrl } from '@/api/client';
 import { isWails } from '@/utils/wails';
+import { APP_NAME } from '@/lib/brand';
 
 export default function ServerSelectionPage() {
 	const navigate = useNavigate();
@@ -101,7 +102,7 @@ export default function ServerSelectionPage() {
 						</div>
 					)}
 					{status === 'success' && (
-						<div className="bg-green-500/10 text-green-400 text-sm p-3 rounded-md mb-4 border border-green-500/20 text-center">
+						<div className="bg-success/10 text-success text-sm p-3 rounded-md mb-4 border border-success/20 text-center">
 							Successfully connected!
 						</div>
 					)}
@@ -113,7 +114,7 @@ export default function ServerSelectionPage() {
 								className="text-xs uppercase font-bold text-muted-foreground"
 							>
 								Server Address
-								<span className="text-destructive ml-1">*</span>
+								<span className="text-destructive ms-1">*</span>
 							</Label>
 							<Input
 								id="server-url"
@@ -139,7 +140,7 @@ export default function ServerSelectionPage() {
 
 				<CardFooter className="flex flex-col items-start gap-2 pt-2">
 					<div className="text-[11px] text-center text-muted-foreground/60 leading-relaxed italic">
-						NodeTalk stores your messages securely, but relies on the server for
+						{APP_NAME} stores your messages securely, but relies on the server for
 						key management. Ensure you trust the host before sending sensitive
 						data
 					</div>
@@ -148,7 +149,7 @@ export default function ServerSelectionPage() {
 
 			<div className="absolute bottom-8 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity duration-300">
 				<p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground select-none">
-					NodeTalk is open source
+					{APP_NAME} is open source
 				</p>
 				<p className="text-[10px] font-medium text-muted-foreground select-none">
 					made with ❤️ by <span className="text-foreground">mjn</span>

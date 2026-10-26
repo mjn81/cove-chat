@@ -1,6 +1,6 @@
-# NodeTalk Docker Guide
+# Cove Docker Guide
 
-This guide explains how to run NodeTalk using Docker and Docker Compose.
+This guide explains how to run Cove using Docker and Docker Compose.
 
 ## 1. Quick Start with Docker Compose
 
@@ -25,7 +25,7 @@ The easiest way to get started is using Docker Compose.
 
 ## 2. Configuration
 
-NodeTalk prioritizes configuration via the `config.toml` file.
+Cove prioritizes configuration via the `config.toml` file.
 
 ### Using config.toml (Recommended)
 1. Ensure `backend/config.toml` exists (copy from `config.toml.example`).

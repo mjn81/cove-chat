@@ -1,4 +1,4 @@
-# Copilot Instructions — NodeTalk
+# Copilot Instructions — Cove
 
 The canonical development guidelines live in `.agents/rules/`. Follow them:
 

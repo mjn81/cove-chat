@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: Full-stack practices for NodeTalk — commands, package management, DRY, documentation, comments, typing.
+description: Full-stack practices for Cove — commands, package management, DRY, documentation, comments, typing.
 ---
 
 # Shared Practices (Full Stack)

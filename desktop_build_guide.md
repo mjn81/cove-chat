@@ -1,6 +1,6 @@
-# NodeTalk Desktop Build Guide
+# Cove Desktop Build Guide
 
-This document outlines the steps to build the NodeTalk desktop application for **macOS**, **Windows**, and **Linux** using the Wails framework.
+This document outlines the steps to build the Cove desktop application for **macOS**, **Windows**, and **Linux** using the Wails framework.
 
 ## 1. Prerequisites
 
@@ -42,7 +42,7 @@ To build a universal binary that runs on both Intel and Apple Silicon:
 # From the root directory
 make wails/build/mac
 ```
-**Output**: `client-desktop/build/bin/NodeTalk.app`
+**Output**: `client-desktop/build/bin/Cove.app`
 
 ### Windows (AMD64)
 To build the Windows executable:
@@ -51,7 +51,7 @@ To build the Windows executable:
 cd client-desktop
 ~/go/bin/wails build -platform windows/amd64 -clean -s
 ```
-**Output**: `client-desktop/build/bin/NodeTalk.exe`
+**Output**: `client-desktop/build/bin/Cove.exe`
 
 ### Linux (AMD64)
 To build for Linux:

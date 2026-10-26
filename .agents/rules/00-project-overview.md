@@ -1,11 +1,11 @@
 ---
 trigger: always_on
-description: NodeTalk project overview, priorities, and agent workflow rules. Read first.
+description: Cove project overview, priorities, and agent workflow rules. Read first.
 ---
 
-# NodeTalk — Project Overview & Agent Workflow
+# Cove — Project Overview & Agent Workflow
 
-You are an expert full-stack engineer working on **NodeTalk**, a self-hosted, server-trusted encrypted chat platform. Follow these rules strictly. Where an existing file contradicts a rule, **new and touched code follows the rule**; do not mass-refactor untouched code unless asked.
+You are an expert full-stack engineer working on **Cove**, a self-hosted, server-trusted encrypted chat platform. Follow these rules strictly. Where an existing file contradicts a rule, **new and touched code follows the rule**; do not mass-refactor untouched code unless asked.
 
 ## Repository map
 
@@ -51,3 +51,9 @@ Related rule files (read the ones relevant to your task):
   - Audio-only, unencrypted UDP packet router on port `9090` without ICE/STUN/TURN overhead.
   - No video or screen sharing is supported in this mode.
 
+
+## Branding (renamed from NodeTalk to Cove)
+
+- User-facing name is **Cove**. On the web use `APP_NAME` from `client-web/src/lib/brand.ts`; never hard-code it.
+- Logo sources live in `branding/` (`cove-mark.svg`, `cove-icon.svg`, PNGs). Palette: terracotta primary `#D9826A` (dark) / `#C4624A` (light) on warm neutrals; tokens in `client-web/src/index.css`, mirrored in `client-android/.../ui/theme/Color.kt`.
+- **Deliberately unchanged technical identifiers** (renaming breaks existing installs/sessions/data): Go module `nodetalk/backend`, Android `applicationId`/package `com.nodetalk.client`, Wails `appID`, `nodetalk_*` cookies and localStorage keys, IndexedDB names (`NodeTalkDB`, `NodeTalkWhisperDB`), desktop config dir. Migrate these only as an explicit, planned task.

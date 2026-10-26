@@ -12,7 +12,7 @@ import (
 
 // Register godoc
 //	@Summary     Register a new account
-//	@Description Creates a new NodeTalk user account.
+//	@Description Creates a new Cove user account.
 //	@Tags        auth
 //	@Accept      json
 //	@Produce     json

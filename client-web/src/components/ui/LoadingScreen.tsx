@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth.slice';
 import GooLoaderDark from './GooLoaderDark';
 import GooLoaderLight from './GooLoaderLight';
 import { RefreshCw, LogIn, RotateCcw } from 'lucide-react';
+import { APP_NAME } from '@/lib/brand';
 
 interface LoadingScreenProps {
   message?: string;
@@ -11,7 +12,7 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
-  message = 'Connecting to NodeTalk',
+  message = `Connecting to ${APP_NAME}`,
   subtext = 'Establishing encrypted session...',
 }) => {
   const theme = useAppStore((s) => s.theme);

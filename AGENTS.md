@@ -1,4 +1,4 @@
-# AGENTS.md — NodeTalk
+# AGENTS.md — Cove
 
 Instructions for AI coding agents (Codex, Cursor, Copilot, Gemini/Antigravity, Claude, etc.).
 

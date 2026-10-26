@@ -1,6 +1,6 @@
-# NodeTalk Deployment Examples
+# Cove Deployment Examples
 
-This directory contains example configurations for deploying NodeTalk in different environments.
+This directory contains example configurations for deploying Cove in different environments.
 
 ## Available Examples
 
