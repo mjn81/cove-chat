@@ -15,7 +15,7 @@ const CONVOS: Convo[] = [
   { name: 'design-team', sub: 'Jo: Whisper for the keys?', color: '#58c48a', active: true },
   { name: 'Sara', sub: 'Online', color: '#6b8fd6', presence: 'online' },
   { name: 'Amir', sub: 'Idle', color: '#58a97b', presence: 'idle' },
-  { name: 'general', sub: 'You: [encrypted]', color: '#f5c265' },
+  { name: 'general', sub: 'You: see you at 6', color: '#f5c265' },
 ];
 
 interface Line {
