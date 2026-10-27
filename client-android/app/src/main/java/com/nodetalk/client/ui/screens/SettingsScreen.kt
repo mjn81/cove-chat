@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
@@ -62,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nodetalk.client.CoveApp
 import com.nodetalk.client.ui.components.AppLanguage
+import com.nodetalk.client.ui.components.adm
+import androidx.compose.runtime.LaunchedEffect
 import com.nodetalk.client.ui.components.SectionDivider
 import com.nodetalk.client.ui.components.UserAvatar
 import com.nodetalk.client.ui.theme.CoveTheme
@@ -83,7 +86,8 @@ private enum class SettingsPage(val title: String, val icon: ImageVector) {
     Appearance("Appearance", Icons.Outlined.Palette),
     Notifications("Notifications", Icons.Outlined.Notifications),
     Voice("Voice & Video", Icons.Outlined.GraphicEq),
-    Storage("Data & Storage", Icons.Outlined.Storage)
+    Storage("Data & Storage", Icons.Outlined.Storage),
+    Admin("Server admin", Icons.Outlined.AdminPanelSettings)
 }
 
 /**
@@ -96,6 +100,9 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
     val app = CoveApp.instance
     val scope = rememberCoroutineScope()
     var page by remember { mutableStateOf<SettingsPage?>(null) }
+    // Cosmetic gate only: the server re-checks the role on every admin request.
+    var serverRole by remember { mutableStateOf(app.preferencesManager.serverRole) }
+    LaunchedEffect(Unit) { app.apiClient.getMe().onSuccess { serverRole = app.preferencesManager.serverRole } }
 
     BackHandler(enabled = page != null) { page = null }
 
@@ -147,6 +154,16 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                         leading = { Icon(item.icon, null, tint = if (item == SettingsPage.Account) c.textPrimary else c.textMuted, modifier = Modifier.size(22.dp)) }
                     )
                 }
+                if (isServerAdmin(serverRole)) {
+                    Text(adm("admin.section").uppercase(), color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, top = 24.dp, bottom = 8.dp))
+                    CoveListRow(
+                        title = SettingsPage.Admin.title,
+                        onClick = { page = SettingsPage.Admin },
+                        titleColor = c.textMuted,
+                        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.md),
+                        leading = { Icon(SettingsPage.Admin.icon, null, tint = c.textMuted, modifier = Modifier.size(22.dp)) }
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
                 SectionDivider(Modifier.padding(horizontal = 4.dp))
                 Row(
@@ -179,6 +196,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     SettingsPage.Notifications -> NotificationSettings()
                     SettingsPage.Voice -> VoiceSettings()
                     SettingsPage.Storage -> StorageSettings()
+                    SettingsPage.Admin -> AdminPage(onLogout = { logout() })
                     else -> Text("This section isn't available on mobile yet.", color = c.textMuted, fontSize = CoveType.body.fontSize)
                 }
             }

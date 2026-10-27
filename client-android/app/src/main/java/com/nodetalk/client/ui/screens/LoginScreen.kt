@@ -45,6 +45,10 @@ import androidx.compose.ui.unit.sp
 import com.nodetalk.client.CoveApp
 import com.nodetalk.client.data.model.LoginRequest
 import com.nodetalk.client.data.model.RegisterRequest
+import com.nodetalk.client.data.model.ServerInfo
+import com.nodetalk.client.ui.components.adm
+import com.nodetalk.client.ui.components.adminError
+import androidx.compose.runtime.LaunchedEffect
 import com.nodetalk.client.ui.components.ErrorBanner
 import com.nodetalk.client.ui.components.FieldLabel
 import com.nodetalk.client.ui.components.CoveButton
@@ -75,9 +79,17 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
     var showPassword by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var inviteCode by remember { mutableStateOf("") }
+    var serverInfo by remember { mutableStateOf<ServerInfo?>(null) }
+
+    // The register form depends on the server's sign-up policy. A failed lookup leaves the plain form and the server decides.
+    LaunchedEffect(isRegister) { if (isRegister) serverInfo = api.getServerInfo().getOrNull() }
+    val mode = serverInfo?.takeIf { !it.needsOwner }?.registrationMode
+    val needsInvite = isRegister && mode == "invite_only"
+    val registrationClosed = isRegister && mode == "closed"
 
     fun submit() {
-        if (loading) return
+        if (loading || registrationClosed) return
         if (username.isBlank() || password.isBlank()) {
             error = "Please enter both username and password."
             return
@@ -87,7 +99,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
         scope.launch {
             val name = username.trim()
             val result = if (isRegister) {
-                api.register(RegisterRequest(name, password)).fold(
+                api.register(RegisterRequest(name, password, inviteCode.trim().ifEmpty { null }.takeIf { needsInvite })).fold(
                     onSuccess = { api.login(LoginRequest(name, password)) },
                     onFailure = { Result.failure(it) }
                 )
@@ -100,7 +112,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                     app.webSocketManager.connect()
                     onLoginSuccess()
                 },
-                onFailure = { error = it.message ?: "Authentication failed." }
+                onFailure = { error = adminError(it.message ?: "Authentication failed.") }
             )
         }
     }
@@ -133,6 +145,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             )
             Spacer(Modifier.height(24.dp))
 
+            if (registrationClosed) ErrorBanner(adm("auth.errors.registration_closed"), Modifier.padding(bottom = 16.dp))
             error?.let {
                 ErrorBanner(it, Modifier.padding(bottom = 16.dp))
             }
@@ -159,9 +172,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                     password = true,
                     revealed = showPassword,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password, imeAction = ImeAction.Go, autoCorrectEnabled = false
+                        keyboardType = KeyboardType.Password, imeAction = if (needsInvite) ImeAction.Next else ImeAction.Go, autoCorrectEnabled = false
                     ),
-                    keyboardActions = KeyboardActions(onGo = { submit() }),
+                    keyboardActions = KeyboardActions(onGo = { submit() }, onNext = { focus.moveFocus(FocusDirection.Down) }),
                     trailing = {
                         Icon(
                             imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
@@ -173,13 +186,28 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                 )
             }
 
+            if (needsInvite) {
+                Spacer(Modifier.height(16.dp))
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FieldLabel(adm("auth.invite_code"), required = true)
+                    CoveTextField(
+                        value = inviteCode,
+                        onValueChange = { inviteCode = it },
+                        enabled = !loading,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Go, autoCorrectEnabled = false),
+                        keyboardActions = KeyboardActions(onGo = { submit() })
+                    )
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
             CoveButton(
                 text = if (isRegister) "Continue" else "Log In",
                 onClick = { submit() },
                 modifier = Modifier.fillMaxWidth(),
                 size = ButtonSize.Lg,
-                loading = loading
+                loading = loading,
+                enabled = !registrationClosed && (!needsInvite || inviteCode.isNotBlank())
             )
 
             Spacer(Modifier.height(16.dp))

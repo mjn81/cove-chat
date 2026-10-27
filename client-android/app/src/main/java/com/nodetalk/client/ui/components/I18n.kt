@@ -223,7 +223,7 @@ object Translations {
         "Couldn't read the image." to "خواندن تصویر ممکن نشد.", "Sent" to "ارسال شد", "Attach" to "پیوست", "Chat" to "گفتگو", "Close" to "بستن", "Change password" to "تغییر گذرواژه",
         "Cancel" to "لغو", "Waiting…" to "در انتظار…", "Safety number" to "عدد ایمنی", "Your request was declined." to "درخواست شما رد شد.", "The other person ended the session." to "طرف مقابل نشست را پایان داد.",
         "Couldn't establish the encrypted session." to "برقراری نشست رمزنگاری‌شده ممکن نشد."
-    ) + ExtraFa
+    ) + ExtraFa + AdminFa
 
     val ar: Map<String, String> = mapOf(
         "ADMIN" to "مشرف", "OWNER" to "المالك", "MEMBER" to "عضو",
@@ -303,5 +303,5 @@ object Translations {
         "Couldn't read the image." to "تعذرت قراءة الصورة.", "Sent" to "تم الإرسال", "Attach" to "إرفاق", "Chat" to "محادثة", "Change password" to "تغيير كلمة المرور",
         "Waiting…" to "في الانتظار…", "Your request was declined." to "تم رفض طلبك.", "The other person ended the session." to "أنهى الطرف الآخر الجلسة.",
         "Couldn't establish the encrypted session." to "تعذر إنشاء الجلسة المشفرة."
-    ) + ExtraAr
+    ) + ExtraAr + AdminAr
 }

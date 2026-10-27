@@ -2,6 +2,25 @@ package com.nodetalk.client.data.remote
 
 import com.nodetalk.client.data.local.PreferencesManager
 import com.nodetalk.client.data.model.AuthUser
+import com.nodetalk.client.data.model.AdminAccount
+import com.nodetalk.client.data.model.AdminOverview
+import com.nodetalk.client.data.model.AdminsResponse
+import com.nodetalk.client.data.model.AuditEntry
+import com.nodetalk.client.data.model.AuditResponse
+import com.nodetalk.client.data.model.BackupRequest
+import com.nodetalk.client.data.model.ConfigResponse
+import com.nodetalk.client.data.model.ConfigSetting
+import com.nodetalk.client.data.model.ConfirmRequest
+import com.nodetalk.client.data.model.CreateInviteRequest
+import com.nodetalk.client.data.model.Invite
+import com.nodetalk.client.data.model.InvitesResponse
+import com.nodetalk.client.data.model.PasswordRequest
+import com.nodetalk.client.data.model.ServerInfo
+import com.nodetalk.client.data.model.TransferOwnerRequest
+import com.nodetalk.client.data.model.UpdateConfigRequest
+import com.nodetalk.client.data.model.UpdateConfigResult
+import io.ktor.http.encodeURLPath
+import kotlinx.serialization.json.JsonElement
 import com.nodetalk.client.data.model.Channel
 import com.nodetalk.client.data.model.CreateChannelRequest
 import com.nodetalk.client.data.model.ErrorBody
@@ -92,6 +111,7 @@ class ApiClient(private val prefs: PreferencesManager) {
         prefs.userId = resp.id
         prefs.username = resp.username
         prefs.avatarId = resp.avatarId?.takeIf { it.isNotBlank() }
+        prefs.serverRole = resp.serverRole.orEmpty()
         resp
     }
 
@@ -108,7 +128,7 @@ class ApiClient(private val prefs: PreferencesManager) {
     }
 
     suspend fun getMe(): Result<AuthUser> = runCatching {
-        client.get(url("/api/me")) { bearer() }.ok().body()
+        client.get(url("/api/me")) { bearer() }.ok().body<AuthUser>().also { prefs.serverRole = it.serverRole.orEmpty() }
     }
 
     suspend fun getChannels(): Result<List<Channel>> = runCatching {
@@ -259,5 +279,108 @@ class ApiClient(private val prefs: PreferencesManager) {
                 })
             }))
         }.ok().body()
+    }
+
+    // ── Server administration (owner / admin only; the server enforces the role) ──
+
+    /** Public: whether sign-up is open, invite-only or closed, and whether the next account becomes the owner. */
+    suspend fun getServerInfo(): Result<ServerInfo> = runCatching {
+        client.get(url("/api/server-info")).ok().body()
+    }
+
+    suspend fun adminOverview(): Result<AdminOverview> = runCatching {
+        client.get(url("/api/admin/overview")) { bearer() }.ok().body()
+    }
+
+    suspend fun adminConfig(): Result<List<ConfigSetting>> = runCatching {
+        client.get(url("/api/admin/config")) { bearer() }.ok().body<ConfigResponse>().settings
+    }
+
+    /** [password] is only needed when a change touches an owner-only setting. */
+    suspend fun adminUpdateConfig(changes: Map<String, JsonElement>, password: String? = null): Result<UpdateConfigResult> = runCatching {
+        client.patch(url("/api/admin/config")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(UpdateConfigRequest(changes, password))
+        }.ok().body()
+    }
+
+    suspend fun adminInvites(): Result<List<Invite>> = runCatching {
+        client.get(url("/api/admin/invites")) { bearer() }.ok().body<InvitesResponse>().invites
+    }
+
+    suspend fun adminCreateInvite(req: CreateInviteRequest): Result<Invite> = runCatching {
+        client.post(url("/api/admin/invites")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(req)
+        }.ok().body()
+    }
+
+    suspend fun adminRevokeInvite(code: String): Result<Unit> = runCatching {
+        client.delete(url("/api/admin/invites/${code.encodeURLPath()}")) { bearer() }.ok()
+        Unit
+    }
+
+    suspend fun adminAudit(): Result<List<AuditEntry>> = runCatching {
+        client.get(url("/api/admin/audit")) { bearer() }.ok().body<AuditResponse>().entries
+    }
+
+    suspend fun adminAdmins(): Result<List<AdminAccount>> = runCatching {
+        client.get(url("/api/admin/admins")) { bearer() }.ok().body<AdminsResponse>().admins
+    }
+
+    suspend fun adminGrant(username: String, password: String): Result<Unit> = runCatching {
+        client.put(url("/api/admin/admins/${username.encodeURLPath()}")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(PasswordRequest(password))
+        }.ok()
+        Unit
+    }
+
+    suspend fun adminRevoke(username: String, password: String): Result<Unit> = runCatching {
+        client.delete(url("/api/admin/admins/${username.encodeURLPath()}")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(PasswordRequest(password))
+        }.ok()
+        Unit
+    }
+
+    suspend fun adminTransferOwner(username: String, password: String): Result<Unit> = runCatching {
+        client.post(url("/api/admin/owner/transfer")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(TransferOwnerRequest(username, password, "TRANSFER"))
+        }.ok()
+        Unit
+    }
+
+    /** The encrypted archive bytes, protected by [passphrase]. */
+    suspend fun adminBackup(password: String, passphrase: String): Result<ByteArray> = runCatching {
+        client.post(url("/api/admin/backup")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(BackupRequest(password, passphrase))
+        }.ok().body<ByteArray>()
+    }
+
+    suspend fun adminReset(password: String, confirm: String): Result<Unit> = runCatching {
+        client.post(url("/api/admin/reset")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(ConfirmRequest(password, confirm))
+        }.ok()
+        Unit
+    }
+
+    suspend fun adminDeleteServer(password: String, confirm: String): Result<Unit> = runCatching {
+        client.post(url("/api/admin/delete")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(ConfirmRequest(password, confirm))
+        }.ok()
+        Unit
     }
 }

@@ -19,6 +19,8 @@ data class AuthUser(
     @SerialName("allow_channel_adds") val allowChannelAdds: String? = null,
     @SerialName("dm_permission") val dmPermission: String? = null,
     @SerialName("friend_request_permission") val friendRequestPermission: String? = null,
+    /** "owner" or "admin" for server administrators, empty for everyone else. UI gating only; the server enforces it. */
+    @SerialName("server_role") val serverRole: String? = null,
     val token: String? = null
 )
 
@@ -53,7 +55,8 @@ data class LoginRequest(
 @Serializable
 data class RegisterRequest(
     val username: String,
-    val password: String
+    val password: String,
+    @SerialName("invite_code") val inviteCode: String? = null
 )
 
 @Serializable

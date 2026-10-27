@@ -84,8 +84,14 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString("username", null)
         set(value) = prefs.edit().putString("username", value).apply()
 
+    /** Cached `server_role` ("owner", "admin" or empty) that decides whether Settings shows the admin entry. */
+    var serverRole: String
+        get() = prefs.getString("server_role", "") ?: ""
+        set(value) = prefs.edit().putString("server_role", value).apply()
+
     fun clearAuth() {
         prefs.edit()
+            .remove("server_role")
             .remove("auth_token")
             .remove("user_id")
             .remove("username")
