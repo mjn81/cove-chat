@@ -628,3 +628,9 @@
 .composer .act .dots i.on {
   opacity: 0.8;
 }
+
+/* The tech strip scrolls with a -50% translate; in RTL the track would start from the right edge and leave a gap. */
+.marq,
+.marq .track {
+  direction: ltr;
+}
