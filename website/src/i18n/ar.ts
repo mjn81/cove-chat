@@ -24,7 +24,7 @@ export const ar: Dict = {
     download: 'تنزيل',
     star: 'نجمة على GitHub',
     trust: ['رخصة MIT', 'استضافة ذاتية', 'AES-256-GCM', 'Go وReact', 'ويب وسطح المكتب وأندرويد', 'بلا تتبع'],
-    ui: { search: 'بحث...', composer: 'رسالة إلى #design-team', channelDesc: 'نقاشات التصميم' },
+    ui: { search: 'بحث...', composer: 'رسالة إلى #design-team', channelDesc: 'نقاشات التصميم', typed: 'ممتاز، سأنشره الآن!' },
     chat: [
       'الخادم يعمل على الجهاز الجديد. استغرق النقل أربع دقائق.',
       'ممتاز. سأنضم إلى المكالمة لمشاركة شاشتي.',

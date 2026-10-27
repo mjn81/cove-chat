@@ -121,11 +121,12 @@ a.row:hover{border-color:var(--primary);transform:translateX(2px)}
 .toc{padding:18px;font-size:12px;color:var(--muted-fg);border-inline-start:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
 @media(max-width:900px){.docs{grid-template-columns:1fr}.docs aside,.toc{display:none}.dgrid{grid-template-columns:1fr 1fr}}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
 .stat{border:1px solid var(--border);border-radius:var(--radius);padding:22px;background:var(--card)}
 .stat strong{font-size:40px;letter-spacing:-.03em;display:block;line-height:1;margin-bottom:8px;font-variant-numeric:tabular-nums}
-.stat span{color:var(--muted-fg);font-size:13px}
-@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+.stat > span{color:var(--muted-fg);font-size:13px}
+.stat strong span{font-size:inherit;color:inherit}
+@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}}
 .faq{max-width:760px;margin:0 auto;text-align:start}
 .faq details{border-bottom:1px solid var(--border);padding:18px 4px}
 .faq summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}

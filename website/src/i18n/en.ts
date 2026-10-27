@@ -22,7 +22,7 @@ export const en = {
     download: 'Download',
     star: 'Star on GitHub',
     trust: ['MIT licensed', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
-    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions' },
+    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!' },
     chat: [
       'The server is up on the new box. Migration took four minutes.',
       'Nice. Joining the call to share my screen.',

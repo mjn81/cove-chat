@@ -56,6 +56,42 @@ function Headline({ phrases }: { phrases: string[] }) {
   );
 }
 
+/**
+ * The composer's single action button, as in the app: microphone when empty, a long press flips it to the
+ * camera, and once something is typed it becomes send. Loops through those three states.
+ */
+function ComposerDemo({ placeholder, typed, play }: { placeholder: string; typed: string; play: boolean }) {
+  const reduce = useReducedMotion();
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    if (!play || reduce) return;
+    const t = setInterval(() => setPhase((p) => (p + 1) % 3), 2400);
+    return () => clearInterval(t);
+  }, [play, reduce]);
+  const Icon = phase === 0 ? Mic : phase === 1 ? Video : Send;
+  return (
+    <div className="composer">
+      <Plus />
+      <span className={phase === 2 ? 'typed' : undefined}>{phase === 2 ? typed : placeholder}</span>
+      <Smile />
+      <span className={'act ' + (phase === 2 ? 'send' : '')}>
+        {phase === 1 && <motion.i className="press" initial={{ scale: 0.4, opacity: 0.7 }} animate={{ scale: 2.2, opacity: 0 }} transition={{ duration: 0.9 }} />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span key={phase} className="ai" initial={{ scale: 0.5, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.18 }}>
+            <Icon className={phase === 2 ? 'rtl-flip' : undefined} />
+          </motion.span>
+        </AnimatePresence>
+        {phase < 2 && (
+          <span className="dots" aria-hidden="true">
+            <i className={phase === 0 ? 'on' : undefined} />
+            <i className={phase === 1 ? 'on' : undefined} />
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 /** App window whose conversation plays itself: messages arrive as ciphertext and resolve. */
 function ProductShot({ lang }: { lang: Lang }) {
   const d = dict(lang).hero;
@@ -140,7 +176,7 @@ function ProductShot({ lang }: { lang: Lang }) {
                 )}
               </AnimatePresence>
             </div>
-            <div className="composer"><Plus /><span>{d.ui.composer}</span><Mic /><Video /><Smile /><Send className="rtl-flip" /></div>
+            <ComposerDemo placeholder={d.ui.composer} typed={d.ui.typed} play={inView} />
           </div>
           <div className="members">
             <Users />
