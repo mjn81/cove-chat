@@ -36,21 +36,28 @@ const PEOPLE = [
 /** Headline revealed word by word. */
 function Headline({ phrases }: { phrases: string[] }) {
   const reduce = useReducedMotion();
-  const words = phrases.flatMap((p, pi) => p.split(' ').map((w) => ({ w, grad: pi === phrases.length - 1 })));
+  let index = 0;
   return (
     <h1 aria-label={phrases.join(' ')}>
-      {words.map((x, i) => (
-        <motion.span
-          key={i}
-          aria-hidden="true"
-          className={x.grad ? 'grad' : undefined}
-          style={{ display: 'inline-block', marginInlineEnd: '0.24em' }}
-          initial={reduce ? false : { opacity: 0, y: 28, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.8, delay: 0.1 + i * 0.07, ease: EASE }}
-        >
-          {x.w}
-        </motion.span>
+      {phrases.map((phrase, pi) => (
+        // A phrase never breaks across lines, so wrapping only happens between phrases ('Your keys.' stays whole).
+        <span key={pi} aria-hidden="true" style={{ display: 'inline-block', whiteSpace: 'nowrap', marginInlineEnd: '0.24em' }}>
+          {phrase.split(' ').map((w, wi) => {
+            const i = index++;
+            return (
+              <motion.span
+                key={wi}
+                className={pi === phrases.length - 1 ? 'grad' : undefined}
+                style={{ display: 'inline-block', marginInlineEnd: wi === phrase.split(' ').length - 1 ? 0 : '0.24em' }}
+                initial={reduce ? false : { opacity: 0, y: 28, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.8, delay: 0.1 + i * 0.07, ease: EASE }}
+              >
+                {w}
+              </motion.span>
+            );
+          })}
+        </span>
       ))}
     </h1>
   );

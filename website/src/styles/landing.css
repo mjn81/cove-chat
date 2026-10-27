@@ -49,7 +49,7 @@ section.block{padding:104px 0;position:relative}
 .announce b{background:var(--primary);color:var(--primary-fg);padding:2px 9px;border-radius:999px;font-size:11px}
 .announce svg{width:14px;height:14px;color:var(--muted-fg)}
 .landing h1{font-size:clamp(42px,7.2vw,84px);line-height:1.02;letter-spacing:-.04em;font-weight:800;max-width:14ch;margin:0 auto}
-.grad{background:linear-gradient(100deg,var(--primary),#f0b28a 45%,var(--primary));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 8s linear infinite}
+.grad{padding-bottom:.14em;margin-bottom:-.14em;background:linear-gradient(100deg,var(--primary),#f0b28a 45%,var(--primary));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 8s linear infinite}
 @keyframes flow{to{background-position:200% center}}
 .hero .lead{margin:24px auto 0;font-size:19px;max-width:60ch}
 .hero .cta{margin-top:34px}
