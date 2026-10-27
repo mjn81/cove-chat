@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cove - Landing mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Tokens mirror client-web/src/index.css */
+:root{
+  --bg:#23201F; --fg:#E8E5E3; --card:#2E2A29; --accent:#3B3735; --border:#46413E;
+  --muted-fg:#A39E9B; --primary:#D9826A; --primary-fg:#23201F; --success:#58C48A; --warning:#F5C265; --danger:#F0616D;
+  --glow:rgba(217,130,106,.22); --radius:14px;
+}
+[data-theme="light"]{
+  --bg:#FFFFFF; --fg:#201A16; --card:#F8F4F0; --accent:#EFE8E1; --border:#E8DFD6;
+  --muted-fg:#7A6E66; --primary:#C4624A; --primary-fg:#FFFFFF; --success:#2E9A55; --warning:#8A5A00; --danger:#D63A3A;
+  --glow:rgba(196,98,74,.18);
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+section{padding:96px 0;position:relative}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:14px}
+h2{font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.02em;font-weight:700;max-width:18ch}
+.lead{color:var(--muted-fg);max-width:56ch;margin-top:14px;font-size:17px}
+.head{margin-bottom:48px}
+.center{text-align:center}.center h2,.center .lead{margin-inline:auto}
+
+/* reveal on scroll */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:10px;font-weight:600;font-size:14px;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:transform .2s,background .2s,border-color .2s;color:var(--fg)}
+.btn:hover{background:var(--accent);transform:translateY(-1px)}
+.btn.primary{background:var(--primary);color:var(--primary-fg);border-color:transparent;position:relative;overflow:hidden}
+.btn.primary:hover{background:var(--primary);filter:brightness(1.08)}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);animation:shine 3.4s ease-in-out infinite}
+@keyframes shine{0%,60%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+
+/* nav */
+nav{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:50;width:min(960px,calc(100% - 24px));display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border:1px solid var(--border);border-radius:999px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px)}
+nav .logo{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;margin-inline-end:auto}
+nav .links{display:flex;gap:2px}
+nav .links a{padding:7px 12px;border-radius:999px;font-size:14px;color:var(--muted-fg);transition:.2s}
+nav .links a:hover{color:var(--fg);background:var(--accent)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--border);font-size:13px;font-weight:500;background:var(--card)}
+.icon-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--fg);cursor:pointer;display:grid;place-items:center;font-size:15px}
+@media(max-width:760px){nav .links{display:none}}
+
+/* hero */
+.hero{padding-top:150px;padding-bottom:70px;overflow:hidden}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:56px 56px;opacity:.35;mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 75%);animation:drift 24s linear infinite}
+@keyframes drift{to{background-position:56px 56px}}
+.orb{position:absolute;width:640px;height:640px;left:50%;top:-220px;transform:translateX(-50%);background:radial-gradient(circle,var(--glow),transparent 62%);filter:blur(10px);animation:breathe 7s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.6;transform:translateX(-50%) scale(1.08)}}
+.hero .wrap{position:relative;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:13px;margin-bottom:26px}
+.badge b{background:var(--primary);color:var(--primary-fg);padding:2px 8px;border-radius:999px;font-size:11px}
+h1{font-size:clamp(40px,7vw,80px);line-height:1.02;letter-spacing:-.035em;font-weight:800;max-width:14ch;margin:0 auto}
+.grad{background:linear-gradient(100deg,var(--primary),#F0B28A 45%,var(--primary));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 6s linear infinite}
+@keyframes flow{to{background-position:200% center}}
+.hero .lead{margin:22px auto 0;font-size:19px;max-width:58ch}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:28px;font-size:13px;color:var(--muted-fg)}
+.trust span::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-inline-end:8px}
+
+/* product shot */
+.shot{margin:64px auto 0;max-width:980px;border:1px solid var(--border);border-radius:18px;background:var(--card);overflow:hidden;box-shadow:0 40px 120px -40px var(--glow);position:relative;text-align:start}
+.shot::before{content:"";position:absolute;inset:-1px;border-radius:18px;padding:1px;background:conic-gradient(from var(--a,0deg),transparent 0 70%,var(--primary) 85%,transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 6s linear infinite;pointer-events:none;z-index:2}
+@property --a{syntax:"<angle>";initial-value:0deg;inherits:false}
+@keyframes spin{to{--a:360deg}}
+.app{display:grid;grid-template-columns:64px 220px 1fr 200px;height:430px}
+.srv{background:color-mix(in srgb,var(--bg) 70%,#000);padding:12px 0;display:flex;flex-direction:column;gap:10px;align-items:center;border-inline-end:1px solid var(--border)}
+.srv i{width:40px;height:40px;border-radius:14px;background:var(--accent);display:block;transition:.3s}
+.srv i:first-child{background:var(--primary);border-radius:12px}
+.chs{background:var(--card);padding:14px 10px;border-inline-end:1px solid var(--border);font-size:13px;color:var(--muted-fg)}
+.chs h6{font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:6px 8px 8px}
+.chs div{padding:6px 10px;border-radius:7px}
+.chs .on{background:var(--accent);color:var(--fg)}
+.chs .vc{display:flex;gap:8px;align-items:center}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:12px}
+.eq s{width:3px;background:var(--success);border-radius:2px;animation:eq 1s ease-in-out infinite}
+.eq s:nth-child(2){animation-delay:.2s}.eq s:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+.chat{background:var(--bg);padding:16px 18px;display:flex;flex-direction:column;gap:14px;font-size:14px;overflow:hidden;justify-content:flex-end}
+.msg{display:flex;gap:10px;opacity:0;animation:pop .6s forwards}
+@keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.msg b{font-size:13px}.msg small{color:var(--muted-fg);margin-inline-start:6px;font-size:11px}
+.msg p{color:var(--fg);opacity:.9}
+.lock{display:inline-flex;gap:5px;font-size:11px;color:var(--success);margin-inline-start:8px}
+.typing{display:flex;gap:4px;padding:10px 14px;background:var(--card);border-radius:12px;width:max-content;opacity:0;animation:pop .6s 4.4s forwards}
+.typing s{width:6px;height:6px;border-radius:50%;background:var(--muted-fg);animation:bob 1.2s infinite}
+.typing s:nth-child(2){animation-delay:.15s}.typing s:nth-child(3){animation-delay:.3s}
+@keyframes bob{40%{transform:translateY(-5px)}}
+.people{background:var(--card);border-inline-start:1px solid var(--border);padding:14px;font-size:13px;display:flex;flex-direction:column;gap:12px}
+.people h6{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-fg)}
+.person{display:flex;gap:9px;align-items:center}
+.person .av{width:28px;height:28px;font-size:10px;position:relative}
+.person .av::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:var(--success);border:2px solid var(--card)}
+.person .idle::after{background:var(--warning)}
+@media(max-width:860px){.app{grid-template-columns:56px 1fr}.chs,.people{display:none}}
+
+/* marquee */
+.marq{padding:30px 0;border-block:1px solid var(--border);overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.track{display:flex;gap:56px;width:max-content;animation:scroll 32s linear infinite;color:var(--muted-fg);font-weight:600;font-size:18px}
+.track span{display:flex;gap:10px;align-items:center;white-space:nowrap}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.cell{grid-column:span 2;border:1px solid var(--border);background:var(--card);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;min-height:230px;transition:border-color .3s,transform .3s}
+.cell.w3{grid-column:span 3}.cell.w4{grid-column:span 4}
+.cell::before{content:"";position:absolute;inset:0;background:radial-gradient(360px circle at var(--mx,50%) var(--my,0%),var(--glow),transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}
+.cell:hover::before{opacity:1}.cell:hover{border-color:color-mix(in srgb,var(--primary) 55%,var(--border));transform:translateY(-3px)}
+.cell h3{font-size:18px;letter-spacing:-.01em;margin-bottom:6px;position:relative}
+.cell p{color:var(--muted-fg);font-size:14px;max-width:44ch;position:relative}
+.ico{width:38px;height:38px;border-radius:10px;background:var(--accent);display:grid;place-items:center;margin-bottom:16px;font-size:18px;position:relative}
+.viz{margin-top:18px;position:relative;height:70px;display:flex;align-items:center;gap:8px}
+.cipher{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--primary);white-space:nowrap;overflow:hidden}
+.cipher::after{content:"|";animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
+.tiles i{height:52px;border-radius:8px;background:var(--accent);position:relative;overflow:hidden}
+.tiles i::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,var(--glow),transparent 70%);animation:sweep 2.6s infinite;animation-delay:calc(var(--i)*.35s)}
+.tiles i.sp{outline:2px solid var(--success);outline-offset:-2px}
+@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--muted-fg)}
+.chip.p{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 50%,var(--border))}
+@media(max-width:860px){.bento{grid-template-columns:1fr}.cell,.cell.w3,.cell.w4{grid-column:auto}}
+
+/* how it works */
+.flow{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:0;align-items:center;margin-top:20px}
+.node{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);padding:22px;text-align:center;position:relative;z-index:1}
+.node.srvn{border-color:var(--primary);box-shadow:0 0 60px -10px var(--glow)}
+.node small{display:block;color:var(--muted-fg);font-size:12px;margin-top:4px}
+.beam{height:2px;background:var(--border);position:relative;overflow:hidden}
+.beam::after{content:"";position:absolute;top:0;height:100%;width:40%;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:beam 2.2s linear infinite}
+.beam.b2::after{animation-delay:1.1s}
+@keyframes beam{from{left:-40%}to{left:100%}}
+.flow-row{display:grid;grid-template-columns:1fr 90px 1.2fr 90px 1fr;align-items:center}
+.note{margin:36px auto 0;max-width:720px;padding:16px 20px;border:1px dashed var(--border);border-radius:12px;color:var(--muted-fg);font-size:14px}
+.note b{color:var(--fg)}
+@media(max-width:860px){.flow-row{grid-template-columns:1fr;gap:12px}.beam{height:36px;width:2px;margin:auto}.beam::after{width:100%;height:40%;animation:none}}
+
+/* terminal */
+.term{border:1px solid var(--border);border-radius:var(--radius);background:color-mix(in srgb,var(--bg) 60%,#000);max-width:760px;margin:0 auto;overflow:hidden;text-align:start}
+[data-theme="light"] .term{background:#1d1816;color:#E8E5E3}
+.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid #46413E;background:rgba(255,255,255,.02)}
+.tab{padding:6px 14px;border-radius:8px;font-size:13px;color:#A39E9B;cursor:pointer;border:0;background:none;font-family:inherit}
+.tab.on{background:#3B3735;color:#E8E5E3}
+.term pre{padding:20px 22px;font-size:14px;line-height:1.8;overflow:auto;min-height:150px;color:#E8E5E3}
+.term .c{color:#A39E9B}.term .k{color:#D9826A}.term .s{color:#58C48A}
+.copy{margin-inline-start:auto;font-size:12px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:760px;margin:26px auto 0;text-align:start}
+.steps div{font-size:13px;color:var(--muted-fg)}.steps b{display:block;color:var(--fg);font-size:14px}
+@media(max-width:700px){.steps{grid-template-columns:1fr}}
+
+/* downloads */
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;gap:14px;position:relative;transition:.3s}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--primary) 55%,var(--border))}
+.card.feat{border-color:var(--primary);box-shadow:0 0 70px -20px var(--glow)}
+.card h3{font-size:18px}.card p{color:var(--muted-fg);font-size:14px}
+.rows{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font-size:13px;transition:.2s}
+.row:hover{border-color:var(--primary)}
+.row span:last-child{color:var(--muted-fg);font-size:12px}
+.ver{font-size:12px;color:var(--muted-fg)}
+.tag{position:absolute;top:-11px;inset-inline-start:20px;background:var(--primary);color:var(--primary-fg);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+@media(max-width:860px){.dl{grid-template-columns:1fr}}
+
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative}
+.col{border:1px solid var(--border);border-radius:var(--radius);padding:22px;background:var(--card)}
+.col header{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%}
+.col .sub{color:var(--muted-fg);font-size:13px;margin-bottom:16px}
+.item{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--border);font-size:14px;align-items:flex-start}
+.st{flex:none;width:18px;height:18px;border-radius:50%;margin-top:2px;display:grid;place-items:center;font-size:10px;border:1.5px solid var(--muted-fg);color:transparent}
+.st.done{background:var(--success);border-color:var(--success);color:#fff}
+.st.wip{border-color:var(--warning);position:relative}
+.st.wip::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--warning);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+.item small{display:block;color:var(--muted-fg);font-size:12px}
+.bar{height:4px;border-radius:4px;background:var(--accent);margin:0 0 14px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--primary);width:0;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
+.in .bar i,.bar.in i{width:var(--w)}
+@media(max-width:860px){.road{grid-template-columns:1fr}}
+
+/* docs preview */
+.docs{display:grid;grid-template-columns:200px 1fr 160px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;min-height:340px;text-align:start}
+.docs aside{padding:18px;border-inline-end:1px solid var(--border);font-size:13px;color:var(--muted-fg);display:flex;flex-direction:column;gap:3px}
+.docs aside h6{color:var(--fg);font-size:12px;margin:10px 0 4px}
+.docs aside a{padding:5px 10px;border-radius:6px}
+.docs aside a.on{background:var(--accent);color:var(--primary)}
+.docs main{padding:26px 30px;background:var(--bg)}
+.docs main h4{font-size:26px;letter-spacing:-.02em;margin-bottom:8px}
+.docs main p{color:var(--muted-fg);font-size:14px;margin-bottom:14px}
+.callout{border-inline-start:3px solid var(--primary);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;margin:14px 0;color:var(--muted-fg)}
+.code{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px}
+.toc{padding:18px;font-size:12px;color:var(--muted-fg);border-inline-start:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.search{display:flex;align-items:center;gap:10px;max-width:420px;margin:0 auto 28px;padding:11px 16px;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--muted-fg);font-size:14px}
+.search kbd{margin-inline-start:auto;font-size:11px;border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.dgrid a{padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:14px;font-weight:600;transition:.25s}
+.dgrid a:hover{border-color:var(--primary);transform:translateY(-2px)}
+.dgrid small{display:block;font-weight:400;color:var(--muted-fg);font-size:12px;margin-top:3px}
+@media(max-width:900px){.docs{grid-template-columns:1fr}.docs aside,.toc{display:none}.dgrid{grid-template-columns:1fr 1fr}}
+
+/* oss */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{border:1px solid var(--border);border-radius:var(--radius);padding:22px;background:var(--card)}
+.stat strong{font-size:38px;letter-spacing:-.03em;display:block;line-height:1}
+.stat span{color:var(--muted-fg);font-size:13px}
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+.faq{max-width:760px;margin:0 auto}
+details{border-bottom:1px solid var(--border);padding:18px 4px}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--primary);font-size:20px;transition:transform .3s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{color:var(--muted-fg);margin-top:10px;font-size:15px}
+
+.final{text-align:center;border:1px solid var(--border);border-radius:24px;padding:72px 24px;background:radial-gradient(ellipse at 50% 0%,var(--glow),transparent 65%),var(--card);overflow:hidden}
+.final h2{margin:0 auto 14px;max-width:16ch}
+footer{border-top:1px solid var(--border);padding:48px 0 36px;margin-top:96px;font-size:14px;color:var(--muted-fg)}
+.fgrid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
+.fgrid h6{color:var(--fg);font-size:13px;margin-bottom:12px}.fgrid a{display:block;padding:3px 0}.fgrid a:hover{color:var(--primary)}
+.legal{display:flex;justify-content:space-between;margin-top:36px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;flex-wrap:wrap;gap:8px}
+@media(max-width:760px){.fgrid{grid-template-columns:1fr 1fr}}
+
+.mock-tag{position:fixed;bottom:14px;inset-inline-start:14px;z-index:60;font-size:11px;padding:6px 10px;border-radius:8px;background:var(--primary);color:var(--primary-fg);font-weight:700}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.msg,.typing{opacity:1}}
+</style>
+</head>
+<body>
+<div class="mock-tag">MOCKUP - not final copy</div>
+
+<nav>
+  <a class="logo" href="#top">
+    <svg width="26" height="26" viewBox="0 0 64 64"><path d="M22 6H42C54 6 60 12 60 22V32C60 43 54 49 42 49H30L16 59V48.5C9 46 4 40 4 32V22C4 12 10 6 22 6z" fill="var(--primary)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M16 23q4-5 8 0t8 0t8 0t8 0"/><path d="M21 33q2.75-4 5.5 0t5.5 0t5.5 0t5.5 0"/></g></svg>
+    Cove
+  </a>
+  <div class="links"><a href="#features">Features</a><a href="#docs">Docs</a><a href="#roadmap">Roadmap</a><a href="#download">Download</a></div>
+  <a class="pill" href="#oss">★ <span class="ticker" data-to="1240">0</span></a>
+  <button class="icon-btn" id="theme" aria-label="Toggle theme">☾</button>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="grid-bg"></div><div class="orb"></div>
+  <div class="wrap">
+    <div class="badge rv"><b>v0.9</b> Calls, Whisper &amp; Android are here →</div>
+    <h1 class="rv" style="--d:.05s">Your community. Your server. <span class="grad">Your keys.</span></h1>
+    <p class="lead rv" style="--d:.12s">Cove is a self-hosted, open-source chat platform with encrypted messaging, group calls and screen sharing. One Go binary, one config file, and the data never leaves your hardware.</p>
+    <div class="cta rv" style="--d:.2s">
+      <a class="btn primary" href="#docs">Self-host in 60s →</a>
+      <a class="btn" href="#download">⬇ Download</a>
+      <a class="btn" href="#oss">★ Star on GitHub</a>
+    </div>
+    <div class="trust rv" style="--d:.28s"><span>Open source</span><span>Self-hosted</span><span>AES-256-GCM</span><span>Web · Desktop · Android</span></div>
+
+    <div class="shot rv" style="--d:.2s">
+      <div class="app">
+        <div class="srv"><i></i><i></i><i></i><i></i></div>
+        <div class="chs">
+          <h6>Text</h6><div class="on"># general</div><div># design</div><div># releases</div>
+          <h6 style="margin-top:14px">Voice</h6><div class="vc"><span class="eq"><s></s><s></s><s></s></span> Lounge</div>
+        </div>
+        <div class="chat">
+          <div class="msg" style="animation-delay:.6s"><div class="av" style="background:#6B8FD6">SA</div><div><b>Sara</b><small>10:02</small><span class="lock">🔒 encrypted</span><p>Server's up on the new box. Migration took 4 minutes.</p></div></div>
+          <div class="msg" style="animation-delay:1.8s"><div class="av" style="background:#58A97B">AM</div><div><b>Amir</b><small>10:03</small><p>Nice. Joining the call to share my screen.</p></div></div>
+          <div class="msg" style="animation-delay:3.1s"><div class="av" style="background:var(--primary)">JO</div><div><b>Jo</b><small>10:03</small><p>Whisper chat for the keys, then? 👀</p></div></div>
+          <div class="typing"><s></s><s></s><s></s></div>
+        </div>
+        <div class="people"><h6>Online - 3</h6>
+          <div class="person"><div class="av" style="background:#6B8FD6">SA</div>Sara</div>
+          <div class="person"><div class="av" style="background:#58A97B">AM</div>Amir</div>
+          <div class="person"><div class="av idle" style="background:var(--primary)">JO</div>Jo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="marq"><div class="track" id="track"></div></div>
+
+<!-- FEATURES -->
+<section id="features"><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● Features</div><h2>Everything a community needs. Nothing it doesn't.</h2><p class="lead">Shipped today, tested on web, desktop and Android.</p></div>
+  <div class="bento">
+    <div class="cell w4 rv"><div class="ico">🔐</div><h3>Encrypted by default</h3><p>Messages are AES-256-GCM encrypted in the client. Channel keys are wrapped by your master key; the database is encrypted at rest.</p>
+      <div class="viz"><div class="cipher" id="cipher"></div></div></div>
+    <div class="cell rv" style="--d:.06s"><div class="ico">🤫</div><h3>Whisper mode</h3><p>Zero-persistence E2EE chats. Messages live in RAM and vanish when the session ends.</p></div>
+    <div class="cell w3 rv"><div class="ico">📞</div><h3>Group calls &amp; screen share</h3><p>Built-in WebRTC SFU with DTLS-SRTP and embedded STUN/TURN. No third-party service.</p>
+      <div class="viz"><div class="tiles"><i class="sp" style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i></div></div></div>
+    <div class="cell w3 rv" style="--d:.06s"><div class="ico">⚡</div><h3>One binary. One config.</h3><p>Go server, BadgerDB, zero external dependencies. Runs on a Raspberry Pi or a cloud VM.</p>
+      <div class="viz"><div class="chips"><span class="chip p">Go 1.25</span><span class="chip">BadgerDB</span><span class="chip">Docker</span><span class="chip">config.toml</span></div></div></div>
+    <div class="cell rv"><div class="ico">🛡</div><h3>Admin &amp; roles</h3><p>Owner, admin, member. Invites, registration modes, audit log.</p></div>
+    <div class="cell rv" style="--d:.06s"><div class="ico">🌍</div><h3>EN · FA · AR</h3><p>Full RTL support and real translations.</p></div>
+    <div class="cell rv" style="--d:.12s"><div class="ico">📱</div><h3>Every platform</h3><p>Web, Windows / macOS / Linux, and native Android.</p></div>
+  </div>
+</div></section>
+
+<!-- HOW IT WORKS -->
+<section><div class="wrap center">
+  <div class="head rv"><div class="eyebrow">● How it works</div><h2>You hold the server. You hold the keys.</h2><p class="lead">The server routes ciphertext and manages keys, so multi-device and recovery just work.</p></div>
+  <div class="flow-row rv">
+    <div class="node">💬 <b>Your client</b><small>encrypts with AES-256-GCM</small></div>
+    <div class="beam"></div>
+    <div class="node srvn">🖥 <b>Your Cove server</b><small>routes ciphertext · wraps keys · stores encrypted</small></div>
+    <div class="beam b2"></div>
+    <div class="node">👥 <b>Members</b><small>decrypt with channel key</small></div>
+  </div>
+  <div class="note rv"><b>Honest by design.</b> Cove is server-trusted, not end-to-end encrypted: the server you control is inside the trust boundary. Need stronger guarantees for a conversation? Use <b>Whisper</b>.</div>
+</div></section>
+
+<!-- QUICKSTART -->
+<section id="quickstart"><div class="wrap center">
+  <div class="head rv"><div class="eyebrow">● Quick start</div><h2>Self-host in under a minute.</h2><p class="lead">The first account you create becomes the server Owner.</p></div>
+  <div class="term rv">
+    <div class="tabs" id="tabs"><button class="tab on" data-t="docker">Docker</button><button class="tab" data-t="bin">Binary</button><button class="tab" data-t="src">From source</button><button class="tab copy" id="copy">Copy</button></div>
+    <pre class="mono" id="code"></pre>
+  </div>
+  <div class="steps rv"><div><b>1 · Run</b>Start the server with Docker or a single binary.</div><div><b>2 · Open</b>Visit <span class="mono">http://localhost:4000</span> and register.</div><div><b>3 · Invite</b>Share an invite link and put it behind HTTPS.</div></div>
+</div></section>
+
+<!-- DOWNLOAD -->
+<section id="download"><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● Download</div><h2>Server and clients, built for every platform.</h2><p class="lead">Latest release <span class="mono">v0.9.0</span> · checksums on every file · all builds open source.</p></div>
+  <div class="dl">
+    <div class="card feat rv"><span class="tag">Detected: Windows</span><h3>🖥 Server</h3><p>The Cove backend. Single static binary, includes the web client.</p>
+      <div class="rows"><a class="row" href="#"><span>Windows (amd64)</span><span>.zip · 24 MB</span></a><a class="row" href="#"><span>Linux (amd64)</span><span>.zip · 23 MB</span></a><a class="row" href="#"><span>macOS (Intel / Apple)</span><span>.zip · 24 MB</span></a><a class="row" href="#"><span>Docker image</span><span>docker pull</span></a></div></div>
+    <div class="card rv" style="--d:.06s"><h3>💻 Desktop app</h3><p>Native shell with voice and screen sharing (Wails).</p>
+      <div class="rows"><a class="row" href="#"><span>Windows</span><span>.zip</span></a><a class="row" href="#"><span>macOS (universal)</span><span>.zip</span></a><a class="row" href="#"><span>Linux</span><span>.zip</span></a><a class="row" href="#"><span>Web client</span><span>open in browser</span></a></div></div>
+    <div class="card rv" style="--d:.12s"><h3>📱 Mobile</h3><p>Native Android client with calls and Whisper.</p>
+      <div class="rows"><a class="row" href="#"><span>Android APK</span><span>.apk</span></a><a class="row" style="opacity:.55"><span>iOS</span><span>on the roadmap</span></a><a class="row" href="#"><span>Source code</span><span>GitHub ↗</span></a><a class="row" href="#"><span>SHA256SUMS</span><span>verify</span></a></div></div>
+  </div>
+</div></section>
+
+<!-- ROADMAP -->
+<section id="roadmap"><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● Roadmap</div><h2>Where Cove is going.</h2><p class="lead">Built in the open. Vote and propose on GitHub.</p></div>
+  <div class="road">
+    <div class="col rv"><header><span class="dot" style="background:var(--success)"></span>Now</header><div class="sub">Stability &amp; polish</div><div class="bar"><i style="--w:70%"></i></div>
+      <div class="item"><span class="st done">✓</span><div>WebRTC calls &amp; screen share</div></div>
+      <div class="item"><span class="st done">✓</span><div>Admin panel &amp; invites</div></div>
+      <div class="item"><span class="st wip"></span><div>Markdown &amp; link rendering</div></div>
+      <div class="item"><span class="st wip"></span><div>Full Persian translations<small>i18n</small></div></div>
+      <div class="item"><span class="st"></span><div>Connection-quality indicator</div></div></div>
+    <div class="col rv" style="--d:.08s"><header><span class="dot" style="background:var(--warning)"></span>Next</header><div class="sub">Privacy &amp; media</div><div class="bar"><i style="--w:25%"></i></div>
+      <div class="item"><span class="st"></span><div>Security tab: DM &amp; group privacy</div></div>
+      <div class="item"><span class="st"></span><div>Secure link previews (proxy)</div></div>
+      <div class="item"><span class="st"></span><div>Noise suppression &amp; AGC</div></div>
+      <div class="item"><span class="st"></span><div>Opus for UDP voice · VAD</div></div></div>
+    <div class="col rv" style="--d:.16s"><header><span class="dot" style="background:var(--primary)"></span>Later</header><div class="sub">Platforms, ecosystem, federation</div><div class="bar"><i style="--w:5%"></i></div>
+      <div class="item"><span class="st"></span><div>PWA &amp; iOS client</div></div>
+      <div class="item"><span class="st"></span><div>Plugins &amp; sticker packs</div></div>
+      <div class="item"><span class="st"></span><div>S3-compatible storage</div></div>
+      <div class="item"><span class="st"></span><div>Server-to-server federation</div></div></div>
+  </div>
+  <div class="center rv" style="margin-top:28px"><a class="btn" href="#">See the full roadmap →</a></div>
+</div></section>
+
+<!-- DOCS -->
+<section id="docs"><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● Documentation</div><h2>Docs that get you from zero to running.</h2><p class="lead">Setup, configuration, security, API reference and contributing guides.</p></div>
+  <div class="search rv">🔍 Search the docs… <kbd>Ctrl K</kbd></div>
+  <div class="dgrid rv">
+    <a href="#">🚀 Quick start<small>Docker in 5 minutes</small></a><a href="#">🖥 Self-hosting<small>Docker, binary, proxy, TLS</small></a><a href="#">⚙ Configuration<small>Every config.toml key</small></a><a href="#">🔐 Security model<small>Keys, Whisper, hardening</small></a>
+    <a href="#">📞 Voice &amp; calls<small>WebRTC, TURN, firewall</small></a><a href="#">🛡 Administration<small>Roles, invites, audit</small></a><a href="#">🔌 API reference<small>REST &amp; WebSocket</small></a><a href="#">🤝 Contributing<small>Dev setup &amp; standards</small></a>
+  </div>
+  <div class="docs rv">
+    <aside><h6>Getting started</h6><a>Introduction</a><a class="on">Quick start</a><a>Architecture</a><h6>Self-hosting</h6><a>Requirements</a><a>Docker</a><a>Reverse proxy &amp; TLS</a><a>Backups</a><h6>Configuration</h6><a>config.toml</a></aside>
+    <main><h4>Quick start</h4><p>Run your own Cove server with Docker in about five minutes.</p>
+      <div class="code mono">docker compose up -d</div>
+      <div class="callout"><b>Tip.</b> Back up your master password. Losing it makes the database unrecoverable.</div>
+      <p>Open <span class="mono">http://localhost:4000</span> and create the first account. It becomes the Owner.</p></main>
+    <div class="toc"><b style="color:var(--fg)">On this page</b><span style="color:var(--primary)">Requirements</span><span>Run the server</span><span>Create the owner</span><span>Next steps</span></div>
+  </div>
+</div></section>
+
+<!-- OSS -->
+<section id="oss"><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● Open source</div><h2>Built in the open, by and for its users.</h2><p class="lead">Licensed for self-hosting. Read the code, audit the crypto, send a pull request.</p></div>
+  <div class="stats">
+    <div class="stat rv"><strong class="ticker" data-to="1240">0</strong><span>GitHub stars</span></div>
+    <div class="stat rv" style="--d:.05s"><strong class="ticker" data-to="86">0</strong><span>Releases &amp; downloads (k)</span></div>
+    <div class="stat rv" style="--d:.1s"><strong class="ticker" data-to="3">0</strong><span>Languages · EN FA AR</span></div>
+    <div class="stat rv" style="--d:.15s"><strong class="ticker" data-to="4">0</strong><span>Platforms</span></div>
+  </div>
+  <div class="cta rv" style="margin-top:28px"><a class="btn primary" href="#">GitHub repository ↗</a><a class="btn" href="#">Good first issues</a><a class="btn" href="#">Discussions</a><a class="btn" href="#">Contributing guide</a></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="head center rv"><div class="eyebrow">● FAQ</div><h2>Questions, answered.</h2></div>
+  <div class="faq rv">
+    <details open><summary>Is Cove end-to-end encrypted?</summary><p>Messages are encrypted client-side and stored encrypted, but the server you run manages channel keys. Whisper chats are true zero-persistence E2EE.</p></details>
+    <details><summary>What do I need to run it?</summary><p>Any machine that runs Docker or a Go binary. 1 CPU and 512 MB RAM is enough for small communities. ffmpeg is optional for video messages.</p></details>
+    <details><summary>Does it work offline or on an isolated LAN?</summary><p>Yes. Raw UDP voice mode is built for air-gapped networks.</p></details>
+    <details><summary>Will servers be able to talk to each other?</summary><p>Federation is on the long-term roadmap.</p></details>
+  </div>
+</div></section>
+
+<div class="wrap"><div class="final rv">
+  <h2>Ready to own your chat?</h2><p class="lead" style="margin-inline:auto;margin-bottom:28px">Spin up a Cove server and invite your community today.</p>
+  <div class="cta"><a class="btn primary" href="#quickstart">Get started →</a><a class="btn" href="#docs">Read the docs</a></div>
+</div></div>
+
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><b style="color:var(--fg)">Cove</b><p style="margin-top:8px;max-width:30ch">Self-hosted, server-trusted encrypted chat for communities that want control over their data.</p></div>
+    <div><h6>Product</h6><a href="#">Features</a><a href="#">Download</a><a href="#">Roadmap</a><a href="#">Changelog</a></div>
+    <div><h6>Docs</h6><a href="#">Quick start</a><a href="#">Self-hosting</a><a href="#">Configuration</a><a href="#">API</a></div>
+    <div><h6>Community</h6><a href="#">GitHub</a><a href="#">Issues</a><a href="#">Contributing</a><a href="#">Security</a></div>
+  </div>
+  <div class="legal"><span>© 2026 Cove contributors · Open source</span><span>v0.9.0</span></div>
+</div></footer>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+// theme
+const th=$('#theme');
+th.onclick=()=>{const l=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=l;th.textContent=l==='dark'?'☾':'☀'};
+// reveal
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+$$('.rv').forEach(el=>io.observe(el));
+// tickers
+const tk=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;tk.unobserve(e.target);const to=+e.target.dataset.to,t0=performance.now();
+ (function f(t){const p=Math.min(1,(t-t0)/1400);e.target.textContent=Math.round(to*(1-Math.pow(1-p,3))).toLocaleString();if(p<1)requestAnimationFrame(f)})(t0)}));
+$$('.ticker').forEach(el=>tk.observe(el));
+// marquee
+const items=['Go','BadgerDB','WebRTC','React 19','TypeScript','Tailwind','Android · Compose','Wails','Docker','Pion SFU','Argon2id','AES-256-GCM'];
+$('#track').innerHTML=[...items,...items].map(i=>`<span><span style="color:var(--primary)">◆</span>${i}</span>`).join('');
+// bento spotlight
+$$('.cell').forEach(c=>c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect();c.style.setProperty('--mx',e.clientX-r.left+'px');c.style.setProperty('--my',e.clientY-r.top+'px')}));
+// cipher scramble
+const ch='0123456789abcdef',ci=$('#cipher'),plain='hello, team';
+setInterval(()=>{ci.firstChild&&0;ci.textContent='aes256gcm:'+Array.from({length:26},()=>ch[Math.random()*16|0]).join('')},120);
+// terminal
+const code={
+ docker:`<span class="c"># 1. grab the compose file and start Cove</span>\n<span class="k">curl</span> -O https://example.com/cove/docker-compose.yml\n<span class="k">docker compose</span> up -d\n<span class="s">✔ cove-server listening on :4000</span>`,
+ bin:`<span class="c"># 1. download, unzip, run</span>\n<span class="k">unzip</span> nodetalk-server-linux-amd64.zip\n<span class="k">cp</span> config.toml.example config.toml\n./nodetalk-server\n<span class="s">✔ cove-server listening on :4000</span>`,
+ src:`<span class="c"># Go 1.25 + pnpm required</span>\n<span class="k">git clone</span> https://github.com/mjn81/nodetalk\n<span class="k">make</span> front/install front/build\n<span class="k">make</span> build &amp;&amp; ./nodetalk-server`};
+let cur='docker',typing;
+function show(k){cur=k;clearTimeout(typing);const el=$('#code');const html=code[k];let i=0,out='';const tokens=html.split(/(<[^>]+>)/);let buf=[];
+ // reveal progressively by characters, keeping tags intact
+ const plainLen=html.replace(/<[^>]+>/g,'').length;let n=0;
+ (function step(){n+=3;let c=0,res='',open=0;for(const t of tokens){if(t.startsWith('<')){res+=t;continue}const take=Math.max(0,Math.min(t.length,n-c));res+=t.slice(0,take);c+=t.length;if(c>=n)break}
+  el.innerHTML=res+(n<plainLen?'<span style="opacity:.6">▍</span>':'');if(n<plainLen)typing=setTimeout(step,16)})()}
+$$('.tab[data-t]').forEach(b=>b.onclick=()=>{$$('.tab[data-t]').forEach(x=>x.classList.remove('on'));b.classList.add('on');show(b.dataset.t)});
+$('#copy').onclick=e=>{e.target.textContent='Copied ✓';setTimeout(()=>e.target.textContent='Copy',1400)};
+new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){show('docker');o.disconnect()}}).observe($('#code'));
+// roadmap bars
+new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){$('.bar',e.target)?.classList.add('in');o.unobserve(e.target)}})).observe&&$$('.col').forEach(c=>new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){$('.bar',c).classList.add('in');o.disconnect()}}).observe(c));
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths: ['website/**', 'backend/config.toml.example', 'backend/docs/swagger.json', '.github/workflows/website.yml']
+  pull_request:
+    paths: ['website/**', 'backend/config.toml.example', 'backend/docs/swagger.json']
+  # Rebuild so the download page picks up new release assets.
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: make site/install
+      - run: make site/lint
+      - run: make site/typecheck
+      - run: make site/build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Set repository variables SITE_URL / SITE_BASE when using a custom domain.
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_BASE: ${{ vars.SITE_BASE }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

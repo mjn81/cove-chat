@@ -1,0 +1,42 @@
+---
+title: Architecture
+description: How the Cove server, clients, database and call engine fit together.
+---
+
+```
+ Web / Desktop / Android clients
+        |  HTTPS + WebSocket (signaling, events)     UDP (media)
+        v                                              v
+ +--------------------------------------------------------------+
+ |  nodetalk-server (Go)                                        |
+ |   api      REST handlers, RBAC                               |
+ |   ws       WebSocket hub, presence, call signaling           |
+ |   rtc      WebRTC SFU (Pion) + embedded STUN/TURN            |
+ |   voice    raw UDP audio router (air-gapped mode)            |
+ |   store    repository layer                                  |
+ |   db       BadgerDB, encrypted at rest                       |
+ +--------------------------------------------------------------+
+        |
+   data/ directory (database + uploaded files)
+```
+
+## Server components
+
+- **REST API** on `http_port` (default 4000), using the standard library `ServeMux`. Every route is wrapped by an access tier: public, authenticated, channel member, admin or owner.
+- **WebSocket hub** delivers messages and presence in real time and carries call signaling. It applies the same membership checks as the REST API.
+- **WebRTC SFU** (`voice.mode = "webrtc"`, the default) forwards audio, video and screen shares between participants. Media is encrypted with DTLS-SRTP. An embedded STUN/TURN relay handles NAT traversal.
+- **Raw UDP router** (`voice.mode = "raw_udp"`) is an unencrypted, audio-only router for isolated LANs. No video or screen sharing.
+- **BadgerDB** stores everything. The database is encrypted with a data key that is itself wrapped by a key derived from your master password.
+
+## Clients
+
+All clients talk to the same API. Web sessions use an httpOnly `nodetalk_session` cookie with a double-submit CSRF token; the desktop app uses a Bearer token. The web client is a static single-page app, so it can be served by nginx, Caddy or any file host.
+
+## What lives where
+
+| Data | Location | Protection |
+|---|---|---|
+| Messages and metadata | BadgerDB | Encrypted at rest; message bodies are also ciphertext from the client |
+| Channel keys | BadgerDB | Wrapped by the key-encryption key |
+| Uploaded files | `data/` | Stored on local disk |
+| Whisper content | Memory only | Never persisted |

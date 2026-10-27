@@ -1,0 +1,278 @@
+/* Layout fixes, mobile menu, language picker, RTL and small-screen rules. Loaded last. */
+
+/* Equal-height grids: every grid item (the BlurFade wrapper) stretches its card to full height. */
+.bento > *,
+.dl > *,
+.road > *,
+.dgrid > *,
+.stats > * {
+  display: flex;
+  min-width: 0;
+}
+.bento > * > *,
+.dl > * > *,
+.road > * > *,
+.dgrid > * > *,
+.stats > * > * {
+  flex: 1;
+  min-width: 0;
+}
+.bento > * {
+  min-height: 0;
+}
+.bento .spot-in {
+  display: flex;
+  flex-direction: column;
+}
+.bento .stage {
+  margin-top: auto;
+  padding-top: 22px;
+  min-height: 0;
+}
+.bento .stage > * {
+  min-width: 0;
+}
+.dl .spot-in {
+  display: flex;
+  flex-direction: column;
+}
+.dl .rows {
+  margin-top: auto;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Text that must not be clipped inside cards. */
+.bubble {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.4;
+}
+.row {
+  min-width: 0;
+}
+.row .rl {
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.row .rm {
+  white-space: nowrap;
+  flex: none;
+}
+.rec-tag {
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Terminal: wrap long commands instead of adding scrollbars. */
+.term pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  min-height: 210px;
+}
+.term-bar {
+  flex-wrap: wrap;
+}
+.term {
+  direction: ltr;
+}
+
+/* Diagrams and code stay left-to-right in RTL pages. */
+.hiw-stage,
+.boot,
+.code,
+.docs {
+  direction: ltr;
+}
+
+/* Language picker + mobile menu */
+.lang-wrap,
+.menu-wrap {
+  position: relative;
+}
+.pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  inset-inline-end: 0;
+  min-width: 170px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
+  z-index: 60;
+}
+.pop a,
+.pop button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--fg);
+  font: 500 14px var(--font-sans);
+  text-align: start;
+  cursor: pointer;
+}
+.pop a:hover,
+.pop button:hover {
+  background: var(--accent);
+}
+.pop .cur {
+  color: var(--primary);
+}
+.pop svg {
+  width: 15px;
+  height: 15px;
+}
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  font: 600 12px/1 var(--font-sans);
+  white-space: nowrap;
+}
+.lang-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.menu-btn {
+  display: none;
+}
+@media (max-width: 760px) {
+  .menu-btn {
+    display: inline-grid;
+  }
+  .nav .gh-pill span,
+  .nav .gh-pill .num {
+    display: none;
+  }
+  .nav .gh-pill {
+    padding: 0;
+    width: 36px;
+    justify-content: center;
+  }
+}
+
+/* RTL typography */
+:root:lang(fa),
+:root:lang(ar) {
+  --font-sans: 'Vazirmatn Variable', 'Inter Variable', system-ui, sans-serif;
+}
+[dir='rtl'] h1,
+[dir='rtl'] h2,
+[dir='rtl'] h3,
+[dir='rtl'] .eyebrow {
+  letter-spacing: 0;
+}
+[dir='rtl'] .eyebrow {
+  text-transform: none;
+}
+[dir='rtl'] .rtl-flip {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .hiw-step .prog {
+  transform-origin: right;
+}
+[dir='rtl'] .bar i {
+  transform-origin: right;
+}
+
+/* Small screens */
+@media (max-width: 860px) {
+  section.block {
+    padding: 72px 0;
+  }
+  .head {
+    margin-bottom: 36px;
+  }
+  .hero {
+    padding-top: 120px;
+  }
+  .shot-wrap {
+    margin-top: 44px;
+  }
+  .app {
+    height: 380px;
+  }
+}
+@media (max-width: 560px) {
+  .wrap {
+    padding: 0 16px;
+  }
+  .landing h1 {
+    font-size: clamp(36px, 11vw, 48px);
+  }
+  .hero .lead {
+    font-size: 16px;
+  }
+  .cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .dgrid {
+    grid-template-columns: 1fr;
+  }
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat strong {
+    font-size: 30px;
+  }
+  .fgrid {
+    grid-template-columns: 1fr;
+  }
+  .hiw-stage {
+    padding: 28px 16px;
+  }
+  .final {
+    padding: 56px 16px;
+  }
+  .hello {
+    font-size: 30px;
+  }
+  .timeline {
+    padding-inline-start: 24px;
+  }
+  .rcard {
+    flex-wrap: wrap;
+  }
+  .rcard .area {
+    margin-inline-start: 30px;
+  }
+  .term pre {
+    font-size: 12.5px;
+    padding: 16px;
+  }
+  .devices {
+    flex-wrap: wrap;
+  }
+  .call-grid {
+    gap: 6px;
+  }
+}
+
+/* Quick-start terminal: all panes share one grid cell so height is reserved for the longest. */
+.term-body {
+  display: grid;
+}
+.term-pane {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.term-pane.on {
+  visibility: visible;
+}

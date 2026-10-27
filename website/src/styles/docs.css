@@ -1,0 +1,25 @@
+/* Starlight refinements to match the landing site. */
+:root {
+  --sl-content-width: 46rem;
+  --sl-nav-height: 3.5rem;
+}
+.sl-markdown-content :not(pre) > code {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.1em 0.4em;
+}
+.sl-link-card {
+  border-radius: var(--radius);
+  transition: border-color 0.2s, transform 0.3s var(--ease);
+}
+.sl-link-card:hover {
+  transform: translateY(-2px);
+}
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+header.header {
+  backdrop-filter: blur(12px);
+}

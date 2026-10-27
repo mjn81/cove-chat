@@ -1,0 +1,21 @@
+---
+import Landing from '../layouts/Landing.astro';
+import { RoadmapTimeline } from '../components/landing/Roadmap';
+import { dict, type Lang } from '../i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = dict(lang);
+---
+<Landing lang={lang} title={d.meta.roadmapTitle} description={d.meta.roadmapDesc} path="/roadmap/">
+  <section class="page-hero">
+    <div class="wrap">
+      <div class="eyebrow">{d.roadmap.eyebrow}</div>
+      <h1>{d.roadmap.pageTitle}</h1>
+      <p class="lead" style="margin-inline:auto">{d.roadmap.pageLead}</p>
+    </div>
+  </section>
+  <section class="block" style="padding-top:40px">
+    <div class="wrap"><RoadmapTimeline client:load lang={lang} /></div>
+  </section>
+</Landing>

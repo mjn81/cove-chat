@@ -1,0 +1,42 @@
+# Persian translations for roadmap.yaml, keyed by id. Missing ids fall back to English.
+phases:
+  shipped: { title: "منتشر شده", subtitle: "هم‌اکنون در دسترس" }
+  now: { title: "در حال انجام", subtitle: "همین حالا روی آن کار می‌شود" }
+  next: { title: "بعدی", subtitle: "حریم خصوصی و رسانه" }
+  later: { title: "بعداً", subtitle: "پلتفرم‌ها و اکوسیستم" }
+  future: { title: "آینده", subtitle: "فدراسیون" }
+items:
+  encrypted-chat: { title: "پیام‌رسانی رمزگذاری‌شده", note: "AES-256-GCM در کلاینت و کلیدهای بسته‌بندی‌شده با کلید اصلی شما." }
+  realtime: { title: "ارسال لحظه‌ای و وضعیت حضور", note: "هاب WebSocket با وضعیت تایپ و آنلاین." }
+  channels-dms: { title: "کانال، پیام مستقیم و دوستان", note: "نقش‌های عضو، مدیر و مالک در هر کانال." }
+  voice-notes: { title: "پیام صوتی و انتخابگر ایموجی", note: "ضبط و ارسال صدا و انتخاب ایموجی." }
+  files: { title: "فایل، تصویر و پیام ویدیویی", note: "آپلود با محدودیت حجم و تبدیل ویدیو با ffmpeg." }
+  webrtc-calls: { title: "تماس گروهی و اشتراک صفحه", note: "SFU مبتنی بر WebRTC با DTLS-SRTP و TURN داخلی." }
+  raw-udp: { title: "صدای UDP برای شبکه ایزوله", note: "حالت فقط‌صوتی برای شبکه‌های محلی ایزوله." }
+  whisper: { title: "گفتگوهای Whisper", note: "اتاق‌های E2EE بدون ذخیره‌سازی." }
+  admin-panel: { title: "پنل مدیریت سرور", note: "نقش‌ها، حالت ثبت‌نام، ویرایشگر پیکربندی و گزارش رویداد." }
+  invites: { title: "ثبت‌نام فقط با دعوت‌نامه", note: "کد دعوت از پنل یا config.toml." }
+  backup: { title: "پشتیبان‌گیری و بازیابی رمزگذاری‌شده", note: "دانلود فقط برای مالک و دستور بازیابی." }
+  android: { title: "برنامه بومی اندروید", note: "کلاینت Compose با تماس، Whisper و حرکت‌های کشیدنی." }
+  desktop: { title: "برنامه دسکتاپ", note: "برنامه Wails برای ویندوز، مک و لینوکس." }
+  web-client: { title: "کلاینت وب با تم روشن و تیره", note: "برنامه React که با Docker نصب می‌شود." }
+  languages: { title: "انگلیسی، فارسی و عربی", note: "پشتیبانی کامل از چیدمان راست‌به‌چپ." }
+  docker: { title: "ایمیج‌های Docker و Compose", note: "ایمیج سرور و کلاینت وب با یک فایل پیکربندی." }
+  openapi: { title: "API مبتنی بر REST با مستندات OpenAPI", note: "هر مسیر همراه با سطح دسترسی مستند شده است." }
+  auth-hardening: { title: "نشست‌های مقاوم‌سازی‌شده", note: "کوکی httpOnly، توکن CSRF، Argon2id و محدودیت نرخ." }
+  markdown: { title: "نمایش Markdown و پیوندها", note: "رندرکننده سفارشی با هایلایت پیوند." }
+  persian: { title: "تکمیل ترجمه فارسی", note: "پوشش ۱۰۰٪ در کلاینت وب." }
+  ui-perf: { title: "عملکرد رابط کاربری", note: "رندرهای کمتر و فهرست پیام روان‌تر." }
+  copy-select: { title: "انتخاب و کپی متن", note: "انتخاب و کپی متن پیام‌ها در همه‌جا." }
+  net-indicator: { title: "نشانگر کیفیت اتصال", note: "میله‌های سیگنال برای WebSocket و تماس‌ها." }
+  security-tab: { title: "تب تنظیمات امنیتی", note: "کنترل اینکه چه کسی می‌تواند پیام مستقیم بدهد یا شما را به گروه اضافه کند." }
+  link-previews: { title: "پیش‌نمایش امن پیوندها", note: "پروکسی کش‌دار تا سایت‌ها IP کاربران را نبینند." }
+  voice-dsp: { title: "کنترل حذف نویز و AGC", note: "تنظیمات پردازش صدا در برنامه‌ها." }
+  opus-vad: { title: "Opus و تشخیص فعالیت صدا", note: "پهنای باند کمتر برای صدای UDP." }
+  video-player: { title: "پخش‌کننده ویدیوی بومی", note: "پخش امن داخل برنامه." }
+  pwa: { title: "برنامه وب پیش‌رونده", note: "نصب کلاینت وب مثل یک برنامه." }
+  ios: { title: "کلاینت iOS", note: "برنامه بومی با همان هسته رمزنگاری." }
+  plugins: { title: "معماری افزونه", note: "افزونه‌های جامعه، آغاز با استیکر." }
+  s3: { title: "ذخیره‌سازی سازگار با S3", note: "AWS، MinIO یا DigitalOcean برای فایل‌های بزرگ." }
+  update-checks: { title: "بررسی به‌روزرسانی و تله‌متری اختیاری", note: "بررسی نسخه با حفظ حریم خصوصی." }
+  federation: { title: "فدراسیون سرور به سرور", note: "سرورهای مستقل Cove که به هم اعتماد می‌کنند و پیام‌ها را مسیریابی می‌کنند." }

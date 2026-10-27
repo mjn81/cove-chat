@@ -1,0 +1,42 @@
+# Arabic translations for roadmap.yaml, keyed by id. Missing ids fall back to English.
+phases:
+  shipped: { title: "أُنجز", subtitle: "متاح اليوم" }
+  now: { title: "قيد التنفيذ", subtitle: "يُعمل عليه الآن" }
+  next: { title: "التالي", subtitle: "الخصوصية والوسائط" }
+  later: { title: "لاحقاً", subtitle: "المنصات والنظام البيئي" }
+  future: { title: "المستقبل", subtitle: "الاتحاد" }
+items:
+  encrypted-chat: { title: "مراسلة مشفرة", note: "AES-256-GCM في العميل ومفاتيح مغلّفة بمفتاحك الرئيسي." }
+  realtime: { title: "تسليم فوري وحالة الحضور", note: "محور WebSocket مع حالة الكتابة والاتصال." }
+  channels-dms: { title: "قنوات ورسائل مباشرة وأصدقاء", note: "أدوار عضو ومشرف ومالك لكل قناة." }
+  voice-notes: { title: "ملاحظات صوتية ومنتقي الإيموجي", note: "سجّل وأرسل الصوت واختر الإيموجي." }
+  files: { title: "ملفات وصور ورسائل فيديو", note: "رفع بحدود للحجم وتحويل الفيديو عبر ffmpeg." }
+  webrtc-calls: { title: "مكالمات جماعية ومشاركة الشاشة", note: "SFU على WebRTC مع DTLS-SRTP وTURN مدمج." }
+  raw-udp: { title: "صوت UDP للشبكات المعزولة", note: "وضع صوتي فقط للشبكات المحلية المعزولة." }
+  whisper: { title: "محادثات Whisper", note: "غرف E2EE بلا تخزين." }
+  admin-panel: { title: "لوحة إدارة الخادم", note: "الأدوار وأوضاع التسجيل ومحرر الإعداد وسجل التدقيق." }
+  invites: { title: "تسجيل بالدعوة فقط", note: "رموز دعوة من اللوحة أو config.toml." }
+  backup: { title: "نسخ احتياطي واستعادة مشفران", note: "تنزيل للمالك فقط وأمر استعادة." }
+  android: { title: "تطبيق أندرويد أصلي", note: "عميل Compose مع المكالمات وWhisper وإيماءات السحب." }
+  desktop: { title: "تطبيق سطح المكتب", note: "تطبيق Wails لأنظمة Windows وmacOS وLinux." }
+  web-client: { title: "عميل ويب بمظهرين فاتح وداكن", note: "تطبيق React يُثبَّت عبر Docker." }
+  languages: { title: "الإنجليزية والفارسية والعربية", note: "دعم كامل لتخطيط اليمين إلى اليسار." }
+  docker: { title: "صور Docker وCompose", note: "صورتا الخادم وعميل الويب مع ملف إعداد واحد." }
+  openapi: { title: "واجهة REST مع توثيق OpenAPI", note: "كل مسار موثّق مع مستوى الوصول." }
+  auth-hardening: { title: "جلسات محصّنة", note: "كوكي httpOnly ورموز CSRF وArgon2id وحدود للمعدل." }
+  markdown: { title: "عرض Markdown والروابط", note: "معالج مخصص مع إبراز الروابط." }
+  persian: { title: "إكمال الترجمة الفارسية", note: "تغطية 100% في عميل الويب." }
+  ui-perf: { title: "أداء الواجهة", note: "إعادة رسم أقل وقوائم رسائل أسلس." }
+  copy-select: { title: "تحديد النص ونسخه", note: "تحديد نص الرسائل ونسخه في كل مكان." }
+  net-indicator: { title: "مؤشر جودة الاتصال", note: "أشرطة إشارة لـ WebSocket والمكالمات." }
+  security-tab: { title: "تبويب إعدادات الأمان", note: "تحكّم بمن يستطيع مراسلتك أو إضافتك إلى مجموعات." }
+  link-previews: { title: "معاينة آمنة للروابط", note: "وكيل تخزين مؤقت لئلا ترى المواقع عناوين IP للمستخدمين." }
+  voice-dsp: { title: "عناصر تحكم كتم الضوضاء وAGC", note: "إعدادات معالجة الصوت في التطبيقات." }
+  opus-vad: { title: "Opus وكشف نشاط الصوت", note: "عرض نطاق أقل لصوت UDP." }
+  video-player: { title: "مشغل فيديو أصلي", note: "تشغيل آمن داخل التطبيق." }
+  pwa: { title: "تطبيق ويب تقدمي", note: "ثبّت عميل الويب كأنه تطبيق." }
+  ios: { title: "عميل iOS", note: "تطبيق أصلي بنفس نواة التشفير." }
+  plugins: { title: "بنية الإضافات", note: "إضافات المجتمع بدءاً بالملصقات." }
+  s3: { title: "تخزين متوافق مع S3", note: "AWS أو MinIO أو DigitalOcean للملفات الكبيرة." }
+  update-checks: { title: "فحص التحديثات وقياس اختياري", note: "فحص إصدارات يحترم الخصوصية." }
+  federation: { title: "اتحاد بين الخوادم", note: "خوادم Cove مستقلة تثق ببعضها وتوجّه الرسائل." }

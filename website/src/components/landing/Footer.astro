@@ -1,0 +1,39 @@
+---
+import { APP_NAME, DISCUSSIONS_URL, ISSUES_URL, REPO_URL, RELEASES_URL } from '../../lib/site';
+import { dict, localUrl, type Lang } from '../../i18n';
+interface Props { version: string | null; lang: Lang }
+const { version, lang } = Astro.props;
+const f = dict(lang).footer;
+---
+<footer class="foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <b style="color:var(--fg)">{APP_NAME}</b>
+        <p style="margin-top:8px;max-width:30ch">{f.tagline}</p>
+      </div>
+      <div>
+        <h6>{f.product}</h6>
+        <a href={localUrl(lang, '/#features')}>{f.features}</a>
+        <a href={localUrl(lang, '/download/')}>{f.download}</a>
+        <a href={localUrl(lang, '/roadmap/')}>{f.roadmap}</a>
+        <a href={RELEASES_URL} rel="noopener noreferrer">{f.changelog}</a>
+      </div>
+      <div>
+        <h6>{f.docs}</h6>
+        <a href={localUrl(lang, '/docs/getting-started/quick-start/')}>{f.quick}</a>
+        <a href={localUrl(lang, '/docs/self-hosting/docker/')}>{f.selfHost}</a>
+        <a href={localUrl(lang, '/docs/configuration/reference/')}>{f.config}</a>
+        <a href={localUrl(lang, '/docs/api/rest/')}>{f.api}</a>
+      </div>
+      <div>
+        <h6>{f.community}</h6>
+        <a href={REPO_URL} rel="noopener noreferrer">{f.github}</a>
+        <a href={ISSUES_URL} rel="noopener noreferrer">{f.issues}</a>
+        <a href={DISCUSSIONS_URL} rel="noopener noreferrer">{f.discussions}</a>
+        <a href={localUrl(lang, '/docs/security/reporting-vulnerabilities/')}>{f.security}</a>
+      </div>
+    </div>
+    <div class="legal"><span>{f.legal}</span><span dir="ltr">{version ?? ''}</span></div>
+  </div>
+</footer>

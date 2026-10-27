@@ -1,0 +1,181 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cove roadmap. THIS is the file to edit; the landing page and /roadmap read it.
+#
+#   Ship something   -> cut its block and paste it under the `shipped` phase
+#   Start something  -> move it under `now`
+#   Add an idea      -> copy any block, give it a unique `id`, a `title` and a short `note`
+#
+# Status comes from the phase (shipped = done, now = in progress, others = planned).
+# Override one item with `status: done | progress | planned` if needed.
+# `area` is one of: calls privacy admin clients chat i18n platform security files ops
+#
+# Translations are optional: roadmap.fa.yaml / roadmap.ar.yaml map an `id` to a translated
+# title/note. Missing ids fall back to the English text here.
+# ─────────────────────────────────────────────────────────────────────────────
+phases:
+  - id: shipped
+    title: Shipped
+    subtitle: Available today
+    status: done
+    items:
+      - id: encrypted-chat
+        area: chat
+        title: "Encrypted messaging"
+        note: "AES-256-GCM in the client, keys wrapped by your master key."
+      - id: realtime
+        area: chat
+        title: "Real-time delivery and presence"
+        note: "WebSocket hub with typing and online status."
+      - id: channels-dms
+        area: chat
+        title: "Channels, DMs and friends"
+        note: "Member, admin and owner roles per channel."
+      - id: voice-notes
+        area: chat
+        title: "Voice notes and emoji picker"
+        note: "Record and send audio, react and pick emoji."
+      - id: files
+        area: files
+        title: "Files, images and video messages"
+        note: "Uploads with size limits and ffmpeg transcoding."
+      - id: webrtc-calls
+        area: calls
+        title: "Group calls and screen sharing"
+        note: "In-process WebRTC SFU with DTLS-SRTP and embedded TURN."
+      - id: raw-udp
+        area: calls
+        title: "Air-gapped UDP voice"
+        note: "Audio-only mode for isolated LANs."
+      - id: whisper
+        area: privacy
+        title: "Whisper chats"
+        note: "Zero-persistence end-to-end encrypted rooms."
+      - id: admin-panel
+        area: admin
+        title: "Server admin panel"
+        note: "Roles, registration modes, config editor, audit log."
+      - id: invites
+        area: admin
+        title: "Invite-only registration"
+        note: "Invitation codes from the panel or config.toml."
+      - id: backup
+        area: admin
+        title: "Encrypted backup and restore"
+        note: "Owner-only download and a restore command."
+      - id: android
+        area: clients
+        title: "Native Android app"
+        note: "Compose client with calls, Whisper and swipe actions."
+      - id: desktop
+        area: clients
+        title: "Desktop app"
+        note: "Wails app for Windows, macOS and Linux."
+      - id: web-client
+        area: clients
+        title: "Web client with light and dark themes"
+        note: "React app, installable via Docker."
+      - id: languages
+        area: i18n
+        title: "English, Persian and Arabic"
+        note: "Full right-to-left layout support."
+      - id: docker
+        area: ops
+        title: "Docker images and Compose"
+        note: "Server and web client images, one config file."
+      - id: openapi
+        area: platform
+        title: "REST API with OpenAPI docs"
+        note: "Every route documented with its access tier."
+      - id: auth-hardening
+        area: security
+        title: "Hardened sessions"
+        note: "httpOnly cookies, CSRF tokens, Argon2id, rate limits."
+
+  - id: now
+    title: In progress
+    subtitle: Being worked on right now
+    status: progress
+    items:
+      - id: markdown
+        area: chat
+        title: "Markdown and link rendering"
+        note: "Custom renderer with link highlighting."
+      - id: persian
+        area: i18n
+        title: "Complete Persian translations"
+        note: "100% coverage across the web client."
+      - id: ui-perf
+        area: chat
+        title: "UI performance"
+        note: "Fewer re-renders and smoother message lists."
+      - id: copy-select
+        area: chat
+        title: "Text selection and copy"
+        note: "Select and copy message text everywhere."
+      - id: net-indicator
+        area: calls
+        title: "Connection quality indicator"
+        note: "Signal bars for WebSocket and calls."
+        status: planned
+
+  - id: next
+    title: Next
+    subtitle: Privacy and media
+    status: planned
+    items:
+      - id: security-tab
+        area: privacy
+        title: "Security settings tab"
+        note: "Control who can DM you or add you to groups."
+      - id: link-previews
+        area: privacy
+        title: "Secure link previews"
+        note: "Caching proxy so sites never see user IPs."
+      - id: voice-dsp
+        area: calls
+        title: "Noise suppression and AGC controls"
+        note: "Voice processing settings in the apps."
+      - id: opus-vad
+        area: calls
+        title: "Opus and voice activity detection"
+        note: "Lower bandwidth for raw UDP voice."
+      - id: video-player
+        area: chat
+        title: "Native video player"
+        note: "Secure in-app playback."
+
+  - id: later
+    title: Later
+    subtitle: Platforms and ecosystem
+    status: planned
+    items:
+      - id: pwa
+        area: clients
+        title: "Progressive Web App"
+        note: "Install the web client like an app."
+      - id: ios
+        area: clients
+        title: "iOS client"
+        note: "Native app sharing the same encryption core."
+      - id: plugins
+        area: platform
+        title: "Plugin architecture"
+        note: "Community extensions, starting with stickers."
+      - id: s3
+        area: platform
+        title: "S3-compatible storage"
+        note: "AWS, MinIO or DigitalOcean for large files."
+      - id: update-checks
+        area: platform
+        title: "Update checks and opt-in telemetry"
+        note: "Privacy-conscious version checks."
+
+  - id: future
+    title: Future
+    subtitle: Federation
+    status: planned
+    items:
+      - id: federation
+        area: platform
+        title: "Server-to-server federation"
+        note: "Independent Cove servers that trust each other and route messages."

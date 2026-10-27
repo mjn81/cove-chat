@@ -1,0 +1,89 @@
+---
+import '../styles/tokens.css';
+import '../styles/landing.css';
+import '../styles/sections.css';
+import '../styles/responsive.css';
+import Nav from '../components/landing/Nav';
+import Footer from '../components/landing/Footer.astro';
+import { getReleaseInfo } from '../lib/github';
+import { APP_NAME, REPO_URL, url } from '../lib/site';
+import { LANGS, LANG_META, dict, localUrl, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  /** Path without language prefix, starting with `/`. */
+  path?: string;
+}
+const { lang, title, description, path = '/' } = Astro.props;
+const info = await getReleaseInfo();
+const d = dict(lang).nav;
+const canonical = new URL(localUrl(lang, path), Astro.site).href;
+const ogImage = new URL(url('/og.png'), Astro.site).href;
+const links = [
+  { label: d.features, href: localUrl(lang, '/#features') },
+  { label: d.docs, href: localUrl(lang, '/docs/') },
+  { label: d.roadmap, href: localUrl(lang, '/roadmap/') },
+  { label: d.download, href: localUrl(lang, '/download/') },
+];
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: APP_NAME,
+  applicationCategory: 'CommunicationApplication',
+  operatingSystem: 'Windows, macOS, Linux, Android',
+  description,
+  url: canonical,
+  inLanguage: lang,
+  codeRepository: REPO_URL,
+  license: 'https://opensource.org/licenses/MIT',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+---
+<!doctype html>
+<html lang={lang} dir={LANG_META[lang].dir} data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(localUrl(l, path), Astro.site).href} />)}
+    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <!-- Runs before paint so the saved (or system) theme never flashes. Same key as Starlight. -->
+    <script is:inline>
+      (function () {
+        let t = null;
+        try { t = localStorage.getItem('starlight-theme'); } catch {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+  </head>
+  <body class="landing">
+    <Nav client:load links={links} stars={info.stars} lang={lang} />
+    <slot />
+    <Footer version={info.tag} lang={lang} />
+  </body>
+  <script>
+    // Inertial smooth scrolling for the marketing pages (not the docs). Skipped for reduced motion.
+    import Lenis from 'lenis';
+
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const lenis = new Lenis({ anchors: { offset: -88 }, lerp: 0.1 });
+      const raf = (t: number) => {
+        lenis.raf(t);
+        requestAnimationFrame(raf);
+      };
+      requestAnimationFrame(raf);
+    }
+  </script>
+</html>

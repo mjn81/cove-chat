@@ -1,0 +1,112 @@
+---
+import Landing from '../layouts/Landing.astro';
+import Hero from '../components/landing/Hero';
+import Marquee from '../components/landing/Marquee';
+import Features from '../components/landing/Features';
+import HowItWorks from '../components/landing/HowItWorks';
+import QuickStart from '../components/landing/QuickStart';
+import Downloads from '../components/landing/Downloads';
+import { RoadmapPreview } from '../components/landing/Roadmap';
+import DocsPreview from '../components/landing/DocsPreview';
+import { OpenSource, Faq, FinalCta } from '../components/landing/OpenSource';
+import { getReleaseInfo } from '../lib/github';
+import { buildDownloads } from '../lib/downloads';
+import { dict, localUrl, type Lang } from '../i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = dict(lang);
+const info = await getReleaseInfo();
+const groups = buildDownloads(info);
+---
+<Landing lang={lang} title={d.meta.homeTitle} description={d.meta.homeDesc}>
+  <Hero client:load version={info.tag} lang={lang} />
+  <Marquee />
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="head center">
+        <div class="eyebrow">{d.features.eyebrow}</div>
+        <h2>{d.features.title}</h2>
+        <p class="lead">{d.features.lead}</p>
+      </div>
+      <Features client:visible={{ rootMargin: "600px" }} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap center">
+      <div class="head">
+        <div class="eyebrow">{d.how.eyebrow}</div>
+        <h2>{d.how.title}</h2>
+        <p class="lead">{d.how.lead}</p>
+      </div>
+      <HowItWorks client:visible={{ rootMargin: "600px" }} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block" id="quickstart">
+    <div class="wrap center">
+      <div class="head">
+        <div class="eyebrow">{d.quick.eyebrow}</div>
+        <h2>{d.quick.title}</h2>
+        <p class="lead">{d.quick.lead}</p>
+      </div>
+      <QuickStart client:visible={{ rootMargin: "600px" }} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block" id="download">
+    <div class="wrap">
+      <div class="head center">
+        <div class="eyebrow">{d.download.eyebrow}</div>
+        <h2>{d.download.title}</h2>
+        <p class="lead">{d.download.lead}</p>
+      </div>
+      <Downloads client:visible={{ rootMargin: "600px" }} groups={groups} tag={info.tag} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block" id="roadmap">
+    <div class="wrap">
+      <div class="head center">
+        <div class="eyebrow">{d.roadmap.eyebrow}</div>
+        <h2>{d.roadmap.title}</h2>
+        <p class="lead">{d.roadmap.lead}</p>
+      </div>
+      <RoadmapPreview client:visible={{ rootMargin: "600px" }} lang={lang} />
+      <div class="cta" style="margin-top:28px"><a class="btn" href={localUrl(lang, '/roadmap/')}>{d.roadmap.seeFull}</a></div>
+    </div>
+  </section>
+
+  <section class="block" id="docs">
+    <div class="wrap">
+      <div class="head center">
+        <div class="eyebrow">{d.docs.eyebrow}</div>
+        <h2>{d.docs.title}</h2>
+        <p class="lead">{d.docs.lead}</p>
+      </div>
+      <DocsPreview client:visible={{ rootMargin: "600px" }} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block" id="oss">
+    <div class="wrap">
+      <div class="head center">
+        <div class="eyebrow">{d.oss.eyebrow}</div>
+        <h2>{d.oss.title}</h2>
+        <p class="lead">{d.oss.lead}</p>
+      </div>
+      <OpenSource client:visible={{ rootMargin: "600px" }} stars={info.stars} lang={lang} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head center"><div class="eyebrow">{d.faq.eyebrow}</div><h2>{d.faq.title}</h2></div>
+      <Faq client:visible={{ rootMargin: "600px" }} lang={lang} />
+    </div>
+  </section>
+
+  <div class="wrap"><FinalCta client:visible={{ rootMargin: "600px" }} lang={lang} /></div>
+</Landing>

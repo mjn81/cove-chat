@@ -1,0 +1,25 @@
+---
+import Landing from '../layouts/Landing.astro';
+import Downloads from '../components/landing/Downloads';
+import { getReleaseInfo } from '../lib/github';
+import { buildDownloads } from '../lib/downloads';
+import { dict, type Lang } from '../i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = dict(lang);
+const info = await getReleaseInfo();
+const groups = buildDownloads(info);
+---
+<Landing lang={lang} title={d.meta.downloadTitle} description={d.meta.downloadDesc} path="/download/">
+  <section class="page-hero">
+    <div class="wrap">
+      <div class="eyebrow">{d.download.eyebrow}</div>
+      <h1>{d.download.pageTitle}</h1>
+      <p class="lead" style="margin-inline:auto">{d.download.pageLead}</p>
+    </div>
+  </section>
+  <section class="block" style="padding-top:40px">
+    <div class="wrap"><Downloads client:load groups={groups} tag={info.tag} lang={lang} /></div>
+  </section>
+</Landing>

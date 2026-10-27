@@ -1,0 +1,128 @@
+/*
+ * Design tokens, mirrored from client-web/src/index.css (warm neutrals + terracotta).
+ * Shared by the landing site and Starlight docs. Dark is the default theme.
+ */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/vazirmatn';
+
+:root {
+  --bg: #23201f;
+  --fg: #e8e5e3;
+  --card: #2e2a29;
+  --accent: #3b3735;
+  --border: #46413e;
+  --muted-fg: #a39e9b;
+  --primary: #d9826a;
+  --primary-fg: #23201f;
+  --success: #58c48a;
+  --warning: #f5c265;
+  --danger: #f0616d;
+  --glow: rgba(217, 130, 106, 0.22);
+  --radius: 14px;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  color-scheme: dark;
+
+  /* Starlight mapping */
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+  --sl-color-black: var(--bg);
+  --sl-color-gray-6: var(--card);
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-4: #6f6966;
+  --sl-color-gray-3: var(--muted-fg);
+  --sl-color-gray-2: #cfcac7;
+  --sl-color-gray-1: #e2dedb;
+  --sl-color-white: #fbf9f8;
+  --sl-color-accent-low: #4a2c25;
+  --sl-color-accent: #c4624a;
+  --sl-color-accent-high: var(--primary);
+  --sl-color-bg-nav: var(--bg);
+  --sl-color-bg-sidebar: var(--bg);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline-shade: var(--border);
+}
+
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --fg: #201a16;
+  --card: #f8f4f0;
+  --accent: #efe8e1;
+  --border: #e8dfd6;
+  --muted-fg: #7a6e66;
+  --primary: #c4624a;
+  --primary-fg: #ffffff;
+  --success: #2e9a55;
+  --warning: #8a5a00;
+  --danger: #d63a3a;
+  --glow: rgba(196, 98, 74, 0.18);
+  color-scheme: light;
+
+  --sl-color-gray-6: var(--card);
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-4: #a99d94;
+  --sl-color-gray-3: var(--muted-fg);
+  --sl-color-gray-2: #4f443d;
+  --sl-color-gray-1: #362d27;
+  --sl-color-white: #201a16;
+  --sl-color-accent-low: #f7dfd7;
+  --sl-color-accent: #c4624a;
+  --sl-color-accent-high: #8f3d29;
+}
+
+/* Theme switch ripple: the new theme is revealed through a growing circle (see lib/theme.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+.icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.icon-btn:hover {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+}
+
+/* Custom scrollbars (Firefox, then WebKit/Blink). Applies to the page, code blocks and popovers. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 55%, var(--border));
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

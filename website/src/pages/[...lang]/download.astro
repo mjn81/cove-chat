@@ -1,0 +1,11 @@
+---
+import Download from '../../views/Download.astro';
+import { LANGS, type Lang } from '../../i18n';
+
+// English is served at the site root (no param); fa and ar get /fa/ and /ar/.
+export function getStaticPaths() {
+  return LANGS.map((l) => ({ params: { lang: l === 'en' ? undefined : l }, props: { lang: l } }));
+}
+const { lang } = Astro.props as { lang: Lang };
+---
+<Download lang={lang} />

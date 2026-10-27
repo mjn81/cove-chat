@@ -1,0 +1,25 @@
+---
+title: Cove documentation
+description: Everything you need to run, configure, secure and extend your own Cove server.
+template: splash
+hero:
+  tagline: Run your own encrypted chat server. Start with the quick start, then dig into configuration and security.
+  actions:
+    - text: Quick start
+      link: getting-started/quick-start/
+      icon: right-arrow
+    - text: Configuration reference
+      link: configuration/reference/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <LinkCard title="Quick start" description="Docker in five minutes." href="getting-started/quick-start/" />
+  <LinkCard title="Self-hosting" description="Docker, binary, reverse proxy, TLS, backups." href="self-hosting/docker/" />
+  <LinkCard title="Configuration" description="Every config.toml key explained." href="configuration/reference/" />
+  <LinkCard title="Security model" description="What the server can and cannot see." href="security/encryption-model/" />
+  <LinkCard title="Administration" description="Roles, invites and the admin panel." href="administration/admin-panel/" />
+  <LinkCard title="API reference" description="REST endpoints and access tiers." href="api/rest/" />
+</CardGrid>

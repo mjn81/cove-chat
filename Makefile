@@ -1,4 +1,4 @@
-.PHONY: android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -56,6 +56,25 @@ front/lint: ## Run ESLint on the web client
 
 front/typecheck: ## Type-check the web client (tsc, no emit)
 	$(PNPM) -C client-web typecheck
+
+## ── Website (landing + docs) ───────────────────────────────────────────────
+site/install: ## Install website deps (pnpm, frozen lockfile)
+	$(PNPM) -C website install --frozen-lockfile
+
+site/dev: ## Run the website dev server (Astro)
+	$(PNPM) -C website dev
+
+site/gen: ## Regenerate the config + API reference pages from the backend
+	$(PNPM) -C website gen
+
+site/build: ## Build the website into website/dist/ (regenerates references first)
+	$(PNPM) -C website build
+
+site/typecheck: ## Type-check the website (astro check)
+	$(PNPM) -C website typecheck
+
+site/lint: ## Run ESLint on the website
+	$(PNPM) -C website lint
 
 ## ── Android ─────────────────────────────────────────────────────────────────
 # Gradle 8.11 cannot start on JDK 24+ (Android Studio now bundles JDK 25), so builds are pinned to a JDK 17-23.
