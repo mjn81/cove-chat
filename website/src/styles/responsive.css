@@ -682,7 +682,9 @@
 .bento .spot-in::after {
   content: '';
   position: absolute;
-  inset: 0;
+  /* Inset with its own rounding so texture lines never run into (and overlap) the card border. */
+  inset: 10px;
+  border-radius: calc(var(--radius) - 8px);
   z-index: 0;
   pointer-events: none;
   opacity: 0.28;
