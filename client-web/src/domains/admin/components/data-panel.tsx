@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Download } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { SettingRow } from '@/components/setting-row';
 import { useAuthStore } from '@/store/store';
 import { useAdminOverview } from '../api/use-admin';
-import { adminBackup, adminDeleteServer, adminReset } from '../api/admin.api';
+import { adminBackup, adminDeleteServer, adminReset, adminRestore } from '../api/admin.api';
 import { StepUpDialog } from './step-up-dialog';
 
-type Action = 'backup' | 'reset' | 'delete';
+type Action = 'backup' | 'restore' | 'reset' | 'delete';
 
 /** Saves a blob through a temporary link; the object URL is revoked right after. */
 function downloadBlob(blob: Blob, filename: string) {
@@ -39,6 +39,12 @@ export function DataPanel() {
 					<Button variant="outline" onClick={() => setAction('backup')}>
 						<Download />
 						{t('admin.data.backup_button')}
+					</Button>
+				</SettingRow>
+				<SettingRow title={t('admin.data.restore')} description={t('admin.data.restore_hint')}>
+					<Button variant="outline" onClick={() => setAction('restore')}>
+						<Upload />
+						{t('admin.data.restore_button')}
 					</Button>
 				</SettingRow>
 			</section>
@@ -70,6 +76,24 @@ export function DataPanel() {
 					const blob = await adminBackup(password, passphrase);
 					downloadBlob(blob, `cove-${stamp()}.cove-backup`);
 					toast.success(t('admin.data.backup_done'));
+				}}
+			/>
+			<StepUpDialog
+				open={action === 'restore'}
+				onOpenChange={(o) => !o && setAction(null)}
+				title={t('admin.data.restore')}
+				description={t('admin.data.restore_confirm')}
+				confirmLabel={t('admin.data.restore_button')}
+				destructive
+				needsFile
+				needsPassphrase
+				phrase="RESTORE"
+				onSubmit={async ({ password, passphrase, file }) => {
+					if (!file) return;
+					await adminRestore(file, passphrase, password);
+					toast.success(t('admin.data.restore_done'));
+					// Every session was ended by the restore, so go back to sign-in.
+					await logout();
 				}}
 			/>
 			<StepUpDialog

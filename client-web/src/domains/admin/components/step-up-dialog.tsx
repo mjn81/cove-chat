@@ -10,6 +10,7 @@ import { adminErrorMessage } from '../utils/admin-errors';
 export interface StepUpValues {
 	password: string;
 	passphrase: string;
+	file: File | null;
 }
 
 export interface StepUpDialogProps {
@@ -24,6 +25,8 @@ export interface StepUpDialogProps {
 	phrase?: string;
 	/** Asks for an archive passphrase (backups). */
 	needsPassphrase?: boolean;
+	/** Asks for a backup file to upload (restore). */
+	needsFile?: boolean;
 	/** Runs the action; a thrown error is shown inside the dialog and keeps it open. */
 	onSubmit: (values: StepUpValues) => Promise<void>;
 }
@@ -42,19 +45,22 @@ export function StepUpDialog({
 	destructive,
 	phrase,
 	needsPassphrase,
+	needsFile,
 	onSubmit,
 }: StepUpDialogProps) {
 	const { t } = useTranslation();
 	const [password, setPassword] = useState('');
 	const [passphrase, setPassphrase] = useState('');
 	const [typed, setTyped] = useState('');
+	const [file, setFile] = useState<File | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState('');
 
 	const ready =
 		password.length > 0 &&
 		(!phrase || typed === phrase) &&
-		(!needsPassphrase || passphrase.length >= 12);
+		(!needsPassphrase || passphrase.length >= 12) &&
+		(!needsFile || file !== null);
 
 	const close = (next: boolean) => {
 		if (busy) return;
@@ -62,6 +68,7 @@ export function StepUpDialog({
 			setPassword('');
 			setPassphrase('');
 			setTyped('');
+			setFile(null);
 			setError('');
 		}
 		onOpenChange(next);
@@ -71,7 +78,7 @@ export function StepUpDialog({
 		setBusy(true);
 		setError('');
 		try {
-			await onSubmit({ password, passphrase });
+			await onSubmit({ password, passphrase, file });
 			close(false);
 		} catch (err) {
 			setError(adminErrorMessage(t, err));
@@ -121,6 +128,18 @@ export function StepUpDialog({
 						/>
 					)}
 				</FormField>
+				{needsFile && (
+					<FormField label={t('admin.step_up.file')} required>
+						{(control) => (
+							<Input
+								{...control}
+								type="file"
+								accept=".cove-backup"
+								onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+							/>
+						)}
+					</FormField>
+				)}
 				{needsPassphrase && (
 					<FormField
 						label={t('admin.step_up.passphrase')}

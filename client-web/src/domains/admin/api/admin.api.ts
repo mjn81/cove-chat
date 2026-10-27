@@ -65,6 +65,16 @@ export const adminBackup = (password: string, passphrase: string) =>
 		apiClient.post('/api/admin/backup', { password, passphrase }, { responseType: 'blob' }),
 	);
 
+/** Replaces all server data with an uploaded backup; everyone is signed out afterwards. */
+export const adminRestore = (file: File, passphrase: string, password: string) => {
+	const form = new FormData();
+	form.append('file', file);
+	form.append('passphrase', passphrase);
+	form.append('password', password);
+	form.append('confirm', 'RESTORE');
+	return request<{ status: string }>(apiClient.post('/api/admin/restore', form));
+};
+
 export const adminReset = (password: string, confirm: string) =>
 	request<{ status: string }>(apiClient.post('/api/admin/reset', { password, confirm }));
 

@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/json"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -235,4 +236,77 @@ func (h *Handler) AdminDeleteServer(w http.ResponseWriter, r *http.Request) {
 			h.Shutdown()
 		}()
 	}
+}
+
+// maxRestoreBytes bounds an uploaded backup; the archive is decrypted in memory.
+const maxRestoreBytes = 1 << 30
+
+// AdminRestore godoc
+//
+//	@Summary     Restore a backup
+//	@Description Replaces ALL current data with the contents of a backup made by the panel. Everyone is signed out, including the caller. Cannot be undone; take a backup first.
+//	@Description **Access:** Server Owner, with their password, the archive passphrase and the phrase `RESTORE`.
+//	@Tags        admin
+//	@Accept      multipart/form-data
+//	@Produce     json
+//	@Security    BearerAuth
+//	@Param       file       formData file   true  "The .cove-backup file"
+//	@Param       passphrase formData string true  "Passphrase chosen when the backup was made"
+//	@Param       password   formData string true  "Owner password"
+//	@Param       confirm    formData string true  "Must be RESTORE"
+//	@Success     200 {object} StatusResponse
+//	@Failure     400 {object} ErrorResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
+//	@Router      /api/admin/restore [post]
+func (h *Handler) AdminRestore(w http.ResponseWriter, r *http.Request) {
+	actor := adminActor(r)
+	r.Body = http.MaxBytesReader(w, r.Body, maxRestoreBytes)
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		code := http.StatusBadRequest
+		if _, tooBig := err.(*http.MaxBytesError); tooBig {
+			code = http.StatusRequestEntityTooLarge
+		}
+		writeError(w, code, "admin.errors.invalid_upload")
+		return
+	}
+	if !h.confirmPassword(w, actor, r.FormValue("password")) {
+		return
+	}
+	if r.FormValue("confirm") != "RESTORE" {
+		writeError(w, http.StatusBadRequest, "admin.errors.confirm_mismatch")
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "admin.errors.invalid_upload")
+		return
+	}
+	defer file.Close()
+	sealed, err := io.ReadAll(file)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "admin.errors.invalid_upload")
+		return
+	}
+	// Decrypt BEFORE touching the database: a wrong passphrase or a damaged
+	// file must leave the current data exactly as it was.
+	plain, err := DecryptBackup(sealed, r.FormValue("passphrase"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "admin.errors.backup_unreadable")
+		return
+	}
+	if err := h.Store.RestoreReplace(bytes.NewReader(plain)); err != nil {
+		logger.Errorf("admin: restore failed: %v", err)
+		writeError(w, http.StatusInternalServerError, "admin.errors.restore_failed")
+		return
+	}
+	h.Sessions.DeleteExcept("")
+	if d, ok := h.Hub.(interface{ DisconnectAllExcept(string) }); ok {
+		d.DisconnectAllExcept("")
+	}
+	h.audit(actor, "server.restore", "")
+	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }

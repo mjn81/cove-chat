@@ -280,6 +280,16 @@ func (s *Store) Backup(w io.Writer) error { return s.db.Backup(w) }
 // Restore loads a snapshot made by Backup.
 func (s *Store) Restore(r io.Reader) error { return s.db.Restore(r) }
 
+// RestoreReplace replaces ALL data with a snapshot made by Backup. The caller
+// must have decrypted and validated the archive first: once DropAll runs there
+// is no way back.
+func (s *Store) RestoreReplace(r io.Reader) error {
+	if err := s.db.DropAll(); err != nil {
+		return err
+	}
+	return s.db.Restore(r)
+}
+
 // ResetKeepOwner wipes all data except the given owner account.
 func (s *Store) ResetKeepOwner(owner *models.User) error { return s.db.ResetKeepUser(owner) }
 

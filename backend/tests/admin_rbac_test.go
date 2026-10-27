@@ -37,6 +37,7 @@ func adminRoutes() []adminRoute {
 		{"DELETE", "/api/admin/admins/nobody-here", pw, levelOwner},
 		{"POST", "/api/admin/owner/transfer", map[string]any{"username": "nobody-here", "password": testPassword, "confirm": "TRANSFER"}, levelOwner},
 		{"POST", "/api/admin/backup", map[string]any{"password": "wrong", "passphrase": "a-long-passphrase"}, levelOwner},
+		{"POST", "/api/admin/restore", nil, levelOwner},
 		{"POST", "/api/admin/reset", map[string]any{"password": "wrong", "confirm": "RESET"}, levelOwner},
 		{"POST", "/api/admin/delete", map[string]any{"password": "wrong", "confirm": "chat.test"}, levelOwner},
 	}

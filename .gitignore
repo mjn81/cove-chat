@@ -5,3 +5,6 @@ config.toml
 nodetalk-server
 stress_report_*.txt
 .env
+
+# config backups written by the admin panel (contain secrets)
+*.toml.bak

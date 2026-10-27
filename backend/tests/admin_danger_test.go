@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"mime/multipart"
 	"bytes"
 	"io"
 	"net/http"
@@ -164,5 +165,95 @@ func TestBackupRestoresIntoAFreshServer(t *testing.T) {
 	}
 	if !dst.store.HasOwner() {
 		t.Error("owner marker not restored")
+	}
+}
+
+// restoreForm builds the multipart body POST /api/admin/restore expects.
+func restoreForm(t *testing.T, archive []byte, fields map[string]string) (*bytes.Buffer, string) {
+	t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	for k, v := range fields {
+		_ = w.WriteField(k, v)
+	}
+	fw, _ := w.CreateFormFile("file", "x.cove-backup")
+	_, _ = fw.Write(archive)
+	_ = w.Close()
+	return &buf, w.FormDataContentType()
+}
+
+func (e *adminEnv) restore(t *testing.T, token string, archive []byte, fields map[string]string) int {
+	t.Helper()
+	body, ctype := restoreForm(t, archive, fields)
+	req, _ := http.NewRequest("POST", e.srv.URL+"/api/admin/restore", body)
+	req.Header.Set("Content-Type", ctype)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode
+}
+
+func TestRestoreReplacesCurrentDataFromABackup(t *testing.T) {
+	e := newAdminEnv(t, "open")
+	owner, _, member := e.seedRoles(t)
+
+	resp := e.do(t, "POST", "/api/admin/backup", owner, map[string]any{"password": testPassword, "passphrase": testPassphrase})
+	archive, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	// State that exists only after the backup must disappear.
+	if _, err := e.store.CreateUser("latecomer", testPassword, "chat.test"); err != nil {
+		t.Fatal(err)
+	}
+
+	ok := map[string]string{"password": testPassword, "passphrase": testPassphrase, "confirm": "RESTORE"}
+	if got := e.restore(t, owner, archive, ok); got != http.StatusOK {
+		t.Fatalf("restore = %d, want 200", got)
+	}
+	if _, err := e.store.GetUserByUsername("latecomer"); err == nil {
+		t.Error("data created after the backup survived the restore")
+	}
+	if u, err := e.store.GetUserByUsername("admin"); err != nil || u.ServerRole != "admin" {
+		t.Errorf("backed-up admin missing after restore: %v", err)
+	}
+	// Everyone signs in again.
+	if got := e.do(t, "GET", "/api/me", member, nil); got.StatusCode != http.StatusUnauthorized {
+		t.Errorf("old session after restore = %d, want 401", got.StatusCode)
+	}
+}
+
+func TestRestoreRejectsBadInputWithoutTouchingData(t *testing.T) {
+	e := newAdminEnv(t, "open")
+	owner, admin, _ := e.seedRoles(t)
+	resp := e.do(t, "POST", "/api/admin/backup", owner, map[string]any{"password": testPassword, "passphrase": testPassphrase})
+	archive, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	cases := []struct {
+		name   string
+		token  string
+		file   []byte
+		fields map[string]string
+		want   int
+	}{
+		{"anonymous", "", archive, map[string]string{"password": testPassword, "passphrase": testPassphrase, "confirm": "RESTORE"}, 401},
+		{"admin is not enough", admin, archive, map[string]string{"password": testPassword, "passphrase": testPassphrase, "confirm": "RESTORE"}, 403},
+		{"wrong password", owner, archive, map[string]string{"password": "nope", "passphrase": testPassphrase, "confirm": "RESTORE"}, 403},
+		{"wrong phrase", owner, archive, map[string]string{"password": testPassword, "passphrase": testPassphrase, "confirm": "no"}, 400},
+		{"wrong passphrase", owner, archive, map[string]string{"password": testPassword, "passphrase": "another-long-passphrase", "confirm": "RESTORE"}, 400},
+		{"not a backup", owner, []byte("garbage"), map[string]string{"password": testPassword, "passphrase": testPassphrase, "confirm": "RESTORE"}, 400},
+	}
+	for _, c := range cases {
+		if got := e.restore(t, c.token, c.file, c.fields); got != c.want {
+			t.Errorf("%s = %d, want %d", c.name, got, c.want)
+		}
+	}
+	if _, err := e.store.GetUserByUsername("member"); err != nil {
+		t.Error("a rejected restore changed the data")
 	}
 }

@@ -633,7 +633,8 @@
 					"download": "downloaded a backup"
 				},
 				"server": {
-					"reset": "reset the server"
+					"reset": "reset the server",
+					"restore": "restored a backup"
 				}
 			}
 		},
@@ -747,13 +748,19 @@
 			"delete": "Delete server",
 			"delete_hint": "Deletes everything including your account, then stops the server.",
 			"delete_button": "Delete server",
-			"delete_confirm": "This permanently deletes ALL data and stops the server. Take a backup first."
+			"delete_confirm": "This permanently deletes ALL data and stops the server. Take a backup first.",
+			"restore": "Restore from backup",
+			"restore_hint": "Replaces ALL current data with a backup file. Everyone is signed out.",
+			"restore_button": "Restore",
+			"restore_confirm": "This permanently replaces all current accounts, channels, messages and uploads with the backup. Take a backup of the current state first.",
+			"restore_done": "Backup restored. Please sign in again."
 		},
 		"step_up": {
 			"password": "Your password",
 			"passphrase": "Backup passphrase",
 			"passphrase_hint": "At least 12 characters.",
-			"type_to_confirm": "Type \"{{phrase}}\" to confirm"
+			"type_to_confirm": "Type \"{{phrase}}\" to confirm",
+			"file": "Backup file"
 		},
 		"errors": {
 			"generic": "Something went wrong",
@@ -783,7 +790,10 @@
 			"reset_failed": "The reset failed.",
 			"delete_failed": "Deleting the server failed.",
 			"not_found": "Not found.",
-			"owner_cannot_delete": "The owner cannot delete their account. Transfer ownership first."
+			"owner_cannot_delete": "The owner cannot delete their account. Transfer ownership first.",
+			"invalid_upload": "The upload could not be read.",
+			"backup_unreadable": "Wrong passphrase, or this is not a valid backup file.",
+			"restore_failed": "The restore failed."
 		}
 	}
 }

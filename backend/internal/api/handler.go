@@ -87,6 +87,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("DELETE /api/admin/admins/{username}",    protectOwner(h.AdminRevokeAdmin))
 	mux.Handle("POST /api/admin/owner/transfer",         protectOwner(h.AdminTransferOwner))
 	mux.Handle("POST /api/admin/backup",                 protectOwner(h.AdminBackup))
+	mux.Handle("POST /api/admin/restore",                protectOwner(h.AdminRestore))
 	mux.Handle("POST /api/admin/reset",                  protectOwner(h.AdminReset))
 	mux.Handle("POST /api/admin/delete",                 protectOwner(h.AdminDeleteServer))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
