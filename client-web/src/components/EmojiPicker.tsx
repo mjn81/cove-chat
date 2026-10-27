@@ -12,17 +12,17 @@ export default function EmojiPicker({ onSelect, onClickOutside, theme = 'dark' }
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onClickOutside();
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
   }, [onClickOutside]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="w-full [&_em-emoji-picker]:w-full [&_em-emoji-picker]:max-w-full">
       <Picker
         data={data}
         onEmojiSelect={onSelect}
@@ -30,6 +30,7 @@ export default function EmojiPicker({ onSelect, onClickOutside, theme = 'dark' }
         previewPosition="none"
         skinTonePosition="none"
         navPosition="bottom"
+        dynamicWidth
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { FileText, Loader2, SendHorizontal, Smile, Video, X } from 'lucide-react';
+import { FileText, Smile, X } from 'lucide-react';
 
 import { AttachMenu } from '@/components/attach-menu';
 import EmojiPicker from '@/components/EmojiPicker';
+import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
 import { useFilePicker } from '@/hooks/use-file-picker';
@@ -61,7 +62,8 @@ export const WhisperComposer = ({
 	const filePicker = useFilePicker((files) => onQueueFiles(files));
 	const disabled = isClosed || !hasSessionKey;
 	const iconSize = isMobile ? 18 : 22;
-	const canSend = (inputText.trim() !== '' || queuedFiles.length > 0) && !disabled && !isSending;
+	const hasContent = inputText.trim() !== '' || queuedFiles.length > 0;
+	const canSend = hasContent && !disabled && !isSending;
 
 	const handleSend = async () => {
 		const trimmed = inputText.trim();
@@ -125,7 +127,7 @@ export const WhisperComposer = ({
 	};
 
 	return (
-		<div className="relative z-10 shrink-0 px-4 pb-4 pt-0">
+		<div className="relative z-10 shrink-0 px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-0 sm:px-4">
 			<div className="relative flex flex-col overflow-hidden rounded-xl border border-dashed border-border/90 bg-secondary/70 text-flat transition-all focus-within:border-foreground/50 focus-within:ring-0">
 				{queuedFiles.length > 0 && (
 					<div className="flex gap-3 overflow-x-auto border-b border-dashed border-border/80 p-3">
@@ -142,7 +144,7 @@ export const WhisperComposer = ({
 					<textarea
 						ref={textareaRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
 						placeholder={
 							isClosed ? t('whisper.chat.session_ended') : t('composer.message_to', { target: peerUsername })
 						}
@@ -156,64 +158,46 @@ export const WhisperComposer = ({
 					/>
 
 					<div className={cn('flex shrink-0 items-center', isMobile ? 'gap-1' : 'gap-1.5')}>
-						<VoiceRecorder
-							channelId={channelId}
-							onFile={(file) => onQueueFiles([file])}
-							onSendVoice={sendVoice}
-							size={iconSize}
-						/>
 						<button
-							type="button"
-							disabled={disabled}
-							onClick={() => setShowVideoRecorder(true)}
-							className={iconButtonClass}
-							title={t('composer.record_video')}
-							aria-label={t('composer.record_video')}
-						>
-							<Video
-								size={iconSize}
-								className="transition-transform group-hover:scale-110 group-disabled:scale-100"
-							/>
-						</button>
-						<button
-							type="button"
-							disabled={disabled}
-							onClick={(e) => {
-								e.stopPropagation();
-								setShowEmoji((v) => !v);
-							}}
-							className={iconButtonClass}
-							title={t('composer.add_emoji')}
-							aria-label={t('composer.add_emoji')}
-						>
-							<Smile
-								size={iconSize}
-								className="transition-transform group-hover:scale-110 group-disabled:scale-100"
-							/>
-						</button>
-						<button
-							type="button"
-							onClick={handleSend}
-							disabled={!canSend}
-							className={iconButtonClass}
-							title={t('whisper.chat.send')}
-							aria-label={t('whisper.chat.send')}
-						>
-							{isSending ? (
-								<Loader2 size={iconSize} className="animate-spin text-primary" />
-							) : (
-								<SendHorizontal
+								type="button"
+								disabled={disabled}
+								onClick={(e) => {
+									e.stopPropagation();
+									setShowEmoji((v) => !v);
+								}}
+								className={iconButtonClass}
+								title={t('composer.add_emoji')}
+								aria-label={t('composer.add_emoji')}
+							>
+								<Smile
 									size={iconSize}
-									className="transition-transform group-hover:scale-110 group-disabled:scale-100 rtl:-scale-x-100"
+									className="transition-transform group-hover:scale-110 group-disabled:scale-100"
 								/>
-							)}
-						</button>
+							</button>
+							<VoiceRecorder
+								channelId={channelId}
+								onFile={(file) => onQueueFiles([file])}
+								onSendVoice={sendVoice}
+								size={iconSize}
+								renderIdle={(start) => (
+									<ComposerActionButton
+										hasContent={hasContent}
+										sending={isSending}
+										disabled={disabled}
+										size={iconSize}
+										onSend={handleSend}
+										onRecordVoice={start}
+										onRecordVideo={() => setShowVideoRecorder(true)}
+										sendLabel={t('whisper.chat.send')}
+									/>
+								)}
+							/>
 					</div>
 				</div>
 			</div>
 
 			{showEmoji && (
-				<div className="absolute bottom-[70px] end-6 z-50">
+				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
 					<EmojiPicker
 						onSelect={(emoji) => {
 							setInputText((prev) => prev + emoji.native);

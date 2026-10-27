@@ -49,14 +49,14 @@ export const VideoMessageRecorderModal: React.FC<VideoMessageRecorderModalProps>
 			<DialogContent className="fixed left-1/2 top-1/2 z-50 flex w-full max-w-[360px] -translate-x-1/2 -translate-y-1/2 select-none flex-col items-center justify-center border-none bg-transparent p-0 shadow-none outline-none sm:max-w-[420px] [&>button:last-child]:hidden">
 				<DialogTitle className="sr-only">{t('videoRecorder.title')}</DialogTitle>
 
-				<div className="pointer-events-auto mb-2 flex w-80 justify-end sm:w-96">
+				<div className="pointer-events-auto mb-2 flex w-[min(20rem,calc(100vw-1.5rem))] justify-end sm:w-96">
 					<IconButton label={t('common.close')} tone="overlay" size="md" onClick={onClose} className="rounded-full">
 						<X size={18} />
 					</IconButton>
 				</div>
 
 				<div
-					className="group relative flex h-80 w-80 items-center justify-center overflow-hidden rounded-[40px] border-2 border-overlay-foreground/15 bg-overlay sm:h-96 sm:w-96 sm:rounded-[48px]"
+					className="group relative flex aspect-square w-[min(20rem,calc(100vw-1.5rem))] items-center justify-center overflow-hidden rounded-[40px] border-2 border-overlay-foreground/15 bg-overlay sm:w-96 sm:rounded-[48px]"
 					style={FRAME_CLIP_STYLE}
 				>
 					{r.mode !== 'preview' && (

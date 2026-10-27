@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, SendHorizontal, Smile, Video } from 'lucide-react';
+import { Smile } from 'lucide-react';
 
 import EmojiPicker from '@/components/EmojiPicker';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
+import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
 import { useAppStore, useAuthStore, getChannelDisplayName } from '@/store/store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -49,6 +50,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const user = useAuthStore((state) => state.user);
 	const theme = useAppStore((state) => state.theme);
 	const isSmall = useMediaQuery('(max-width: 400px)');
+	const isTiny = useMediaQuery('(max-width: 340px)');
 
 	const [inputText, setInputText] = useState('');
 	const [sending, setSending] = useState(false);
@@ -76,7 +78,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const isDirect = isDirectMessage(channel);
 	const displayName = getChannelDisplayName(channel, user?.id || '');
 	const target = `${isDirect ? '@' : '#'}${displayName}`;
-	const iconSize = isSmall ? 18 : 22;
+	const iconSize = isTiny ? 17 : isSmall ? 18 : 22;
 
 	const handleSend = useCallback(async () => {
 		const text = inputText.trim();
@@ -169,12 +171,15 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		inputRef.current?.focus();
 	}, [replyTo, channel.id]);
 
-	const canSend = (inputText.trim() !== '' || attachments.files.length > 0) && !sending;
+	const hasContent = inputText.trim() !== '' || attachments.files.length > 0;
 	const iconButtonClass =
 		'group flex cursor-pointer items-center justify-center rounded-full p-1 text-muted-foreground transition hover:bg-secondary/80 hover:text-foreground';
 
 	return (
-		<div className={cn('relative shrink-0', isSmall ? 'px-2 pb-4 pt-1' : 'px-4 pb-4 pt-2')}>
+		<div className={cn(
+				'relative shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]',
+				isSmall ? 'px-2 pt-1' : 'px-4 pt-2',
+			)}>
 			{isDragging && <DropOverlay target={target} compact={isSmall} />}
 
 			{sendError && <SendErrorBanner message={sendError} onDismiss={() => setSendError(null)} />}
@@ -201,14 +206,14 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					/>
 				)}
 
-				<div className={cn('flex items-start', isSmall ? 'gap-2 px-2 py-2' : 'gap-3 px-4 py-2.5')}>
+				<div className={cn('flex items-start', isTiny ? 'gap-1.5 px-1.5 py-2' : isSmall ? 'gap-2 px-2 py-2' : 'gap-3 px-4 py-2.5')}>
 					<AttachMenu compact={isSmall} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
 					<textarea
 						ref={inputRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
 						placeholder={isSmall ? t('composer.message_short') : t('composer.message_to', { target })}
 						aria-label={t('composer.message_to', { target })}
 						value={inputText}
@@ -218,52 +223,37 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						dir="auto"
 					/>
 
-					<div className={cn('flex shrink-0 items-center', isSmall ? 'gap-1' : 'gap-1.5')}>
-						<VoiceRecorder
-							channelId={channel.id}
-							onFile={(file) => attachments.add([file])}
-							onSendVoice={sendVoice}
-							size={iconSize}
-						/>
+					<div className={cn('flex shrink-0 items-center', isTiny ? 'gap-0' : isSmall ? 'gap-1' : 'gap-1.5')}>
 						<button
-							type="button"
-							onClick={() => setShowVideoRecorder(true)}
-							className={iconButtonClass}
-							title={t('composer.record_video')}
-							aria-label={t('composer.record_video')}
-						>
-							<Video size={iconSize} className="transition-transform group-hover:scale-110" />
-						</button>
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								setShowEmoji((v) => !v);
-							}}
-							className={iconButtonClass}
-							title={t('composer.add_emoji')}
-							aria-label={t('composer.add_emoji')}
-						>
-							<Smile size={iconSize} className="transition-transform group-hover:scale-110" />
-						</button>
-						<button
-							type="button"
-							onClick={handleSend}
-							disabled={!canSend}
-							className={cn(iconButtonClass, 'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground')}
-							title={t('composer.send')}
-							aria-label={t('composer.send')}
-						>
-							{sending ? (
-								<Loader2 size={iconSize} className="animate-spin text-primary" />
-							) : (
-								<SendHorizontal
-									size={iconSize}
-									className="transition-transform group-hover:scale-110 group-disabled:scale-100 rtl:-scale-x-100"
-								/>
-							)}
-						</button>
-					</div>
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									setShowEmoji((v) => !v);
+								}}
+								className={iconButtonClass}
+								title={t('composer.add_emoji')}
+								aria-label={t('composer.add_emoji')}
+							>
+								<Smile size={iconSize} className="transition-transform group-hover:scale-110" />
+							</button>
+							<VoiceRecorder
+								channelId={channel.id}
+								onFile={(file) => attachments.add([file])}
+								onSendVoice={sendVoice}
+								size={iconSize}
+								renderIdle={(start) => (
+									<ComposerActionButton
+										hasContent={hasContent}
+										sending={sending}
+										size={iconSize}
+										onSend={handleSend}
+										onRecordVoice={start}
+										onRecordVideo={() => setShowVideoRecorder(true)}
+										sendLabel={t('composer.send')}
+									/>
+								)}
+							/>
+						</div>
 				</div>
 			</div>
 
@@ -278,7 +268,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 			)}
 
 			{showEmoji && (
-				<div className="absolute bottom-[70px] end-6 z-50">
+				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
 					<EmojiPicker
 						onSelect={handleEmojiSelect}
 						onClickOutside={() => setShowEmoji(false)}

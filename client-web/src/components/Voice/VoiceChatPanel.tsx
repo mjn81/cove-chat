@@ -159,7 +159,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 			className={`fixed transition-all duration-300 ease-in-out z-50 flex flex-col bg-popover border border-border shadow-[0_12px_48px_rgba(0,0,0,0.8)] overflow-hidden ${
 				isExpanded
 					? 'inset-3 sm:inset-6 rounded-3xl'
-					: 'bottom-6 end-6 w-[380px] sm:w-[460px] h-[580px] rounded-2xl'
+					: 'inset-x-0 bottom-0 h-[min(580px,85dvh)] w-full rounded-t-2xl sm:inset-x-auto sm:bottom-6 sm:end-6 sm:w-[460px] sm:rounded-2xl'
 			}`}
 		>
 			{/* Dedicated Hidden Audio Elements mounted in DOM for zero-failure remote audio playback */}

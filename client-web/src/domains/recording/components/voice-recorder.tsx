@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Mic, Pause, Play, RotateCcw, Scissors, Send, Trash2 } from 'lucide-react';
 
@@ -14,6 +15,8 @@ interface VoiceRecorderProps {
 	onSendVoice?: (file: File, duration?: number) => Promise<void>;
 	/** Icon size of the idle microphone button. */
 	size?: number;
+	/** Replaces the idle microphone button (the composer supplies its combined record/send button). */
+	renderIdle?: (start: () => void) => ReactNode;
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -23,11 +26,12 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
  * while recording it covers the composer with a live level meter; after
  * "pause" it becomes a preview with waveform trimming before sending.
  */
-export default function VoiceRecorder({ onFile, onSendVoice, size = 20 }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onFile, onSendVoice, size = 20, renderIdle }: VoiceRecorderProps) {
 	const { t } = useTranslation();
 	const { timelineRef, ...r } = useVoiceRecorder({ onFile, onSendVoice });
 
 	if (r.mode === 'idle') {
+		if (renderIdle) return <>{renderIdle(r.start)}</>;
 		return (
 			<button
 				type="button"

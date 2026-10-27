@@ -513,7 +513,8 @@
 			"voice_failed": "Failed to send the voice message.",
 			"video_not_connected": "Not connected - video message not sent.",
 			"video_failed": "Failed to send the video message."
-		}
+		},
+		"record_hold_hint": "Hold to switch voice / video"
 	},
 	"account": {
 		"change_avatar": "Change avatar",

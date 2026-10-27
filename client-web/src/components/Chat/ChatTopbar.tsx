@@ -113,8 +113,8 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 	return (
 		<Profiler id="ChatTopbar" onRender={logProfiler}>
-			<div className="flex items-center justify-between px-4 h-12 border-b border-border shrink-0 relative z-10 bg-background">
-				<div className="flex items-center gap-2 min-w-0">
+			<div className="flex items-center justify-between gap-1 px-2 sm:px-4 h-12 border-b border-border shrink-0 relative z-10 bg-background">
+				<div className="flex items-center gap-2 min-w-0 flex-1">
 					{isMobile && (
 						<button
 							onClick={() => setActiveChannel(null)}
@@ -145,7 +145,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									<div className="text-[15px] font-bold text-foreground leading-tight truncate">
 										{getChannelDisplayName(liveChannel, currentUserId)}
 									</div>
-									<div className="text-[12px] text-muted-foreground leading-tight mt-0.5">
+									<div className="text-[12px] text-muted-foreground leading-tight mt-0.5 truncate">
 										{dmSubtitle}
 									</div>
 								</div>
@@ -189,12 +189,12 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						)}
 					</div>
 				</div>
-				<div className="flex items-center gap-1.5 text-muted-foreground">
+				<div className="flex items-center gap-0.5 sm:gap-1.5 text-muted-foreground shrink-0">
 					{/* Add Friend button if DM and not friends */}
 					{canAddFriend && (
 						isRequested ? (
 							<div
-								className="w-9 h-9 flex items-center justify-center text-muted-foreground select-none"
+								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-muted-foreground select-none"
 								title="Friend request pending"
 							>
 								<Clock size={20} className="text-warning opacity-80" />
@@ -213,7 +213,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										setIsSendingFriendReq(false);
 									}
 								}}
-								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-success text-success transition-colors cursor-pointer"
+								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-success text-success transition-colors cursor-pointer"
 								title="Accept Friend Request"
 							>
 								{isSendingFriendReq ? (
@@ -236,7 +236,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										setIsSendingFriendReq(false);
 									}
 								}}
-								className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
+								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
 								title="Add Friend"
 							>
 								{isSendingFriendReq ? (
@@ -296,7 +296,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSearching(true)}
-							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							title="Search"
 						>
 							<Search size={20} className="opacity-70 hover:opacity-100" />
@@ -327,7 +327,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 								}
 							}}
 							disabled={!isFriend}
-							className={`relative w-9 h-9 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+							className={`relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
 								!isFriend
 									? 'opacity-40 cursor-not-allowed text-muted-foreground'
 									: hasIncomingInviteForPeer
@@ -361,7 +361,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setRightSidebarOpen(!isRightSidebarOpen)}
-							className={`w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground transition-colors cursor-pointer ${
+							className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground transition-colors cursor-pointer ${
 								isRightSidebarOpen ? 'text-primary bg-primary/10' : 'text-muted-foreground'
 							}`}
 							title="Show Members"
@@ -374,7 +374,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setShowSettings(true)}
-							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							title="Channel Settings"
 						>
 							<SlidersHorizontal
@@ -389,7 +389,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => stopVoice()}
-							className="w-9 h-9 flex items-center justify-center rounded-lg text-success hover:text-destructive hover:bg-secondary/60 transition-colors cursor-pointer group"
+							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:text-destructive hover:bg-secondary/60 transition-colors cursor-pointer group"
 							title="Connected to voice call (Click to disconnect)"
 						>
 							<PhoneCall size={18} className="animate-pulse group-hover:hidden" />
@@ -399,7 +399,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => startVoice(liveChannel.id)}
-							className="relative w-9 h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
+							className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
 							title={`Join ongoing voice call (${participantCount} active)`}
 						>
 							<PhoneCall size={18} className="animate-pulse" />
@@ -411,7 +411,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => startVoice(liveChannel.id)}
-							className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							title="Start Voice Call"
 						>
 							<Phone size={18} className="opacity-80 hover:opacity-100" />

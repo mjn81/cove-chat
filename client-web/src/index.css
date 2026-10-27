@@ -289,3 +289,16 @@
   }
 }
 
+
+/* Fills the composer record button's ring while it is held (see composer-action-button.tsx). */
+.hold-ring {
+  stroke-dashoffset: 88;
+  animation-name: hold-ring;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes hold-ring {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
