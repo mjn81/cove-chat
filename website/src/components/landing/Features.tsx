@@ -26,10 +26,14 @@ function useCycle(active: boolean, count: number, ms: number, start = 0) {
   return i;
 }
 
-function Card({ icon, title, text, className = '', delay = 0, children }: { icon: ReactNode; title: string; text: string; className?: string; delay?: number; children: ReactNode }) {
+type Tone = 'primary' | 'violet' | 'green' | 'blue' | 'amber' | 'pink' | 'teal';
+type Pattern = 'dots' | 'grid' | 'lines' | 'rings';
+
+/** Each card has its own hover color (tone) and a faint background texture (pattern), styled in responsive.css. */
+function Card({ icon, title, text, className = '', delay = 0, tone, pattern, children }: { icon: ReactNode; title: string; text: string; className?: string; delay?: number; tone: Tone; pattern: Pattern; children: ReactNode }) {
   return (
     <BlurFade delay={delay} className={className}>
-      <SpotlightCard>
+      <SpotlightCard className={`tone-${tone} pat-${pattern}`}>
         <div className="ico">{icon}</div>
         <h3>{title}</h3>
         <p>{text}</p>
@@ -189,13 +193,13 @@ export default function Features({ lang }: { lang: Lang }) {
   const f = dict(lang).features;
   return (
     <div className="bento">
-      <Card className="w4" icon={<Lock />} title={f.enc.title} text={f.enc.text}><EncryptionViz f={f.enc} /></Card>
-      <Card delay={0.06} icon={<EyeOff />} title={f.whisper.title} text={f.whisper.text}><WhisperViz f={f.whisper} /></Card>
-      <Card className="w3" icon={<PhoneCall />} title={f.calls.title} text={f.calls.text}><CallViz f={f.calls} /></Card>
-      <Card className="w3" delay={0.06} icon={<TerminalSquare />} title={f.binary.title} text={f.binary.text}><BootViz f={f.binary} /></Card>
-      <Card icon={<ShieldCheck />} title={f.admin.title} text={f.admin.text}><AdminViz f={f.admin} /></Card>
-      <Card delay={0.06} icon={<Languages />} title={f.i18n.title} text={f.i18n.text}><I18nViz /></Card>
-      <Card delay={0.12} icon={<Sparkles />} title={f.platforms.title} text={f.platforms.text}><PlatformViz f={f.platforms} /></Card>
+      <Card className="w4" tone="primary" pattern="dots" icon={<Lock />} title={f.enc.title} text={f.enc.text}><EncryptionViz f={f.enc} /></Card>
+      <Card delay={0.06} tone="violet" pattern="rings" icon={<EyeOff />} title={f.whisper.title} text={f.whisper.text}><WhisperViz f={f.whisper} /></Card>
+      <Card className="w3" tone="green" pattern="grid" icon={<PhoneCall />} title={f.calls.title} text={f.calls.text}><CallViz f={f.calls} /></Card>
+      <Card className="w3" delay={0.06} tone="blue" pattern="lines" icon={<TerminalSquare />} title={f.binary.title} text={f.binary.text}><BootViz f={f.binary} /></Card>
+      <Card tone="amber" pattern="dots" icon={<ShieldCheck />} title={f.admin.title} text={f.admin.text}><AdminViz f={f.admin} /></Card>
+      <Card delay={0.06} tone="pink" pattern="rings" icon={<Languages />} title={f.i18n.title} text={f.i18n.text}><I18nViz /></Card>
+      <Card delay={0.12} tone="teal" pattern="grid" icon={<Sparkles />} title={f.platforms.title} text={f.platforms.text}><PlatformViz f={f.platforms} /></Card>
     </div>
   );
 }

@@ -634,3 +634,85 @@
 .marq .track {
   direction: ltr;
 }
+
+/* Feature cards: per-card hover color + faint texture. */
+.bento .spot {
+  --tone: var(--primary);
+}
+.tone-violet {
+  --tone: var(--tone-violet);
+}
+.tone-green {
+  --tone: var(--success);
+}
+.tone-blue {
+  --tone: var(--tone-blue);
+}
+.tone-amber {
+  --tone: var(--warning);
+}
+.tone-pink {
+  --tone: var(--tone-pink);
+}
+.tone-teal {
+  --tone: var(--tone-teal);
+}
+.bento .spot::before {
+  background: radial-gradient(260px circle at var(--mx, -999px) var(--my, -999px), var(--tone), transparent 70%);
+}
+.bento .spot > .spot-in::before {
+  background: radial-gradient(380px circle at var(--mx, -999px) var(--my, -999px), color-mix(in srgb, var(--tone) 16%, transparent), transparent 65%);
+}
+.bento .ico {
+  background: color-mix(in srgb, var(--tone) 14%, var(--bg));
+  color: var(--tone);
+  transition: background 0.3s, transform 0.3s var(--ease);
+}
+.bento .spot:hover .ico {
+  background: color-mix(in srgb, var(--tone) 24%, var(--bg));
+  transform: scale(1.06);
+}
+.bento .spot-in > * {
+  position: relative;
+  z-index: 1;
+}
+.bento .spot-in::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  transition: opacity 0.4s;
+  background-image: var(--pat);
+  background-size: var(--pat-size, auto);
+  -webkit-mask-image: radial-gradient(ellipse 75% 90% at 100% 0%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse 75% 90% at 100% 0%, #000 0%, transparent 72%);
+}
+.bento .spot:hover .spot-in::after {
+  opacity: 1;
+}
+.pat-dots {
+  --pat: radial-gradient(color-mix(in srgb, var(--tone) 38%, transparent) 1.1px, transparent 1.6px);
+  --pat-size: 16px 16px;
+}
+.pat-grid {
+  --pat: linear-gradient(color-mix(in srgb, var(--tone) 22%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--tone) 22%, transparent) 1px, transparent 1px);
+  --pat-size: 22px 22px;
+}
+.pat-lines {
+  --pat: repeating-linear-gradient(135deg, color-mix(in srgb, var(--tone) 24%, transparent) 0 1px, transparent 1px 12px);
+}
+.pat-rings {
+  --pat: repeating-radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--tone) 26%, transparent) 0 1px, transparent 1px 18px);
+}
+[dir='rtl'] .bento .spot-in::after {
+  -webkit-mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento .spot:hover .ico {
+    transform: none;
+  }
+}

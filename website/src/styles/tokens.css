@@ -19,6 +19,10 @@
   --warning: #f5c265;
   --danger: #f0616d;
   --glow: rgba(217, 130, 106, 0.22);
+  --tone-violet: #a594f9;
+  --tone-blue: #6ea8f0;
+  --tone-pink: #ec86ae;
+  --tone-teal: #4fc9ba;
   --radius: 14px;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
@@ -59,6 +63,10 @@
   --warning: #8a5a00;
   --danger: #d63a3a;
   --glow: rgba(196, 98, 74, 0.18);
+  --tone-violet: #7a5bdb;
+  --tone-blue: #2f74cc;
+  --tone-pink: #c94a80;
+  --tone-teal: #1a9486;
   color-scheme: light;
 
   --sl-color-gray-6: var(--card);
