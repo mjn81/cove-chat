@@ -669,12 +669,11 @@
 }
 /* The icon stays brand-colored at rest and picks up the card's color on hover. */
 .bento .ico {
-  transition: background 0.3s, color 0.3s, transform 0.3s var(--ease);
+  transition: background 0.3s, color 0.3s;
 }
 .bento .spot:hover .ico {
   background: color-mix(in srgb, var(--tone) 22%, var(--bg));
   color: var(--tone);
-  transform: scale(1.06);
 }
 .bento .spot-in > * {
   position: relative;
@@ -724,9 +723,4 @@
 [dir='rtl'] .bento .spot-in::after {
   -webkit-mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
   mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
-}
-@media (prefers-reduced-motion: reduce) {
-  .bento .spot:hover .ico {
-    transform: none;
-  }
 }

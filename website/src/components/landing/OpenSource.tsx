@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { ArrowRight, BookOpen, CircleHelp, GitFork, Plus, Scale, Star } from 'lucide-react';
 import { BlurFade, BorderBeam, GithubIcon, NumberTicker } from './primitives';
 import { DISCUSSIONS_URL, GOOD_FIRST_ISSUES_URL, REPO_URL } from '@/lib/site';
@@ -20,9 +19,9 @@ export function OpenSource({ stars, lang }: { stars: number | null; lang: Lang }
       <BlurFade>
         <div className="star-banner beam-host">
           <BorderBeam size={180} duration={8} />
-          <motion.div className="star-ico" animate={{ rotate: [0, -12, 12, -8, 0], scale: [1, 1.12, 1] }} transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2.4, ease: 'easeInOut' }}>
+          <div className="star-ico">
             <Star />
-          </motion.div>
+          </div>
           <div className="grow">
             <h3>{d.starTitle}</h3>
             <p>{d.starText}</p>
