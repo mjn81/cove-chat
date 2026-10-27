@@ -1,0 +1,174 @@
+---
+/**
+ * Architecture overview: clients, the single Cove server (with its internal parts) and storage.
+ * Pure SVG painted with the site's CSS variables, so it follows the light/dark theme.
+ */
+const clients = [
+  { x: 30, title: 'Web client', sub: 'React, served as static files' },
+  { x: 290, title: 'Desktop app', sub: 'Wails shell (Windows, macOS, Linux)' },
+  { x: 550, title: 'Android app', sub: 'Kotlin and Jetpack Compose' },
+];
+const row1 = [
+  { title: 'REST API', sub: 'routes, RBAC, rate limits' },
+  { title: 'WebSocket hub', sub: 'events, presence, signaling' },
+  { title: 'WebRTC SFU', sub: 'calls and screen share' },
+  { title: 'STUN / TURN', sub: 'embedded NAT traversal' },
+];
+const row2 = [
+  { title: 'Auth', sub: 'sessions, CSRF, tokens' },
+  { title: 'Store', sub: 'repository layer' },
+  { title: 'Crypto', sub: 'Argon2id, AES-256-GCM' },
+  { title: 'Raw UDP voice', sub: 'air-gapped mode only', dashed: true },
+];
+const chipX = (i: number) => 50 + i * 180;
+---
+<figure class="arch">
+  <svg viewBox="0 0 800 560" role="img" aria-labelledby="arch-title arch-desc">
+    <title id="arch-title">Cove architecture</title>
+    <desc id="arch-desc">Web, desktop and Android clients connect over HTTPS, WebSocket and UDP to one Cove server, which stores data in an encrypted BadgerDB database and on disk.</desc>
+    <defs>
+      <marker id="arch-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" class="arrow-head" />
+      </marker>
+    </defs>
+
+    {clients.map((c) => (
+      <g>
+        <rect x={c.x} y="16" width="220" height="68" rx="12" class="box" />
+        <text x={c.x + 110} y="45" class="t-title" text-anchor="middle">{c.title}</text>
+        <text x={c.x + 110} y="66" class="t-sub" text-anchor="middle">{c.sub}</text>
+        <line x1={c.x + 90} y1="86" x2={c.x + 90} y2="148" class="link" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)" />
+        <line x1={c.x + 130} y1="86" x2={c.x + 130} y2="148" class="link dashed" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)" />
+      </g>
+    ))}
+
+    <rect x="30" y="150" width="740" height="264" rx="18" class="server" />
+    <text x="52" y="182" class="t-head">Cove server</text>
+    <text x="150" y="182" class="t-sub">one Go binary, configured by config.toml</text>
+
+    {row1.map((c, i) => (
+      <g>
+        <rect x={chipX(i)} y="204" width="160" height="62" rx="10" class="chip" />
+        <text x={chipX(i) + 80} y="231" class="t-chip" text-anchor="middle">{c.title}</text>
+        <text x={chipX(i) + 80} y="251" class="t-sub small" text-anchor="middle">{c.sub}</text>
+      </g>
+    ))}
+    {row2.map((c, i) => (
+      <g>
+        <rect x={chipX(i)} y="290" width="160" height="62" rx="10" class={c.dashed ? 'chip dashed' : 'chip'} />
+        <text x={chipX(i) + 80} y="317" class="t-chip" text-anchor="middle">{c.title}</text>
+        <text x={chipX(i) + 80} y="337" class="t-sub small" text-anchor="middle">{c.sub}</text>
+      </g>
+    ))}
+    <text x="52" y="388" class="t-sub small">Messages arrive as ciphertext; the server wraps and distributes channel keys.</text>
+
+    <line x1="260" y1="416" x2="260" y2="466" class="link" marker-end="url(#arch-arrow)" />
+    <line x1="540" y1="416" x2="540" y2="466" class="link" marker-end="url(#arch-arrow)" />
+
+    <g>
+      <path d="M180 480 v38 a80 14 0 0 0 160 0 v-38 z" class="box" />
+      <ellipse cx="260" cy="480" rx="80" ry="14" class="cap" />
+      <text x="260" y="512" class="t-title" text-anchor="middle">BadgerDB</text>
+      <text x="260" y="540" class="t-sub small" text-anchor="middle">encrypted at rest (data/db)</text>
+    </g>
+    <g>
+      <path d="M460 480 v38 a80 14 0 0 0 160 0 v-38 z" class="box" />
+      <ellipse cx="540" cy="480" rx="80" ry="14" class="cap" />
+      <text x="540" y="512" class="t-title" text-anchor="middle">Uploads</text>
+      <text x="540" y="540" class="t-sub small" text-anchor="middle">files on disk (data/uploads)</text>
+    </g>
+  </svg>
+  <figcaption>
+    <span class="key"><i class="solid"></i>HTTPS and WebSocket</span>
+    <span class="key"><i class="dash"></i>UDP media (WebRTC) and raw UDP voice</span>
+  </figcaption>
+</figure>
+
+<style>
+  .arch {
+    margin: 1.5rem 0;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    font-family: var(--font-sans);
+    display: block;
+  }
+  .box,
+  .chip {
+    fill: var(--card);
+    stroke: var(--border);
+    stroke-width: 1.5;
+  }
+  .cap {
+    fill: var(--accent);
+    stroke: var(--border);
+    stroke-width: 1.5;
+  }
+  .server {
+    fill: color-mix(in srgb, var(--primary) 6%, var(--bg));
+    stroke: color-mix(in srgb, var(--primary) 55%, var(--border));
+    stroke-width: 1.5;
+  }
+  .chip {
+    fill: var(--bg);
+  }
+  .dashed {
+    stroke-dasharray: 5 5;
+  }
+  .link {
+    stroke: var(--muted-fg);
+    stroke-width: 1.6;
+    fill: none;
+  }
+  .link.dashed {
+    stroke: var(--primary);
+  }
+  .arrow-head {
+    fill: var(--muted-fg);
+  }
+  .t-title {
+    fill: var(--fg);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .t-head {
+    fill: var(--primary);
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .t-chip {
+    fill: var(--fg);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .t-sub {
+    fill: var(--muted-fg);
+    font-size: 12px;
+  }
+  .t-sub.small {
+    font-size: 11px;
+  }
+  figcaption {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted-fg);
+  }
+  .key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .key i {
+    display: inline-block;
+    width: 28px;
+    border-top: 2px solid var(--muted-fg);
+  }
+  .key i.dash {
+    border-top: 2px dashed var(--primary);
+  }
+</style>

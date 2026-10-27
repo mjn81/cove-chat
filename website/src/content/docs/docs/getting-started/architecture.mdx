@@ -3,22 +3,9 @@ title: Architecture
 description: How the Cove server, clients, database and call engine fit together.
 ---
 
-```
- Web / Desktop / Android clients
-        |  HTTPS + WebSocket (signaling, events)     UDP (media)
-        v                                              v
- +--------------------------------------------------------------+
- |  nodetalk-server (Go)                                        |
- |   api      REST handlers, RBAC                               |
- |   ws       WebSocket hub, presence, call signaling           |
- |   rtc      WebRTC SFU (Pion) + embedded STUN/TURN            |
- |   voice    raw UDP audio router (air-gapped mode)            |
- |   store    repository layer                                  |
- |   db       BadgerDB, encrypted at rest                       |
- +--------------------------------------------------------------+
-        |
-   data/ directory (database + uploaded files)
-```
+import ArchitectureDiagram from '../../../../components/docs/ArchitectureDiagram.astro';
+
+<ArchitectureDiagram />
 
 ## Server components
 
