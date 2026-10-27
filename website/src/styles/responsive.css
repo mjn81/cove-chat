@@ -276,3 +276,306 @@
 .term-pane.on {
   visibility: visible;
 }
+
+/* Landing mockup of the real app: icon rail, conversation list, chat, member rail. */
+.app {
+  display: grid;
+  grid-template-columns: 48px 250px 1fr 56px;
+  height: 460px;
+  direction: ltr;
+  font-size: 13px;
+}
+[dir='rtl'] .app {
+  direction: ltr;
+}
+.app svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.app .av {
+  position: relative;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+  color: #1b1918;
+}
+.app .pd {
+  position: absolute;
+  inset-inline-end: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  background: var(--muted-fg);
+}
+.app .pd.online {
+  background: var(--success);
+}
+.app .pd.idle {
+  background: var(--warning);
+}
+.rail {
+  background: color-mix(in srgb, var(--bg) 82%, #000);
+  border-inline-end: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+.rail i {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--muted-fg);
+}
+.rail i.on {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+}
+.side {
+  background: color-mix(in srgb, var(--bg) 90%, #000);
+  border-inline-end: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.side-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 10px;
+  color: var(--muted-fg);
+}
+.side-head b {
+  color: var(--fg);
+  font-size: 14px;
+  margin-inline-end: auto;
+}
+.side-head small {
+  font-size: 11px;
+}
+.side-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--muted-fg);
+  background: var(--card);
+}
+.side-search span {
+  flex: 1;
+}
+.side-search kbd {
+  font: 500 10px var(--font-mono);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.convo,
+.side-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1px 8px;
+  padding: 8px;
+  border-radius: 9px;
+}
+.convo.on {
+  background: var(--accent);
+}
+.cm {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.cm b {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cm small {
+  color: var(--muted-fg);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.unread {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font: 700 10px var(--font-sans);
+  background: color-mix(in srgb, var(--primary) 85%, #000);
+  color: #fff;
+}
+.side-user {
+  margin: auto 0 0;
+  padding: 10px 14px;
+  border-radius: 0;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-fg);
+}
+.side-user .av {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+.main-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-fg);
+}
+.main-head .av {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+.main-head .sp {
+  flex: 1;
+}
+.main-head b {
+  color: var(--fg);
+}
+.main-head .calling {
+  color: var(--success);
+}
+.main .chat {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 18px;
+}
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 14px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--muted-fg);
+}
+.composer span {
+  flex: 1;
+}
+.members {
+  border-inline-start: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 90%, #000);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  color: var(--muted-fg);
+}
+.members .av {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 44px 1fr;
+    height: 400px;
+  }
+  .side,
+  .members {
+    display: none;
+  }
+}
+
+/* Stat numbers: the ticker is a span, so keep the label style off it. */
+.stat > span {
+  color: var(--muted-fg);
+  font-size: 13px;
+}
+.stat strong {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--fg);
+}
+
+/* Star banner */
+.star-banner {
+  --radius: 18px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 0% 0%, var(--glow), transparent 60%), var(--card);
+  text-align: start;
+}
+.star-banner h3 {
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.star-banner p {
+  color: var(--muted-fg);
+  font-size: 14px;
+  max-width: 56ch;
+}
+.star-ico {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--primary) 16%, var(--bg));
+  color: var(--primary);
+}
+.star-ico svg {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+.star-banner .grow {
+  flex: 1;
+}
+.star-banner .btn {
+  flex: none;
+}
+.star-count {
+  display: inline-flex;
+  align-items: center;
+  padding-inline-start: 10px;
+  margin-inline-start: 4px;
+  border-inline-start: 1px solid color-mix(in srgb, var(--primary-fg) 25%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 700px) {
+  .star-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px;
+  }
+}

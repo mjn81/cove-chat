@@ -13,7 +13,7 @@ export const fa: Dict = {
   nav: {
     features: 'امکانات', docs: 'مستندات', roadmap: 'نقشه راه', download: 'دانلود',
     menu: 'منو', language: 'زبان', github: 'مخزن گیت‌هاب',
-    toLight: 'تغییر به تم روشن', toDark: 'تغییر به تم تیره',
+    star: 'ستاره', toLight: 'تغییر به تم روشن', toDark: 'تغییر به تم تیره',
   },
   hero: {
     badgeFallback: 'متن‌باز',
@@ -24,8 +24,7 @@ export const fa: Dict = {
     download: 'دانلود',
     star: 'ستاره در گیت‌هاب',
     trust: ['مجوز MIT', 'خودمیزبان', 'AES-256-GCM', 'Go و React', 'وب، دسکتاپ، اندروید', 'بدون ردیابی'],
-    channels: { text: 'متنی', voice: 'صوتی' },
-    online: 'آنلاین - ۳',
+    ui: { search: 'جستجو...', composer: 'پیام به #design-team', channelDesc: 'گفتگوهای طراحی' },
     chat: [
       'سرور روی دستگاه جدید بالا آمد. انتقال چهار دقیقه طول کشید.',
       'عالی. وارد تماس می‌شوم تا صفحه‌ام را به اشتراک بگذارم.',
@@ -152,6 +151,11 @@ export const fa: Dict = {
     discussions: 'بحث‌ها',
     contributing: 'راهنمای مشارکت',
     license: 'مجوز MIT',
+    starTitle: 'Cove را دوست دارید؟ یک ستاره بدهید.',
+    starText: 'ستاره دادن رایگان است، یک ثانیه طول می‌کشد و به جوامع دیگر کمک می‌کند جایگزینی متن‌باز پیدا کنند که خودشان میزبانی کنند.',
+    starCta: 'ستاره در گیت‌هاب',
+    starNone: 'اولین ستاره را شما بدهید',
+    starCount: 'ستاره تاکنون',
   },
   faq: {
     eyebrow: 'پرسش‌های متداول',

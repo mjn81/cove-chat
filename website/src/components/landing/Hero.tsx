@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'motion/react';
-import { ArrowRight, Download, Hash, Lock, PhoneCall, ShieldCheck, Star, Volume2, Server, Code2, Smartphone } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Code2, Download, Hash, LayoutList, Lock, MessageCircle, Mic, Phone, PhoneCall, Plus, Search, Send, Server, Settings, ShieldCheck, SlidersHorizontal, Smartphone, Smile, Star, Users, Video, Volume2 } from 'lucide-react';
 import { BorderBeam, GithubIcon } from './primitives';
 import ScrambleText from './ScrambleText';
 import { REPO_URL } from '@/lib/site';
 import { dict, localUrl, type Lang } from '@/i18n';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+/** Sidebar conversations, shaped like the real app: letter avatars, last-message preview, unread pill, presence dot on DMs. */
+interface Convo { name: string; sub: string; color: string; unread?: number; active?: boolean; presence?: 'online' | 'idle' }
+const CONVOS: Convo[] = [
+  { name: 'launch-crew', sub: 'Sara: ready to ship', color: '#ef5350', unread: 2 },
+  { name: 'design-team', sub: 'Jo: Whisper for the keys?', color: '#58c48a', active: true },
+  { name: 'Sara', sub: 'Online', color: '#6b8fd6', presence: 'online' },
+  { name: 'Amir', sub: 'Idle', color: '#58a97b', presence: 'idle' },
+  { name: 'general', sub: 'You: [encrypted]', color: '#f5c265' },
+];
 
 interface Line {
   who: string;
@@ -80,47 +90,63 @@ function ProductShot({ lang }: { lang: Lang }) {
       >
         <BorderBeam size={220} duration={10} />
         <div className="app">
-          <div className="srv"><i>C</i><i>D</i><i>G</i><i>+</i></div>
-          <div className="chs">
-            <h6>{d.channels.text}</h6>
-            <div className="ch on"><Hash />general</div>
-            <div className="ch"><Hash />design</div>
-            <div className="ch"><Hash />releases</div>
-            <h6 style={{ marginTop: 14 }}>{d.channels.voice}</h6>
-            <div className="ch"><span className="eq"><s /><s /><s /></span>Lounge</div>
+          <div className="rail">
+            <i className="on"><LayoutList /></i>
+            <i><MessageCircle /></i>
+            <i><Hash /></i>
           </div>
-          <div className="chat">
-            <AnimatePresence initial={false}>
-              {LINES.slice(0, count).map((l) => (
-                <motion.div
-                  key={l.who}
-                  className="msg"
-                  layout
-                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                >
-                  <div className="av" style={{ background: l.color }}>{l.initials}</div>
-                  <div>
-                    <b>{l.who}</b><small>{l.time}</small>
-                    <p>{l.encrypted ? <ScrambleText text={l.text} duration={1100} /> : l.text}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            <AnimatePresence>
-              {typing && (
-                <motion.div className="typing" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.2 }}>
-                  <s /><s /><s />
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="side">
+            <div className="side-head"><b>Cove</b><small>0.9.0</small><ChevronLeft /></div>
+            <div className="side-search"><Search /><span>{d.ui.search}</span><kbd>Ctrl K</kbd><Plus /></div>
+            {CONVOS.map((c) => (
+              <div key={c.name} className={`convo ${c.active ? 'on' : ''}`}>
+                <div className="av" style={{ background: c.color }}>{c.name[0].toUpperCase()}{c.presence && <span className={`pd ${c.presence}`} />}</div>
+                <div className="cm"><b>{c.name}</b><small>{c.sub}</small></div>
+                {c.unread ? <span className="unread">{c.unread}</span> : null}
+              </div>
+            ))}
+            <div className="side-user"><div className="av" style={{ background: 'var(--primary)' }}>A</div><div className="cm"><b>alice</b><small>Online</small></div><Settings /></div>
           </div>
-          <div className="people">
-            <h6>{d.online}</h6>
-            <div className="person"><div className="av" style={{ background: '#6b8fd6' }}>SA</div>Sara</div>
-            <div className="person"><div className="av" style={{ background: '#58a97b' }}>AM</div>Amir</div>
-            <div className="person"><div className="av idle" style={{ background: 'var(--primary)' }}>JO</div>Jo</div>
+          <div className="main">
+            <div className="main-head">
+              <div className="av" style={{ background: '#58c48a' }}>D</div>
+              <div className="cm"><b>design-team</b><small>{d.ui.channelDesc}</small></div>
+              <span className="sp" /><Search /><SlidersHorizontal /><Phone className="calling" />
+            </div>
+            <div className="chat">
+              <AnimatePresence initial={false}>
+                {LINES.slice(0, count).map((l) => (
+                  <motion.div
+                    key={l.who}
+                    className="msg"
+                    layout
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  >
+                    <div className="av" style={{ background: l.color }}>{l.initials}</div>
+                    <div>
+                      <b>{l.who}</b><small>{l.time}</small>
+                      <p>{l.encrypted ? <ScrambleText text={l.text} duration={1100} /> : l.text}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <AnimatePresence>
+                {typing && (
+                  <motion.div className="typing" layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.2 }}>
+                    <s /><s /><s />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="composer"><Plus /><span>{d.ui.composer}</span><Mic /><Video /><Smile /><Send className="rtl-flip" /></div>
+          </div>
+          <div className="members">
+            <Users />
+            <div className="av" style={{ background: '#6b8fd6' }}>S<span className="pd online" /></div>
+            <div className="av" style={{ background: '#58a97b' }}>A<span className="pd online" /></div>
+            <div className="av" style={{ background: 'var(--primary)' }}>J<span className="pd idle" /></div>
           </div>
         </div>
       </motion.div>

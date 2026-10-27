@@ -13,7 +13,7 @@ export const ar: Dict = {
   nav: {
     features: 'المزايا', docs: 'التوثيق', roadmap: 'خارطة الطريق', download: 'تنزيل',
     menu: 'القائمة', language: 'اللغة', github: 'مستودع GitHub',
-    toLight: 'التبديل إلى المظهر الفاتح', toDark: 'التبديل إلى المظهر الداكن',
+    star: 'نجمة', toLight: 'التبديل إلى المظهر الفاتح', toDark: 'التبديل إلى المظهر الداكن',
   },
   hero: {
     badgeFallback: 'مفتوح المصدر',
@@ -24,8 +24,7 @@ export const ar: Dict = {
     download: 'تنزيل',
     star: 'نجمة على GitHub',
     trust: ['رخصة MIT', 'استضافة ذاتية', 'AES-256-GCM', 'Go وReact', 'ويب وسطح المكتب وأندرويد', 'بلا تتبع'],
-    channels: { text: 'نصية', voice: 'صوتية' },
-    online: 'متصل - 3',
+    ui: { search: 'بحث...', composer: 'رسالة إلى #design-team', channelDesc: 'نقاشات التصميم' },
     chat: [
       'الخادم يعمل على الجهاز الجديد. استغرق النقل أربع دقائق.',
       'ممتاز. سأنضم إلى المكالمة لمشاركة شاشتي.',
@@ -152,6 +151,11 @@ export const ar: Dict = {
     discussions: 'النقاشات',
     contributing: 'دليل المساهمة',
     license: 'رخصة MIT',
+    starTitle: 'أعجبك Cove؟ امنحه نجمة.',
+    starText: 'النجمة مجانية وتستغرق ثانية واحدة، وتساعد مجتمعات أخرى على إيجاد بديل مفتوح المصدر تستضيفه بنفسها.',
+    starCta: 'نجمة على GitHub',
+    starNone: 'كن أول من يمنحه نجمة',
+    starCount: 'نجمة حتى الآن',
   },
   faq: {
     eyebrow: 'الأسئلة الشائعة',

@@ -41,7 +41,7 @@ export async function toggleTheme(origin: { x: number; y: number }): Promise<The
   );
   document.documentElement.animate(
     { clipPath: [`circle(0px at ${origin.x}px ${origin.y}px)`, `circle(${radius}px at ${origin.x}px ${origin.y}px)`] },
-    { duration: 500, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' },
+    { duration: 333, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' },
   );
   return next;
 }

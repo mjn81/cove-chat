@@ -11,7 +11,7 @@ export const en = {
   nav: {
     features: 'Features', docs: 'Docs', roadmap: 'Roadmap', download: 'Download',
     menu: 'Menu', language: 'Language', github: 'GitHub repository',
-    toLight: 'Switch to light theme', toDark: 'Switch to dark theme',
+    star: 'Star', toLight: 'Switch to light theme', toDark: 'Switch to dark theme',
   },
   hero: {
     badgeFallback: 'Open source',
@@ -22,8 +22,7 @@ export const en = {
     download: 'Download',
     star: 'Star on GitHub',
     trust: ['MIT licensed', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
-    channels: { text: 'Text', voice: 'Voice' },
-    online: 'Online - 3',
+    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions' },
     chat: [
       'The server is up on the new box. Migration took four minutes.',
       'Nice. Joining the call to share my screen.',
@@ -150,6 +149,11 @@ export const en = {
     discussions: 'Discussions',
     contributing: 'Contributing guide',
     license: 'MIT license',
+    starTitle: 'Like Cove? Give it a star.',
+    starText: 'A star is free, takes one second, and helps other communities find an open-source alternative they can host themselves.',
+    starCta: 'Star on GitHub',
+    starNone: 'Be the first to star it',
+    starCount: 'stars so far',
   },
   faq: {
     eyebrow: 'FAQ',

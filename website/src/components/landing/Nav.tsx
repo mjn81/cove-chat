@@ -99,7 +99,7 @@ export default function Nav({ links, stars, lang }: { links: NavLink[]; stars: n
       </div>
       <a className="gh-pill" href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label={d.nav.github}>
         <GithubIcon />
-        {stars !== null ? <span className="num"><NumberTicker value={stars} /></span> : <span>GitHub</span>}
+        {stars !== null && stars > 0 ? <span className="num"><NumberTicker value={stars} /></span> : <span>{d.nav.star}</span>}
       </a>
       <LangSelect lang={lang} label={d.nav.language} />
       <ThemeToggle lightLabel={d.nav.toLight} darkLabel={d.nav.toDark} />
