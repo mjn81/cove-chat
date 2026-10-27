@@ -27,8 +27,12 @@
       "invalid_json": "تنسيق الطلب غير صالح",
       "session_failed": "فشل إنشاء الجلسة. يرجى المحاولة مرة أخرى.",
       "login_failed": "فشل تسجيل الدخول",
-      "register_failed": "فشل التسجيل"
-    }
+      "register_failed": "فشل التسجيل",
+      "registration_closed": "التسجيل مغلق على هذا الخادم.",
+      "invite_required": "هذا الخادم بدعوة فقط. أدخل رمز الدعوة.",
+      "invite_invalid": "رمز الدعوة غير صالح."
+    },
+    "invite_code": "رمز الدعوة"
   },
   "sidebar": {
     "groups": "المجموعات",
@@ -73,7 +77,7 @@
     "account_menu": "قائمة الحساب"
   },
   "chat": {
-  	"copied": "تم النسخ",
+    "copied": "تم النسخ",
     "message_placeholder": "رسالة…",
     "today": "اليوم",
     "yesterday": "أمس",
@@ -579,5 +583,200 @@
     "recording": "جارٍ تسجيل رسالة الفيديو...",
     "trim": "قص الفيديو",
     "retake": "إعادة التسجيل"
+  },
+  "admin": {
+    "title": "إدارة الخادم",
+    "section": "الإدارة",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "registration": "التسجيل",
+      "config": "الإعدادات",
+      "admins": "المشرفون",
+      "data": "البيانات"
+    },
+    "roles": {
+      "owner": "المالك",
+      "admin": "مشرف"
+    },
+    "overview": {
+      "users": "المستخدمون",
+      "channels": "القنوات",
+      "active_invites": "الدعوات النشطة",
+      "uptime": "مدة التشغيل",
+      "data_size": "حجم البيانات",
+      "version": "الإصدار"
+    },
+    "audit": {
+      "title": "نشاط المشرفين الأخير",
+      "empty": "لا يوجد شيء بعد.",
+      "actions": {
+        "config": {
+          "update": "غيّر إعداداً"
+        },
+        "invite": {
+          "create": "أنشأ دعوة",
+          "revoke": "ألغى دعوة"
+        },
+        "admin": {
+          "grant": "عيّن مشرفاً",
+          "revoke": "أزال مشرفاً"
+        },
+        "owner": {
+          "transfer": "نقل الملكية إلى"
+        },
+        "backup": {
+          "download": "نزّل نسخة احتياطية"
+        },
+        "server": {
+          "reset": "أعاد ضبط الخادم"
+        }
+      }
+    },
+    "registration": {
+      "mode": "من يمكنه التسجيل",
+      "mode_open": "الجميع",
+      "mode_invite_only": "بدعوة فقط",
+      "mode_closed": "مغلق",
+      "mode_open_hint": "يمكن لأي شخص يصل إلى الخادم إنشاء حساب.",
+      "mode_invite_only_hint": "يحتاج الحساب الجديد إلى رمز دعوة صالح.",
+      "mode_closed_hint": "لا يمكن لأحد إنشاء حساب.",
+      "saved": "تم حفظ إعداد التسجيل"
+    },
+    "invites": {
+      "title": "رموز الدعوة",
+      "type": "النوع",
+      "type_limited": "عدد محدود",
+      "type_unlimited": "غير محدود",
+      "max_uses": "عدد مرات الاستخدام",
+      "expires": "ينتهي",
+      "expires_hint": "اختياري. اتركه فارغاً لعدم الانتهاء.",
+      "code": "رمز مخصص",
+      "code_hint": "اختياري. من 6 إلى 64 حرفاً أو رقماً أو - أو _. اتركه فارغاً للتوليد التلقائي.",
+      "note": "ملاحظة",
+      "create": "إنشاء دعوة",
+      "created": "تم إنشاء الدعوة {{code}}",
+      "copied": "تم نسخ الرمز",
+      "copy": "نسخ الرمز",
+      "revoke": "إلغاء الدعوة",
+      "empty": "لا توجد رموز دعوة بعد.",
+      "status_active": "نشطة",
+      "status_expired": "منتهية",
+      "status_exhausted": "مستنفدة",
+      "status_revoked": "ملغاة",
+      "uses": "الاستخدام: {{uses}}",
+      "expires_on": "تنتهي {{date}}",
+      "from_config": "config.toml"
+    },
+    "config": {
+      "saved": "تم حفظ الإعدادات",
+      "restart_needed": "بعض التغييرات تُطبَّق بعد إعادة تشغيل الخادم.",
+      "owner_only": "للمالك فقط",
+      "needs_restart": "يتطلب إعادة تشغيل",
+      "discard": "تجاهل التغييرات",
+      "confirm_title": "أكّد بكلمة المرور",
+      "confirm_description": "تغيّر هذه الإعدادات طريقة الوصول إلى الخادم. يمكن للمالك وحده تغييرها.",
+      "groups": {
+        "limits": "الحدود",
+        "calls": "المكالمات",
+        "network": "الشبكة",
+        "security": "الأمان"
+      },
+      "keys": {
+        "server": {
+          "max_file_size_mb": "أقصى حجم للملف (ميغابايت)",
+          "max_video_size_mb": "أقصى حجم للفيديو (ميغابايت)",
+          "max_video_duration_sec": "أقصى مدة للفيديو (ثوانٍ)",
+          "domain": "نطاق الخادم",
+          "frontend_origin": "أصل عميل الويب",
+          "trust_proxy_headers": "الوثوق بترويسات الوسيط",
+          "http_port": "منفذ HTTP",
+          "dev": "وضع التطوير"
+        },
+        "rate_limit": {
+          "global_rps": "الطلبات في الثانية (عام)",
+          "auth_rps": "الطلبات في الثانية (تسجيل الدخول)"
+        },
+        "voice": {
+          "mode": "محرك المكالمات",
+          "max_participants_per_call": "أقصى عدد مشاركين في المكالمة",
+          "public_ip": "عنوان IP العام للمكالمات",
+          "embedded_turn_enabled": "خادم TURN المدمج"
+        },
+        "security": {
+          "token_expire_hours": "مدة الجلسة (ساعات)"
+        }
+      }
+    },
+    "admins": {
+      "description": "يمكن للمشرفين إدارة التسجيل والدعوات والإعدادات. المالك وحده يضيف المشرفين وينشئ النسخ الاحتياطية أو يمسح الخادم.",
+      "make_owner": "تعيين كمالك",
+      "remove": "إزالة المشرف",
+      "add": "إضافة مشرف",
+      "username_placeholder": "اسم المستخدم",
+      "grant": "تعيين كمشرف",
+      "done_grant": "{{username}} أصبح مشرفاً",
+      "done_revoke": "{{username}} لم يعد مشرفاً",
+      "done_transfer": "{{username}} أصبح المالك",
+      "confirm_grant_title": "تعيين {{username}} مشرفاً؟",
+      "confirm_grant_description": "سيرى هذه اللوحة ويمكنه تغيير التسجيل والدعوات والإعدادات.",
+      "confirm_revoke_title": "إزالة {{username}} من الإشراف؟",
+      "confirm_revoke_description": "سيفقد الوصول إلى هذه اللوحة فوراً.",
+      "confirm_transfer_title": "جعل {{username}} المالك؟",
+      "confirm_transfer_description": "ستصبح مشرفاً عادياً. المالك الجديد وحده يستطيع التراجع."
+    },
+    "data": {
+      "backup_title": "النسخ الاحتياطي",
+      "backup": "نسخة احتياطية مشفرة",
+      "backup_hint": "ينزّل كل بيانات الخادم في ملف واحد محمي بعبارة مرور تختارها. احتفظ بالعبارة: بدونها لا يمكن فتح الملف.",
+      "backup_button": "تنزيل النسخة",
+      "backup_confirm": "أدخل كلمة المرور وعبارة مرور لتشفير ملف النسخة الاحتياطية.",
+      "backup_done": "تم تنزيل النسخة الاحتياطية",
+      "danger_title": "منطقة الخطر",
+      "reset": "إعادة ضبط بيانات الخادم",
+      "reset_hint": "يحذف كل الحسابات عدا حسابك، وكل القنوات والرسائل والملفات. تبقى الإعدادات.",
+      "reset_button": "إعادة ضبط البيانات",
+      "reset_confirm": "سيحذف هذا نهائياً الحسابات الأخرى والقنوات والرسائل والملفات.",
+      "reset_done": "تمت إعادة ضبط بيانات الخادم",
+      "delete": "حذف الخادم",
+      "delete_hint": "يحذف كل شيء بما في ذلك حسابك ثم يوقف الخادم.",
+      "delete_button": "حذف الخادم",
+      "delete_confirm": "سيحذف هذا كل البيانات نهائياً ويوقف الخادم. أنشئ نسخة احتياطية أولاً."
+    },
+    "step_up": {
+      "password": "كلمة المرور الخاصة بك",
+      "passphrase": "عبارة مرور النسخة الاحتياطية",
+      "passphrase_hint": "12 حرفاً على الأقل.",
+      "type_to_confirm": "اكتب \"{{phrase}}\" للتأكيد"
+    },
+    "errors": {
+      "generic": "حدث خطأ ما",
+      "forbidden": "ليس لديك صلاحية الوصول إلى هذا.",
+      "password_invalid": "كلمة المرور خاطئة.",
+      "too_many_attempts": "محاولات خاطئة كثيرة. حاول مجدداً بعد دقائق.",
+      "invalid_json": "طلب غير صالح.",
+      "invalid_setting": "إعداد غير صالح",
+      "owner_only_setting": "المالك وحده يستطيع تغيير هذا الإعداد.",
+      "config_unreadable": "تعذّرت قراءة ملف الإعدادات.",
+      "config_unavailable": "ملف الإعدادات غير متاح.",
+      "config_write_failed": "تعذّرت كتابة ملف الإعدادات.",
+      "internal": "خطأ داخلي.",
+      "invite_max_uses": "يجب أن يكون عدد مرات الاستخدام بين 0 و1,000,000.",
+      "invite_note_too_long": "الملاحظة طويلة جداً.",
+      "invite_code_format": "يتكون الرمز من 6 إلى 64 حرفاً أو رقماً أو - أو _.",
+      "invite_expiry": "يجب أن يكون تاريخ الانتهاء في المستقبل.",
+      "invite_exists": "هذا الرمز موجود بالفعل.",
+      "invite_not_found": "الدعوة غير موجودة.",
+      "invite_from_config": "هذه الدعوة من config.toml. أزلها من هناك.",
+      "user_not_found": "المستخدم غير موجود.",
+      "owner_role_fixed": "لا يمكن نقل دور المالك إلا عبر نقل الملكية.",
+      "confirm_mismatch": "نص التأكيد غير مطابق.",
+      "transfer_to_self": "أنت المالك بالفعل.",
+      "passphrase_short": "يجب أن تتكون العبارة من 12 حرفاً على الأقل.",
+      "backup_failed": "تعذّر إنشاء النسخة الاحتياطية.",
+      "reset_failed": "فشلت إعادة الضبط.",
+      "delete_failed": "فشل حذف الخادم.",
+      "not_found": "غير موجود.",
+      "owner_cannot_delete": "لا يستطيع المالك حذف حسابه. انقل الملكية أولاً."
+    }
   }
 }

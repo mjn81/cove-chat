@@ -1,17 +1,187 @@
 basePath: /
 definitions:
-  api.AddMembersRequest:
+  internal_api.AddMembersRequest:
     properties:
-      usernames:
+      user_ids:
         example:
-        - '["bob"'
-        - '"charlie"]'
+        - '["user-1"'
+        - '"user-2"]'
         items:
           type: string
         type: array
     type: object
-  api.CreateChannelRequest:
+  internal_api.AdminAccountResponse:
     properties:
+      id:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_api.AdminConfigResponse:
+    properties:
+      settings:
+        items:
+          $ref: '#/definitions/internal_api.ConfigSettingResponse'
+        type: array
+    type: object
+  internal_api.AdminListResponse:
+    properties:
+      admins:
+        items:
+          $ref: '#/definitions/internal_api.AdminAccountResponse'
+        type: array
+    type: object
+  internal_api.AdminOverviewResponse:
+    properties:
+      active_invites:
+        example: 3
+        type: integer
+      channels:
+        example: 12
+        type: integer
+      data_size_bytes:
+        example: 10485760
+        type: integer
+      domain:
+        example: chat.example.com
+        type: string
+      registration_mode:
+        example: invite_only
+        type: string
+      uptime_seconds:
+        example: 86400
+        type: integer
+      users:
+        example: 42
+        type: integer
+      version:
+        example: 0.9.0
+        type: string
+    type: object
+  internal_api.AuditListResponse:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/nodetalk_backend_internal_models.AuditEntry'
+        type: array
+    type: object
+  internal_api.BackupRequest:
+    properties:
+      passphrase:
+        type: string
+      password:
+        type: string
+    type: object
+  internal_api.ChannelResponse:
+    properties:
+      avatar_id:
+        type: string
+      created_at:
+        type: string
+      creator_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      invite_link:
+        type: string
+      is_private:
+        type: boolean
+      last_message_at:
+        type: string
+      last_message_ciphertext:
+        items:
+          type: integer
+        type: array
+      last_message_id:
+        type: string
+      last_message_nonce:
+        items:
+          type: integer
+        type: array
+      last_message_sender_id:
+        type: string
+      last_message_type:
+        type: string
+      member_avatars:
+        additionalProperties:
+          type: string
+        type: object
+      member_domains:
+        additionalProperties:
+          type: string
+        type: object
+      member_names:
+        additionalProperties:
+          type: string
+        type: object
+      member_roles:
+        additionalProperties:
+          type: integer
+        type: object
+      member_statuses:
+        additionalProperties:
+          type: string
+        type: object
+      members:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      unread_count:
+        type: integer
+      user_role:
+        description: 0=Member, 10=Admin, 20=Owner
+        type: integer
+    type: object
+  internal_api.ConfigSettingResponse:
+    properties:
+      group:
+        description: panel grouping
+        type: string
+      key:
+        description: '"section.key", e.g. "registration.mode"'
+        type: string
+      max:
+        type: integer
+      min:
+        type: integer
+      name:
+        description: TOML key
+        type: string
+      options:
+        items:
+          type: string
+        type: array
+      owner_only:
+        description: |-
+          OwnerOnly keys change network exposure or session security, so only the
+          owner (with their password) may touch them.
+        type: boolean
+      restart_required:
+        description: |-
+          RestartRequired keys are saved to the file but only take effect after a
+          restart. The others are applied live.
+        type: boolean
+      section:
+        description: TOML table
+        type: string
+      type:
+        description: '"enum" | "int" | "bool" | "string"'
+        type: string
+      value: {}
+    type: object
+  internal_api.CreateChannelRequest:
+    properties:
+      avatar_id:
+        type: string
+      description:
+        example: A place for design discussions
+        type: string
       is_private:
         example: false
         type: boolean
@@ -26,13 +196,85 @@ definitions:
         example: Design Team
         type: string
     type: object
-  api.ErrorResponse:
+  internal_api.CreateInviteRequest:
+    properties:
+      code:
+        example: WELCOME-2026
+        type: string
+      expires_at:
+        example: "2026-12-31T23:59:59Z"
+        type: string
+      max_uses:
+        description: 0 = unlimited
+        example: 10
+        type: integer
+      note:
+        example: launch party
+        type: string
+    type: object
+  internal_api.DeleteServerRequest:
+    properties:
+      confirm:
+        example: chat.example.com
+        type: string
+      password:
+        type: string
+    type: object
+  internal_api.ErrorResponse:
     properties:
       error:
         example: invalid credentials
         type: string
     type: object
-  api.LoginRequest:
+  internal_api.ExploreChannelResponse:
+    properties:
+      avatar_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      invite_link:
+        type: string
+      member_count:
+        type: integer
+      name:
+        type: string
+    type: object
+  internal_api.InviteListResponse:
+    properties:
+      invites:
+        items:
+          $ref: '#/definitions/internal_api.InviteResponse'
+        type: array
+    type: object
+  internal_api.InviteResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      expires_at:
+        type: string
+      max_uses:
+        type: integer
+      note:
+        type: string
+      revoked:
+        type: boolean
+      source:
+        type: string
+      status:
+        description: Status is "active", "expired", "exhausted" or "revoked".
+        type: string
+      uses:
+        type: integer
+    type: object
+  internal_api.LoginRequest:
     properties:
       password:
         example: s3cur3P@ss!
@@ -41,20 +283,56 @@ definitions:
         example: alice
         type: string
     type: object
-  api.LoginResponse:
+  internal_api.LoginResponse:
     properties:
-      token:
-        example: Bearer eyJhb...
+      allow_channel_adds:
         type: string
-      user_id:
+      avatar_id:
+        type: string
+      avatar_ids:
+        items:
+          type: string
+        type: array
+      banner_color:
+        type: string
+      custom_msg:
+        type: string
+      dm_permission:
+        type: string
+      domain:
+        example: localhost
+        type: string
+      friend_request_permission:
+        type: string
+      id:
         example: a3f4...
         type: string
+      server_role:
+        description: ServerRole is "owner" or "admin" for panel users, empty otherwise.
+        type: string
+      status:
+        example: online
+        type: string
+      status_preference:
+        example: auto
+        type: string
+      token:
+        type: string
       username:
         example: alice
         type: string
     type: object
-  api.RegisterRequest:
+  internal_api.PasswordRequest:
     properties:
+      password:
+        type: string
+    type: object
+  internal_api.RegisterRequest:
+    properties:
+      invite_code:
+        description: InviteCode is required when the server runs in invite-only mode.
+        example: K7M2-X9QF
+        type: string
       password:
         example: s3cur3P@ss!
         type: string
@@ -62,7 +340,7 @@ definitions:
         example: alice
         type: string
     type: object
-  api.RegisterResponse:
+  internal_api.RegisterResponse:
     properties:
       id:
         example: a3f4...
@@ -71,48 +349,178 @@ definitions:
         example: alice
         type: string
     type: object
-  api.StatusResponse:
+  internal_api.ResetRequest:
+    properties:
+      confirm:
+        example: RESET
+        type: string
+      password:
+        type: string
+    type: object
+  internal_api.ServerInfoResponse:
+    properties:
+      needs_owner:
+        description: 'NeedsOwner is true on a fresh server: the next account created
+          becomes the owner.'
+        example: false
+        type: boolean
+      registration_mode:
+        description: RegistrationMode is "open", "invite_only" or "closed".
+        example: invite_only
+        type: string
+    type: object
+  internal_api.StatusResponse:
     properties:
       status:
         example: success
         type: string
     type: object
-  api.UploadFileResponse:
+  internal_api.TransferOwnerRequest:
     properties:
-      file_id:
+      confirm:
+        example: TRANSFER
         type: string
-      mime:
-        type: string
-      size:
-        type: integer
-      uploaded:
-        type: string
-    type: object
-  api.UserResponse:
-    properties:
-      domain:
-        example: localhost
-        type: string
-      id:
-        example: user-1
-        type: string
-      status:
-        example: online
+      password:
         type: string
       username:
         example: alice
         type: string
     type: object
-  models.Channel:
+  internal_api.UpdateChannelRequest:
+    properties:
+      avatar_id:
+        type: string
+      description:
+        type: string
+      is_private:
+        type: boolean
+      name:
+        type: string
+    type: object
+  internal_api.UpdateConfigRequest:
+    properties:
+      changes:
+        additionalProperties: {}
+        type: object
+      password:
+        type: string
+    type: object
+  internal_api.UpdateConfigResponse:
+    properties:
+      applied:
+        items:
+          type: string
+        type: array
+      restart_required:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api.UpdateUserRequest:
+    properties:
+      allow_channel_adds:
+        type: string
+      avatar_id:
+        type: string
+      avatar_ids:
+        items:
+          type: string
+        type: array
+      banner_color:
+        type: string
+      custom_msg:
+        type: string
+      dm_permission:
+        type: string
+      friend_request_permission:
+        type: string
+      old_password:
+        type: string
+      password:
+        type: string
+      status_preference:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_api.UserResponse:
+    properties:
+      allow_channel_adds:
+        type: string
+      avatar_id:
+        type: string
+      avatar_ids:
+        items:
+          type: string
+        type: array
+      banner_color:
+        type: string
+      custom_msg:
+        type: string
+      dm_permission:
+        type: string
+      domain:
+        example: localhost
+        type: string
+      friend_request_permission:
+        type: string
+      id:
+        example: user-1
+        type: string
+      server_role:
+        description: ServerRole is only filled in for the caller's own account (/api/me),
+          never for other users.
+        type: string
+      status:
+        example: online
+        type: string
+      status_preference:
+        example: auto
+        type: string
+      username:
+        example: alice
+        type: string
+    type: object
+  internal_api.VersionResponse:
+    properties:
+      udp_port:
+        example: 9090
+        type: integer
+      version:
+        example: V1.0.0
+        type: string
+    type: object
+  nodetalk_backend_internal_models.AuditEntry:
+    properties:
+      action:
+        description: e.g. "invite.create"
+        type: string
+      actor_id:
+        type: string
+      actor_name:
+        type: string
+      at:
+        type: string
+      id:
+        type: string
+      target:
+        description: e.g. a username or invite code (never a secret)
+        type: string
+    type: object
+  nodetalk_backend_internal_models.Channel:
     properties:
       aes_key_enc:
         description: Channel AES-256 key encrypted with server KEK
         items:
           type: integer
         type: array
+      avatar_id:
+        type: string
       created_at:
         type: string
       creator_id:
+        type: string
+      description:
         type: string
       id:
         type: string
@@ -122,14 +530,34 @@ definitions:
       is_private:
         description: If true, hidden from public search
         type: boolean
-      members:
+      last_message_at:
+        description: 'Ephemeral: Populated in ListUserChannels'
+        type: string
+      last_message_ciphertext:
+        description: |-
+          Ephemeral, populated in ListUserChannels: the channel's most recent
+          message, still encrypted — lets the client render a sidebar preview
+          without a second round-trip. The server never sees the plaintext.
         items:
-          type: string
+          type: integer
         type: array
+      last_message_id:
+        type: string
+      last_message_nonce:
+        items:
+          type: integer
+        type: array
+      last_message_sender_id:
+        type: string
+      last_message_type:
+        $ref: '#/definitions/nodetalk_backend_internal_models.MessageType'
       name:
         type: string
+      unread_count:
+        description: 'Ephemeral: Populated per-user in handlers'
+        type: integer
     type: object
-  models.Message:
+  nodetalk_backend_internal_models.Message:
     properties:
       channel_id:
         type: string
@@ -138,6 +566,11 @@ definitions:
         items:
           type: integer
         type: array
+      compression:
+        description: '"none", "zstd", etc.'
+        type: string
+      edited_at:
+        type: string
       id:
         type: string
       nonce:
@@ -145,6 +578,8 @@ definitions:
         items:
           type: integer
         type: array
+      reply_to_id:
+        type: string
       sender_id:
         type: string
       sent_at:
@@ -156,20 +591,22 @@ definitions:
         type: array
       type:
         allOf:
-        - $ref: '#/definitions/models.MessageType'
-        description: '"text" | "file" | "voice"'
+        - $ref: '#/definitions/nodetalk_backend_internal_models.MessageType'
+        description: '"text" | "file" | "voice" | "video"'
     type: object
-  models.MessageType:
+  nodetalk_backend_internal_models.MessageType:
     enum:
     - text
     - file
     - voice
+    - video
     type: string
     x-enum-varnames:
     - MessageTypeText
     - MessageTypeFile
     - MessageTypeVoice
-  models.Presence:
+    - MessageTypeVideo
+  nodetalk_backend_internal_models.Presence:
     properties:
       current_status:
         description: '"online" | "away" | "offline"'
@@ -190,14 +627,373 @@ info:
   title: Cove API
   version: 0.1.0
 paths:
-  /api/channels:
+  /api/admin/admins:
     get:
-      description: Without ?q=, returns your joined channels. With ?q=, searches across
-        all public channels globally.
+      description: '**Access:** Server Admin.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.AdminListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List admins
+      tags:
+      - admin
+  /api/admin/admins/{username}:
+    delete:
+      consumes:
+      - application/json
+      description: '**Access:** Server Owner, with their password.'
       parameters:
-      - description: Search query for ALL public channels
-        in: query
-        name: q
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Owner password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.PasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove an account's admin access
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: '**Access:** Server Owner, with their password.'
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Owner password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.PasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Give an account admin access
+      tags:
+      - admin
+  /api/admin/audit:
+    get:
+      description: '**Access:** Server Admin.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.AuditListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Recent admin actions
+      tags:
+      - admin
+  /api/admin/backup:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Returns a passphrase-encrypted snapshot of the database (messages stay ciphertext). Restore it with the server CLI.
+        **Access:** Server Owner, with their password.
+      parameters:
+      - description: Password and archive passphrase (min 12 chars)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.BackupRequest'
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Download an encrypted backup
+      tags:
+      - admin
+  /api/admin/config:
+    get:
+      description: |-
+        Lists the settings the panel may change with their saved values. Secrets and file paths are never included.
+        **Access:** Server Admin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.AdminConfigResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Editable server settings
+      tags:
+      - admin
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Validates every change, writes them into config.toml (comments are kept) and applies live-editable ones immediately. The whole request is rejected if any change is invalid.
+        **Access:** Server Admin. Owner-only settings need the owner and their password.
+      parameters:
+      - description: Settings to change
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change server settings
+      tags:
+      - admin
+  /api/admin/delete:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Wipes every account, message and upload, then stops the process. Cannot be undone; take a backup first.
+        **Access:** Server Owner, with their password and the server domain typed as confirmation.
+      parameters:
+      - description: Confirmation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.DeleteServerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete the server
+      tags:
+      - admin
+  /api/admin/invites:
+    get:
+      description: '**Access:** Server Admin.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.InviteListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List invitation codes
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Limited-use (max_uses > 0) or unlimited (max_uses = 0), with an optional expiry date. Leave `code` empty for a random one.
+        **Access:** Server Admin.
+      parameters:
+      - description: Invite settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.CreateInviteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api.InviteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an invitation code
+      tags:
+      - admin
+  /api/admin/invites/{code}:
+    delete:
+      description: |-
+        Codes declared in config.toml cannot be revoked here; remove them from the file.
+        **Access:** Server Admin.
+      parameters:
+      - description: Invite code
+        in: path
+        name: code
+        required: true
         type: string
       produces:
       - application/json
@@ -205,12 +1001,155 @@ paths:
         "200":
           description: OK
           schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke an invitation code
+      tags:
+      - admin
+  /api/admin/overview:
+    get:
+      description: |-
+        Counts, uptime and registration mode for the admin dashboard.
+        **Access:** Server Admin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.AdminOverviewResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Server overview
+      tags:
+      - admin
+  /api/admin/owner/transfer:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        The previous owner stays on as an admin. Needs the owner's password and the confirmation phrase `TRANSFER`.
+        **Access:** Server Owner.
+      parameters:
+      - description: New owner
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.TransferOwnerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hand the owner role to another account
+      tags:
+      - admin
+  /api/admin/reset:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Deletes all users except the owner, plus channels, messages, files, invites and sessions. Settings in config.toml are kept. Cannot be undone.
+        **Access:** Server Owner, with their password and the phrase `RESET`.
+      parameters:
+      - description: Confirmation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.ResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reset server data
+      tags:
+      - admin
+  /api/channels:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
             items:
-              $ref: '#/definitions/models.Channel'
+              $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
             type: array
       security:
       - BearerAuth: []
-      summary: List channels for the user OR search global public channels
+      summary: List channels for the current user
       tags:
       - channels
     post:
@@ -222,20 +1161,44 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/api.CreateChannelRequest'
+          $ref: '#/definitions/internal_api.CreateChannelRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Channel'
+            $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
       security:
       - BearerAuth: []
       summary: Create a channel or direct message
       tags:
       - channels
   /api/channels/{id}:
+    delete:
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: If true, permanently deletes for all participants (owner required
+          for group channels)
+        in: query
+        name: for_both
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete or clear a channel/direct message
+      tags:
+      - channels
     get:
       parameters:
       - description: Channel ID
@@ -249,10 +1212,37 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Channel'
+            $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
       security:
       - BearerAuth: []
       summary: Get a channel by ID
+      tags:
+      - channels
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateChannelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.ChannelResponse'
+      security:
+      - BearerAuth: []
+      summary: Update channel settings
       tags:
       - channels
   /api/channels/{id}/members:
@@ -270,7 +1260,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.UserResponse'
+              $ref: '#/definitions/internal_api.UserResponse'
             type: array
       security:
       - BearerAuth: []
@@ -291,14 +1281,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/api.AddMembersRequest'
+          $ref: '#/definitions/internal_api.AddMembersRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StatusResponse'
+            $ref: '#/definitions/internal_api.StatusResponse'
       security:
       - BearerAuth: []
       summary: Add multiple members to a channel by username
@@ -323,7 +1313,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StatusResponse'
+            $ref: '#/definitions/internal_api.StatusResponse'
       security:
       - BearerAuth: []
       summary: Remove a member from a channel
@@ -338,14 +1328,14 @@ paths:
         name: id
         required: true
         type: string
-      - description: Max messages to return (default 50, max 200)
+      - description: Max messages to return (default 250, max 500)
         in: query
         name: limit
         type: integer
-      - description: Unix timestamp (nanoseconds) cursor for pagination
+      - description: KSUID string cursor for pagination
         in: query
         name: before
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -353,31 +1343,34 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Message'
+              $ref: '#/definitions/nodetalk_backend_internal_models.Message'
             type: array
       security:
       - BearerAuth: []
       summary: List recent messages for a channel
       tags:
       - messages
-  /api/files/{id}:
+  /api/channels/explore:
     get:
       parameters:
-      - description: File ID
-        in: path
-        name: id
-        required: true
+      - description: Search query
+        in: query
+        name: q
         type: string
       produces:
-      - application/octet-stream
+      - application/json
       responses:
         "200":
-          description: File content
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_api.ExploreChannelResponse'
+            type: array
       security:
       - BearerAuth: []
-      summary: Download a file by ID
+      summary: Search public channels
       tags:
-      - files
+      - channels
   /api/join/{link}:
     post:
       parameters:
@@ -392,7 +1385,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StatusResponse'
+            $ref: '#/definitions/internal_api.StatusResponse'
       security:
       - BearerAuth: []
       summary: Join a channel via a unique invite link
@@ -408,22 +1401,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/api.LoginRequest'
+          $ref: '#/definitions/internal_api.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.LoginResponse'
+            $ref: '#/definitions/internal_api.LoginResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            $ref: '#/definitions/internal_api.ErrorResponse'
       summary: Log in and obtain a session token
       tags:
       - auth
@@ -435,7 +1428,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StatusResponse'
+            $ref: '#/definitions/internal_api.StatusResponse'
       security:
       - BearerAuth: []
       summary: Log out and invalidate session
@@ -449,7 +1442,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.UserResponse'
+            $ref: '#/definitions/internal_api.UserResponse'
       security:
       - BearerAuth: []
       summary: Get current authenticated user
@@ -459,54 +1452,59 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new Cove user account.
+      description: |-
+        Creates a new Cove user account. Depends on the server's registration mode:
+        **open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.
+        The very first account on a fresh server is always accepted and becomes the server owner.
+        **Access:** Public.
       parameters:
       - description: Registration payload
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/api.RegisterRequest'
+          $ref: '#/definitions/internal_api.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.RegisterResponse'
+            $ref: '#/definitions/internal_api.RegisterResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: registration closed, invite required or invite not valid
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/api.ErrorResponse'
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       summary: Register a new account
       tags:
       - auth
-  /api/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: File to upload (max 50 MB)
-        in: formData
-        name: file
-        required: true
-        type: file
+  /api/server-info:
+    get:
+      description: |-
+        Tells clients whether sign-up is open, invite-only or closed, so the register screen can show the right form.
+        **Access:** Public.
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/api.UploadFileResponse'
-      security:
-      - BearerAuth: []
-      summary: Upload a file or voice note
+            $ref: '#/definitions/internal_api.ServerInfoResponse'
+      summary: Public server information
       tags:
-      - files
+      - system
   /api/users:
     get:
       parameters:
@@ -521,7 +1519,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.UserResponse'
+              $ref: '#/definitions/internal_api.UserResponse'
             type: array
       security:
       - BearerAuth: []
@@ -542,7 +1540,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.UserResponse'
+            $ref: '#/definitions/internal_api.UserResponse'
       security:
       - BearerAuth: []
       summary: Get a user by ID
@@ -562,7 +1560,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Presence'
+            $ref: '#/definitions/nodetalk_backend_internal_models.Presence'
       security:
       - BearerAuth: []
       summary: Get presence status for a user
@@ -576,12 +1574,47 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.StatusResponse'
+            $ref: '#/definitions/internal_api.StatusResponse'
       security:
       - BearerAuth: []
       summary: Delete current user account
       tags:
       - users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UserResponse'
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - users
+  /api/version:
+    get:
+      description: Returns the semantic version of the Cove backend currently running.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.VersionResponse'
+      summary: Get the current server build version
+      tags:
+      - system
 securityDefinitions:
   BearerAuth:
     description: 'Format: Bearer <token>'

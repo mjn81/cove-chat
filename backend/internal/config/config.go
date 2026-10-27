@@ -5,17 +5,51 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"strings"
+	"time"
+
 	"github.com/BurntSushi/toml"
 )
 
 // Config holds all server configuration values.
 type Config struct {
-	Server    ServerConfig    `toml:"server"`
-	Security  SecurityConfig  `toml:"security"`
-	Database  DatabaseConfig  `toml:"database"`
-	Storage   StorageConfig   `toml:"storage"`
-	RateLimit RateLimitConfig `toml:"rate_limit"`
-	Voice     VoiceConfig     `toml:"voice"`
+	Server       ServerConfig       `toml:"server"`
+	Security     SecurityConfig     `toml:"security"`
+	Database     DatabaseConfig     `toml:"database"`
+	Storage      StorageConfig      `toml:"storage"`
+	RateLimit    RateLimitConfig    `toml:"rate_limit"`
+	Voice        VoiceConfig        `toml:"voice"`
+	Registration RegistrationConfig `toml:"registration"`
+	Admin        AdminConfig        `toml:"admin"`
+}
+
+// Registration modes.
+const (
+	RegistrationOpen       = "open"        // anyone can sign up
+	RegistrationInviteOnly = "invite_only" // a valid invitation code is required
+	RegistrationClosed     = "closed"      // nobody can sign up
+)
+
+// RegistrationConfig controls who may create an account. It can be edited by
+// hand here or from the admin panel; both write the same keys.
+type RegistrationConfig struct {
+	Mode    string         `toml:"mode"`
+	Invites []InviteConfig `toml:"invites"` // static codes seeded at startup
+}
+
+// InviteConfig is an invitation code declared in config.toml.
+type InviteConfig struct {
+	Code      string `toml:"code"`
+	ExpiresAt string `toml:"expires_at"` // RFC 3339, empty = never expires
+	MaxUses   int    `toml:"max_uses"`   // 0 = unlimited
+	Note      string `toml:"note"`
+}
+
+// AdminConfig holds server-administration settings.
+type AdminConfig struct {
+	// OwnerUsername assigns the owner role to an existing account at startup.
+	// It is the recovery path if the owner is locked out; leave empty normally.
+	OwnerUsername string `toml:"owner_username"`
 }
 
 // VoiceConfig selects and configures the group audio/video calling engine.
@@ -80,9 +114,9 @@ type VoiceConfig struct {
 }
 
 type ServerConfig struct {
-	Domain         string `toml:"domain"`
-	HTTPPort       int    `toml:"http_port"`
-	UDPPort        int    `toml:"udp_port"`
+	Domain              string `toml:"domain"`
+	HTTPPort            int    `toml:"http_port"`
+	UDPPort             int    `toml:"udp_port"`
 	MaxFileSizeMB       int    `toml:"max_file_size_mb"`
 	MaxVideoSizeMB      int    `toml:"max_video_size_mb"`
 	MaxVideoDurationSec int    `toml:"max_video_duration_sec"`
@@ -126,22 +160,20 @@ type RateLimitConfig struct {
 
 const configPath = "config.toml"
 
-// Load reads config.toml, applying defaults where values are missing.
-// If a master_password is not set, it generates one, prints it to the terminal,
-// and persists it back into config.toml.
-func Load() (*Config, error) {
-	cfg := &Config{
+// defaults returns the built-in configuration every file is decoded on top of.
+func defaults() *Config {
+	return &Config{
 		Server: ServerConfig{
-			Domain:         "localhost",
-			HTTPPort:       4000,
-			UDPPort:        9090,
+			Domain:              "localhost",
+			HTTPPort:            4000,
+			UDPPort:             9090,
 			MaxFileSizeMB:       100, // Default 100MB
 			MaxVideoSizeMB:      50,  // Default 50MB
 			MaxVideoDurationSec: 60,  // Default 60 seconds
 			FFmpegPath:          "ffmpeg",
 			Dev:                 false,
-			FrontendOrigin:    "http://localhost:5173",
-			TrustProxyHeaders: false,
+			FrontendOrigin:      "http://localhost:5173",
+			TrustProxyHeaders:   false,
 		},
 		Security: SecurityConfig{
 			MasterPassword:   "",
@@ -160,6 +192,7 @@ func Load() (*Config, error) {
 			GlobalRPS: 100,
 			AuthRPS:   5,
 		},
+		Registration: RegistrationConfig{Mode: RegistrationOpen},
 		Voice: VoiceConfig{
 			Mode:                   "webrtc",
 			MaxParticipantsPerCall: 10,
@@ -178,15 +211,30 @@ func Load() (*Config, error) {
 			TURNRealm:           "nodetalk",
 		},
 	}
+}
 
-	// Allow config path to be overridden via environment variable.
-	path := configPath
+// Path returns the config file in use: NODETALK_CONFIG or ./config.toml.
+func Path() string {
 	if envPath := os.Getenv("NODETALK_CONFIG"); envPath != "" {
-		path = envPath
+		return envPath
 	}
+	return configPath
+}
+
+// Load reads config.toml, applying defaults where values are missing.
+// If a master_password is not set, it generates one, prints it to the terminal,
+// and persists it back into config.toml.
+func Load() (*Config, error) {
+	cfg := defaults()
+
+	path := Path()
 
 	if _, err := toml.DecodeFile(path, cfg); err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("config: failed to decode %s: %w", path, err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
 
 	// Override master password from environment if set (12-Factor App pattern).
@@ -207,7 +255,7 @@ func Load() (*Config, error) {
 		}
 		cfg.Security.MasterPassword = pwd
 		printPasswordWarning(pwd)
-		if err := cfg.persist(path); err != nil {
+		if err := PatchFile(path, []Change{{Section: "security", Key: "master_password", Value: pwd}}); err != nil {
 			// Non-fatal — just warn, the server can still run.
 			fmt.Fprintf(os.Stderr, "WARNING: Could not persist master password to %s: %v\n", path, err)
 			fmt.Fprintln(os.Stderr, "Store the password shown above manually in config.toml or NODETALK_MASTER_PASSWORD.")
@@ -224,7 +272,7 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("config: failed to generate TURN shared secret: %w", err)
 		}
 		cfg.Voice.TURNSharedSecret = secret
-		if err := cfg.persist(path); err != nil {
+		if err := PatchFile(path, []Change{{Section: "voice", Key: "turn_shared_secret", Value: secret}}); err != nil {
 			fmt.Fprintf(os.Stderr, "WARNING: Could not persist TURN shared secret to %s: %v\n", path, err)
 		}
 	}
@@ -258,15 +306,25 @@ func printPasswordWarning(pwd string) {
 	fmt.Println()
 }
 
-// persist writes the current configuration back to the TOML file. The file
-// contains the master password in plaintext, so it's created with 0600
-// (owner read/write only) rather than relying on the process umask, which
-// on a permissively-configured host could leave it world-readable.
-func (c *Config) persist(path string) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
+// Validate checks values that would otherwise fail later and more confusingly.
+func (c *Config) Validate() error {
+	switch c.Registration.Mode {
+	case RegistrationOpen, RegistrationInviteOnly, RegistrationClosed:
+	default:
+		return fmt.Errorf("config: registration.mode must be %q, %q or %q, got %q", RegistrationOpen, RegistrationInviteOnly, RegistrationClosed, c.Registration.Mode)
 	}
-	defer f.Close()
-	return toml.NewEncoder(f).Encode(c)
+	for i, inv := range c.Registration.Invites {
+		if strings.TrimSpace(inv.Code) == "" {
+			return fmt.Errorf("config: registration.invites[%d] has an empty code", i)
+		}
+		if inv.MaxUses < 0 {
+			return fmt.Errorf("config: registration.invites[%d] max_uses cannot be negative", i)
+		}
+		if inv.ExpiresAt != "" {
+			if _, err := time.Parse(time.RFC3339, inv.ExpiresAt); err != nil {
+				return fmt.Errorf("config: registration.invites[%d] expires_at must be RFC 3339: %w", i, err)
+			}
+		}
+	}
+	return nil
 }

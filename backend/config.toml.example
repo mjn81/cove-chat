@@ -87,3 +87,28 @@ turn_realm = "nodetalk"
 # Generated automatically on first run and persisted here, like
 # master_password above.
 turn_shared_secret = ""
+
+# ── Registration ──────────────────────────────────────────────────────────
+# Who may create an account. Editable live from the admin panel; whatever you
+# set here is the starting value. The very first account on a fresh server is
+# always allowed - it becomes the server owner.
+[registration]
+# "open"        anyone can sign up
+# "invite_only" a valid invitation code is required
+# "closed"      nobody can sign up
+mode = "open"
+
+# Invitation codes. max_uses = 0 means unlimited; expires_at is optional (RFC3339).
+# Codes listed here are synced into the database on every start; remove one
+# from this file to revoke it. Invites made in the admin panel are separate.
+# [[registration.invites]]
+# code       = "WELCOME-2026"
+# max_uses   = 10
+# expires_at = "2026-12-31T23:59:59Z"
+# note       = "launch party"
+
+# ── Admin ─────────────────────────────────────────────────────────────────
+[admin]
+# Recovery for a lost owner login: set this to an existing username and restart
+# to make that account the owner (the previous owner becomes an admin).
+# owner_username = ""

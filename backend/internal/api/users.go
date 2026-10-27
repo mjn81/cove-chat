@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"nodetalk/backend/internal/auth"
 	"nodetalk/backend/internal/crypto"
+	"nodetalk/backend/internal/models"
 )
 
 // ============================
@@ -38,6 +39,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 		AllowChannelAdds:        u.AllowChannelAdds,
 		DMPermission:            u.DMPermission,
 		FriendRequestPermission: u.FriendRequestPermission,
+		ServerRole:              u.ServerRole,
 	})
 }
 
@@ -51,6 +53,13 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	token, _, _ := auth.ResolveToken(r)
+
+	// The owner cannot vanish from under the server: they must hand the role
+	// over first, otherwise nobody could ever reach the admin panel again.
+	if me, err := h.Store.GetUser(session.UserID); err == nil && me.ServerRole == models.ServerRoleOwner {
+		writeError(w, http.StatusForbidden, "admin.errors.owner_cannot_delete")
+		return
+	}
 
 	if err := h.Store.DeleteUser(session.UserID); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete account")

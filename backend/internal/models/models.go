@@ -24,6 +24,10 @@ type User struct {
 	DMPermission            string    `json:"dm_permission,omitempty"`             // "everyone" | "friends" | "nobody" (default: "everyone")
 	FriendRequestPermission string    `json:"friend_request_permission,omitempty"` // "everyone" | "nobody" (default: "everyone")
 	PublicKey               []byte    `json:"pub_key"`                             // Reserved for future E2EE key exchange
+	// ServerRole is the account's role on the server itself (not in a channel):
+	// "" (member), "admin" or "owner". It is only ever set by the server and is
+	// never read from a client payload.
+	ServerRole string `json:"server_role,omitempty"`
 	CreatedAt               time.Time `json:"created_at"`
 }
 
@@ -181,4 +185,55 @@ type Session struct {
 	Username  string    `json:"username"`
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// ---- Server administration ------------------------------------------------- //
+
+// Server-level roles (User.ServerRole).
+const (
+	ServerRoleNone  = ""
+	ServerRoleAdmin = "admin"
+	ServerRoleOwner = "owner"
+)
+
+// IsServerAdmin reports whether the role may use the admin panel.
+func IsServerAdmin(role string) bool {
+	return role == ServerRoleAdmin || role == ServerRoleOwner
+}
+
+// Where an invitation came from.
+const (
+	InviteSourcePanel  = "panel"
+	InviteSourceConfig = "config"
+)
+
+// Invite is a registration invitation code, stored under inv:{code}.
+type Invite struct {
+	Code      string     `json:"code"`
+	Note      string     `json:"note,omitempty"`
+	CreatedBy string     `json:"created_by"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"` // nil = never expires
+	MaxUses   int        `json:"max_uses"`             // 0 = unlimited
+	Uses      int        `json:"uses"`
+	Revoked   bool       `json:"revoked"`
+	Source    string     `json:"source"` // InviteSource*
+}
+
+// InviteSpec describes an invitation declared in config.toml.
+type InviteSpec struct {
+	Code      string
+	Note      string
+	ExpiresAt *time.Time
+	MaxUses   int
+}
+
+// AuditEntry records one admin action, stored under aud:{time}:{id}.
+type AuditEntry struct {
+	ID        string    `json:"id"`
+	At        time.Time `json:"at"`
+	ActorID   string    `json:"actor_id"`
+	ActorName string    `json:"actor_name"`
+	Action    string    `json:"action"`           // e.g. "invite.create"
+	Target    string    `json:"target,omitempty"` // e.g. a username or invite code (never a secret)
 }

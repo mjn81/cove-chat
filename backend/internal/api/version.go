@@ -19,7 +19,7 @@ type VersionResponse struct {
 //	@Router      /api/version [get]
 func (h *Handler) GetVersion(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, VersionResponse{
-		Version: "0.9.0",
+		Version: appVersion,
 		UDPPort: h.UDPPort,
 	})
 }

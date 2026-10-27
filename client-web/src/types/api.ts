@@ -1,4 +1,6 @@
 export interface AuthUser {
+	/** Server-level role; only present for the signed-in account itself. */
+	server_role?: 'admin' | 'owner';
 	id: string;
 	username: string;
 	domain: string;

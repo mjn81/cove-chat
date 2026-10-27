@@ -5,4 +5,5 @@ export type SettingsTab =
 	| 'privacy'
 	| 'notifications'
 	| 'voice'
-	| 'storage';
+	| 'storage'
+	| 'admin';

@@ -369,3 +369,22 @@ func writeError(w http.ResponseWriter, code int, msg string) {
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
+
+// DeleteExcept ends every session that does not belong to userID. The admin
+// "reset server" action uses it so only the owner stays signed in.
+func (ss *SessionStore) DeleteExcept(userID string) {
+	ss.mu.Lock()
+	var drop []string
+	for token, s := range ss.sessions {
+		if s.UserID != userID {
+			drop = append(drop, token)
+			delete(ss.sessions, token)
+		}
+	}
+	ss.mu.Unlock()
+	if ss.persister != nil {
+		for _, t := range drop {
+			_ = ss.persister.DeleteSession(t)
+		}
+	}
+}

@@ -2,8 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"time"
+
 	"nodetalk/backend/internal/auth"
+	"nodetalk/backend/internal/config"
+	"nodetalk/backend/internal/store"
 )
 
 // ============================
@@ -12,14 +17,19 @@ import (
 
 // Register godoc
 //	@Summary     Register a new account
-//	@Description Creates a new Cove user account.
+//	@Description Creates a new Cove user account. Depends on the server's registration mode:
+//	@Description **open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.
+//	@Description The very first account on a fresh server is always accepted and becomes the server owner.
+//	@Description **Access:** Public.
 //	@Tags        auth
 //	@Accept      json
 //	@Produce     json
 //	@Param       body body RegisterRequest true "Registration payload"
 //	@Success     201 {object} RegisterResponse
 //	@Failure     400 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse "registration closed, invite required or invite not valid"
 //	@Failure     409 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
 //	@Router      /api/register [post]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var body RegisterRequest
@@ -31,10 +41,64 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "auth.errors.invalid_length")
 		return
 	}
+
+	mode := h.registrationMode()
+	// A fresh server has no owner yet; its first account must always be able
+	// to register, otherwise a closed or invite-only server could never be set up.
+	bootstrap := !h.Store.HasOwner()
+
+	reservedCode := ""
+	if !bootstrap {
+		switch mode {
+		case config.RegistrationClosed:
+			writeError(w, http.StatusForbidden, "auth.errors.registration_closed")
+			return
+		case config.RegistrationInviteOnly:
+			code := body.InviteCode
+			if code == "" {
+				writeError(w, http.StatusForbidden, "auth.errors.invite_required")
+				return
+			}
+			// Take the use first (atomically); give it back if the account is not created.
+			if err := h.Store.ReserveInviteUse(code, time.Now()); err != nil {
+				if errors.Is(err, store.ErrInviteInvalid) {
+					writeError(w, http.StatusForbidden, "auth.errors.invite_invalid")
+				} else {
+					writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
+				}
+				return
+			}
+			reservedCode = code
+		}
+	}
+
 	u, err := h.Store.CreateUser(body.Username, body.Password, "localhost")
 	if err != nil {
+		if reservedCode != "" {
+			h.Store.ReleaseInviteUse(reservedCode)
+		}
 		writeError(w, http.StatusConflict, "auth.errors.username_taken")
 		return
+	}
+
+	// Claim ownership if still unclaimed. Exactly one concurrent first
+	// sign-up wins; a loser on a non-open server must not stay registered.
+	if bootstrap {
+		claimed, cerr := h.Store.ClaimOwner(u)
+		if cerr != nil {
+			_ = h.Store.PurgeUser(u.ID)
+			writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
+			return
+		}
+		if !claimed && mode != config.RegistrationOpen {
+			_ = h.Store.PurgeUser(u.ID)
+			if mode == config.RegistrationClosed {
+				writeError(w, http.StatusForbidden, "auth.errors.registration_closed")
+			} else {
+				writeError(w, http.StatusForbidden, "auth.errors.invite_required")
+			}
+			return
+		}
 	}
 	writeJSON(w, http.StatusCreated, RegisterResponse{ID: u.ID, Username: u.Username})
 }
@@ -86,6 +150,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		AvatarID:         u.AvatarID,
 		BannerColor:      u.BannerColor,
 		CustomMsg:        u.CustomMsg,
+		ServerRole:       u.ServerRole,
 		Token:            token,
 	})
 }

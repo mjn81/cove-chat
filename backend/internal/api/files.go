@@ -79,11 +79,12 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 
 	// Limit upload size
-	maxBytes := int64(h.MaxFileSizeMB) << 20
+	maxFileMB, _, _ := h.limits()
+	maxBytes := int64(maxFileMB) << 20
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
-		writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large (max %dMB)", h.MaxFileSizeMB))
+		writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large (max %dMB)", maxFileMB))
 		return
 	}
 
@@ -106,7 +107,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	isVideo := r.FormValue("is_video") == "true" || strings.HasPrefix(claimedContentType, "video/")
 
 	// Pre-check video size limit
-	maxVideoSize := h.MaxVideoSizeMB
+	_, maxVideoSize, _ := h.limits()
 	if maxVideoSize <= 0 {
 		maxVideoSize = 50
 	}
@@ -133,7 +134,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maxDuration := h.MaxVideoDurationSec
+	_, _, maxDuration := h.limits()
 	if maxDuration <= 0 {
 		maxDuration = 60
 	}

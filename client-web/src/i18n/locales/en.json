@@ -34,8 +34,12 @@
 			"invalid_json": "Invalid request format",
 			"session_failed": "Failed to create session. Please try again.",
 			"login_failed": "Login failed",
-			"register_failed": "Registration failed"
-		}
+			"register_failed": "Registration failed",
+			"registration_closed": "Registration is closed on this server.",
+			"invite_required": "This server is invite-only. Enter an invitation code.",
+			"invite_invalid": "That invitation code is not valid."
+		},
+		"invite_code": "Invitation code"
 	},
 	"sidebar": {
 		"groups": "Groups",
@@ -579,5 +583,200 @@
 		"recording": "Recording video message...",
 		"trim": "Trim video",
 		"retake": "Retake"
+	},
+	"admin": {
+		"title": "Server admin",
+		"section": "Administration",
+		"tabs": {
+			"overview": "Overview",
+			"registration": "Registration",
+			"config": "Settings",
+			"admins": "Admins",
+			"data": "Data"
+		},
+		"roles": {
+			"owner": "Owner",
+			"admin": "Admin"
+		},
+		"overview": {
+			"users": "Users",
+			"channels": "Channels",
+			"active_invites": "Active invites",
+			"uptime": "Uptime",
+			"data_size": "Data size",
+			"version": "Version"
+		},
+		"audit": {
+			"title": "Recent admin activity",
+			"empty": "Nothing yet.",
+			"actions": {
+				"config": {
+					"update": "changed setting"
+				},
+				"invite": {
+					"create": "created invite",
+					"revoke": "revoked invite"
+				},
+				"admin": {
+					"grant": "made admin",
+					"revoke": "removed admin"
+				},
+				"owner": {
+					"transfer": "transferred ownership to"
+				},
+				"backup": {
+					"download": "downloaded a backup"
+				},
+				"server": {
+					"reset": "reset the server"
+				}
+			}
+		},
+		"registration": {
+			"mode": "Who can sign up",
+			"mode_open": "Anyone",
+			"mode_invite_only": "Invite only",
+			"mode_closed": "Closed",
+			"mode_open_hint": "Anyone who can reach the server can create an account.",
+			"mode_invite_only_hint": "New accounts need a valid invitation code.",
+			"mode_closed_hint": "Nobody can create an account.",
+			"saved": "Registration setting saved"
+		},
+		"invites": {
+			"title": "Invitation codes",
+			"type": "Type",
+			"type_limited": "Limited uses",
+			"type_unlimited": "Unlimited",
+			"max_uses": "Number of uses",
+			"expires": "Expires",
+			"expires_hint": "Optional. Leave empty for no expiry.",
+			"code": "Custom code",
+			"code_hint": "Optional. 6-64 letters, numbers, - or _. Leave empty to generate one.",
+			"note": "Note",
+			"create": "Create invite",
+			"created": "Invite {{code}} created",
+			"copied": "Code copied",
+			"copy": "Copy code",
+			"revoke": "Revoke invite",
+			"empty": "No invitation codes yet.",
+			"status_active": "Active",
+			"status_expired": "Expired",
+			"status_exhausted": "Used up",
+			"status_revoked": "Revoked",
+			"uses": "Used {{uses}}",
+			"expires_on": "Expires {{date}}",
+			"from_config": "config.toml"
+		},
+		"config": {
+			"saved": "Settings saved",
+			"restart_needed": "Some changes apply after the server restarts.",
+			"owner_only": "Owner only",
+			"needs_restart": "Needs restart",
+			"discard": "Discard changes",
+			"confirm_title": "Confirm with your password",
+			"confirm_description": "These settings change how the server is exposed. Only the owner can change them.",
+			"groups": {
+				"limits": "Limits",
+				"calls": "Calls",
+				"network": "Network",
+				"security": "Security"
+			},
+			"keys": {
+				"server": {
+					"max_file_size_mb": "Max file size (MB)",
+					"max_video_size_mb": "Max video size (MB)",
+					"max_video_duration_sec": "Max video length (seconds)",
+					"domain": "Server domain",
+					"frontend_origin": "Web client origin",
+					"trust_proxy_headers": "Trust proxy headers",
+					"http_port": "HTTP port",
+					"dev": "Development mode"
+				},
+				"rate_limit": {
+					"global_rps": "Requests per second (global)",
+					"auth_rps": "Requests per second (sign-in)"
+				},
+				"voice": {
+					"mode": "Call engine",
+					"max_participants_per_call": "Max call participants",
+					"public_ip": "Public IP for calls",
+					"embedded_turn_enabled": "Built-in TURN server"
+				},
+				"security": {
+					"token_expire_hours": "Session lifetime (hours)"
+				}
+			}
+		},
+		"admins": {
+			"description": "Admins can manage registration, invites and settings. Only the owner can add admins, back up or wipe the server.",
+			"make_owner": "Make owner",
+			"remove": "Remove admin",
+			"add": "Add an admin",
+			"username_placeholder": "Username",
+			"grant": "Make admin",
+			"done_grant": "{{username}} is now an admin",
+			"done_revoke": "{{username}} is no longer an admin",
+			"done_transfer": "{{username}} is now the owner",
+			"confirm_grant_title": "Make {{username}} an admin?",
+			"confirm_grant_description": "They will see this panel and can change registration, invites and settings.",
+			"confirm_revoke_title": "Remove {{username}} as admin?",
+			"confirm_revoke_description": "They lose access to this panel immediately.",
+			"confirm_transfer_title": "Make {{username}} the owner?",
+			"confirm_transfer_description": "You become a regular admin. Only the new owner can undo this."
+		},
+		"data": {
+			"backup_title": "Backup",
+			"backup": "Encrypted backup",
+			"backup_hint": "Downloads all server data in one file protected by a passphrase you choose. Keep the passphrase safe: without it the file cannot be opened.",
+			"backup_button": "Download backup",
+			"backup_confirm": "Enter your password and a passphrase to encrypt the backup file.",
+			"backup_done": "Backup downloaded",
+			"danger_title": "Danger zone",
+			"reset": "Reset server data",
+			"reset_hint": "Deletes every account except yours, plus all channels, messages and files. Settings are kept.",
+			"reset_button": "Reset data",
+			"reset_confirm": "This permanently deletes all other accounts, channels, messages and uploads.",
+			"reset_done": "Server data was reset",
+			"delete": "Delete server",
+			"delete_hint": "Deletes everything including your account, then stops the server.",
+			"delete_button": "Delete server",
+			"delete_confirm": "This permanently deletes ALL data and stops the server. Take a backup first."
+		},
+		"step_up": {
+			"password": "Your password",
+			"passphrase": "Backup passphrase",
+			"passphrase_hint": "At least 12 characters.",
+			"type_to_confirm": "Type \"{{phrase}}\" to confirm"
+		},
+		"errors": {
+			"generic": "Something went wrong",
+			"forbidden": "You do not have access to this.",
+			"password_invalid": "Wrong password.",
+			"too_many_attempts": "Too many wrong passwords. Try again in a few minutes.",
+			"invalid_json": "Invalid request.",
+			"invalid_setting": "Invalid setting",
+			"owner_only_setting": "Only the owner can change this setting.",
+			"config_unreadable": "The configuration file could not be read.",
+			"config_unavailable": "No configuration file is available.",
+			"config_write_failed": "The configuration file could not be written.",
+			"internal": "Internal error.",
+			"invite_max_uses": "Number of uses must be between 0 and 1,000,000.",
+			"invite_note_too_long": "The note is too long.",
+			"invite_code_format": "Codes use 6-64 letters, numbers, - or _.",
+			"invite_expiry": "The expiry must be a future date.",
+			"invite_exists": "That code already exists.",
+			"invite_not_found": "Invite not found.",
+			"invite_from_config": "This invite comes from config.toml. Remove it there.",
+			"user_not_found": "User not found.",
+			"owner_role_fixed": "The owner role can only be moved with a transfer.",
+			"confirm_mismatch": "The confirmation text does not match.",
+			"transfer_to_self": "You are already the owner.",
+			"passphrase_short": "The passphrase needs at least 12 characters.",
+			"backup_failed": "The backup could not be created.",
+			"reset_failed": "The reset failed.",
+			"delete_failed": "Deleting the server failed.",
+			"not_found": "Not found.",
+			"owner_cannot_delete": "The owner cannot delete their account. Transfer ownership first."
+		}
 	}
 }

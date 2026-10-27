@@ -179,16 +179,27 @@ import type {
 // `as unknown as Promise<T>` to paper over this mismatch (~20 near-identical
 // casts). This is the one place that bridges the gap now — callers below
 // get real Promise<T> typing without each needing its own unsafe cast.
-function request<T>(axiosCall: Promise<unknown>): Promise<T> {
+export function request<T>(axiosCall: Promise<unknown>): Promise<T> {
 	return axiosCall as unknown as Promise<T>;
 }
 
 // ─────────────────────────────────────────────
 // Auth API
 // ─────────────────────────────────────────────
-export async function apiRegister(username: string, password: string) {
+export async function apiRegister(username: string, password: string, inviteCode?: string) {
 	return request<{ id: string; username: string }>(
-		apiClient.post('/api/register', { username, password }),
+		apiClient.post('/api/register', {
+			username,
+			password,
+			...(inviteCode ? { invite_code: inviteCode } : {}),
+		}),
+	);
+}
+
+/** Public sign-up policy, so the register page can adapt before the user types. */
+export async function apiServerInfo() {
+	return request<{ registration_mode: 'open' | 'invite_only' | 'closed'; needs_owner: boolean }>(
+		apiClient.get('/api/server-info'),
 	);
 }
 

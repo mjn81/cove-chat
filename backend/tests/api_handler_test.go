@@ -401,6 +401,8 @@ func TestAccountDeletion(t *testing.T) {
 	srv := testServer(t)
 	defer srv.Close()
 
+	// The first account on a server is its owner and cannot delete itself.
+	registerAndLogin(t, srv, "founder", "password123!")
 	token1 := registerAndLogin(t, srv, "victor", "password123!")
 	
 	// Delete

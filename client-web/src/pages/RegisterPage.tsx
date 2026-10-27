@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
-import { BASE_URL } from '@/api/client';
+import { useQuery } from '@tanstack/react-query';
+import { BASE_URL, apiServerInfo } from '@/api/client';
 import { useAuthStore } from '@/store/store';
 import {
 	Card,
@@ -26,8 +27,16 @@ export default function RegisterPage() {
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
+	const [inviteCode, setInviteCode] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	// The first account on a fresh server is always allowed (it becomes the
+	// owner), so `needs_owner` overrides the closed / invite-only policy.
+	const { data: info } = useQuery({ queryKey: ['server-info'], queryFn: apiServerInfo });
+	const open = !info || info.needs_owner || info.registration_mode === 'open';
+	const closed = !open && info?.registration_mode === 'closed';
+	const needsInvite = !open && info?.registration_mode === 'invite_only';
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -48,7 +57,7 @@ export default function RegisterPage() {
 
 		setLoading(true);
 		try {
-			await register(username, password);
+			await register(username, password, needsInvite ? inviteCode.trim() : undefined);
 			navigate('/', { replace: true });
 		} catch (err: unknown) {
 			setError(t((err as Error).message) || t('auth.errors.register_failed'));
@@ -75,6 +84,13 @@ export default function RegisterPage() {
 						</div>
 					)}
 
+					{closed && (
+						<p className="rounded-md border border-border p-3 text-center text-sm text-muted-foreground">
+							{t('auth.errors.registration_closed')}
+						</p>
+					)}
+
+					{!closed && (
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
 							<Label
@@ -133,6 +149,30 @@ export default function RegisterPage() {
 								</button>
 							</div>
 						</div>
+						{needsInvite && (
+							<div className="space-y-2">
+								<Label
+									htmlFor="reg-invite"
+									className="text-xs uppercase font-bold text-muted-foreground"
+								>
+									{t('auth.invite_code')}
+									<span className="text-destructive ms-1">*</span>
+								</Label>
+								<Input
+									id="reg-invite"
+									className="bg-popover border-none text-[15px] h-10 text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+									value={inviteCode}
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+										setInviteCode(e.target.value)
+									}
+									autoComplete="off"
+									autoCorrect="off"
+									autoCapitalize="none"
+									spellCheck={false}
+									required
+								/>
+							</div>
+						)}
 						<Button
 							type="submit"
 							className="w-full h-11 bg-primary hover:opacity-90 text-primary-foreground font-medium text-base mt-2 transition-colors"
@@ -141,6 +181,7 @@ export default function RegisterPage() {
 							{loading ? <span className="spinner" /> : 'Continue'}
 						</Button>
 					</form>
+					)}
 
 					<div className="text-sm text-muted-foreground mt-4 text-center">
 						<Link

@@ -40,6 +40,17 @@ type Handler struct {
 	UDPPort             int
 	IsDev               bool
 	FrontendOrigin      string
+
+	// Admin panel and live settings. All optional: a Handler built without
+	// them behaves as an open server with no admin features configured.
+	Settings     *Settings // hot-applicable config (registration mode, upload limits)
+	ConfigPath   string    // config.toml the panel edits
+	DataDir      string    // database parent dir, used by backup/reset
+	ServerDomain string    // shown to the owner and required for the delete confirmation
+	StartedAt    time.Time // for the uptime shown in the overview
+	Shutdown     func()    // stops the process after "delete server"
+
+	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 }
 
 
@@ -56,8 +67,35 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(h.RequireMember(handler)))
 	}
 
+	// Admin panel. The role is checked against the database on every request;
+	// the catch-all keeps unregistered /api/admin/ paths behind the same guard.
+	protectAdmin := func(handler http.HandlerFunc) http.Handler {
+		return globalLimiter.Limit(h.Sessions.Require(h.requireAdmin(false, handler)))
+	}
+	protectOwner := func(handler http.HandlerFunc) http.Handler {
+		return globalLimiter.Limit(h.Sessions.Require(h.requireAdmin(true, handler)))
+	}
+	mux.Handle("GET /api/admin/overview",                protectAdmin(h.AdminOverview))
+	mux.Handle("GET /api/admin/config",                  protectAdmin(h.AdminGetConfig))
+	mux.Handle("PATCH /api/admin/config",                protectAdmin(h.AdminUpdateConfig))
+	mux.Handle("GET /api/admin/invites",                 protectAdmin(h.AdminListInvites))
+	mux.Handle("POST /api/admin/invites",                protectAdmin(h.AdminCreateInvite))
+	mux.Handle("DELETE /api/admin/invites/{code}",       protectAdmin(h.AdminRevokeInvite))
+	mux.Handle("GET /api/admin/audit",                   protectAdmin(h.AdminAudit))
+	mux.Handle("GET /api/admin/admins",                  protectAdmin(h.AdminListAdmins))
+	mux.Handle("PUT /api/admin/admins/{username}",       protectOwner(h.AdminGrantAdmin))
+	mux.Handle("DELETE /api/admin/admins/{username}",    protectOwner(h.AdminRevokeAdmin))
+	mux.Handle("POST /api/admin/owner/transfer",         protectOwner(h.AdminTransferOwner))
+	mux.Handle("POST /api/admin/backup",                 protectOwner(h.AdminBackup))
+	mux.Handle("POST /api/admin/reset",                  protectOwner(h.AdminReset))
+	mux.Handle("POST /api/admin/delete",                 protectOwner(h.AdminDeleteServer))
+	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, http.StatusNotFound, "admin.errors.not_found")
+	}))
+
 	// Public
 	mux.Handle("GET /api/version",   http.HandlerFunc(h.GetVersion))
+	mux.Handle("GET /api/server-info", http.HandlerFunc(h.GetServerInfo))
 	mux.Handle("POST /api/register", authLimiter.Limit(http.HandlerFunc(h.Register)))
 	mux.Handle("POST /api/login",    authLimiter.Limit(http.HandlerFunc(h.Login)))
 

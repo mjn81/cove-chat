@@ -41,6 +41,7 @@ import (
 	"nodetalk/backend/internal/db"
 	"nodetalk/backend/internal/logger"
 	"nodetalk/backend/internal/middleware"
+	"nodetalk/backend/internal/models"
 	"nodetalk/backend/internal/rtc"
 	"nodetalk/backend/internal/storage"
 	"nodetalk/backend/internal/store"
@@ -95,6 +96,27 @@ func main() {
 	tokenTTL  := time.Duration(cfg.Security.TokenExpireHours) * time.Hour
 	sessions  := auth.NewSessionStore(tokenTTL, database)
 
+	// Registration invites declared in config.toml are mirrored into the DB,
+	// and a configured owner_username can reclaim ownership (lost-login recovery).
+	var inviteSpecs []models.InviteSpec
+	for _, inv := range cfg.Registration.Invites {
+		spec := models.InviteSpec{Code: inv.Code, Note: inv.Note, MaxUses: inv.MaxUses}
+		if inv.ExpiresAt != "" {
+			if t, perr := time.Parse(time.RFC3339, inv.ExpiresAt); perr == nil {
+				spec.ExpiresAt = &t
+			}
+		}
+		inviteSpecs = append(inviteSpecs, spec)
+	}
+	if err := dataStore.SeedConfigInvites(inviteSpecs); err != nil {
+		logger.Warnf("registration: could not sync config invites: %v", err)
+	}
+	if cfg.Admin.OwnerUsername != "" {
+		if err := dataStore.RecoverOwner(cfg.Admin.OwnerUsername); err != nil {
+			logger.Warnf("admin: owner_username recovery failed: %v", err)
+		}
+	}
+
 	// ── 6. HTTP router + WebSocket Hub ────────────────────────────────────
 	var blobStorage storage.BlobStorage
 	if cfg.Storage.S3 != nil && cfg.Storage.S3.Enabled {
@@ -104,6 +126,9 @@ func main() {
 	} else {
 		blobStorage = &storage.FileSystemStorage{BaseDir: cfg.Storage.UploadDir}
 	}
+
+	// Buffered: the admin "delete server" action sends SIGTERM here too.
+	quit := make(chan os.Signal, 2)
 
 	apiHandler := &api.Handler{
 		Store:          dataStore,
@@ -118,6 +143,17 @@ func main() {
 		UDPPort:             cfg.Server.UDPPort,
 		IsDev:               cfg.Server.Dev,
 		FrontendOrigin:      cfg.Server.FrontendOrigin,
+		Settings: api.NewSettings(api.SettingsInit{
+			RegistrationMode:    cfg.Registration.Mode,
+			MaxFileSizeMB:       cfg.Server.MaxFileSizeMB,
+			MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
+			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
+		}),
+		ConfigPath:   config.Path(),
+		DataDir:      cfg.Database.Path,
+		ServerDomain: cfg.Server.Domain,
+		StartedAt:    time.Now(),
+		Shutdown:     func() { quit <- syscall.SIGTERM },
 	}
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
@@ -193,7 +229,6 @@ func main() {
 	}
 
 	// ── 9. Graceful shutdown ───────────────────────────────────────────────
-	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	host := cfg.Server.Domain

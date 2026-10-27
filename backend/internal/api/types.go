@@ -9,6 +9,8 @@ import (
 type RegisterRequest struct {
 	Username string `json:"username" example:"alice"`
 	Password string `json:"password" example:"s3cur3P@ss!"`
+	// InviteCode is required when the server runs in invite-only mode.
+	InviteCode string `json:"invite_code,omitempty" example:"K7M2-X9QF"`
 }
 
 type RegisterResponse struct {
@@ -35,6 +37,8 @@ type LoginResponse struct {
 	DMPermission            string   `json:"dm_permission,omitempty"`
 	FriendRequestPermission string   `json:"friend_request_permission,omitempty"`
 	Token                   string   `json:"token"`
+	// ServerRole is "owner" or "admin" for panel users, empty otherwise.
+	ServerRole string `json:"server_role,omitempty"`
 }
 
 type ChannelResponse struct {
@@ -92,6 +96,8 @@ type UserResponse struct {
 	AllowChannelAdds        string   `json:"allow_channel_adds,omitempty"`
 	DMPermission            string   `json:"dm_permission,omitempty"`
 	FriendRequestPermission string   `json:"friend_request_permission,omitempty"`
+	// ServerRole is only filled in for the caller's own account (/api/me), never for other users.
+	ServerRole string `json:"server_role,omitempty"`
 }
 
 type UpdateUserRequest struct {

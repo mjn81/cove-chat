@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { User, Users, Shield, Palette, Bell, LogOut, Mic, HardDrive } from 'lucide-react';
+import { User, Users, Shield, Palette, Bell, LogOut, Mic, HardDrive, ServerCog } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { TabButton } from './TabButton';
 import type { SettingsTab } from './types';
@@ -17,6 +17,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 	const { t } = useTranslation();
 	const logout = useAuthStore((state) => state.logout);
 	const incomingRequests = useAuthStore((state) => state.incomingRequests);
+	const serverRole = useAuthStore((state) => state.user?.server_role);
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 	return (
@@ -87,6 +88,24 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 						/>
 					</div>
 				</div>
+
+				{/* Hidden for everyone without a server role; the API enforces it independently. */}
+				{serverRole && (
+					<div>
+						<div className="text-[11px] font-bold text-muted-foreground uppercase px-3 mb-1.5 tracking-wider">
+							{t('admin.section')}
+						</div>
+						<div className="space-y-0.5">
+							<TabButton
+								id="admin"
+								label={t('admin.title')}
+								icon={ServerCog}
+								activeTab={activeTab}
+								setActiveTab={setActiveTab}
+							/>
+						</div>
+					</div>
+				)}
 
 				<div className="pt-4 mt-auto">
 					<div className="h-[1px] bg-border mb-4 mx-2" />

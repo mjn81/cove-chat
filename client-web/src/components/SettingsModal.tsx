@@ -10,6 +10,7 @@ import { X, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { Sidebar } from './SettingsModal/Sidebar';
 import { AccountTab } from '@/domains/users/components/account-tab';
+import { AdminTab } from '@/domains/admin/components/admin-tab';
 import { FriendsTab } from '@/domains/relationships/components/friends-tab';
 import { AppearanceTab } from './SettingsModal/AppearanceTab';
 import { PrivacyTab } from './SettingsModal/PrivacyTab';
@@ -89,6 +90,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 											t('settings.notifications')}
 										{activeTab === 'voice' && t('settings.voice_video')}
 										{activeTab === 'storage' && t('settings.storage')}
+										{activeTab === 'admin' && t('admin.title')}
 									</span>
 								</div>
 							)}
@@ -105,6 +107,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
 								{activeTab === 'notifications' && <NotificationsTab />}
 								{activeTab === 'voice' && <VoiceTab />}
 								{activeTab === 'storage' && <StorageTab />}
+								{activeTab === 'admin' && <AdminTab />}
 							</div>
 
 							{/* Floating Close Button - Desktop Only */}

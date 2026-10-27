@@ -99,6 +99,40 @@ func (d *DB) get(key string, dst any) error {
 	})
 }
 
+// update runs a read-modify-write on one key inside a single transaction and
+// retries on write conflicts, so concurrent callers (e.g. two sign-ups using
+// the same invite) serialize instead of overwriting each other. fn returns
+// the error to abort with; a nil error persists the mutated value.
+func (d *DB) update(key string, dst any, fn func() error) error {
+	var err error
+	for attempt := 0; attempt < 50; attempt++ {
+		err = d.bdb.Update(func(txn *badger.Txn) error {
+			item, gerr := txn.Get([]byte(key))
+			if errors.Is(gerr, badger.ErrKeyNotFound) {
+				return ErrNotFound
+			}
+			if gerr != nil {
+				return gerr
+			}
+			if verr := item.Value(func(val []byte) error { return json.Unmarshal(val, dst) }); verr != nil {
+				return verr
+			}
+			if ferr := fn(); ferr != nil {
+				return ferr
+			}
+			data, merr := json.Marshal(dst)
+			if merr != nil {
+				return merr
+			}
+			return txn.Set([]byte(key), data)
+		})
+		if !errors.Is(err, badger.ErrConflict) {
+			return err
+		}
+	}
+	return err
+}
+
 // delete removes a key from the store.
 func (d *DB) delete(key string) error {
 	return d.bdb.Update(func(txn *badger.Txn) error {
@@ -142,6 +176,9 @@ const (
 	prefixSession            = "s:"
 	prefixRelationship       = "rel:"
 	prefixRelationshipInbox  = "reli:"
+	prefixInvite             = "inv:"
+	prefixAudit              = "aud:"
+	keyOwner                 = "srv:owner"
 	keyDEK                   = "sys:dek"
 )
 

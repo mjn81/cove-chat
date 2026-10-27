@@ -50,3 +50,20 @@ func (s *FileSystemStorage) Delete(path string) error {
 }
 
 // TODO: Implement S3Storage struct here or in a separate file when needed.
+
+// Wipe removes every stored blob. Used by the admin "reset server" action.
+func (s *FileSystemStorage) Wipe() error {
+	entries, err := os.ReadDir(s.BaseDir)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("storage: list %s: %w", s.BaseDir, err)
+	}
+	for _, e := range entries {
+		if err := os.RemoveAll(filepath.Join(s.BaseDir, e.Name())); err != nil {
+			return fmt.Errorf("storage: remove %s: %w", e.Name(), err)
+		}
+	}
+	return nil
+}

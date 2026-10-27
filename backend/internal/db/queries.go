@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"sort"
 	"time"
 
 	"nodetalk/backend/internal/models"
@@ -530,3 +532,122 @@ func (d *DB) ListIncomingRequests(toUserID string) ([]*models.Relationship, erro
 	return list, err
 }
 
+
+// ============================================================
+//  Server administration: owner, invites, audit
+// ============================================================
+
+// ClaimOwner records userID as the server owner if nobody has claimed it yet.
+// The write is conditional, so concurrent first sign-ups produce exactly one owner.
+func (d *DB) ClaimOwner(userID string) (bool, error) {
+	err := d.setIfAbsent(keyOwner, userID)
+	if errors.Is(err, ErrConflict) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// OwnerID returns the owner's user ID, or ErrNotFound if the server has none yet.
+func (d *DB) OwnerID() (string, error) {
+	var id string
+	err := d.get(keyOwner, &id)
+	return id, err
+}
+
+// SetOwnerID overwrites the owner record (ownership transfer).
+func (d *DB) SetOwnerID(userID string) error { return d.set(keyOwner, userID) }
+
+// CreateInvite stores a new invite; ErrConflict if the code exists.
+func (d *DB) CreateInvite(inv *models.Invite) error { return d.setIfAbsent(prefixInvite+inv.Code, inv) }
+
+// SetInvite overwrites an invite record.
+func (d *DB) SetInvite(inv *models.Invite) error { return d.set(prefixInvite+inv.Code, inv) }
+
+// GetInvite fetches one invite.
+func (d *DB) GetInvite(code string) (*models.Invite, error) {
+	var inv models.Invite
+	if err := d.get(prefixInvite+code, &inv); err != nil {
+		return nil, err
+	}
+	return &inv, nil
+}
+
+// UpdateInvite applies fn to an invite atomically.
+func (d *DB) UpdateInvite(code string, fn func(*models.Invite) error) (*models.Invite, error) {
+	var inv models.Invite
+	err := d.update(prefixInvite+code, &inv, func() error { return fn(&inv) })
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
+}
+
+// ListInvites returns every invite, newest first.
+func (d *DB) ListInvites() ([]*models.Invite, error) {
+	items, err := d.listByPrefix(prefixInvite, func() any { return &models.Invite{} })
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*models.Invite, 0, len(items))
+	for _, it := range items {
+		out = append(out, it.(*models.Invite))
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
+	return out, nil
+}
+
+// AppendAudit stores one audit entry. Keys sort by time, so listing is chronological.
+func (d *DB) AppendAudit(e *models.AuditEntry) error {
+	return d.set(fmt.Sprintf("%s%019d:%s", prefixAudit, e.At.UnixNano(), e.ID), e)
+}
+
+// ListAudit returns the newest `limit` audit entries, newest first.
+func (d *DB) ListAudit(limit int) ([]*models.AuditEntry, error) {
+	var out []*models.AuditEntry
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefixAudit)
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		// Reverse iteration must seek past the prefix range to start at its last key.
+		for it.Seek(append([]byte(prefixAudit), 0xFF)); it.ValidForPrefix([]byte(prefixAudit)) && len(out) < limit; it.Next() {
+			var e models.AuditEntry
+			if err := it.Item().Value(func(val []byte) error { return json.Unmarshal(val, &e) }); err != nil {
+				return err
+			}
+			out = append(out, &e)
+		}
+		return nil
+	})
+	return out, err
+}
+
+// DeleteUserRecord removes a user record outright (used only to undo a sign-up that lost the owner race).
+func (d *DB) DeleteUserRecord(id string) error { return d.delete(userKey(id)) }
+
+// ---- Admin: backup / reset ------------------------------------------------ //
+
+// Backup streams a consistent snapshot of every key to w (Badger backup format).
+func (d *DB) Backup(w io.Writer) error {
+	_, err := d.bdb.Backup(w, 0)
+	return err
+}
+
+// Restore loads a snapshot produced by Backup into the (normally empty) database.
+func (d *DB) Restore(r io.Reader) error { return d.bdb.Load(r, 256) }
+
+// ResetKeepUser deletes every key and then re-creates only the given account
+// and the owner marker, so the owner can sign straight back in.
+func (d *DB) ResetKeepUser(u *models.User) error {
+	if err := d.bdb.DropAll(); err != nil {
+		return fmt.Errorf("db: drop all: %w", err)
+	}
+	if err := d.SetUser(u); err != nil {
+		return err
+	}
+	return d.SetOwnerID(u.ID)
+}
+
+// DropAll removes every key.
+func (d *DB) DropAll() error { return d.bdb.DropAll() }

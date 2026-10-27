@@ -23,6 +23,779 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/admin/admins": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List admins",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AdminListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/admins/{username}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "**Access:** Server Owner, with their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Give an account admin access",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Owner password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "**Access:** Server Owner, with their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Remove an account's admin access",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Owner password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/audit": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Recent admin actions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AuditListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/backup": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a passphrase-encrypted snapshot of the database (messages stay ciphertext). Restore it with the server CLI.\n**Access:** Server Owner, with their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Download an encrypted backup",
+                "parameters": [
+                    {
+                        "description": "Password and archive passphrase (min 12 chars)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.BackupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/config": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lists the settings the panel may change with their saved values. Secrets and file paths are never included.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Editable server settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AdminConfigResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates every change, writes them into config.toml (comments are kept) and applies live-editable ones immediately. The whole request is rejected if any change is invalid.\n**Access:** Server Admin. Owner-only settings need the owner and their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Change server settings",
+                "parameters": [
+                    {
+                        "description": "Settings to change",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Wipes every account, message and upload, then stops the process. Cannot be undone; take a backup first.\n**Access:** Server Owner, with their password and the server domain typed as confirmation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete the server",
+                "parameters": [
+                    {
+                        "description": "Confirmation",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.DeleteServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/invites": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List invitation codes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.InviteListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Limited-use (max_uses \u003e 0) or unlimited (max_uses = 0), with an optional expiry date. Leave ` + "`" + `code` + "`" + ` empty for a random one.\n**Access:** Server Admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create an invitation code",
+                "parameters": [
+                    {
+                        "description": "Invite settings",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CreateInviteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.InviteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/invites/{code}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Codes declared in config.toml cannot be revoked here; remove them from the file.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Revoke an invitation code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invite code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Counts, uptime and registration mode for the admin dashboard.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Server overview",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AdminOverviewResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/owner/transfer": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The previous owner stays on as an admin. Needs the owner's password and the confirmation phrase ` + "`" + `TRANSFER` + "`" + `.\n**Access:** Server Owner.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Hand the owner role to another account",
+                "parameters": [
+                    {
+                        "description": "New owner",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.TransferOwnerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/reset": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes all users except the owner, plus channels, messages, files, invites and sessions. Settings in config.toml are kept. Cannot be undone.\n**Access:** Server Owner, with their password and the phrase ` + "`" + `RESET` + "`" + `.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Reset server data",
+                "parameters": [
+                    {
+                        "description": "Confirmation",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/channels": {
             "get": {
                 "security": [
@@ -30,29 +803,20 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Without ?q=, returns your joined channels. With ?q=, searches across all public channels globally.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "channels"
                 ],
-                "summary": "List channels for the user OR search global public channels",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search query for ALL public channels",
-                        "name": "q",
-                        "in": "query"
-                    }
-                ],
+                "summary": "List channels for the current user",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Channel"
+                                "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
                             }
                         }
                     }
@@ -81,7 +845,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateChannelRequest"
+                            "$ref": "#/definitions/internal_api.CreateChannelRequest"
                         }
                     }
                 ],
@@ -89,7 +853,42 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Channel"
+                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/channels/explore": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Search public channels",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_api.ExploreChannelResponse"
+                            }
                         }
                     }
                 }
@@ -122,7 +921,87 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Channel"
+                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Delete or clear a channel/direct message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Channel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, permanently deletes for all participants (owner required for group channels)",
+                        "name": "for_both",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Update channel settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Channel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateChannelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ChannelResponse"
                         }
                     }
                 }
@@ -157,7 +1036,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.UserResponse"
+                                "$ref": "#/definitions/internal_api.UserResponse"
                             }
                         }
                     }
@@ -193,7 +1072,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.AddMembersRequest"
+                            "$ref": "#/definitions/internal_api.AddMembersRequest"
                         }
                     }
                 ],
@@ -201,7 +1080,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.StatusResponse"
                         }
                     }
                 }
@@ -241,7 +1120,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.StatusResponse"
                         }
                     }
                 }
@@ -277,8 +1156,8 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "Unix timestamp (nanoseconds) cursor for pagination",
+                        "type": "string",
+                        "description": "KSUID string cursor for pagination",
                         "name": "before",
                         "in": "query"
                     }
@@ -289,39 +1168,9 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Message"
+                                "$ref": "#/definitions/nodetalk_backend_internal_models.Message"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/api/files/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Download a file by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "File ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "File content"
                     }
                 }
             }
@@ -353,7 +1202,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.StatusResponse"
                         }
                     }
                 }
@@ -378,7 +1227,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.LoginRequest"
+                            "$ref": "#/definitions/internal_api.LoginRequest"
                         }
                     }
                 ],
@@ -386,19 +1235,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LoginResponse"
+                            "$ref": "#/definitions/internal_api.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -422,7 +1271,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.StatusResponse"
                         }
                     }
                 }
@@ -446,7 +1295,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.UserResponse"
+                            "$ref": "#/definitions/internal_api.UserResponse"
                         }
                     }
                 }
@@ -454,7 +1303,7 @@ const docTemplate = `{
         },
         "/api/register": {
             "post": {
-                "description": "Creates a new Cove user account.",
+                "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\n**Access:** Public.",
                 "consumes": [
                     "application/json"
                 ],
@@ -472,7 +1321,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.RegisterRequest"
+                            "$ref": "#/definitions/internal_api.RegisterRequest"
                         }
                     }
                 ],
@@ -480,55 +1329,51 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.RegisterResponse"
+                            "$ref": "#/definitions/internal_api.RegisterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "registration closed, invite required or invite not valid",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/upload": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "consumes": [
-                    "multipart/form-data"
-                ],
+        "/api/server-info": {
+            "get": {
+                "description": "Tells clients whether sign-up is open, invite-only or closed, so the register screen can show the right form.\n**Access:** Public.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "system"
                 ],
-                "summary": "Upload a file or voice note",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "File to upload (max 50 MB)",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
+                "summary": "Public server information",
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.UploadFileResponse"
+                            "$ref": "#/definitions/internal_api.ServerInfoResponse"
                         }
                     }
                 }
@@ -562,7 +1407,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.UserResponse"
+                                "$ref": "#/definitions/internal_api.UserResponse"
                             }
                         }
                     }
@@ -587,7 +1432,43 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update current user profile",
+                "parameters": [
+                    {
+                        "description": "Update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UserResponse"
                         }
                     }
                 }
@@ -620,7 +1501,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.UserResponse"
+                            "$ref": "#/definitions/internal_api.UserResponse"
                         }
                     }
                 }
@@ -653,7 +1534,27 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Presence"
+                            "$ref": "#/definitions/nodetalk_backend_internal_models.Presence"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/version": {
+            "get": {
+                "description": "Returns the semantic version of the Cove backend currently running.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get the current server build version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.VersionResponse"
                         }
                     }
                 }
@@ -661,24 +1562,268 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.AddMembersRequest": {
+        "internal_api.AddMembersRequest": {
             "type": "object",
             "properties": {
-                "usernames": {
+                "user_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "example": [
-                        "[\"bob\"",
-                        "\"charlie\"]"
+                        "[\"user-1\"",
+                        "\"user-2\"]"
                     ]
                 }
             }
         },
-        "api.CreateChannelRequest": {
+        "internal_api.AdminAccountResponse": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.AdminConfigResponse": {
+            "type": "object",
+            "properties": {
+                "settings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.ConfigSettingResponse"
+                    }
+                }
+            }
+        },
+        "internal_api.AdminListResponse": {
+            "type": "object",
+            "properties": {
+                "admins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.AdminAccountResponse"
+                    }
+                }
+            }
+        },
+        "internal_api.AdminOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "active_invites": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "channels": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "data_size_bytes": {
+                    "type": "integer",
+                    "example": 10485760
+                },
+                "domain": {
+                    "type": "string",
+                    "example": "chat.example.com"
+                },
+                "registration_mode": {
+                    "type": "string",
+                    "example": "invite_only"
+                },
+                "uptime_seconds": {
+                    "type": "integer",
+                    "example": 86400
+                },
+                "users": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "version": {
+                    "type": "string",
+                    "example": "0.9.0"
+                }
+            }
+        },
+        "internal_api.AuditListResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/nodetalk_backend_internal_models.AuditEntry"
+                    }
+                }
+            }
+        },
+        "internal_api.BackupRequest": {
+            "type": "object",
+            "properties": {
+                "passphrase": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.ChannelResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invite_link": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "last_message_at": {
+                    "type": "string"
+                },
+                "last_message_ciphertext": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "last_message_id": {
+                    "type": "string"
+                },
+                "last_message_nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "last_message_sender_id": {
+                    "type": "string"
+                },
+                "last_message_type": {
+                    "type": "string"
+                },
+                "member_avatars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "member_domains": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "member_names": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "member_roles": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "member_statuses": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unread_count": {
+                    "type": "integer"
+                },
+                "user_role": {
+                    "description": "0=Member, 10=Admin, 20=Owner",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.ConfigSettingResponse": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "description": "panel grouping",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "\"section.key\", e.g. \"registration.mode\"",
+                    "type": "string"
+                },
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "TOML key",
+                    "type": "string"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "owner_only": {
+                    "description": "OwnerOnly keys change network exposure or session security, so only the\nowner (with their password) may touch them.",
+                    "type": "boolean"
+                },
+                "restart_required": {
+                    "description": "RestartRequired keys are saved to the file but only take effect after a\nrestart. The others are applied live.",
+                    "type": "boolean"
+                },
+                "section": {
+                    "description": "TOML table",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"enum\" | \"int\" | \"bool\" | \"string\"",
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "internal_api.CreateChannelRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "A place for design discussions"
+                },
                 "is_private": {
                     "type": "boolean",
                     "example": false
@@ -699,7 +1844,41 @@ const docTemplate = `{
                 }
             }
         },
-        "api.ErrorResponse": {
+        "internal_api.CreateInviteRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WELCOME-2026"
+                },
+                "expires_at": {
+                    "type": "string",
+                    "example": "2026-12-31T23:59:59Z"
+                },
+                "max_uses": {
+                    "description": "0 = unlimited",
+                    "type": "integer",
+                    "example": 10
+                },
+                "note": {
+                    "type": "string",
+                    "example": "launch party"
+                }
+            }
+        },
+        "internal_api.DeleteServerRequest": {
+            "type": "object",
+            "properties": {
+                "confirm": {
+                    "type": "string",
+                    "example": "chat.example.com"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -708,7 +1887,80 @@ const docTemplate = `{
                 }
             }
         },
-        "api.LoginRequest": {
+        "internal_api.ExploreChannelResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invite_link": {
+                    "type": "string"
+                },
+                "member_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.InviteListResponse": {
+            "type": "object",
+            "properties": {
+                "invites": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.InviteResponse"
+                    }
+                }
+            }
+        },
+        "internal_api.InviteResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "max_uses": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "revoked": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is \"active\", \"expired\", \"exhausted\" or \"revoked\".",
+                    "type": "string"
+                },
+                "uses": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.LoginRequest": {
             "type": "object",
             "properties": {
                 "password": {
@@ -721,26 +1973,78 @@ const docTemplate = `{
                 }
             }
         },
-        "api.LoginResponse": {
+        "internal_api.LoginResponse": {
             "type": "object",
             "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "Bearer eyJhb..."
+                "allow_channel_adds": {
+                    "type": "string"
                 },
-                "user_id": {
+                "avatar_id": {
+                    "type": "string"
+                },
+                "avatar_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "banner_color": {
+                    "type": "string"
+                },
+                "custom_msg": {
+                    "type": "string"
+                },
+                "dm_permission": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string",
+                    "example": "localhost"
+                },
+                "friend_request_permission": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string",
                     "example": "a3f4..."
                 },
+                "server_role": {
+                    "description": "ServerRole is \"owner\" or \"admin\" for panel users, empty otherwise.",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "online"
+                },
+                "status_preference": {
+                    "type": "string",
+                    "example": "auto"
+                },
+                "token": {
+                    "type": "string"
+                },
                 "username": {
                     "type": "string",
                     "example": "alice"
                 }
             }
         },
-        "api.RegisterRequest": {
+        "internal_api.PasswordRequest": {
             "type": "object",
             "properties": {
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "invite_code": {
+                    "description": "InviteCode is required when the server runs in invite-only mode.",
+                    "type": "string",
+                    "example": "K7M2-X9QF"
+                },
                 "password": {
                     "type": "string",
                     "example": "s3cur3P@ss!"
@@ -751,7 +2055,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RegisterResponse": {
+        "internal_api.RegisterResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -764,7 +2068,34 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StatusResponse": {
+        "internal_api.ResetRequest": {
+            "type": "object",
+            "properties": {
+                "confirm": {
+                    "type": "string",
+                    "example": "RESET"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.ServerInfoResponse": {
+            "type": "object",
+            "properties": {
+                "needs_owner": {
+                    "description": "NeedsOwner is true on a fresh server: the next account created becomes the owner.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "registration_mode": {
+                    "description": "RegistrationMode is \"open\", \"invite_only\" or \"closed\".",
+                    "type": "string",
+                    "example": "invite_only"
+                }
+            }
+        },
+        "internal_api.StatusResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -773,37 +2104,15 @@ const docTemplate = `{
                 }
             }
         },
-        "api.UploadFileResponse": {
+        "internal_api.TransferOwnerRequest": {
             "type": "object",
             "properties": {
-                "file_id": {
-                    "type": "string"
-                },
-                "mime": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "uploaded": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.UserResponse": {
-            "type": "object",
-            "properties": {
-                "domain": {
+                "confirm": {
                     "type": "string",
-                    "example": "localhost"
+                    "example": "TRANSFER"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "user-1"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "online"
+                "password": {
+                    "type": "string"
                 },
                 "username": {
                     "type": "string",
@@ -811,7 +2120,185 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Channel": {
+        "internal_api.UpdateChannelRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.UpdateConfigRequest": {
+            "type": "object",
+            "properties": {
+                "changes": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.UpdateConfigResponse": {
+            "type": "object",
+            "properties": {
+                "applied": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "restart_required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "allow_channel_adds": {
+                    "type": "string"
+                },
+                "avatar_id": {
+                    "type": "string"
+                },
+                "avatar_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "banner_color": {
+                    "type": "string"
+                },
+                "custom_msg": {
+                    "type": "string"
+                },
+                "dm_permission": {
+                    "type": "string"
+                },
+                "friend_request_permission": {
+                    "type": "string"
+                },
+                "old_password": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "status_preference": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.UserResponse": {
+            "type": "object",
+            "properties": {
+                "allow_channel_adds": {
+                    "type": "string"
+                },
+                "avatar_id": {
+                    "type": "string"
+                },
+                "avatar_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "banner_color": {
+                    "type": "string"
+                },
+                "custom_msg": {
+                    "type": "string"
+                },
+                "dm_permission": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string",
+                    "example": "localhost"
+                },
+                "friend_request_permission": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "user-1"
+                },
+                "server_role": {
+                    "description": "ServerRole is only filled in for the caller's own account (/api/me), never for other users.",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "online"
+                },
+                "status_preference": {
+                    "type": "string",
+                    "example": "auto"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "alice"
+                }
+            }
+        },
+        "internal_api.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "udp_port": {
+                    "type": "integer",
+                    "example": 9090
+                },
+                "version": {
+                    "type": "string",
+                    "example": "V1.0.0"
+                }
+            }
+        },
+        "nodetalk_backend_internal_models.AuditEntry": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "e.g. \"invite.create\"",
+                    "type": "string"
+                },
+                "actor_id": {
+                    "type": "string"
+                },
+                "actor_name": {
+                    "type": "string"
+                },
+                "at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "target": {
+                    "description": "e.g. a username or invite code (never a secret)",
+                    "type": "string"
+                }
+            }
+        },
+        "nodetalk_backend_internal_models.Channel": {
             "type": "object",
             "properties": {
                 "aes_key_enc": {
@@ -821,10 +2308,16 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "avatar_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "creator_id": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {
@@ -838,18 +2331,42 @@ const docTemplate = `{
                     "description": "If true, hidden from public search",
                     "type": "boolean"
                 },
-                "members": {
+                "last_message_at": {
+                    "description": "Ephemeral: Populated in ListUserChannels",
+                    "type": "string"
+                },
+                "last_message_ciphertext": {
+                    "description": "Ephemeral, populated in ListUserChannels: the channel's most recent\nmessage, still encrypted — lets the client render a sidebar preview\nwithout a second round-trip. The server never sees the plaintext.",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "type": "integer"
                     }
+                },
+                "last_message_id": {
+                    "type": "string"
+                },
+                "last_message_nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "last_message_sender_id": {
+                    "type": "string"
+                },
+                "last_message_type": {
+                    "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
                 },
                 "name": {
                     "type": "string"
+                },
+                "unread_count": {
+                    "description": "Ephemeral: Populated per-user in handlers",
+                    "type": "integer"
                 }
             }
         },
-        "models.Message": {
+        "nodetalk_backend_internal_models.Message": {
             "type": "object",
             "properties": {
                 "channel_id": {
@@ -862,6 +2379,13 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "compression": {
+                    "description": "\"none\", \"zstd\", etc.",
+                    "type": "string"
+                },
+                "edited_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -871,6 +2395,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "reply_to_id": {
+                    "type": "string"
                 },
                 "sender_id": {
                     "type": "string"
@@ -886,29 +2413,31 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "description": "\"text\" | \"file\" | \"voice\"",
+                    "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/models.MessageType"
+                            "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
                         }
                     ]
                 }
             }
         },
-        "models.MessageType": {
+        "nodetalk_backend_internal_models.MessageType": {
             "type": "string",
             "enum": [
                 "text",
                 "file",
-                "voice"
+                "voice",
+                "video"
             ],
             "x-enum-varnames": [
                 "MessageTypeText",
                 "MessageTypeFile",
-                "MessageTypeVoice"
+                "MessageTypeVoice",
+                "MessageTypeVideo"
             ]
         },
-        "models.Presence": {
+        "nodetalk_backend_internal_models.Presence": {
             "type": "object",
             "properties": {
                 "current_status": {

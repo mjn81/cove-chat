@@ -166,7 +166,7 @@ describe('auth.slice register', () => {
 
 		await useAuthStore.getState().register('carol', 'password123');
 
-		expect(mockApiRegister).toHaveBeenCalledWith('carol', 'password123');
+		expect(mockApiRegister).toHaveBeenCalledWith('carol', 'password123', undefined);
 		expect(mockApiLogin).toHaveBeenCalledWith('carol', 'password123');
 		expect(useAuthStore.getState().user?.username).toBe('carol');
 		expect(mockConnectWS).toHaveBeenCalledWith('carol-token');
