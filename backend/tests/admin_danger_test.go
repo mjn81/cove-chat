@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"os"
@@ -139,5 +140,29 @@ func TestDangerousActionsLockAfterRepeatedWrongPasswords(t *testing.T) {
 	// Even the right password is refused while locked.
 	if got := e.do(t, "POST", "/api/admin/reset", owner, map[string]any{"password": testPassword, "confirm": "RESET"}); got.StatusCode != http.StatusTooManyRequests {
 		t.Errorf("right password while locked = %d, want 429", got.StatusCode)
+	}
+}
+
+func TestBackupRestoresIntoAFreshServer(t *testing.T) {
+	src := newAdminEnv(t, "open")
+	owner, _, _ := src.seedRoles(t)
+	resp := src.do(t, "POST", "/api/admin/backup", owner, map[string]any{"password": testPassword, "passphrase": testPassphrase})
+	archive, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	plain, err := api.DecryptBackup(archive, testPassphrase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dst := newAdminEnv(t, "open")
+	if err := dst.store.Restore(bytes.NewReader(plain)); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	u, err := dst.store.GetUserByUsername("admin")
+	if err != nil || u.ServerRole != "admin" {
+		t.Fatalf("restored admin = %v, %v", u, err)
+	}
+	if !dst.store.HasOwner() {
+		t.Error("owner marker not restored")
 	}
 }

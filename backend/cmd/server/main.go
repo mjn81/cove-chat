@@ -22,6 +22,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -93,6 +94,13 @@ func main() {
 
 	// ── 5. App layers ──────────────────────────────────────────────────────
 	dataStore := store.New(database)
+
+	// "server restore <file>" loads an admin-panel backup into an empty
+	// database and exits. The archive passphrase comes from the environment so
+	// it never lands in shell history or the process list.
+	if len(os.Args) >= 3 && os.Args[1] == "restore" {
+		os.Exit(runRestore(dataStore, os.Args[2], len(os.Args) > 3 && os.Args[3] == "--force"))
+	}
 	tokenTTL  := time.Duration(cfg.Security.TokenExpireHours) * time.Hour
 	sessions  := auth.NewSessionStore(tokenTTL, database)
 
@@ -316,4 +324,33 @@ func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
 	}()
 
 	return conn, nil
+}
+
+// runRestore implements the restore subcommand and returns the exit code.
+func runRestore(dataStore *store.Store, path string, force bool) int {
+	pass := os.Getenv("NODETALK_BACKUP_PASSPHRASE")
+	if pass == "" {
+		logger.Error("restore: set NODETALK_BACKUP_PASSPHRASE to the passphrase chosen when the backup was made")
+		return 2
+	}
+	if dataStore.HasOwner() && !force {
+		logger.Error("restore: this database already has data; pass --force to merge the backup into it")
+		return 2
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		logger.Errorf("restore: cannot read %s: %v", path, err)
+		return 1
+	}
+	plain, err := api.DecryptBackup(data, pass)
+	if err != nil {
+		logger.Error("restore: wrong passphrase or damaged backup file")
+		return 1
+	}
+	if err := dataStore.Restore(bytes.NewReader(plain)); err != nil {
+		logger.Errorf("restore failed: %v", err)
+		return 1
+	}
+	logger.Info("restore complete - start the server normally")
+	return 0
 }

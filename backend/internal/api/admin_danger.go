@@ -174,6 +174,9 @@ func (h *Handler) AdminReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Sessions.DeleteExcept(owner.ID)
+	if d, ok := h.Hub.(interface{ DisconnectAllExcept(string) }); ok {
+		d.DisconnectAllExcept(owner.ID)
+	}
 	if wp, ok := h.Storage.(blobWiper); ok {
 		if err := wp.Wipe(); err != nil {
 			logger.Warnf("admin: reset could not wipe uploads: %v", err)

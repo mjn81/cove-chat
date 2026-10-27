@@ -161,6 +161,25 @@ func (h *Hub) Close() {
 	}
 }
 
+// DisconnectAllExcept closes every WebSocket except those of keepUserID. The
+// admin "reset server" action uses it so removed accounts cannot keep a live
+// connection after their data and sessions are gone.
+func (h *Hub) DisconnectAllExcept(keepUserID string) {
+	h.mu.Lock()
+	var drop []*Client
+	for uid, list := range h.clients {
+		if uid == keepUserID {
+			continue
+		}
+		drop = append(drop, list...)
+		delete(h.clients, uid)
+	}
+	h.mu.Unlock()
+	for _, c := range drop {
+		_ = c.conn.Close(websocket.StatusPolicyViolation, "server reset")
+	}
+}
+
 // run is the Hub's main event loop — dispatches inbound envelopes to the
 // correct channel members, one at a time and in the order they were
 // submitted. This guarantees clients observe messages, edits, and deletes
