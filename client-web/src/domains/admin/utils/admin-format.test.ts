@@ -6,7 +6,7 @@ import {
 	formatUptime,
 	liveInviteStatus,
 	splitErrorKey,
-	toRFC3339,
+	maskInviteCode,
 } from './admin-format';
 
 const invite = (over: Partial<Invite>): Invite => ({
@@ -49,10 +49,9 @@ describe('formatting', () => {
 		expect(formatUptime(3900)).toBe('1h 5m');
 		expect(formatUptime(120)).toBe('2m');
 	});
-	it('converts datetime-local values', () => {
-		expect(toRFC3339('')).toBeUndefined();
-		expect(toRFC3339('nonsense')).toBeUndefined();
-		expect(toRFC3339('2026-12-31T23:59')).toMatch(/^2026-1[12]-\d\dT.*Z$/);
+	it('masks invite codes without leaking any character', () => {
+		expect(maskInviteCode('ABC-123')).toBe('•••••••');
+		expect(maskInviteCode('ABC-123')).not.toMatch(/[A-Z0-9]/);
 	});
 	it('splits backend error keys from their detail', () => {
 		expect(splitErrorKey('admin.errors.forbidden')).toEqual({ key: 'admin.errors.forbidden' });

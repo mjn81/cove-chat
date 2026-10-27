@@ -13,11 +13,9 @@ export function formatInviteUses(invite: Pick<Invite, 'uses' | 'max_uses'>): str
 	return `${invite.uses} / ${invite.max_uses > 0 ? invite.max_uses : '∞'}`;
 }
 
-/** Converts a `datetime-local` value into the RFC3339 string the API wants (empty → undefined). */
-export function toRFC3339(localValue: string): string | undefined {
-	if (!localValue) return undefined;
-	const ms = Date.parse(localValue);
-	return Number.isNaN(ms) ? undefined : new Date(ms).toISOString();
+/** Hides an invite code behind dots (same length, so layout does not jump on reveal). */
+export function maskInviteCode(code: string): string {
+	return '•'.repeat(code.length);
 }
 
 /** Human-readable size using binary units. */

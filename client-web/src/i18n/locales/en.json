@@ -11,7 +11,12 @@
 		"save": "Save",
 		"cancel": "Cancel",
 		"apply": "Apply",
-		"confirm": "Confirm"
+		"confirm": "Confirm",
+		"pick_date_time": "Pick date and time",
+		"hour": "Hour",
+		"minute": "Minute",
+		"done": "Done",
+		"clear": "Clear"
 	},
 	"auth": {
 		"login": "Sign In",
@@ -654,7 +659,6 @@
 			"code_hint": "Optional. 6-64 letters, numbers, - or _. Leave empty to generate one.",
 			"note": "Note",
 			"create": "Create invite",
-			"created": "Invite {{code}} created",
 			"copied": "Code copied",
 			"copy": "Copy code",
 			"revoke": "Revoke invite",
@@ -665,7 +669,10 @@
 			"status_revoked": "Revoked",
 			"uses": "Used {{uses}}",
 			"expires_on": "Expires {{date}}",
-			"from_config": "config.toml"
+			"from_config": "config.toml",
+			"created_copied": "Invite created and copied to the clipboard",
+			"show": "Show code",
+			"hide": "Hide code"
 		},
 		"config": {
 			"saved": "Settings saved",

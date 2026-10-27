@@ -4,10 +4,10 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/date-time-picker';
 import { FormField } from '@/components/form-field';
 import { useCreateInvite } from '../api/use-admin';
 import { adminErrorMessage } from '../utils/admin-errors';
-import { toRFC3339 } from '../utils/admin-format';
 
 type UseType = 'limited' | 'unlimited';
 
@@ -17,7 +17,7 @@ export function InviteForm() {
 	const create = useCreateInvite();
 	const [useType, setUseType] = useState<UseType>('limited');
 	const [maxUses, setMaxUses] = useState('1');
-	const [expires, setExpires] = useState('');
+	const [expires, setExpires] = useState<Date | undefined>();
 	const [code, setCode] = useState('');
 	const [note, setNote] = useState('');
 
@@ -31,11 +31,13 @@ export function InviteForm() {
 				code: code.trim() || undefined,
 				note: note.trim() || undefined,
 				max_uses: useType === 'unlimited' ? 0 : uses,
-				expires_at: toRFC3339(expires),
+				expires_at: expires?.toISOString(),
 			},
 			{
 				onSuccess: (inv) => {
-					toast.success(t('admin.invites.created', { code: inv.code }));
+					// The code is copied, never shown, so it cannot leak on a stream.
+					void navigator.clipboard?.writeText(inv.code).catch(() => {});
+					toast.success(t('admin.invites.created_copied'));
 					setCode('');
 					setNote('');
 				},
@@ -81,7 +83,7 @@ export function InviteForm() {
 
 			<FormField label={t('admin.invites.expires')} hint={t('admin.invites.expires_hint')}>
 				{(c) => (
-					<Input {...c} type="datetime-local" value={expires} onChange={(e) => setExpires(e.target.value)} />
+					<DateTimePicker {...c} value={expires} onChange={setExpires} minDate={new Date()} defaultTime={[23, 59]} />
 				)}
 			</FormField>
 
@@ -89,6 +91,9 @@ export function InviteForm() {
 				{(c) => (
 					<Input
 						{...c}
+						type="password"
+						data-1p-ignore
+						data-lpignore="true"
 						value={code}
 						onChange={(e) => setCode(e.target.value)}
 						maxLength={64}

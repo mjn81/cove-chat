@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Copy, Loader2, Trash2 } from 'lucide-react';
+import { Copy, Eye, EyeOff, Loader2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import {
 	useUpdateAdminConfig,
 } from '../api/use-admin';
 import { adminErrorMessage } from '../utils/admin-errors';
-import { formatInviteUses, liveInviteStatus } from '../utils/admin-format';
+import { formatInviteUses, liveInviteStatus, maskInviteCode } from '../utils/admin-format';
 import type { RegistrationMode } from '../types/admin.types';
 import { InviteForm } from './invite-form';
 
@@ -26,6 +27,14 @@ export function RegistrationPanel() {
 	const save = useUpdateAdminConfig();
 	const invites = useAdminInvites();
 	const revoke = useRevokeInvite();
+	// Codes stay masked until someone clicks the eye, so the page is safe to show on a stream.
+	const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
+	const toggleReveal = (code: string) =>
+		setRevealed((prev) => {
+			const next = new Set(prev);
+			if (!next.delete(code)) next.add(code);
+			return next;
+		});
 
 	const mode = config.data?.settings.find((s) => s.key === 'registration.mode')?.value as
 		| RegistrationMode
@@ -80,7 +89,9 @@ export function RegistrationPanel() {
 							const status = liveInviteStatus(inv);
 							return (
 								<li key={inv.code} className="flex flex-wrap items-center gap-3 px-4 py-3">
-									<code className="font-mono text-sm text-foreground">{inv.code}</code>
+									<code className="font-mono text-sm text-foreground">
+										{revealed.has(inv.code) ? inv.code : maskInviteCode(inv.code)}
+									</code>
 									<Badge variant={status === 'active' ? 'default' : 'secondary'}>
 										{t(`admin.invites.status_${status}`)}
 									</Badge>
@@ -99,6 +110,15 @@ export function RegistrationPanel() {
 									)}
 									{inv.note && <span className="truncate text-xs text-muted-foreground">{inv.note}</span>}
 									<div className="ms-auto flex gap-1">
+										<Button
+											size="icon"
+											variant="ghost"
+											aria-label={t(revealed.has(inv.code) ? 'admin.invites.hide' : 'admin.invites.show')}
+											aria-pressed={revealed.has(inv.code)}
+											onClick={() => toggleReveal(inv.code)}
+										>
+											{revealed.has(inv.code) ? <EyeOff /> : <Eye />}
+										</Button>
 										<Button size="icon" variant="ghost" aria-label={t('admin.invites.copy')} onClick={() => copy(inv.code)}>
 											<Copy />
 										</Button>

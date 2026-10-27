@@ -163,6 +163,21 @@
   button *,
   [role="button"],
   [role="button"] *,
+  /* Radix menu / select / tab items ship with cursor-default (arrow); treat them as clickable too. */
+  [role="menuitem"],
+  [role="menuitem"] *,
+  [role="menuitemcheckbox"],
+  [role="menuitemcheckbox"] *,
+  [role="menuitemradio"],
+  [role="menuitemradio"] *,
+  [role="option"],
+  [role="option"] *,
+  [role="combobox"],
+  [role="combobox"] *,
+  [role="tab"],
+  [role="tab"] *,
+  [role="switch"],
+  [role="checkbox"],
   .cursor-pointer,
   .cursor-pointer * {
     cursor: pointer !important;
@@ -177,7 +192,11 @@
   button:disabled,
   button:disabled *,
   :disabled,
-  :disabled * {
+  :disabled *,
+  [data-disabled],
+  [data-disabled] *,
+  [aria-disabled="true"],
+  [aria-disabled="true"] * {
     cursor: not-allowed !important;
   }
 }
