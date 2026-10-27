@@ -23,6 +23,8 @@ import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -30,7 +32,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +92,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -342,6 +347,8 @@ private fun RegistrationPanel() {
     val config = rememberLoader { api.adminConfig() }
     val invites = rememberLoader { api.adminInvites() }
     var saving by remember { mutableStateOf(false) }
+    // Codes stay masked (stream-friendly) until the row's eye is tapped.
+    val shown = remember { mutableStateMapOf<String, Boolean>() }
 
     val mode = config.data?.firstOrNull { it.key == "registration.mode" }?.value?.text()
 
@@ -378,7 +385,8 @@ private fun RegistrationPanel() {
                 AdminCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(inv.code, color = c.textPrimary, style = CoveType.body, fontWeight = FontWeight.Medium)
+                            val reveal = shown[inv.code] == true
+                            Text(if (reveal) inv.code else "•".repeat(inv.code.length), color = c.textPrimary, style = CoveType.body, fontWeight = FontWeight.Medium)
                             Text(
                                 listOfNotNull(
                                     adm("admin.invites.status_$status"),
@@ -390,6 +398,11 @@ private fun RegistrationPanel() {
                             )
                             inv.note?.takeIf { it.isNotBlank() }?.let { Text(it, color = c.textMuted, style = CoveType.caption) }
                         }
+                        CoveIconButton(
+                            if (shown[inv.code] == true) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                            adm(if (shown[inv.code] == true) "admin.invites.hide" else "admin.invites.show"),
+                            { shown[inv.code] = shown[inv.code] != true }
+                        )
                         CoveIconButton(Icons.Outlined.ContentCopy, adm("admin.invites.copy"), {
                             clipboard.setText(AnnotatedString(inv.code))
                             toast(context, adm("admin.invites.copied"))
@@ -418,8 +431,11 @@ private fun InviteForm(onCreated: () -> Unit) {
     val c = CoveTheme.extendedColors
     var unlimited by remember { mutableStateOf(false) }
     var maxUses by remember { mutableStateOf("1") }
-    var expiresDay by remember { mutableStateOf<LocalDate?>(null) }
+    var expiresAt by remember { mutableStateOf<LocalDateTime?>(null) }
+    var pickedDay by remember { mutableStateOf<LocalDate?>(null) }
     var pickDate by remember { mutableStateOf(false) }
+    var pickTime by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
     var code by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -443,14 +459,14 @@ private fun InviteForm(onCreated: () -> Unit) {
             FormField(adm("admin.invites.expires"), hint = adm("admin.invites.expires_hint")) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
                     CoveButton(
-                        expiresDay?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) ?: "None",
+                        expiresAt?.format(dateFormat) ?: "None",
                         onClick = { pickDate = true }, variant = ButtonVariant.Outline, size = ButtonSize.Md, modifier = Modifier.weight(1f)
                     )
-                    if (expiresDay != null) CoveIconButton(Icons.Outlined.Close, "Clear", { expiresDay = null })
+                    if (expiresAt != null) CoveIconButton(Icons.Outlined.Close, "Clear", { expiresAt = null })
                 }
             }
             FormField(adm("admin.invites.code"), hint = adm("admin.invites.code_hint")) {
-                CoveTextField(code, { code = it.take(64) }, keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
+                CoveTextField(code, { code = it.take(64) }, password = true, revealed = false, keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
             }
             FormField(adm("admin.invites.note")) {
                 CoveTextField(note, { note = it.take(200) })
@@ -459,13 +475,17 @@ private fun InviteForm(onCreated: () -> Unit) {
                 adm("admin.invites.create"), enabled = valid, loading = busy, modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     busy = true
-                    // End of the chosen day in the device zone, sent as UTC RFC3339 like the web form does.
-                    val expiry = expiresDay?.atTime(LocalTime.MAX)?.atZone(ZoneId.systemDefault())?.toInstant()?.toString()
+                    // Chosen local date and time, sent as a UTC instant like the web form does.
+                    val expiry = expiresAt?.atZone(ZoneId.systemDefault())?.toInstant()?.toString()
                     scope.launch {
                         api.adminCreateInvite(
                             CreateInviteRequest(code.trim().ifEmpty { null }, note.trim().ifEmpty { null }, if (unlimited) 0 else uses ?: 1, expiry)
                         ).fold(
-                            { toast(context, adm("admin.invites.created", "code" to it.code)); code = ""; note = ""; onCreated() },
+                            {
+                                // The code goes to the clipboard, never into the toast, so it stays off a shared screen.
+                                clipboard.setText(AnnotatedString(it.code))
+                                toast(context, adm("admin.invites.created_copied")); code = ""; note = ""; onCreated()
+                            },
                             { toast(context, adminError(it.message)) }
                         )
                         busy = false
@@ -482,12 +502,28 @@ private fun InviteForm(onCreated: () -> Unit) {
             confirmButton = {
                 TextButton({
                     // The picker reports UTC midnight of the chosen calendar day.
-                    expiresDay = state.selectedDateMillis?.let { Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).toLocalDate() }
+                    pickedDay = state.selectedDateMillis?.let { Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).toLocalDate() }
                     pickDate = false
+                    pickTime = pickedDay != null
                 }) { Text(adm("common.confirm"), color = MaterialTheme.colorScheme.primary) }
             },
             dismissButton = { TextButton({ pickDate = false }) { Text("Cancel", color = c.textMuted) } }
         ) { DatePicker(state) }
+    }
+
+    if (pickTime) {
+        // Defaults to 23:59 so a date-only choice still covers the whole day.
+        val time = rememberTimePickerState(initialHour = 23, initialMinute = 59, is24Hour = true)
+        CoveDialog(
+            onDismiss = { pickTime = false }, title = adm("admin.invites.expires"), size = DialogSize.Sm,
+            footer = {
+                CoveButton("Cancel", { pickTime = false }, variant = ButtonVariant.Ghost)
+                CoveButton(adm("common.confirm"), {
+                    expiresAt = pickedDay?.atTime(time.hour, time.minute)
+                    pickTime = false
+                })
+            }
+        ) { Column(Modifier.fillMaxWidth().padding(Spacing.lg), horizontalAlignment = Alignment.CenterHorizontally) { TimePicker(time) } }
     }
 }
 
