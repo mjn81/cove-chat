@@ -27,7 +27,8 @@ FROM alpine:latest
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates
+# ffmpeg also provides ffprobe; both are used for video messages (transcoding and duration).
+RUN apk add --no-cache ca-certificates ffmpeg
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/nodetalk-server .

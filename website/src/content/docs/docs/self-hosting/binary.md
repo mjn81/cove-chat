@@ -22,6 +22,10 @@ chmod +x nodetalk-server-linux-amd64
 
 The server reads `config.toml` from the working directory. Set `NODETALK_CONFIG` to use another path. On first start it generates a master password and writes it to the file: **back it up**.
 
+:::tip[Video messages]
+Install `ffmpeg` (it includes `ffprobe`) so uploaded videos are converted to MP4. The Docker image already has it. See [Requirements](../requirements/#about-ffmpeg).
+:::
+
 :::note
 The binary serves the API and WebSocket only. Serve the web client separately: use the `mjn81/nodetalk-webclient` image, or build `client-web` and put `dist/` behind any static web server. See [Web client](../../clients/web/).
 :::
