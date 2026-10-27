@@ -124,7 +124,7 @@ export function DateTimePicker({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="max-h-60">
-								{minuteOptions(value?.getMinutes()).map((m) => (
+								{minuteOptions(value?.getMinutes() ?? defaultTime[1]).map((m) => (
 									<SelectItem key={m} value={String(m)}>
 										{String(m).padStart(2, '0')}
 									</SelectItem>
