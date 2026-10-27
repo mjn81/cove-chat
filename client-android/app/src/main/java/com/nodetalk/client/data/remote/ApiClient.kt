@@ -366,6 +366,23 @@ class ApiClient(private val prefs: PreferencesManager) {
         }.ok().body<ByteArray>()
     }
 
+    /** Replaces ALL server data with an encrypted backup; the server then ends every session. */
+    suspend fun adminRestore(file: ByteArray, passphrase: String, password: String): Result<Unit> = runCatching {
+        client.post(url("/api/admin/restore")) {
+            bearer()
+            setBody(MultiPartFormDataContent(formData {
+                append("passphrase", passphrase)
+                append("password", password)
+                append("confirm", "RESTORE")
+                append("file", file, Headers.build {
+                    append(HttpHeaders.ContentType, "application/octet-stream")
+                    append(HttpHeaders.ContentDisposition, "filename=\"restore.cove-backup\"")
+                })
+            }))
+        }.ok()
+        Unit
+    }
+
     suspend fun adminReset(password: String, confirm: String): Result<Unit> = runCatching {
         client.post(url("/api/admin/reset")) {
             contentType(ContentType.Application.Json)

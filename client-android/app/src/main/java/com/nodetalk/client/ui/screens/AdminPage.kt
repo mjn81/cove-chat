@@ -2,6 +2,7 @@ package com.nodetalk.client.ui.screens
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -232,6 +233,7 @@ private fun StepUpDialog(
     destructive: Boolean = false,
     phrase: String? = null,
     needsPassphrase: Boolean = false,
+    fileName: String? = null,
     onSubmit: suspend (password: String, passphrase: String) -> Result<Unit>
 ) {
     val c = CoveTheme.extendedColors
@@ -265,6 +267,7 @@ private fun StepUpDialog(
     ) {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Text(description, color = c.textMuted, style = CoveType.label)
+            fileName?.let { name -> FormField(adm("admin.step_up.file")) { Text(name, color = c.textPrimary, style = CoveType.label) } }
             FormField(adm("admin.step_up.password"), required = true) {
                 CoveTextField(password, { password = it }, password = true, enabled = !busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false))
             }
@@ -693,7 +696,7 @@ private fun AdminsPanel(isOwner: Boolean, onRoleChanged: () -> Unit) {
 
 // ── Data (owner only) ───────────────────────────────────────────────────────
 
-private enum class DataAction { Backup, Reset, Delete }
+private enum class DataAction { Backup, Restore, Reset, Delete }
 
 /** Owner-only: encrypted backup, reset, and deleting the whole server. */
 @Composable
@@ -706,6 +709,21 @@ private fun DataPanel(onLogout: () -> Unit) {
     val domain = overview.data?.domain.orEmpty()
     var action by remember { mutableStateOf<DataAction?>(null) }
     var backup by remember { mutableStateOf<ByteArray?>(null) }
+    var restoreFile by remember { mutableStateOf<Pair<String, ByteArray>?>(null) }
+
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val picked = withContext(Dispatchers.IO) {
+                runCatching {
+                    val name = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { if (it.moveToFirst()) it.getString(0) else null } ?: "backup"
+                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("no stream")
+                    name to bytes
+                }.getOrNull()
+            }
+            if (picked == null) toast(context, adm("admin.errors.invalid_upload")) else { restoreFile = picked; action = DataAction.Restore }
+        }
+    }
 
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
         val bytes = backup
@@ -729,6 +747,11 @@ private fun DataPanel(onLogout: () -> Unit) {
     Column(Modifier.fillMaxWidth().clip(CoveShapes.md).border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f), CoveShapes.md).padding(Spacing.lg)) {
         Text(adm("admin.data.danger_title"), color = MaterialTheme.colorScheme.error, style = CoveType.label, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(Spacing.md))
+        Text(adm("admin.data.restore"), color = c.textPrimary, style = CoveType.body, fontWeight = FontWeight.Medium)
+        Text(adm("admin.data.restore_hint"), color = c.textMuted, style = CoveType.caption)
+        Spacer(Modifier.height(Spacing.sm))
+        CoveButton(adm("admin.data.restore_button"), { pick.launch(arrayOf("*/*")) }, variant = ButtonVariant.Destructive)
+        Spacer(Modifier.height(Spacing.lg))
         Text(adm("admin.data.reset"), color = c.textPrimary, style = CoveType.body, fontWeight = FontWeight.Medium)
         Text(adm("admin.data.reset_hint"), color = c.textMuted, style = CoveType.caption)
         Spacer(Modifier.height(Spacing.sm))
@@ -740,8 +763,17 @@ private fun DataPanel(onLogout: () -> Unit) {
         CoveButton(adm("admin.data.delete_button"), { action = DataAction.Delete }, variant = ButtonVariant.Destructive, enabled = domain.isNotEmpty())
     }
 
-    val dismiss = { action = null }
+    val dismiss = { action = null; restoreFile = null }
     when (action) {
+        DataAction.Restore -> restoreFile?.let { (name, bytes) ->
+            StepUpDialog(
+                adm("admin.data.restore"), adm("admin.data.restore_confirm"), adm("admin.data.restore_button"),
+                onDismiss = dismiss, destructive = true, phrase = "RESTORE", needsPassphrase = true, fileName = name
+            ) { password, passphrase ->
+                // Every session ends with the restore, so go straight back to sign-in.
+                api.adminRestore(bytes, passphrase, password).onSuccess { toast(context, adm("admin.data.restore_done")); onLogout() }
+            }
+        }
         DataAction.Backup -> StepUpDialog(
             adm("admin.data.backup_title"), adm("admin.data.backup_confirm"), adm("admin.data.backup_button"),
             onDismiss = dismiss, needsPassphrase = true
