@@ -176,6 +176,6 @@ export const fa: Dict = {
     features: 'امکانات', download: 'دانلود', roadmap: 'نقشه راه', changelog: 'تغییرات',
     quick: 'شروع سریع', selfHost: 'خودمیزبانی', config: 'پیکربندی', api: 'API',
     github: 'گیت‌هاب', issues: 'Issueها', discussions: 'بحث‌ها', security: 'امنیت',
-    legal: 'مجوز MIT. ساخته‌ی مشارکت‌کنندگان Cove.',
+    legal: 'مجوز MIT. ساخته‌شده توسط',
   },
 };

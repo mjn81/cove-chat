@@ -137,4 +137,4 @@ STRESS_CONCURRENCY=20 STRESS_REQUESTS=100 go test -v ./tests -run TestStressBack
 ---
 
 ## License
-MIT © Cove Contributors
+MIT © mjn

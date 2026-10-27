@@ -176,6 +176,6 @@ export const ar: Dict = {
     features: 'المزايا', download: 'تنزيل', roadmap: 'خارطة الطريق', changelog: 'سجل التغييرات',
     quick: 'بداية سريعة', selfHost: 'الاستضافة الذاتية', config: 'التهيئة', api: 'API',
     github: 'GitHub', issues: 'المسائل', discussions: 'النقاشات', security: 'الأمان',
-    legal: 'رخصة MIT. من صنع مساهمي Cove.',
+    legal: 'رخصة MIT. من صنع',
   },
 };

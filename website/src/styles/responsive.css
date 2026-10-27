@@ -726,3 +726,5 @@
   -webkit-mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
   mask-image: radial-gradient(ellipse 75% 90% at 0% 0%, #000 0%, transparent 72%);
 }
+.legal a{color:var(--fg)}
+.legal a:hover{color:var(--primary)}

@@ -174,7 +174,7 @@ export const en = {
     features: 'Features', download: 'Download', roadmap: 'Roadmap', changelog: 'Changelog',
     quick: 'Quick start', selfHost: 'Self-hosting', config: 'Configuration', api: 'API',
     github: 'GitHub', issues: 'Issues', discussions: 'Discussions', security: 'Security',
-    legal: 'MIT licensed. Made by the Cove contributors.',
+    legal: 'MIT licensed. Made by',
   },
 };
 
