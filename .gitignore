@@ -8,3 +8,8 @@ stress_report_*.txt
 
 # config backups written by the admin panel (contain secrets)
 *.toml.bak
+
+# Local env files (use .env.example as the template)
+.env.local
+.env.*.local
+!.env.example

@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
+  "license": "MIT",
+  "author": "mjn",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "dev": "astro dev",

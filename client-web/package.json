@@ -2,6 +2,8 @@
   "name": "frontend",
   "private": true,
   "version": "0.9.0",
+  "license": "MIT",
+  "author": "mjn",
   "type": "module",
   "scripts": {
     "dev": "vite",
