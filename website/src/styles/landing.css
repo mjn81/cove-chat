@@ -27,7 +27,7 @@ section.block{padding:104px 0;position:relative}
 @keyframes shine{0%,55%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 
-.nav{position:fixed;top:12px;inset-inline:0;margin-inline:auto;z-index:50;width:min(980px,calc(100% - 24px));display:flex;align-items:center;gap:6px;padding-block:7px;padding-inline:16px 8px;border:1px solid var(--border);border-radius:999px;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);transition:background .3s}
+.nav{position:fixed;top:12px;inset-inline:0;margin-inline:auto;z-index:50;width:min(980px,calc(100% - 24px));display:flex;align-items:center;gap:6px;padding-block:7px;padding-inline:16px 8px;border:1px solid var(--border);border-radius:999px;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(16px) saturate(1.4);transition:background .3s}
 .nav.scrolled{background:color-mix(in srgb,var(--bg) 90%,transparent)}
 .nav .logo{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;margin-inline-end:auto}
 .nav-links{display:flex;gap:2px;position:relative;isolation:isolate}

@@ -24,7 +24,9 @@ export interface DownloadGroup {
 const PATTERNS = {
   'server-windows': /server.*windows.*amd64/i,
   'server-linux': /server.*linux.*amd64/i,
-  'server-macos': /server.*(darwin|mac)/i,
+  'server-linux-arm': /server.*linux.*arm64/i,
+  'server-macos-arm': /server.*(darwin|mac).*arm64/i,
+  'server-macos': /server.*(darwin|mac).*amd64/i,
   'desktop-windows': /desktop.*windows/i,
   'desktop-macos': /desktop.*mac/i,
   'desktop-linux': /desktop.*linux/i,
@@ -61,7 +63,9 @@ export function buildDownloads(info: ReleaseInfo): DownloadGroup[] {
       entries: [
         entry(assets, 'server-windows', 'Windows (amd64)', 'windows'),
         entry(assets, 'server-linux', 'Linux (amd64)', 'linux'),
-        entry(assets, 'server-macos', 'macOS (Intel / Apple silicon)', 'macos'),
+        entry(assets, 'server-linux-arm', 'Linux (arm64)', 'linux'),
+        entry(assets, 'server-macos-arm', 'macOS (Apple silicon)', 'macos'),
+        entry(assets, 'server-macos', 'macOS (Intel)', 'macos'),
         {
           id: 'docker',
           label: 'Docker image',

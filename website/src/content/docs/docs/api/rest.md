@@ -24,6 +24,7 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/admin/invites` | List invitation codes | Server Admin. |
 | `POST` | `/api/admin/invites` | Create an invitation code | Server Admin. |
 | `DELETE` | `/api/admin/invites/{code}` | Revoke an invitation code | Server Admin. |
+| `POST` | `/api/admin/notices` | Send a server-wide notice | Server Owner. |
 | `GET` | `/api/admin/overview` | Server overview | Server Admin. |
 | `POST` | `/api/admin/owner/transfer` | Hand the owner role to another account | Server Owner. |
 | `POST` | `/api/admin/reset` | Reset server data | Server Owner, with their password and the phrase `RESET`. |
@@ -57,6 +58,14 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | Method | Path | Summary | Access |
 | --- | --- | --- | --- |
 | `GET` | `/api/channels/{id}/messages` | List recent messages for a channel | Authenticated |
+
+## sessions
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/sessions` | List the signed-in devices of the current user | Authenticated. |
+| `POST` | `/api/sessions/terminate-others` | Terminate all other signed-in devices | Authenticated. |
+| `DELETE` | `/api/sessions/{id}` | Terminate one signed-in device | Authenticated (own sessions only). |
 
 ## system
 
