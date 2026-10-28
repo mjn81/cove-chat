@@ -1,4 +1,4 @@
-package com.nodetalk.client.data.model
+package com.cove.chat.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

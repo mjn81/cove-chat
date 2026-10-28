@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.PathParser
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -2,9 +2,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.Cove" parent="android:Theme.Material.NoActionBar">
         <!-- Match Cove dark window background from web client -->
-        <item name="android:windowBackground">@color/nt_background</item>
-        <item name="android:statusBarColor">@color/nt_popover</item>
-        <item name="android:navigationBarColor">@color/nt_popover</item>
+        <item name="android:windowBackground">@color/cove_background</item>
+        <item name="android:statusBarColor">@color/cove_popover</item>
+        <item name="android:navigationBarColor">@color/cove_popover</item>
         
         <!-- Light icons on dark status/nav bars -->
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>

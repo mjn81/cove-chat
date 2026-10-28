@@ -1,4 +1,4 @@
-package com.nodetalk.client.rtc
+package com.cove.chat.rtc
 
 import android.content.Context
 import android.content.Intent
@@ -7,8 +7,8 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.os.SystemClock
 import android.util.Log
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.data.remote.WebSocketManager
+import com.cove.chat.CoveApp
+import com.cove.chat.data.remote.WebSocketManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

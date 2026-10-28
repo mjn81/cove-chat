@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 /** Persian strings added after the main table in [Translations] (chat input, backgrounds, calls, Whisper); merged into it. */
 internal val ExtraFa: Map<String, String> = mapOf(

@@ -1,4 +1,4 @@
-package com.nodetalk.client.notify
+package com.cove.chat.notify
 
 import android.Manifest
 import android.app.Activity
@@ -19,14 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
-import com.nodetalk.client.whisper.WhisperInvite
+import com.cove.chat.whisper.WhisperInvite
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.MainActivity
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.components.t
+import com.cove.chat.MainActivity
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.components.t
 
 /** What the user is looking at right now; used to suppress notifications for the open chat. */
 object ActiveChat {
@@ -302,7 +302,7 @@ class NotificationHelper(private val app: Application) {
         const val CHANNEL_MESSAGES = "messages"
         const val CHANNEL_CALLS = "calls"
         const val CHANNEL_SERVICE = "background_connection"
-        const val GROUP_MESSAGES = "nodetalk_messages"
+        const val GROUP_MESSAGES = "cove_messages"
         const val SUMMARY_ID = 1
         const val CALL_ID_BASE = 100_000
         const val WHISPER_ID_BASE = 200_000
@@ -312,14 +312,14 @@ class NotificationHelper(private val app: Application) {
         const val EXTRA_CHANNEL_ID = "open_channel_id"
         const val EXTRA_CHANNEL_NAME = "open_channel_name"
         const val KEY_REPLY = "reply_text"
-        const val ACTION_REPLY = "com.nodetalk.client.REPLY"
-        const val ACTION_MARK_READ = "com.nodetalk.client.MARK_READ"
-        const val ACTION_DISMISSED = "com.nodetalk.client.DISMISSED"
-        const val ACTION_DECLINE_CALL = "com.nodetalk.client.DECLINE_CALL"
-        const val ACTION_ANSWER_CALL = "com.nodetalk.client.ANSWER_CALL"
-        const val ACTION_ACCEPT_WHISPER = "com.nodetalk.client.ACCEPT_WHISPER"
-        const val ACTION_DECLINE_WHISPER = "com.nodetalk.client.DECLINE_WHISPER"
-        const val ACTION_OPEN_WHISPER = "com.nodetalk.client.OPEN_WHISPER"
+        const val ACTION_REPLY = "com.cove.chat.REPLY"
+        const val ACTION_MARK_READ = "com.cove.chat.MARK_READ"
+        const val ACTION_DISMISSED = "com.cove.chat.DISMISSED"
+        const val ACTION_DECLINE_CALL = "com.cove.chat.DECLINE_CALL"
+        const val ACTION_ANSWER_CALL = "com.cove.chat.ANSWER_CALL"
+        const val ACTION_ACCEPT_WHISPER = "com.cove.chat.ACCEPT_WHISPER"
+        const val ACTION_DECLINE_WHISPER = "com.cove.chat.DECLINE_WHISPER"
+        const val ACTION_OPEN_WHISPER = "com.cove.chat.OPEN_WHISPER"
         const val EXTRA_WHISPER_ID = "whisper_session_id"
     }
 }

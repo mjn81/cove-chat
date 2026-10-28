@@ -1,7 +1,7 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
 import android.content.Context
 import android.media.AudioAttributes
@@ -55,10 +55,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.data.model.FileMeta
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.data.model.FileMeta
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

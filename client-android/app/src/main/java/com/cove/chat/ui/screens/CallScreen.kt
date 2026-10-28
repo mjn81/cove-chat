@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import android.app.Activity
 import android.content.Context
@@ -60,18 +60,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.rtc.ReceiveQuality
-import com.nodetalk.client.service.CallService
-import com.nodetalk.client.ui.components.CoveIconButton
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.IconButtonVariant
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.CoveApp
+import com.cove.chat.rtc.ReceiveQuality
+import com.cove.chat.service.CallService
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.IconButtonVariant
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Spacing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

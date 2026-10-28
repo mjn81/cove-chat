@@ -1,9 +1,9 @@
-package com.nodetalk.client.data.remote
+package com.cove.chat.data.remote
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
-import com.nodetalk.client.CoveApp
+import com.cove.chat.CoveApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

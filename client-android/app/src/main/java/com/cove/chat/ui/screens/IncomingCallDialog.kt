@@ -1,13 +1,13 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.layout.size
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.ButtonVariant
-import com.nodetalk.client.ui.components.ButtonSize
-import com.nodetalk.client.ui.components.CoveDialog
-import com.nodetalk.client.ui.components.DialogSize
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.ButtonVariant
+import com.cove.chat.ui.components.ButtonSize
+import com.cove.chat.ui.components.CoveDialog
+import com.cove.chat.ui.components.DialogSize
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,10 +30,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.nodetalk.client.notify.IncomingCall
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.notify.IncomingCall
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
 
 /** In-app counterpart of the ringing notification (web `IncomingCallModal`): who is calling, Answer / Decline. */
 @Composable

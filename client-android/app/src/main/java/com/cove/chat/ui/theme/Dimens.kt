@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.theme
+package com.cove.chat.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.TextStyle

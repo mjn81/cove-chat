@@ -1,11 +1,11 @@
-package com.nodetalk.client.notify
+package com.cove.chat.notify
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.RemoteInput
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.service.CallService
+import com.cove.chat.CoveApp
+import com.cove.chat.service.CallService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

@@ -1,12 +1,12 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveIconButton
-import com.nodetalk.client.ui.components.IconButtonVariant
-import com.nodetalk.client.ui.components.CoveDialog
-import com.nodetalk.client.ui.components.DialogSize
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.components.IconButtonVariant
+import com.cove.chat.ui.components.CoveDialog
+import com.cove.chat.ui.components.DialogSize
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.LayoutInflater
@@ -67,11 +67,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.nodetalk.client.R
-import com.nodetalk.client.data.model.FileMeta
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.R
+import com.cove.chat.data.model.FileMeta
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

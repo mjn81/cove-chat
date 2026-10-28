@@ -2,37 +2,37 @@
 <resources>
     <!-- Cove colours; hex values mirror client-web/src/index.css -->
     <color name="ic_launcher_background">#C4624A</color>
-    <color name="nt_background">#23201F</color>          
-    <color name="nt_card">#2E2A29</color>
-    <color name="nt_popover">#1B1918</color>
-    <color name="nt_primary">#D9826A</color>
-    <color name="nt_primary_foreground">#2A140D</color>
-    <color name="nt_accent">#3B3735</color>
-    <color name="nt_text_primary">#E8E5E3</color>
-    <color name="nt_text_muted">#AEA7A3</color>
-    <color name="nt_destructive">#E5707A</color>
-    <color name="nt_border">#46413E</color>
+    <color name="cove_background">#23201F</color>          
+    <color name="cove_card">#2E2A29</color>
+    <color name="cove_popover">#1B1918</color>
+    <color name="cove_primary">#D9826A</color>
+    <color name="cove_primary_foreground">#2A140D</color>
+    <color name="cove_accent">#3B3735</color>
+    <color name="cove_text_primary">#E8E5E3</color>
+    <color name="cove_text_muted">#AEA7A3</color>
+    <color name="cove_destructive">#E5707A</color>
+    <color name="cove_border">#46413E</color>
 
     
-    <color name="nt_status_online">#23A55A</color>
-    <color name="nt_status_idle">#F0B232</color>
-    <color name="nt_status_dnd">#F23F43</color>
-    <color name="nt_status_offline">#80848E</color>
+    <color name="cove_status_online">#23A55A</color>
+    <color name="cove_status_idle">#F0B232</color>
+    <color name="cove_status_dnd">#F23F43</color>
+    <color name="cove_status_offline">#80848E</color>
 
     
-    <color name="nt_mention_bg">#3B2E17</color>
-    <color name="nt_mention_fg">#F5C265</color>
+    <color name="cove_mention_bg">#3B2E17</color>
+    <color name="cove_mention_fg">#F5C265</color>
 
     
-    <color name="nt_whisper_bg">#121212</color>
-    <color name="nt_whisper_card">#1C1C1C</color>
-    <color name="nt_whisper_popover">#141414</color>
-    <color name="nt_whisper_accent">#292929</color>
+    <color name="cove_whisper_bg">#121212</color>
+    <color name="cove_whisper_card">#1C1C1C</color>
+    <color name="cove_whisper_popover">#141414</color>
+    <color name="cove_whisper_accent">#292929</color>
 
     
-    <color name="nt_light_background">#FFFFFF</color>
-    <color name="nt_light_card">#F8F4F0</color>
-    <color name="nt_light_text_primary">#201A16</color>
-    <color name="nt_light_text_muted">#7A6E65</color>
-    <color name="nt_light_accent">#EFE8E1</color>
+    <color name="cove_light_background">#FFFFFF</color>
+    <color name="cove_light_card">#F8F4F0</color>
+    <color name="cove_light_text_primary">#201A16</color>
+    <color name="cove_light_text_muted">#7A6E65</color>
+    <color name="cove_light_accent">#EFE8E1</color>
 </resources>

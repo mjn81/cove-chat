@@ -1,4 +1,4 @@
-package com.nodetalk.client.service
+package com.cove.chat.service
 
 import android.Manifest
 import android.app.Notification
@@ -15,10 +15,10 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.MainActivity
-import com.nodetalk.client.notify.NotificationActionReceiver
-import com.nodetalk.client.ui.components.t
+import com.cove.chat.CoveApp
+import com.cove.chat.MainActivity
+import com.cove.chat.notify.NotificationActionReceiver
+import com.cove.chat.ui.components.t
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,11 +42,11 @@ class CallService : Service() {
     private var channelName = "Group Call"
 
     companion object {
-        private const val CHANNEL_ID = "nodetalk_active_call_channel"
+        private const val CHANNEL_ID = "cove_active_call_channel"
         private const val NOTIFICATION_ID = 2001
         private const val EXTRA_SCREEN = "screen_share"
-        const val ACTION_MUTE = "com.nodetalk.client.CALL_MUTE"
-        const val ACTION_LEAVE = "com.nodetalk.client.CALL_LEAVE"
+        const val ACTION_MUTE = "com.cove.chat.CALL_MUTE"
+        const val ACTION_LEAVE = "com.cove.chat.CALL_LEAVE"
 
         private val _screenReady = MutableStateFlow(false)
         /** True while the service is running in the foreground with the `mediaProjection` type. */

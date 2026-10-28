@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.theme
+package com.cove.chat.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +23,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import android.app.Activity
-import com.nodetalk.client.R
+import com.cove.chat.R
 import androidx.compose.ui.graphics.Color
 
 @Immutable
@@ -177,7 +177,7 @@ fun CoveTheme(
         }
     }
 
-    val direction = if (com.nodetalk.client.ui.components.AppLanguage.isRtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
+    val direction = if (com.cove.chat.ui.components.AppLanguage.isRtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
     CompositionLocalProvider(
         LocalCoveExtendedColors provides extendedColors,
         androidx.compose.ui.platform.LocalLayoutDirection provides direction

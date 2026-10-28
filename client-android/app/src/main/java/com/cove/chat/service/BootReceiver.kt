@@ -1,4 +1,4 @@
-package com.nodetalk.client.service
+package com.cove.chat.service
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -1,6 +1,6 @@
-package com.nodetalk.client.data.model
+package com.cove.chat.data.model
 
-import com.nodetalk.client.crypto.CryptoManager
+import com.cove.chat.crypto.CryptoManager
 import kotlinx.serialization.json.Json
 
 private val metaJson = Json { ignoreUnknownKeys = true }

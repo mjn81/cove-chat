@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -35,23 +35,23 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.rtc.AudioRoute
-import com.nodetalk.client.rtc.CameraQuality
-import com.nodetalk.client.rtc.ReceiveQuality
-import com.nodetalk.client.rtc.ScreenQuality
-import com.nodetalk.client.ui.components.ButtonVariant
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.CoveChoiceList
-import com.nodetalk.client.ui.components.CoveIconButton
-import com.nodetalk.client.ui.components.CoveSegmented
-import com.nodetalk.client.ui.components.CoveSwitchRow
-import com.nodetalk.client.ui.components.IconButtonVariant
-import com.nodetalk.client.ui.components.Segment
-import com.nodetalk.client.ui.components.SectionHeader
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.CoveApp
+import com.cove.chat.rtc.AudioRoute
+import com.cove.chat.rtc.CameraQuality
+import com.cove.chat.rtc.ReceiveQuality
+import com.cove.chat.rtc.ScreenQuality
+import com.cove.chat.ui.components.ButtonVariant
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.CoveChoiceList
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.components.CoveSegmented
+import com.cove.chat.ui.components.CoveSwitchRow
+import com.cove.chat.ui.components.IconButtonVariant
+import com.cove.chat.ui.components.Segment
+import com.cove.chat.ui.components.SectionHeader
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.Spacing
 import org.webrtc.EglBase
 
 /** Call options that do not fit the control bar: audio output, deafen, camera flip and the quality settings. */

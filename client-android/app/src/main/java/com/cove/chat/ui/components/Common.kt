@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -19,7 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,7 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
-import com.nodetalk.client.data.remote.AvatarCache
+import com.cove.chat.data.remote.AvatarCache
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,14 +45,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.LineHeightStyle
-import com.nodetalk.client.ui.theme.ThemeSettings
+import com.cove.chat.ui.theme.ThemeSettings
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveTheme
 
 /** Same palette as `ChannelInitialsAvatar` in client-web/src/components/Avatar.tsx. */
 private val ChannelPalette = listOf(
@@ -79,7 +79,7 @@ fun InitialsAvatar(id: String, name: String, size: Dp = 40.dp, modifier: Modifie
     val text = name.trim().split(Regex("\\s+")).take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("").ifEmpty { "#" }
     val context = androidx.compose.ui.platform.LocalContext.current
     val typeface = remember {
-        runCatching { androidx.core.content.res.ResourcesCompat.getFont(context, com.nodetalk.client.R.font.vazirmatn) }.getOrNull()
+        runCatching { androidx.core.content.res.ResourcesCompat.getFont(context, com.cove.chat.R.font.vazirmatn) }.getOrNull()
             ?.let { android.graphics.Typeface.create(it, android.graphics.Typeface.BOLD) } ?: android.graphics.Typeface.DEFAULT_BOLD
     }
     Canvas(modifier.size(size).clip(CircleShape).background(color)) {
@@ -210,7 +210,7 @@ fun SectionDivider(modifier: Modifier = Modifier) {
 @Composable
 fun CoveMark(size: Dp = 64.dp, modifier: Modifier = Modifier) {
     androidx.compose.foundation.Image(
-        painter = androidx.compose.ui.res.painterResource(com.nodetalk.client.R.drawable.ic_cove_mark),
+        painter = androidx.compose.ui.res.painterResource(com.cove.chat.R.drawable.ic_cove_mark),
         contentDescription = null, modifier = modifier.size(size)
     )
 }

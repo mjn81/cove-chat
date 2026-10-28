@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,17 +19,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.data.model.CreateChannelRequest
-import com.nodetalk.client.data.model.UserSummary
-import com.nodetalk.client.ui.components.ButtonSize
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.CoveDialog
-import com.nodetalk.client.ui.components.DialogSize
-import com.nodetalk.client.ui.components.ErrorBanner
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.CoveApp
+import com.cove.chat.data.model.CreateChannelRequest
+import com.cove.chat.data.model.UserSummary
+import com.cove.chat.ui.components.ButtonSize
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.CoveDialog
+import com.cove.chat.ui.components.DialogSize
+import com.cove.chat.ui.components.ErrorBanner
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.launch
 
 /**

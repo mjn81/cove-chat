@@ -1,13 +1,13 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.components.CoveSegmented
-import com.nodetalk.client.ui.components.Segment
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.ButtonVariant
-import com.nodetalk.client.ui.components.ButtonSize
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.components.CoveSegmented
+import com.cove.chat.ui.components.Segment
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.ButtonVariant
+import com.cove.chat.ui.components.ButtonSize
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Spacing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,15 +39,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.data.model.CreateChannelRequest
-import com.nodetalk.client.data.model.Relationship
-import com.nodetalk.client.data.model.UserSummary
-import com.nodetalk.client.ui.components.ErrorBanner
-import com.nodetalk.client.ui.components.FieldLabel
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.CoveApp
+import com.cove.chat.data.model.CreateChannelRequest
+import com.cove.chat.data.model.Relationship
+import com.cove.chat.data.model.UserSummary
+import com.cove.chat.ui.components.ErrorBanner
+import com.cove.chat.ui.components.FieldLabel
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

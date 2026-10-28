@@ -1,10 +1,10 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveIconButton
-import com.nodetalk.client.ui.components.I18nToast
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.components.I18nToast
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -38,7 +38,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import com.nodetalk.client.ui.components.chatBackgroundPattern
+import com.cove.chat.ui.components.chatBackgroundPattern
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -62,9 +62,9 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.MessageText
-import com.nodetalk.client.ui.components.mirrorInRtl
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.MessageText
+import com.cove.chat.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -90,20 +90,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.crypto.CryptoManager
-import com.nodetalk.client.data.model.Channel
-import com.nodetalk.client.data.model.Message
-import com.nodetalk.client.data.model.fileMeta
-import com.nodetalk.client.data.model.previewText
-import com.nodetalk.client.notify.ActiveChat
-import com.nodetalk.client.ui.components.InitialsAvatar
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.SectionDivider
-import com.nodetalk.client.ui.components.UserAvatar
+import com.cove.chat.CoveApp
+import com.cove.chat.crypto.CryptoManager
+import com.cove.chat.data.model.Channel
+import com.cove.chat.data.model.Message
+import com.cove.chat.data.model.fileMeta
+import com.cove.chat.data.model.previewText
+import com.cove.chat.notify.ActiveChat
+import com.cove.chat.ui.components.InitialsAvatar
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.SectionDivider
+import com.cove.chat.ui.components.UserAvatar
 import kotlinx.coroutines.delay
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -582,7 +582,7 @@ private fun MessageRow(
     val maxDrag = with(density) { 96.dp.toPx() }
     val swipe = remember { androidx.compose.animation.core.Animatable(0f) }
     val swipeScope = rememberCoroutineScope()
-    val sign = if (com.nodetalk.client.ui.components.AppLanguage.isRtl) -1f else 1f
+    val sign = if (com.cove.chat.ui.components.AppLanguage.isRtl) -1f else 1f
     val primary = MaterialTheme.colorScheme.primary
     Box(Modifier.fillMaxWidth()) {
     val pull = (kotlin.math.abs(swipe.value) / trigger).coerceIn(0f, 1f)

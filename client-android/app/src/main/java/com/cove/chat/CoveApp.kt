@@ -1,16 +1,16 @@
-package com.nodetalk.client
+package com.cove.chat
 
 import android.app.Application
-import com.nodetalk.client.data.local.PreferencesManager
-import com.nodetalk.client.data.remote.ApiClient
-import com.nodetalk.client.data.remote.WebSocketManager
-import com.nodetalk.client.rtc.RawUdpVoiceManager
-import com.nodetalk.client.data.model.previewText
-import com.nodetalk.client.notify.ActiveChat
-import com.nodetalk.client.notify.CallCoordinator
-import com.nodetalk.client.notify.NotificationHelper
-import com.nodetalk.client.service.BackgroundConnection
-import com.nodetalk.client.rtc.WebRTCManager
+import com.cove.chat.data.local.PreferencesManager
+import com.cove.chat.data.remote.ApiClient
+import com.cove.chat.data.remote.WebSocketManager
+import com.cove.chat.rtc.RawUdpVoiceManager
+import com.cove.chat.data.model.previewText
+import com.cove.chat.notify.ActiveChat
+import com.cove.chat.notify.CallCoordinator
+import com.cove.chat.notify.NotificationHelper
+import com.cove.chat.service.BackgroundConnection
+import com.cove.chat.rtc.WebRTCManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,7 +29,7 @@ class CoveApp : Application() {
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
-    lateinit var whisperManager: com.nodetalk.client.whisper.WhisperManager
+    lateinit var whisperManager: com.cove.chat.whisper.WhisperManager
         private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -49,13 +49,13 @@ class CoveApp : Application() {
         rawUdpVoiceManager = RawUdpVoiceManager()
 
         notificationHelper = NotificationHelper(this)
-        whisperManager = com.nodetalk.client.whisper.WhisperManager(this, webSocketManager, { preferencesManager.userId }, { preferencesManager.username })
-        whisperManager.notifier = object : com.nodetalk.client.whisper.WhisperNotifier {
-            override fun request(invite: com.nodetalk.client.whisper.WhisperInvite) {
+        whisperManager = com.cove.chat.whisper.WhisperManager(this, webSocketManager, { preferencesManager.userId }, { preferencesManager.username })
+        whisperManager.notifier = object : com.cove.chat.whisper.WhisperNotifier {
+            override fun request(invite: com.cove.chat.whisper.WhisperInvite) {
                 if (preferencesManager.notificationsEnabled) notificationHelper.showWhisperRequest(invite)
             }
             override fun cancelRequest(sessionId: String) = notificationHelper.cancelWhisperRequest(sessionId)
-            override fun message(session: com.nodetalk.client.whisper.WhisperSession) {
+            override fun message(session: com.cove.chat.whisper.WhisperSession) {
                 if (preferencesManager.notificationsEnabled) notificationHelper.showWhisperMessage(session.id, session.peerName)
             }
         }

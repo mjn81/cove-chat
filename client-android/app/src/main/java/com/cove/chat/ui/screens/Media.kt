@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -61,10 +61,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.nodetalk.client.data.model.FileMeta
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.data.model.FileMeta
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

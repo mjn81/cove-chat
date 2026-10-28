@@ -1,4 +1,4 @@
-package com.nodetalk.client.whisper
+package com.cove.chat.whisper
 
 import android.util.Base64
 import java.math.BigInteger
@@ -23,12 +23,12 @@ class WhisperSecrets(val sessionKey: ByteArray, val safetyNumber: String)
 
 /**
  * Whisper E2EE primitives, wire-compatible with the web client: ephemeral ECDH P-256, HKDF with the
- * `nodetalk-whisper-salt-v1` salt, AES-256-GCM, and Signal-style 12x5-digit safety numbers.
+ * `cove-whisper-salt-v1` salt, AES-256-GCM, and Signal-style 12x5-digit safety numbers.
  * Keys live only in memory for the duration of a session.
  */
 object WhisperCrypto {
     private val random = SecureRandom()
-    private val salt = "nodetalk-whisper-salt-v1".toByteArray()
+    private val salt = "cove-whisper-salt-v1".toByteArray()
 
     private val p256: ECParameterSpec by lazy {
         val params = AlgorithmParameters.getInstance("EC")
@@ -75,9 +75,9 @@ object WhisperCrypto {
 
     fun deriveSecrets(privateKey: java.security.PrivateKey, remote: PublicKey, sessionId: String, userA: String, userB: String): WhisperSecrets {
         val shared = KeyAgreement.getInstance("ECDH").apply { init(privateKey); doPhase(remote, true) }.generateSecret()
-        val sessionKey = hkdf("HmacSHA256", shared, "nodetalk-whisper-v1-aes-$sessionId".toByteArray(), 32)
+        val sessionKey = hkdf("HmacSHA256", shared, "cove-whisper-v1-aes-$sessionId".toByteArray(), 32)
         val sorted = listOf(userA, userB).sorted().joinToString(":")
-        val fp = hkdf("HmacSHA512", shared, "nodetalk-whisper-v1-safety-number-$sorted".toByteArray(), 32)
+        val fp = hkdf("HmacSHA512", shared, "cove-whisper-v1-safety-number-$sorted".toByteArray(), 32)
         val groups = (0 until 12).map { i ->
             val v = ((fp[i * 2].toInt() and 0xFF) shl 8) or (fp[i * 2 + 1].toInt() and 0xFF)
             (v % 100000).toString().padStart(5, '0')

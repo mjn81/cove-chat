@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nodetalk.client"
+    namespace = "com.cove.chat"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nodetalk.client"
+        applicationId = "com.cove.chat"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

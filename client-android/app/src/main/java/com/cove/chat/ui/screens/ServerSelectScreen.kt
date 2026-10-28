@@ -1,10 +1,10 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.ButtonSize
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.ButtonSize
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,7 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -48,14 +48,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.components.AppLanguage
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.OpenSourceFooter
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CovePopoverDark
-import com.nodetalk.client.ui.theme.CovePrimaryForeground
-import com.nodetalk.client.ui.theme.CoveStatusOnline
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.components.AppLanguage
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.OpenSourceFooter
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CovePopoverDark
+import com.cove.chat.ui.theme.CovePrimaryForeground
+import com.cove.chat.ui.theme.CoveStatusOnline
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -141,7 +141,7 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            com.nodetalk.client.ui.components.CoveMark(size = 72.dp)
+            com.cove.chat.ui.components.CoveMark(size = 72.dp)
             Spacer(Modifier.height(16.dp))
             Text(
                 text = "Select a Server",

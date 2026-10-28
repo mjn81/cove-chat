@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 /**
  * Looks up a web i18n path (`admin.invites.title`) in [AdminEn], translates it to the app language and fills

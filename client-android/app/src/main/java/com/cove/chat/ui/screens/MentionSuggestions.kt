@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,10 +23,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
 
 /** A channel member that can be @-mentioned. */
 data class MentionMember(val id: String, val username: String, val avatarId: String? = null)

@@ -1,9 +1,9 @@
-package com.nodetalk.client.notify
+package com.cove.chat.notify
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.nodetalk.client.CoveApp
+import com.cove.chat.CoveApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

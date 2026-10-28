@@ -1,11 +1,11 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Radius
-import com.nodetalk.client.ui.components.CoveIconButton
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Radius
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.theme.Spacing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.background
@@ -75,10 +75,10 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.ui.components.AppLanguage
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.mirrorInRtl
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.ui.components.AppLanguage
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.mirrorInRtl
+import com.cove.chat.ui.theme.CoveTheme
 
 /** What the reply/edit banner above the input shows. */
 class InputContext(val isEdit: Boolean, val author: String, val snippet: String)

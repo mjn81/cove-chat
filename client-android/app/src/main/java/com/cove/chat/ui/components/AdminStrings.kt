@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 /*
  * Generated from client-web/src/i18n/locales/{en,fa,ar}.json (admin.* plus the register invite keys) so the

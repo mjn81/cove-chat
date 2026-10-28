@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -25,12 +25,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Radius
-import com.nodetalk.client.ui.theme.Sizes
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Radius
+import com.cove.chat.ui.theme.Sizes
+import com.cove.chat.ui.theme.Spacing
 
 /** Same names as the web `ui/button` variants. */
 enum class ButtonVariant { Default, Secondary, Outline, Ghost, Destructive }

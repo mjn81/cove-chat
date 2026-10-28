@@ -98,7 +98,7 @@ the waves cut out, generated from the mark geometry) is the Android 13+ themed i
 ## Architecture Overview
 
 ```
-client-android/app/src/main/java/com/nodetalk/client/
+client-android/app/src/main/java/com/cove/chat/
 ├── CoveApp.kt                 # Application singleton, notifications and Whisper wiring
 ├── MainActivity.kt            # Launcher Activity, edge-to-edge, runtime permissions
 ├── crypto/CryptoManager.kt    # AES-256-GCM channel encryption & zstd
@@ -113,7 +113,7 @@ client-android/app/src/main/java/com/nodetalk/client/
 ## UI kit and naming
 
 Kotlin symbols use the **Cove** name (`CoveTheme`, `CoveApp`, `Cove*` colours, `CoveFontFamily`); the Gradle
-`applicationId` and the `com.nodetalk.client` package are deliberately unchanged. The manifest theme is `Theme.Cove`.
+`applicationId` and the `com.cove.chat` package are deliberately unchanged. The manifest theme is `Theme.Cove`.
 
 Screens are composed from one shared kit whose names and variants mirror the web client (see
 `docs/design/component-cleanup-plan.md`). Do not hand-roll dialogs, buttons or rows in a screen; extend the kit instead.

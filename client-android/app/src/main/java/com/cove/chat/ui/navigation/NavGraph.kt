@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.navigation
+package com.cove.chat.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -6,25 +6,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.nodetalk.client.ui.screens.WhisperInviteDialog
-import com.nodetalk.client.ui.screens.WhisperScreen
-import com.nodetalk.client.ui.screens.WhisperStartDialog
-import com.nodetalk.client.notify.CallCoordinator
-import com.nodetalk.client.notify.OpenChatRequest
-import com.nodetalk.client.service.BackgroundConnection
-import com.nodetalk.client.ui.screens.IncomingCallDialog
+import com.cove.chat.ui.screens.WhisperInviteDialog
+import com.cove.chat.ui.screens.WhisperScreen
+import com.cove.chat.ui.screens.WhisperStartDialog
+import com.cove.chat.notify.CallCoordinator
+import com.cove.chat.notify.OpenChatRequest
+import com.cove.chat.service.BackgroundConnection
+import com.cove.chat.ui.screens.IncomingCallDialog
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.screens.CallScreen
-import com.nodetalk.client.ui.screens.ChannelListScreen
-import com.nodetalk.client.ui.screens.ChatScreen
-import com.nodetalk.client.ui.screens.LoginScreen
-import com.nodetalk.client.ui.screens.ServerSelectScreen
-import com.nodetalk.client.ui.screens.SettingsScreen
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.screens.CallScreen
+import com.cove.chat.ui.screens.ChannelListScreen
+import com.cove.chat.ui.screens.ChatScreen
+import com.cove.chat.ui.screens.LoginScreen
+import com.cove.chat.ui.screens.ServerSelectScreen
+import com.cove.chat.ui.screens.SettingsScreen
 
 @Composable
 fun NavGraph() {

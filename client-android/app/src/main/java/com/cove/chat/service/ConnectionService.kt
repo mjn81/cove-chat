@@ -1,4 +1,4 @@
-package com.nodetalk.client.service
+package com.cove.chat.service
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -10,9 +10,9 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.MainActivity
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.notify.NotificationHelper
+import com.cove.chat.MainActivity
+import com.cove.chat.CoveApp
+import com.cove.chat.notify.NotificationHelper
 
 /**
  * Keeps the WebSocket connected while the app is in the background so messages and calls can raise notifications

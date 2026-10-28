@@ -25,5 +25,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NodeTalk"
+rootProject.name = "Cove"
 include(":app")

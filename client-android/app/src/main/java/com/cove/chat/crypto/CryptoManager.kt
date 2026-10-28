@@ -1,4 +1,4 @@
-package com.nodetalk.client.crypto
+package com.cove.chat.crypto
 
 import android.util.Base64
 import com.github.luben.zstd.Zstd

@@ -1,4 +1,4 @@
-package com.nodetalk.client.whisper
+package com.cove.chat.whisper
 
 import android.content.Context
 import androidx.security.crypto.EncryptedFile

@@ -1,4 +1,4 @@
-package com.nodetalk.client.data.local
+package com.cove.chat.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -12,7 +12,7 @@ class PreferencesManager(context: Context) {
 
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
         context,
-        "nodetalk_secure_prefs",
+        "cove_secure_prefs",
         masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM

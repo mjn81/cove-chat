@@ -1,4 +1,4 @@
-package com.nodetalk.client.rtc
+package com.cove.chat.rtc
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

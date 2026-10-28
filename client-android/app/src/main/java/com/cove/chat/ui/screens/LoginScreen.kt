@@ -1,9 +1,9 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.size
-import com.nodetalk.client.ui.components.ButtonSize
+import com.cove.chat.ui.components.ButtonSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,19 +42,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.data.model.LoginRequest
-import com.nodetalk.client.data.model.RegisterRequest
-import com.nodetalk.client.data.model.ServerInfo
-import com.nodetalk.client.ui.components.adm
-import com.nodetalk.client.ui.components.adminError
+import com.cove.chat.CoveApp
+import com.cove.chat.data.model.LoginRequest
+import com.cove.chat.data.model.RegisterRequest
+import com.cove.chat.data.model.ServerInfo
+import com.cove.chat.ui.components.adm
+import com.cove.chat.ui.components.adminError
 import androidx.compose.runtime.LaunchedEffect
-import com.nodetalk.client.ui.components.ErrorBanner
-import com.nodetalk.client.ui.components.FieldLabel
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.OpenSourceFooter
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.ui.components.ErrorBanner
+import com.cove.chat.ui.components.FieldLabel
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.OpenSourceFooter
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.launch
 
 /**
@@ -132,7 +132,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            com.nodetalk.client.ui.components.CoveMark(size = 72.dp)
+            com.cove.chat.ui.components.CoveMark(size = 72.dp)
             Spacer(Modifier.height(16.dp))
             Text(
                 if (isRegister) "Create an account" else "Welcome back!",

@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,9 +30,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.Spacing
 
 /** One big labelled action in the attachment sheet. */
 class AttachAction(val icon: ImageVector, val label: String, val run: () -> Unit)

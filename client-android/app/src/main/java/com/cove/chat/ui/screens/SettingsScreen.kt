@@ -1,14 +1,14 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import androidx.compose.foundation.horizontalScroll
-import com.nodetalk.client.ui.components.ChatBackgroundIds
-import com.nodetalk.client.ui.components.ChatBackgroundSettings
-import com.nodetalk.client.ui.components.chatBackgroundPattern
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.components.ChatBackgroundIds
+import com.cove.chat.ui.components.ChatBackgroundSettings
+import com.cove.chat.ui.components.chatBackgroundPattern
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.theme.Spacing
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -45,8 +45,8 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.Icon
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.mirrorInRtl
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.mirrorInRtl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,22 +61,22 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.components.AppLanguage
-import com.nodetalk.client.ui.components.adm
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.components.AppLanguage
+import com.cove.chat.ui.components.adm
 import androidx.compose.runtime.LaunchedEffect
-import com.nodetalk.client.ui.components.SectionDivider
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveBackgroundDark
-import com.nodetalk.client.ui.theme.CoveBackgroundLight
-import com.nodetalk.client.ui.theme.CoveAccentDark
-import com.nodetalk.client.ui.theme.CoveAccentLight
-import com.nodetalk.client.ui.theme.CoveCardDark
-import com.nodetalk.client.ui.theme.CoveCardLight
-import com.nodetalk.client.ui.theme.CoveTextPrimaryDark
-import com.nodetalk.client.ui.theme.CoveTextPrimaryLight
-import com.nodetalk.client.ui.theme.ThemeSettings
+import com.cove.chat.ui.components.SectionDivider
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveBackgroundDark
+import com.cove.chat.ui.theme.CoveBackgroundLight
+import com.cove.chat.ui.theme.CoveAccentDark
+import com.cove.chat.ui.theme.CoveAccentLight
+import com.cove.chat.ui.theme.CoveCardDark
+import com.cove.chat.ui.theme.CoveCardLight
+import com.cove.chat.ui.theme.CoveTextPrimaryDark
+import com.cove.chat.ui.theme.CoveTextPrimaryLight
+import com.cove.chat.ui.theme.ThemeSettings
 import kotlinx.coroutines.launch
 
 private enum class SettingsPage(val title: String, val icon: ImageVector) {
@@ -112,7 +112,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
             app.webSocketManager.disconnect()
             app.whisperManager.reset()
             app.preferencesManager.clearAuth()
-            com.nodetalk.client.service.BackgroundConnection.sync(app)
+            com.cove.chat.service.BackgroundConnection.sync(app)
             onLogout()
         }
     }

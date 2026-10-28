@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,10 +27,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Spacing
 
 /** Same sizes as the web `ModalShell`; [Media] is edge-to-edge black for photo / video viewers. */
 enum class DialogSize(val maxWidth: Dp) { Sm(360.dp), Md(480.dp), Lg(640.dp), Media(Dp.Unspecified) }

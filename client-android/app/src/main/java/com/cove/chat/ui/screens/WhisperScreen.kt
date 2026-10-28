@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import android.app.Activity
 import android.content.Intent
@@ -74,31 +74,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.components.ButtonSize
-import com.nodetalk.client.ui.components.ButtonVariant
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.CoveConfirmDialog
-import com.nodetalk.client.ui.components.CoveDialog
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.components.DialogSize
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.components.mirrorInRtl
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.CoveWhisperAccent
-import com.nodetalk.client.ui.theme.CoveWhisperBg
-import com.nodetalk.client.ui.theme.CoveWhisperCard
-import com.nodetalk.client.ui.theme.CoveWhisperPopover
-import com.nodetalk.client.ui.theme.CoveWhisperPrimary
-import com.nodetalk.client.ui.theme.CoveWhisperTextMuted
-import com.nodetalk.client.ui.theme.Spacing
-import com.nodetalk.client.whisper.WhisperFile
-import com.nodetalk.client.whisper.WhisperInvite
-import com.nodetalk.client.whisper.WhisperMessage
-import com.nodetalk.client.whisper.WhisperStatus
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.components.ButtonSize
+import com.cove.chat.ui.components.ButtonVariant
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.CoveConfirmDialog
+import com.cove.chat.ui.components.CoveDialog
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.components.DialogSize
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.components.mirrorInRtl
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveWhisperAccent
+import com.cove.chat.ui.theme.CoveWhisperBg
+import com.cove.chat.ui.theme.CoveWhisperCard
+import com.cove.chat.ui.theme.CoveWhisperPopover
+import com.cove.chat.ui.theme.CoveWhisperPrimary
+import com.cove.chat.ui.theme.CoveWhisperTextMuted
+import com.cove.chat.ui.theme.Spacing
+import com.cove.chat.whisper.WhisperFile
+import com.cove.chat.whisper.WhisperInvite
+import com.cove.chat.whisper.WhisperMessage
+import com.cove.chat.whisper.WhisperStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -447,7 +447,7 @@ private fun WhisperBubble(m: WhisperMessage, mine: Boolean, now: Long) {
 @Composable
 private fun WhisperInputBar(
     input: String, onInput: (String) -> Unit, busy: Boolean,
-    onSend: () -> Unit, onAttach: () -> Unit, onVoice: (com.nodetalk.client.ui.screens.VoiceRecorder.Result) -> Unit, toast: (String) -> Unit
+    onSend: () -> Unit, onAttach: () -> Unit, onVoice: (com.cove.chat.ui.screens.VoiceRecorder.Result) -> Unit, toast: (String) -> Unit
 ) {
     val context = LocalContext.current
     val recorder = remember { VoiceRecorder(context) }

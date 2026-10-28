@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,11 +35,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Radius
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Radius
+import com.cove.chat.ui.theme.Spacing
 
 /**
  * The one list row (conversations, people, search results, menu entries, permission rows). Slots: [leading]

@@ -1,4 +1,4 @@
-package com.nodetalk.client.rtc
+package com.cove.chat.rtc
 
 import android.content.Context
 import android.content.pm.PackageManager

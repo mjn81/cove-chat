@@ -1,16 +1,16 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveShapes
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveChoiceList
-import com.nodetalk.client.ui.components.ButtonVariant
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.components.CoveSwitchRow
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Spacing
+import com.cove.chat.ui.components.CoveChoiceList
+import com.cove.chat.ui.components.ButtonVariant
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.components.CoveSwitchRow
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Spacing
 import androidx.compose.foundation.layout.PaddingValues
-import com.nodetalk.client.ui.components.ButtonSize
-import com.nodetalk.client.ui.components.I18nToast
+import com.cove.chat.ui.components.ButtonSize
+import com.cove.chat.ui.components.I18nToast
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -36,7 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,16 +53,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.data.model.AuthUser
-import com.nodetalk.client.data.model.UpdateProfileRequest
-import com.nodetalk.client.data.remote.AvatarCache
-import com.nodetalk.client.ui.components.ErrorBanner
-import com.nodetalk.client.ui.components.FieldLabel
-import com.nodetalk.client.ui.components.CoveButton
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.CoveApp
+import com.cove.chat.data.model.AuthUser
+import com.cove.chat.data.model.UpdateProfileRequest
+import com.cove.chat.data.remote.AvatarCache
+import com.cove.chat.ui.components.ErrorBanner
+import com.cove.chat.ui.components.FieldLabel
+import com.cove.chat.ui.components.CoveButton
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -289,7 +289,7 @@ fun NotificationSettings() {
         CoveSwitchRow("Sound", sound, caption = "Play a sound with each notification.") { sound = it; prefs.notificationSound = it }
         CoveSwitchRow("Stay connected in the background", keepConnected, caption = "Keeps a quiet notification so messages and incoming calls reach you even when Cove is closed.") {
             keepConnected = it; prefs.keepConnected = it
-            com.nodetalk.client.service.BackgroundConnection.sync(context)
+            com.cove.chat.service.BackgroundConnection.sync(context)
         }
         if (!systemAllowed) {
             Text("Android notification permission is off.", color = MaterialTheme.colorScheme.error, fontSize = CoveType.label.fontSize)

@@ -1,11 +1,11 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveDialog
-import com.nodetalk.client.ui.components.DialogSize
-import com.nodetalk.client.ui.components.I18nToast
+import com.cove.chat.ui.components.CoveDialog
+import com.cove.chat.ui.components.DialogSize
+import com.cove.chat.ui.components.I18nToast
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -37,7 +37,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,10 +60,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.github.luben.zstd.Zstd
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.crypto.CryptoManager
-import com.nodetalk.client.data.model.FileMeta
-import com.nodetalk.client.ui.theme.CoveTheme
+import com.cove.chat.CoveApp
+import com.cove.chat.crypto.CryptoManager
+import com.cove.chat.data.model.FileMeta
+import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

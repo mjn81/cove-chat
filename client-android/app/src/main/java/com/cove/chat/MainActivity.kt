@@ -1,4 +1,4 @@
-package com.nodetalk.client
+package com.cove.chat
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -9,11 +9,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.nodetalk.client.notify.NotificationHelper
-import com.nodetalk.client.notify.OpenChatRequest
-import com.nodetalk.client.ui.navigation.NavGraph
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.ThemeSettings
+import com.cove.chat.notify.NotificationHelper
+import com.cove.chat.notify.OpenChatRequest
+import com.cove.chat.ui.navigation.NavGraph
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.ThemeSettings
 
 class MainActivity : ComponentActivity() {
 
@@ -31,8 +31,8 @@ class MainActivity : ComponentActivity() {
         handleOpenIntent(intent)
 
         ThemeSettings.dark = CoveApp.instance.preferencesManager.darkTheme
-        com.nodetalk.client.ui.components.ChatBackgroundSettings.id = CoveApp.instance.preferencesManager.chatBackground
-        com.nodetalk.client.ui.components.AppLanguage.code = CoveApp.instance.preferencesManager.language
+        com.cove.chat.ui.components.ChatBackgroundSettings.id = CoveApp.instance.preferencesManager.chatBackground
+        com.cove.chat.ui.components.AppLanguage.code = CoveApp.instance.preferencesManager.language
 
         setContent {
             CoveTheme {
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
         val name = intent.getStringExtra(NotificationHelper.EXTRA_CHANNEL_NAME).orEmpty()
         if (intent.action == NotificationHelper.ACTION_ANSWER_CALL) {
             // Answer tapped on the ringing notification (or its full-screen version).
-            com.nodetalk.client.notify.CallCoordinator.answer(CoveApp.instance, com.nodetalk.client.notify.IncomingCall(id, "", name))
+            com.cove.chat.notify.CallCoordinator.answer(CoveApp.instance, com.cove.chat.notify.IncomingCall(id, "", name))
             return
         }
         OpenChatRequest.channelName = name

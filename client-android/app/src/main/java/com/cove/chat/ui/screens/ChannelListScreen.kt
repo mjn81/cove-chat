@@ -1,10 +1,10 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
-import com.nodetalk.client.ui.components.CoveListRow
-import com.nodetalk.client.ui.components.CoveBadge
+import com.cove.chat.ui.components.CoveListRow
+import com.cove.chat.ui.components.CoveBadge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +32,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.Icon
-import com.nodetalk.client.ui.components.Text
+import com.cove.chat.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,16 +48,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.crypto.CryptoManager
-import com.nodetalk.client.data.model.Channel
-import com.nodetalk.client.ui.components.InitialsAvatar
-import com.nodetalk.client.ui.components.CoveTextField
-import com.nodetalk.client.ui.components.SectionDivider
-import com.nodetalk.client.ui.components.StatusDot
-import com.nodetalk.client.ui.components.UserAvatar
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.ThemeSettings
+import com.cove.chat.CoveApp
+import com.cove.chat.crypto.CryptoManager
+import com.cove.chat.data.model.Channel
+import com.cove.chat.ui.components.InitialsAvatar
+import com.cove.chat.ui.components.CoveTextField
+import com.cove.chat.ui.components.SectionDivider
+import com.cove.chat.ui.components.StatusDot
+import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.ThemeSettings
 
 private enum class ListTab(val icon: ImageVector) {
     All(Icons.Outlined.ViewList),

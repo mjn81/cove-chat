@@ -1,14 +1,14 @@
-package com.nodetalk.client.data.remote
+package com.cove.chat.data.remote
 
-import com.nodetalk.client.crypto.CryptoManager
-import com.nodetalk.client.data.local.PreferencesManager
-import com.nodetalk.client.data.model.ChannelKeyPayload
-import com.nodetalk.client.data.model.Message
-import com.nodetalk.client.data.model.MessageDeletePayload
-import com.nodetalk.client.data.model.OutboundChatMessagePayload
-import com.nodetalk.client.data.model.OutboundDeletePayload
-import com.nodetalk.client.data.model.OutboundEditPayload
-import com.nodetalk.client.data.model.OutboundWSMessage
+import com.cove.chat.crypto.CryptoManager
+import com.cove.chat.data.local.PreferencesManager
+import com.cove.chat.data.model.ChannelKeyPayload
+import com.cove.chat.data.model.Message
+import com.cove.chat.data.model.MessageDeletePayload
+import com.cove.chat.data.model.OutboundChatMessagePayload
+import com.cove.chat.data.model.OutboundDeletePayload
+import com.cove.chat.data.model.OutboundEditPayload
+import com.cove.chat.data.model.OutboundWSMessage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession

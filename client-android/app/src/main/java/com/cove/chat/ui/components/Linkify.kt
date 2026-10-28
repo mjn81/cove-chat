@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString

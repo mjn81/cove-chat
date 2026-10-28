@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.components
+package com.cove.chat.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,12 +29,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveTheme
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.Sizes
-import com.nodetalk.client.ui.theme.Spacing
-import com.nodetalk.client.ui.theme.ThemeSettings
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.Sizes
+import com.cove.chat.ui.theme.Spacing
+import com.cove.chat.ui.theme.ThemeSettings
 
 /** Uppercase small label; [required] appends the red ` *` marker (web rule for required fields). */
 @Composable

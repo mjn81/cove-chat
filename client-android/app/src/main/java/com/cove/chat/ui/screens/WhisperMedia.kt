@@ -1,4 +1,4 @@
-package com.nodetalk.client.ui.screens
+package com.cove.chat.ui.screens
 
 import android.content.Context
 import android.content.Intent
@@ -44,15 +44,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import com.nodetalk.client.CoveApp
-import com.nodetalk.client.ui.components.I18nToast
-import com.nodetalk.client.ui.components.Text
-import com.nodetalk.client.ui.theme.CoveShapes
-import com.nodetalk.client.ui.theme.CoveType
-import com.nodetalk.client.ui.theme.CoveWhisperAccent
-import com.nodetalk.client.ui.theme.CoveWhisperPrimary
-import com.nodetalk.client.ui.theme.CoveWhisperTextMuted
-import com.nodetalk.client.whisper.WhisperMessage
+import com.cove.chat.CoveApp
+import com.cove.chat.ui.components.I18nToast
+import com.cove.chat.ui.components.Text
+import com.cove.chat.ui.theme.CoveShapes
+import com.cove.chat.ui.theme.CoveType
+import com.cove.chat.ui.theme.CoveWhisperAccent
+import com.cove.chat.ui.theme.CoveWhisperPrimary
+import com.cove.chat.ui.theme.CoveWhisperTextMuted
+import com.cove.chat.whisper.WhisperMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext

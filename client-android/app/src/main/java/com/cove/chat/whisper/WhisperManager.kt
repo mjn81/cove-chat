@@ -1,4 +1,4 @@
-package com.nodetalk.client.whisper
+package com.cove.chat.whisper
 
 import android.content.Context
 import android.util.Base64
@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.nodetalk.client.data.remote.WebSocketManager
+import com.cove.chat.data.remote.WebSocketManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
