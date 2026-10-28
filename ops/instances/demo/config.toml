@@ -1,0 +1,36 @@
+# Public demo: abuse-limited, wiped nightly (ops/reset-demo.sh). Secrets come from .env, never from here.
+[server]
+domain = "demo.covechat.dev"
+http_port = 4000
+frontend_origin = "https://demo.covechat.dev"
+max_file_size_mb = 5
+max_video_size_mb = 10
+max_video_duration_sec = 30
+trust_proxy_headers = true
+
+[database]
+path = "./data/db"
+
+[rate_limit]
+global_rps = 20
+auth_rps = 1
+
+[voice]
+mode = "webrtc"
+max_participants_per_call = 4
+webrtc_port_min = 50000
+webrtc_port_max = 50100
+public_ip = "auto"
+embedded_turn_enabled = true
+embedded_turn_port = 3478
+
+[registration]
+mode = "open"
+
+[demo]
+enabled = true
+max_users = 200
+signups_per_ip_per_day = 3
+# Public Cloudflare Turnstile key; the secret is in the server .env as COVE_TURNSTILE_SECRET_KEY.
+# Needs a server image with the bot check (0.9.2 or newer).
+turnstile_site_key = "0x4AAAAAAFqPZetIkRB_q8Lc"

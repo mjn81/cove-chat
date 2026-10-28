@@ -1,0 +1,29 @@
+# Staging: follows main, free to break. Secrets come from .env, never from here.
+[server]
+domain = "staging.covechat.dev"
+http_port = 4000
+frontend_origin = "https://staging.covechat.dev"
+max_file_size_mb = 5
+max_video_size_mb = 10
+max_video_duration_sec = 30
+trust_proxy_headers = true
+
+[database]
+path = "./data/db"
+
+[rate_limit]
+global_rps = 20
+auth_rps = 1
+
+[voice]
+mode = "webrtc"
+max_participants_per_call = 4
+webrtc_port_min = 50200
+webrtc_port_max = 50300
+public_ip = "auto"
+embedded_turn_enabled = false
+embedded_turn_port = 3478
+
+[registration]
+mode = "invite_only"
+

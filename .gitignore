@@ -2,6 +2,8 @@
 *.log
 /backend/data/
 config.toml
+# Instance configs under ops/ hold no secrets (those live in .env on the server) and are deployed from the repo.
+!ops/instances/*/config.toml
 cove-server
 stress_report_*.txt
 .env
