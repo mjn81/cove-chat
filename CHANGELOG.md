@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.3](https://github.com/mjn81/cove-chat/compare/v0.9.2...v0.9.3) (2026-10-28)
+
+
+### Features
+
+* **auth:** replace Turnstile with a self-hosted ALTCHA sign-up check for every server ([6d93d88](https://github.com/mjn81/cove-chat/commit/6d93d88e4bb77de829cf641d22231d809068dbd1))
+
+
+### Bug Fixes
+
+* **dev:** make wails/dev rebuild the web client; add register page sign-up check tests ([9ef0c71](https://github.com/mjn81/cove-chat/commit/9ef0c71a4b1d935977ac14f75c673c3e9e92996e))
+* **ws:** wait for connection work before the database closes ([73f4e15](https://github.com/mjn81/cove-chat/commit/73f4e15a58d11c263628e39841054ff947dfa936))
+
 ## [0.9.2](https://github.com/mjn81/cove-chat/compare/v0.9.1...v0.9.2) (2026-10-28)
 
 
