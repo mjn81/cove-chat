@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 dir="instances/demo"
 # The .env file exists only on the server, so shellcheck cannot follow it.
-# shellcheck source=/dev/null
+# shellcheck disable=SC1091
 set -a; . "$dir/.env"; set +a
 tag="$(cat "$dir/.last-good")"
 export INSTANCE=demo TAG="$tag"
