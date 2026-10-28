@@ -1,0 +1,5 @@
+# Scripts and workflows run on Linux; never let a Windows checkout turn them into CRLF.
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+VERSION text eol=lf
