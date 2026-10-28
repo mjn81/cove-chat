@@ -341,7 +341,7 @@
 		"photo_counter": "{{current}} of {{total}}",
 		"download_photo": "Download photo",
 		"photo_unavailable": "Image not available"
-	},
+	},
 	"window": {
 		"minimize": "Minimize",
 		"maximize": "Maximize",
@@ -809,5 +809,20 @@
 			"backup_unreadable": "Wrong passphrase, or this is not a valid backup file.",
 			"restore_failed": "The restore failed."
 		}
+	},
+	"serverSelect": {
+		"title": "Select a Server",
+		"subtitle": "Where are we heading today?",
+		"address": "Server Address",
+		"placeholder": "https://chat.example.com",
+		"connect": "Connect",
+		"connected": "Successfully connected!",
+		"failed": "Could not connect to the server. Check the address and try again.",
+		"demoHint": "Just want to look around?",
+		"useDemo": "Use the public demo server",
+		"demoNote": "The demo resets every night. Do not enter anything private.",
+		"trustNote": "{{app}} stores your messages securely, but relies on the server for key management. Ensure you trust the host before sending sensitive data.",
+		"openSource": "{{app}} is open source",
+		"madeBy": "made with ❤️ by"
 	}
 }

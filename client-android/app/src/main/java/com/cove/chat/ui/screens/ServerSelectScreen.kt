@@ -1,5 +1,6 @@
 package com.cove.chat.ui.screens
 
+import com.cove.chat.data.serverUrlCandidates
 import com.cove.chat.ui.theme.CoveShapes
 import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
@@ -63,19 +64,6 @@ import kotlinx.coroutines.launch
 private enum class ConnectStatus { Idle, Checking, Success, Error }
 
 /**
- * Prepends a scheme when the user typed a bare domain/host ("chat.example.com"),
- * matching the web/desktop server-selection step.
- */
-private fun normalizeServerUrl(raw: String): String {
-    val trimmed = raw.trim().trimEnd('/')
-    val withScheme =
-        if (trimmed.startsWith("http://", true) || trimmed.startsWith("https://", true)) trimmed
-        else "http://$trimmed"
-    return if (isEmulator()) withScheme.replace(Regex("//(localhost|127\\.0\\.0\\.1)(?=[:/]|$)"), "//10.0.2.2")
-    else withScheme
-}
-
-/**
  * Inside the Android emulator "localhost" is the emulated device itself; the host
  * machine is reachable at the special alias 10.0.2.2, so dev servers typed as
  * localhost are rewritten there.
@@ -110,11 +98,18 @@ fun ServerSelectScreen(onServerConfigured: () -> Unit) {
         status = ConnectStatus.Checking
         errorMessage = null
         val previous = prefs.serverUrl
-        prefs.serverUrl = normalizeServerUrl(serverUrl)
         scope.launch {
-            // ApiClient reads the base URL from prefs, so the candidate is saved first and rolled back on failure.
-            val result = api.getVersion()
-            if (result.isSuccess) {
+            // ApiClient reads the base URL from prefs, so each candidate is saved before probing and the
+            // previous value is restored when none answers. Public domains are tried over https first.
+            var reachable = false
+            for (candidate in serverUrlCandidates(serverUrl)) {
+                prefs.serverUrl = if (isEmulator()) candidate.replace(Regex("""//(localhost|127\.0\.0\.1)(?=[:/]|$)"""), "//10.0.2.2") else candidate
+                if (api.getVersion().isSuccess) {
+                    reachable = true
+                    break
+                }
+            }
+            if (reachable) {
                 status = ConnectStatus.Success
                 delay(800)
                 onServerConfigured()

@@ -11,7 +11,7 @@ Download the APK from the [latest release](https://github.com/mjn81/cove-chat/re
 
 ## Connect
 
-On first launch, enter your server address (for example `https://chat.example.com`) on the server selection screen, then sign in or register.
+On first launch, enter your server address on the server selection screen, then sign in or register. A bare domain such as `chat.example.com` is enough: the app tries `https` first. To look around first, type `demo.covechat.dev`. See [Connect a client to a server](/docs/clients/connect/) for the details and troubleshooting.
 
 ## Build it yourself
 
