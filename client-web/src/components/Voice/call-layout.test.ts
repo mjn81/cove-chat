@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCREEN_SHARE_SETTINGS } from '@/store/voiceStore';
-import { fitGrid, matchStreamPreset } from './call-layout';
+import { chunkRows, fitGrid, matchStreamPreset, pickTileRatio } from './call-layout';
 
 describe('fitGrid', () => {
 	it('returns zeros when there is nothing to lay out', () => {
@@ -40,5 +40,29 @@ describe('matchStreamPreset', () => {
 
 	it('returns null for customised settings', () => {
 		expect(matchStreamPreset({ ...DEFAULT_SCREEN_SHARE_SETTINGS, frameRate: 15 })).toBeNull();
+	});
+});
+
+describe('pickTileRatio', () => {
+	it('uses landscape tiles for wide areas and portrait tiles for tall ones', () => {
+		expect(pickTileRatio(1200, 500)).toBeCloseTo(16 / 9);
+		expect(pickTileRatio(360, 640)).toBeLessThan(1);
+	});
+});
+
+describe('fitGrid in portrait areas', () => {
+	it('gives phone-sized stages more tile area with a portrait ratio and still fits', () => {
+		const wide = fitGrid(4, 360, 600, 8);
+		const tall = fitGrid(4, 360, 600, 8, pickTileRatio(360, 600));
+		expect(tall.width * tall.height).toBeGreaterThan(wide.width * wide.height);
+		expect(tall.cols * tall.width + (tall.cols - 1) * 8).toBeLessThanOrEqual(360);
+		expect(tall.rows * tall.height + (tall.rows - 1) * 8).toBeLessThanOrEqual(600);
+	});
+});
+
+describe('chunkRows', () => {
+	it('splits items into rows of at most `cols`', () => {
+		expect(chunkRows([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+		expect(chunkRows([1, 2], 0)).toEqual([]);
 	});
 });

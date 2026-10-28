@@ -26,9 +26,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CallEnd
@@ -48,6 +45,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -213,16 +211,17 @@ fun CallScreen(
                     }
                 }
             } else {
-                val cols = when {
-                    landscape -> if (tiles.size <= 1) 1 else if (tiles.size <= 4) 2 else 3
-                    else -> if (tiles.size <= 2) 1 else 2
-                }
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(cols), modifier = Modifier.fillMaxSize().padding(Spacing.sm),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-                ) {
-                    items(tiles, key = { it.key }) { t ->
-                        CallTileView(t, speaking, receive, rtc.eglBase, frontCamera, Modifier.fillMaxWidth().aspectRatio(if (cols == 1) 16f / 10f else 1f), { tileClick(t) }, { viewer = t }, compact = cols > 1)
+                // Tiles share the whole area, so every participant stays visible with no scrolling at any call size.
+                val cols = bestCallGridCols(tiles.size, (maxWidth - Spacing.sm * 2).value, (maxHeight - Spacing.sm * 2).value, Spacing.sm.value)
+                Column(Modifier.fillMaxSize().padding(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    tiles.chunked(cols).forEach { row ->
+                        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            row.forEach { t ->
+                                key(t.key) {
+                                    CallTileView(t, speaking, receive, rtc.eglBase, frontCamera, Modifier.weight(1f).fillMaxHeight(), { tileClick(t) }, { viewer = t }, compact = tiles.size > 2)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -245,6 +244,26 @@ fun CallScreen(
         val live = tiles.firstOrNull { it.key == v.key }
         if (live == null) viewer = null else ScreenViewerDialog(live, rtc.eglBase, receive, onDismiss = { viewer = null })
     }
+}
+
+/**
+ * Column count that makes grid cells closest to square for [count] tiles in a [width] x [height] box (dp), so
+ * 2 people stack on a phone held upright, sit side by side in landscape, and larger calls tile evenly without
+ * thin slivers. Ties go to fewer rows.
+ */
+internal fun bestCallGridCols(count: Int, width: Float, height: Float, gap: Float): Int {
+    if (count <= 1 || width <= 0f || height <= 0f) return 1
+    var best = 1
+    var bestScore = -1f
+    for (cols in 1..count) {
+        val rows = (count + cols - 1) / cols
+        val w = (width - gap * (cols - 1)) / cols
+        val h = (height - gap * (rows - 1)) / rows
+        if (w <= 0f || h <= 0f) continue
+        val score = minOf(w / h, h / w)
+        if (score > bestScore + 0.001f) { bestScore = score; best = cols }
+    }
+    return best
 }
 
 /** A participant (camera or avatar) or a shared screen, with name label, mute badge and the speaking ring. */

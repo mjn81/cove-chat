@@ -373,7 +373,12 @@
 		"deafen": "Deafen",
 		"undeafen": "Undeafen",
 		"connecting": "Connecting…",
-		"connectFailed": "Couldn't connect to the call. Try joining again."
+		"connectFailed": "Couldn't connect to the call. Try joining again.",
+		"incomingVoice": "Incoming voice call",
+		"accept": "Accept",
+		"decline": "Decline",
+		"backToChat": "Back to call chat",
+		"inCall": "{{count}} in call"
 	},
 	"whisper": {
 		"start": {

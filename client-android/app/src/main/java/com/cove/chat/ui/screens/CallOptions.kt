@@ -1,5 +1,9 @@
 package com.cove.chat.ui.screens
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -21,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -32,9 +37,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.cove.chat.CoveApp
 import com.cove.chat.rtc.AudioRoute
 import com.cove.chat.rtc.CameraQuality
@@ -104,6 +115,21 @@ internal fun ScreenViewerDialog(tile: CallTile, egl: EglBase, receive: ReceiveQu
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        // Full screen means immersive and free to rotate: shared screens are almost always landscape.
+        val view = LocalView.current
+        val activity = LocalContext.current.findActivity()
+        DisposableEffect(Unit) {
+            val previous = activity?.requestedOrientation
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+            val window = (view.parent as? DialogWindowProvider)?.window
+            val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller?.hide(WindowInsetsCompat.Type.systemBars())
+            onDispose {
+                controller?.show(WindowInsetsCompat.Type.systemBars())
+                if (previous != null) activity.requestedOrientation = previous
+            }
+        }
         Box(Modifier.fillMaxSize().background(Color.Black)) {
             tile.track?.let { track ->
                 VideoRenderer(track, egl, mirror = false, fit = true, fpsReduction = receive.fpsReduction?.takeIf { receive != ReceiveQuality.Paused }, modifier = Modifier.fillMaxSize()) { view ->
@@ -132,4 +158,14 @@ internal fun ScreenViewerDialog(tile: CallTile, egl: EglBase, receive: ReceiveQu
             }
         }
     }
+}
+
+/** Unwraps the [ContextWrapper] chain Compose hands out to reach the hosting [Activity], if any. */
+private fun Context.findActivity(): Activity? {
+    var c: Context = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
 }

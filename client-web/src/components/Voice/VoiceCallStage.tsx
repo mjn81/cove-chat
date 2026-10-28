@@ -7,9 +7,9 @@ import { webRTCManager } from '@/rtc/WebRTCManager';
 import { useElementSize } from '@/hooks/use-element-size';
 import type { Channel } from '@/types/api';
 import { ScreenContextMenu, StreamVideo, type ScreenShareItem } from './call-media';
-import { CallTile, ScreenTile } from './call-tile';
+import { ParticipantTile, ScreenTile } from './call-tile';
 import { CallControls } from './call-controls';
-import { fitGrid } from './call-layout';
+import { chunkRows, fitGrid, pickTileRatio } from './call-layout';
 
 interface VoiceCallStageProps {
 	channel: Channel;
@@ -45,20 +45,12 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 
 	const currentUser = useAuthStore((s) => s.user);
 	const currentUserId = currentUser?.id;
-	const isMuted = useVoiceStore((s) => s.isMuted);
-	const isDeafened = useVoiceStore((s) => s.isDeafened);
-	const isVideoEnabled = useVoiceStore((s) => s.isVideoEnabled);
 	const isScreenSharing = useVoiceStore((s) => s.isScreenSharing);
-	const speakingUsers = useVoiceStore((s) => s.speakingUsers);
-	const localStream = useVoiceStore((s) => s.localStream);
 	const localScreenStream = useVoiceStore((s) => s.localScreenStream);
-	const remoteStreams = useVoiceStore((s) => s.remoteStreams);
 	const remoteScreenStreams = useVoiceStore((s) => s.remoteScreenStreams);
 	const participantTrackStates = useVoiceStore((s) => s.participantTrackStates);
 	const spotlightStreamId = useVoiceStore((s) => s.spotlightStreamId);
 	const setSpotlightStreamId = useVoiceStore((s) => s.setSpotlightStreamId);
-	const userVolumes = useVoiceStore((s) => s.userVolumes);
-	const userMutes = useVoiceStore((s) => s.userMutes);
 	const rawParticipants = useVoiceStore((s) => s.participants[channel.id]);
 	const isConnecting = useVoiceStore((s) => s.callStatus === 'connecting');
 
@@ -68,11 +60,6 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 		if (currentUserId) set.add(currentUserId);
 		return Array.from(set);
 	}, [rawParticipants, currentUserId]);
-
-	const nameOf = (userId: string) =>
-		channel.member_names?.[userId] ||
-		(userId === currentUserId ? currentUser?.username : undefined) ||
-		`User ${userId.slice(0, 6)}`;
 
 	const allScreenShares = useMemo<ScreenShareItem[]>(() => {
 		const list: ScreenShareItem[] = [];
@@ -150,28 +137,12 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 	};
 
 	const renderParticipant = (userId: string, width: number, height: number) => {
-		const isMe = userId === currentUserId;
-		const camStream = isMe
-			? isVideoEnabled
-				? localStream
-				: null
-			: participantTrackStates[userId]?.video
-				? (remoteStreams[userId] ?? null)
-				: null;
-		const userScreen = allScreenShares.find((s) => (isMe ? s.id === 'local' : s.userId === userId));
+		const userScreen = allScreenShares.find((s) => (userId === currentUserId ? s.id === 'local' : s.userId === userId));
 		return (
-			<CallTile
+			<ParticipantTile
 				key={userId}
 				userId={userId}
-				name={nameOf(userId)}
-				avatarId={channel.member_avatars?.[userId]}
-				isMe={isMe}
-				isSpeaking={speakingUsers.has(userId)}
-				isMuted={isMe ? isMuted : participantTrackStates[userId] ? !participantTrackStates[userId].audio : false}
-				isDeafened={isDeafened}
-				isLocallyMuted={userMutes.has(userId)}
-				volume={userVolumes[userId] ?? 1}
-				cameraStream={camStream}
+				channel={channel}
 				width={width}
 				height={height}
 				onClick={userScreen ? () => setSpotlightStreamId(userScreen.id) : undefined}
@@ -204,7 +175,7 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 	const stripTileW = sideStrip ? 200 : 128;
 	const stripTileH = Math.round((stripTileW * 9) / 16);
 	const otherScreens = allScreenShares.filter((s) => s.id !== activeSpotlight?.id);
-	const grid = fitGrid(members.length, area.width, area.height, GAP);
+	const grid = fitGrid(members.length, area.width, area.height, GAP, pickTileRatio(area.width, area.height));
 
 	return (
 		<div
@@ -285,11 +256,12 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
 						{grid.cols > 0 && (
-							<div
-								className="flex flex-wrap justify-center"
-								style={{ width: grid.cols * grid.width + (grid.cols - 1) * GAP, gap: GAP }}
-							>
-								{members.map((id) => renderParticipant(id, grid.width, grid.height))}
+							<div className="flex flex-col items-center" style={{ gap: GAP }}>
+								{chunkRows(members, grid.cols).map((row) => (
+									<div key={row[0]} className="flex justify-center" style={{ gap: GAP }}>
+										{row.map((id) => renderParticipant(id, grid.width, grid.height))}
+									</div>
+								))}
 							</div>
 						)}
 					</div>

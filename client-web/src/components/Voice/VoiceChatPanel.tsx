@@ -1,467 +1,117 @@
-import React, { useRef, useEffect, useState } from 'react';
-import {
-	Mic,
-	MicOff,
-	Video,
-	VideoOff,
-	Monitor,
-	Volume2,
-	VolumeX,
-	PhoneOff,
-	Maximize2,
-	Minimize2,
-	Settings2,
-	Radio,
-	Headphones,
-	Wifi,
-} from 'lucide-react';
-import { Avatar } from '../Avatar';
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuItem,
-	ContextMenuSeparator,
-	ContextMenuTrigger,
-	ContextMenuLabel,
-} from '../ui/context-menu';
-import { Slider } from '../ui/slider';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Monitor } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
-import { useAuthStore } from '@/store/store';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { useAuthStore, getChannelDisplayName } from '@/store/store';
+import { useElementSize } from '@/hooks/use-element-size';
+import type { Channel } from '@/types/api';
+import { StreamVideo } from './call-media';
+import { ParticipantTile } from './call-tile';
+import { CallControls } from './call-controls';
+import { chunkRows, fitGrid, pickTileRatio } from './call-layout';
 
 interface VoiceChatPanelProps {
-	isActive: boolean;
-	isMuted: boolean;
-	isDeafened: boolean;
-	speakingUsers: Set<string>;
-	onMuteToggle: () => void;
-	onDeafenToggle: () => void;
-	onDisconnect: () => void;
+	/** The channel the call belongs to. */
+	channel: Channel;
+	/** User IDs currently in the call, including the current user. */
 	members: string[];
-	memberAvatars: Record<string, string>;
-	memberNames: Record<string, string>;
+	/** Takes the user back to the call's own chat, where the full call stage lives. */
+	onReturnToChat: () => void;
 }
 
+const GAP = 8;
+const STRIP_TILE_W = 112;
+const STRIP_TILE_H = 63;
+
 /**
- * Dedicated video component that safely binds a MediaStream to an HTML video element.
+ * Floating call panel shown while the user browses a different chat than the one their call is in. It reuses the
+ * stage's tiles, fitted grid and control dock; its fullscreen button returns to the source chat rather than
+ * enlarging the panel, so there is one place to see a call full size.
  */
-const StreamVideo: React.FC<{
-	stream: MediaStream;
-	isLocal?: boolean;
-	className?: string;
-	objectFit?: 'cover' | 'contain';
-	mirror?: boolean;
-}> = ({ stream, isLocal, className, objectFit = 'cover', mirror }) => {
-	const videoRef = useRef<HTMLVideoElement | null>(null);
+export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({ channel, members, onReturnToChat }) => {
+	const { t } = useTranslation();
+	const [areaRef, area] = useElementSize<HTMLDivElement>();
+	const currentUserId = useAuthStore((s) => s.user?.id);
+	const remoteStreams = useVoiceStore((s) => s.remoteStreams);
+	const remoteScreenStreams = useVoiceStore((s) => s.remoteScreenStreams);
+	const localScreenStream = useVoiceStore((s) => s.localScreenStream);
+	const isScreenSharing = useVoiceStore((s) => s.isScreenSharing);
+	const spotlightStreamId = useVoiceStore((s) => s.spotlightStreamId);
 
-	useEffect(() => {
-		const el = videoRef.current;
-		if (!el || !stream) return;
+	const screen = useMemo(() => {
+		const local = isScreenSharing && localScreenStream?.getVideoTracks().length ? localScreenStream : null;
+		const remote = Object.entries(remoteScreenStreams).filter(([, st]) => st && st.getVideoTracks().length > 0);
+		if (spotlightStreamId === 'local' && local) return local;
+		return remote.find(([uid]) => uid === spotlightStreamId)?.[1] ?? local ?? remote[0]?.[1] ?? null;
+	}, [isScreenSharing, localScreenStream, remoteScreenStreams, spotlightStreamId]);
 
-		el.srcObject = stream;
-
-		const tryPlay = () => {
-			const p = el.play();
-			if (p !== undefined) {
-				p.catch(() => {});
-			}
-		};
-
-		tryPlay();
-		el.onloadedmetadata = () => {
-			tryPlay();
-		};
-
-		const tracks = stream.getVideoTracks();
-		tracks.forEach((track) => {
-			track.onunmute = () => tryPlay();
-		});
-	}, [stream]);
+	const grid = fitGrid(members.length, area.width, area.height, GAP, pickTileRatio(area.width, area.height));
 
 	return (
-		<video
-			ref={videoRef}
-			autoPlay
-			playsInline
-			muted={true}
-			className={`${className || 'w-full h-full'} ${
-				objectFit === 'contain' ? 'object-contain bg-black' : 'object-cover'
-			} rounded-2xl`}
-			style={mirror ?? isLocal ? { transform: 'scaleX(-1)' } : undefined}
-		/>
-	);
-};
-
-export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
-	isActive,
-	isMuted,
-	isDeafened,
-	speakingUsers,
-	onMuteToggle,
-	onDeafenToggle,
-	onDisconnect,
-	members,
-	memberAvatars,
-	memberNames,
-}) => {
-	const [isExpanded, setIsExpanded] = useState(false);
-	const currentUser = useAuthStore((state) => state.user);
-
-	const isVideoEnabled = useVoiceStore((state) => state.isVideoEnabled);
-	const isScreenSharing = useVoiceStore((state) => state.isScreenSharing);
-	const localStream = useVoiceStore((state) => state.localStream);
-	const localScreenStream = useVoiceStore((state) => state.localScreenStream);
-	const remoteStreams = useVoiceStore((state) => state.remoteStreams);
-	const remoteScreenStreams = useVoiceStore((state) => state.remoteScreenStreams);
-	const participantTrackStates = useVoiceStore((state) => state.participantTrackStates);
-	const activePresenterId = useVoiceStore((state) => state.activePresenterId);
-	const userVolumes = useVoiceStore((state) => state.userVolumes);
-	const userMutes = useVoiceStore((state) => state.userMutes);
-
-	const spotlightStreamId = useVoiceStore((state) => state.spotlightStreamId);
-
-	if (!isActive) return null;
-
-	// Check if someone (local or remote) is sharing screen
-	const activeScreenStream =
-		spotlightStreamId === 'local' && isScreenSharing && localScreenStream
-			? localScreenStream
-			: spotlightStreamId && remoteScreenStreams[spotlightStreamId]
-			? remoteScreenStreams[spotlightStreamId]
-			: isScreenSharing && localScreenStream
-			? localScreenStream
-			: activePresenterId && remoteScreenStreams[activePresenterId]
-			? remoteScreenStreams[activePresenterId]
-			: Object.values(remoteScreenStreams)[0] || null;
-
-	const presenterName =
-		activeScreenStream && isScreenSharing
-			? `${currentUser?.username || 'You'} (Your Screen)`
-			: activePresenterId
-			? `${memberNames[activePresenterId] || `User ${activePresenterId.slice(0, 6)}`}'s Screen`
-			: null;
-
-	// Grid column layout matching Discord's adaptive call layout
-	const totalTiles = members.length;
-	const gridCols =
-		totalTiles <= 1
-			? 'grid-cols-1'
-			: totalTiles <= 2
-			? 'grid-cols-1 sm:grid-cols-2'
-			: totalTiles <= 4
-			? 'grid-cols-2'
-			: totalTiles <= 6
-			? 'grid-cols-2 sm:grid-cols-3'
-			: 'grid-cols-2 sm:grid-cols-4';
-
-	return (
-		<div
-			className={`fixed transition-all duration-300 ease-in-out z-50 flex flex-col bg-popover border border-border shadow-[0_12px_48px_rgba(0,0,0,0.8)] overflow-hidden ${
-				isExpanded
-					? 'inset-3 sm:inset-6 rounded-3xl'
-					: 'inset-x-0 bottom-0 h-[min(580px,85dvh)] w-full rounded-t-2xl sm:inset-x-auto sm:bottom-6 sm:end-6 sm:w-[460px] sm:rounded-2xl'
-			}`}
-		>
-			{/* Dedicated Hidden Audio Elements mounted in DOM for zero-failure remote audio playback */}
+		<div className="fixed inset-x-0 bottom-0 z-50 flex h-[min(520px,80dvh)] w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-popover sm:inset-x-auto sm:bottom-6 sm:end-6 sm:w-[420px] sm:rounded-2xl">
+			{/* Remote audio elements stay mounted so playback survives the call stage unmounting. */}
 			{members
-				.filter((uid) => uid !== currentUser?.id)
-				.map((uid) => {
-					const stream = remoteStreams[uid];
-					return (
-						<audio
-							key={uid}
-							ref={(el) => {
-								if (el && stream && el.srcObject !== stream) {
-									el.srcObject = stream;
-									el.play().catch(() => {});
-								}
-							}}
-							autoPlay
-							playsInline
-							className="hidden"
-						/>
-					);
-				})}
+				.filter((uid) => uid !== currentUserId)
+				.map((uid) => (
+					<audio
+						key={uid}
+						ref={(el) => {
+							const stream = remoteStreams[uid];
+							if (el && stream && el.srcObject !== stream) {
+								el.srcObject = stream;
+								el.play().catch(() => {});
+							}
+						}}
+						autoPlay
+						playsInline
+						className="hidden"
+					/>
+				))}
 
-			{/* Discord Top Header */}
-			<div className="px-4 py-3 flex items-center justify-between border-b border-border/50 bg-popover shrink-0 select-none">
-				<div className="flex items-center gap-2.5">
-					<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">
-						<Radio size={12} className="animate-pulse" />
-						<span className="text-[11px] font-bold tracking-wide uppercase">Voice Connected</span>
+			<div className="flex shrink-0 select-none items-center gap-2 border-b border-border px-4 py-2.5">
+				<div className="min-w-0">
+					<div className="truncate text-sm font-semibold text-foreground">
+						{getChannelDisplayName(channel, currentUserId ?? '')}
 					</div>
-					<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-						<Wifi size={13} className="text-success" />
-						<span className="font-medium text-foreground">
-							{members.length} {members.length === 1 ? 'member' : 'members'}
-						</span>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-1 text-muted-foreground">
-					<button
-						type="button"
-						onClick={() => setIsExpanded(!isExpanded)}
-						className="p-1.5 hover:bg-card hover:text-foreground rounded-lg transition-colors cursor-pointer"
-						title={isExpanded ? 'Restore' : 'Maximize'}
-					>
-						{isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-					</button>
-					<button
-						type="button"
-						onClick={onDisconnect}
-						className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-lg transition-colors cursor-pointer"
-						title="Disconnect"
-					>
-						<PhoneOff size={16} />
-					</button>
+					<div className="text-xs text-muted-foreground">{t('call.inCall', { count: members.length })}</div>
 				</div>
 			</div>
 
-			{/* Discord Main Stage / Grid */}
-			<div className="relative flex-1 p-3.5 flex flex-col gap-3 min-h-0 bg-popover overflow-hidden">
-				{/* Screen Share Spotlight (if active) */}
-				{activeScreenStream && (
-					<div className="relative flex-1 min-h-[220px] bg-black rounded-2xl overflow-hidden border border-border flex items-center justify-center shadow-lg">
-						<StreamVideo
-							stream={activeScreenStream}
-							isLocal={false}
-							objectFit="contain"
-							className="w-full h-full"
-						/>
-						{presenterName && (
-							<div className="absolute top-3 start-3 px-3 py-1 rounded-md bg-popover/85 text-xs font-semibold text-foreground border border-border flex items-center gap-2 shadow-md">
-								<Monitor size={14} className="text-success" />
-								<span>{presenterName}</span>
-								<span className="px-1.5 py-0.2 rounded bg-destructive text-[10px] font-bold uppercase tracking-wider text-destructive-foreground">
-									LIVE
-								</span>
+			<div ref={areaRef} className="relative min-h-0 flex-1 overflow-hidden p-3">
+				{screen ? (
+					<div className="flex h-full w-full flex-col gap-2">
+						<div className="relative min-h-0 flex-1 overflow-hidden rounded-xl bg-black">
+							<StreamVideo stream={screen} objectFit="contain" className="h-full w-full" />
+							<div className="pointer-events-none absolute start-2 top-2 flex items-center gap-1.5 rounded-md bg-popover/80 px-2 py-0.5 text-xs font-medium text-foreground">
+								<Monitor size={12} className="text-primary" />
+								<span>{t('call.live')}</span>
+							</div>
+						</div>
+						<div className="flex shrink-0 justify-center gap-2 overflow-x-auto">
+							{members.map((id) => (
+								<ParticipantTile key={id} userId={id} channel={channel} width={STRIP_TILE_W} height={STRIP_TILE_H} />
+							))}
+						</div>
+					</div>
+				) : (
+					<div className="flex h-full w-full items-center justify-center">
+						{grid.cols > 0 && (
+							<div className="flex flex-col items-center" style={{ gap: GAP }}>
+								{chunkRows(members, grid.cols).map((row) => (
+									<div key={row[0]} className="flex justify-center" style={{ gap: GAP }}>
+										{row.map((id) => (
+											<ParticipantTile key={id} userId={id} channel={channel} width={grid.width} height={grid.height} />
+										))}
+									</div>
+								))}
 							</div>
 						)}
 					</div>
 				)}
+			</div>
 
-				{/* Discord Participant Cards Grid */}
-				<div
-					className={
-						activeScreenStream
-							? 'flex gap-2.5 overflow-x-auto py-1 shrink-0 h-32 scrollbar-thin'
-							: `grid gap-3 ${gridCols} auto-rows-fr h-full overflow-y-auto`
-					}
-				>
-					{members.map((userId) => {
-						const isMe = userId === currentUser?.id;
-						const isSpeaking = speakingUsers.has(userId);
-						const isLocalMuted = userMutes.has(userId);
-						const volume = userVolumes[userId] ?? 1;
-
-						const isUserMuted = isMe
-							? isMuted
-							: participantTrackStates[userId]
-							? !participantTrackStates[userId].audio
-							: false;
-
-						// Determine video stream
-						const stream = isMe
-							? isVideoEnabled && localStream
-								? localStream
-								: null
-							: participantTrackStates[userId]?.video && remoteStreams[userId]
-							? remoteStreams[userId]
-							: null;
-
-						const hasVideoTrack = !!(stream && stream.getVideoTracks().length > 0);
-
-						const tileContent = (
-							<div
-								className={`group relative flex flex-col items-center justify-center rounded-2xl transition-all duration-150 overflow-hidden bg-card select-none ${
-									activeScreenStream ? 'w-40 h-28 shrink-0' : 'w-full h-full min-h-[140px]'
-								} ${
-									isSpeaking
-										? 'border-2 border-success shadow-[0_0_12px_hsl(var(--success)/0.35)]'
-										: 'border border-border/50 hover:border-border'
-								}`}
-							>
-								{hasVideoTrack ? (
-									<StreamVideo
-										stream={stream}
-										isLocal={isMe}
-										className="w-full h-full object-cover"
-									/>
-								) : (
-									<div className="relative flex flex-col items-center justify-center">
-										<div className="relative">
-											<div
-												className={`rounded-full transition-all duration-150 ${
-													isSpeaking
-														? 'ring-4 ring-success shadow-[0_0_16px_hsl(var(--success)/0.65)]'
-														: ''
-												}`}
-											>
-												<Avatar
-													userId={userId}
-													avatarId={memberAvatars[userId]}
-													size={isExpanded ? 80 : 56}
-												/>
-											</div>
-										</div>
-									</div>
-								)}
-
-								{/* Discord Bottom-Left Username Tag Pill */}
-								<div className="absolute bottom-2.5 start-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-popover/85 text-[12px] font-semibold text-foreground shadow-md pointer-events-none max-w-[85%] border border-border/50">
-									<span className="truncate">
-										{memberNames[userId] || (isMe ? currentUser?.username : `User ${userId.slice(0, 6)}`)}
-										{isMe && ' (You)'}
-									</span>
-
-									{/* Status indicators inside badge */}
-									{isUserMuted && (
-										<div className="text-destructive shrink-0" title="Muted">
-											<MicOff size={12} />
-										</div>
-									)}
-									{isMe && isDeafened && (
-										<div className="text-destructive shrink-0" title="Deafened">
-											<Headphones size={12} />
-										</div>
-									)}
-									{isLocalMuted && (
-										<div className="text-destructive shrink-0" title="Muted locally">
-											<VolumeX size={12} />
-										</div>
-									)}
-								</div>
-							</div>
-						);
-
-						if (isMe) {
-							return <div key={userId} className="w-full h-full">{tileContent}</div>;
-						}
-
-						return (
-							<ContextMenu key={userId}>
-								<ContextMenuTrigger className="w-full h-full cursor-context-menu">
-									{tileContent}
-								</ContextMenuTrigger>
-								<ContextMenuContent className="w-60 bg-popover border-border text-foreground">
-									<ContextMenuLabel className="flex items-center gap-2 text-foreground">
-										<Settings2 size={14} className="text-success" />
-										{memberNames[userId] || `User ${userId.slice(0, 6)}`}
-									</ContextMenuLabel>
-									<ContextMenuSeparator className="bg-border" />
-									<div className="px-3 py-2.5">
-										<div className="flex items-center justify-between mb-2">
-											<span className="text-xs font-medium text-foreground">User Volume</span>
-											<span className="text-[11px] font-bold text-success tabular-nums">
-												{Math.round(volume * 100)}%
-											</span>
-										</div>
-										<Slider
-											value={[volume * 100]}
-											min={0}
-											max={200}
-											step={1}
-											onValueChange={(vals) =>
-												webRTCManager.setParticipantVolume(userId, vals[0] / 100)
-											}
-										/>
-									</div>
-									<ContextMenuSeparator className="bg-border" />
-									<ContextMenuItem
-										onClick={() => webRTCManager.toggleParticipantMute(userId)}
-										className={`cursor-pointer ${isLocalMuted ? 'text-success' : 'text-destructive'}`}
-									>
-										{isLocalMuted ? (
-											<>
-												<Volume2 className="me-2 h-4 w-4" />
-												Unmute for me
-											</>
-										) : (
-											<>
-												<VolumeX className="me-2 h-4 w-4" />
-												Mute for me
-											</>
-										)}
-									</ContextMenuItem>
-								</ContextMenuContent>
-							</ContextMenu>
-						);
-					})}
-				</div>
-
-				{/* Discord Floating Bottom Pill Dock */}
-				<div className="w-full flex items-center justify-center shrink-0 pt-2 pb-1">
-					<div className="bg-card rounded-2xl px-5 py-2.5 shadow-2xl border border-border flex items-center justify-center gap-3.5 z-20">
-						{/* Camera Toggle Button */}
-						<button
-							type="button"
-							onClick={() => webRTCManager.toggleVideo()}
-							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
-								isVideoEnabled
-									? 'bg-foreground text-background hover:bg-foreground/90 shadow-md'
-									: 'bg-card hover:bg-accent text-foreground'
-							}`}
-							title={isVideoEnabled ? 'Turn Off Camera' : 'Turn On Camera'}
-						>
-							{isVideoEnabled ? <Video size={19} /> : <VideoOff size={19} />}
-						</button>
-
-						{/* Screen Share Button */}
-						<button
-							type="button"
-							onClick={() => webRTCManager.toggleScreenShare()}
-							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
-								isScreenSharing
-									? 'bg-success text-success-foreground hover:bg-success/90 shadow-md'
-									: 'bg-card hover:bg-accent text-foreground'
-							}`}
-							title={isScreenSharing ? 'Stop Screen Share' : 'Share Your Screen'}
-						>
-							<Monitor size={19} />
-						</button>
-
-						{/* Mic Mute / Unmute Button */}
-						<button
-							type="button"
-							onClick={onMuteToggle}
-							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
-								isMuted
-									? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md'
-									: 'bg-card hover:bg-accent text-foreground'
-							}`}
-							title={isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
-						>
-							{isMuted ? <MicOff size={19} /> : <Mic size={19} />}
-						</button>
-
-						{/* Deafen Button */}
-						<button
-							type="button"
-							onClick={onDeafenToggle}
-							className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer ${
-								isDeafened
-									? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md'
-									: 'bg-card hover:bg-accent text-foreground'
-							}`}
-							title={isDeafened ? 'Undeafen' : 'Deafen'}
-						>
-							{isDeafened ? <VolumeX size={19} /> : <Headphones size={19} />}
-						</button>
-
-						<div className="w-px h-6 bg-border mx-0.5" />
-
-						{/* Disconnect Button (Discord Red) */}
-						<button
-							type="button"
-							onClick={onDisconnect}
-							className="w-11 h-11 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg flex items-center justify-center transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer"
-							title="Disconnect"
-						>
-							<PhoneOff size={19} />
-						</button>
-					</div>
-				</div>
+			<div className="shrink-0 px-3 pb-3 pt-1">
+				<CallControls isFullscreen={false} onToggleFullscreen={onReturnToChat} fullscreenLabel={t('call.backToChat')} />
 			</div>
 		</div>
 	);

@@ -76,14 +76,22 @@ const StreamSettings: React.FC = () => {
 interface CallControlsProps {
 	isFullscreen: boolean;
 	onToggleFullscreen: () => void;
-	onMinimize: () => void;
+	/** Omit to hide the minimise button (the floating panel has nothing to collapse into). */
+	onMinimize?: () => void;
+	/** Overrides the fullscreen button's label, e.g. when it returns to the call's chat instead. */
+	fullscreenLabel?: string;
 }
 
 /**
  * Bottom control dock, Meet-style: round toggles for mic, camera, screen share (with a quality popover) and
  * deafen, then fullscreen / minimise, then a wide red leave button. Active states: red = off / muted.
  */
-export const CallControls: React.FC<CallControlsProps> = ({ isFullscreen, onToggleFullscreen, onMinimize }) => {
+export const CallControls: React.FC<CallControlsProps> = ({
+	isFullscreen,
+	onToggleFullscreen,
+	onMinimize,
+	fullscreenLabel,
+}) => {
 	const { t } = useTranslation();
 	const isMuted = useVoiceStore((s) => s.isMuted);
 	const isDeafened = useVoiceStore((s) => s.isDeafened);
@@ -94,7 +102,7 @@ export const CallControls: React.FC<CallControlsProps> = ({ isFullscreen, onTogg
 	const wait = ready ? '' : ' opacity-50 pointer-events-none';
 
 	return (
-		<div className="flex items-center justify-center gap-2 py-1">
+		<div className="flex flex-wrap items-center justify-center gap-2 py-1">
 			<button
 				type="button"
 				onClick={() => void webRTCManager.toggleMute()}
@@ -166,12 +174,12 @@ export const CallControls: React.FC<CallControlsProps> = ({ isFullscreen, onTogg
 				type="button"
 				onClick={onToggleFullscreen}
 				className={`${BUTTON} ${NEUTRAL}`}
-				title={isFullscreen ? t('call.exitFullscreen') : t('call.fullscreen')}
-				aria-label={isFullscreen ? t('call.exitFullscreen') : t('call.fullscreen')}
+				title={fullscreenLabel ?? (isFullscreen ? t('call.exitFullscreen') : t('call.fullscreen'))}
+				aria-label={fullscreenLabel ?? (isFullscreen ? t('call.exitFullscreen') : t('call.fullscreen'))}
 			>
 				{isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
 			</button>
-			{!isFullscreen && (
+			{!isFullscreen && onMinimize && (
 				<button
 					type="button"
 					onClick={onMinimize}

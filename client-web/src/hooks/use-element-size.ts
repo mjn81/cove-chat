@@ -12,7 +12,16 @@ export function useElementSize<T extends HTMLElement>() {
 	useLayoutEffect(() => {
 		const el = ref.current;
 		if (!el) return;
-		const update = () => setSize({ width: el.clientWidth, height: el.clientHeight });
+		const update = () => {
+				// clientWidth/Height include padding; callers lay content out inside it, so subtract it.
+				const cs = getComputedStyle(el);
+				const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+				const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+				setSize({
+					width: Math.max(0, el.clientWidth - padX),
+					height: Math.max(0, el.clientHeight - padY),
+				});
+			};
 		update();
 		const observer = new ResizeObserver(update);
 		observer.observe(el);

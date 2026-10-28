@@ -4,14 +4,16 @@ import { Phone, PhoneOff } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useChannelStore } from '@/store/store';
 import { webRTCManager } from '@/rtc/WebRTCManager';
+import { useTranslation } from 'react-i18next';
 import { Avatar } from '../Avatar';
+import { Button } from '../ui/button';
 
 /**
  * Incoming call notification modal for Direct Messages.
- * Matches Discord's incoming call toast with avatar ring animation,
- * accept/decline actions, and gentle synthesized ringtone.
+ * A flat theme-token card with accept / decline actions and a gentle synthesized ringtone.
  */
 export const IncomingCallModal: React.FC = () => {
+	const { t } = useTranslation();
 	const incomingCall = useVoiceStore((state) => state.incomingCall);
 	const dismissIncomingCall = useVoiceStore((state) => state.dismissIncomingCall);
 	const channels = useChannelStore((state) => state.channels);
@@ -105,56 +107,38 @@ export const IncomingCallModal: React.FC = () => {
 	return (
 		<AnimatePresence>
 			<motion.div
-				initial={{ opacity: 0, y: -20, scale: 0.95 }}
-				animate={{ opacity: 1, y: 0, scale: 1 }}
-				exit={{ opacity: 0, y: -20, scale: 0.95 }}
-				transition={{ duration: 0.2, ease: 'easeOut' }}
-				className="fixed top-6 end-6 z-50 w-80 sm:w-92 bg-card border border-border shadow-[0_16px_48px_rgba(0,0,0,0.8)] rounded-2xl p-4 sm:p-5 text-foreground pointer-events-auto select-none"
+				role="alertdialog"
+				aria-label={t('call.incomingVoice')}
+				initial={{ opacity: 0, y: -12 }}
+				animate={{ opacity: 1, y: 0 }}
+				exit={{ opacity: 0, y: -12 }}
+				transition={{ duration: 0.15, ease: 'easeOut' }}
+				className="pointer-events-auto fixed end-4 top-4 z-50 w-[min(340px,calc(100vw-2rem))] select-none rounded-xl border border-border bg-popover p-4 text-foreground shadow-lg shadow-black/25"
 			>
-				<div className="flex items-center gap-3.5">
-					{/* Caller Avatar with animated ringing halos */}
-					<div className="relative shrink-0 flex items-center justify-center">
-						<span className="absolute -inset-1 rounded-full bg-success/30 animate-ping" />
-						<div className="relative rounded-full ring-3 ring-success shadow-[0_0_16px_hsl(var(--success)/0.6)]">
-							<Avatar
-								userId={incomingCall.callerId}
-								avatarId={incomingCall.callerAvatarId}
-								size={52}
-							/>
+				<div className="flex items-center gap-3">
+					<Avatar userId={incomingCall.callerId} avatarId={incomingCall.callerAvatarId} size={44} />
+					<div className="min-w-0 flex-1">
+						<div className="truncate text-sm font-semibold">{incomingCall.callerUsername}</div>
+						<div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+							<Phone size={12} className="animate-pulse text-success" />
+							<span>{t('call.incomingVoice')}</span>
 						</div>
-					</div>
-
-					{/* Caller Information */}
-					<div className="flex-1 min-w-0 pe-1">
-						<h4 className="text-sm font-bold text-foreground truncate">
-							{incomingCall.callerUsername}
-						</h4>
-						<p className="text-xs text-success font-medium flex items-center gap-1.5 mt-0.5">
-							<span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-							Incoming Voice Call...
-						</p>
 					</div>
 				</div>
 
-				{/* Discord Call Actions: Decline & Accept */}
-				<div className="flex items-center gap-3 mt-4 pt-1">
-					<button
+				<div className="mt-4 flex gap-2">
+					<Button type="button" variant="secondary" className="flex-1 gap-2" onClick={handleDecline}>
+						<PhoneOff size={15} className="text-destructive" />
+						{t('call.decline')}
+					</Button>
+					<Button
 						type="button"
-						onClick={handleDecline}
-						className="flex-1 py-2.5 px-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
-					>
-						<PhoneOff size={15} />
-						<span>Decline</span>
-					</button>
-
-					<button
-						type="button"
+						className="flex-1 gap-2 bg-success text-success-foreground hover:bg-success/90"
 						onClick={handleAccept}
-						className="flex-1 py-2.5 px-3 bg-success hover:bg-success/90 text-success-foreground font-semibold text-xs rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-98 cursor-pointer"
 					>
 						<Phone size={15} />
-						<span>Accept</span>
-					</button>
+						{t('call.accept')}
+					</Button>
 				</div>
 			</motion.div>
 		</AnimatePresence>

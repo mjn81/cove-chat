@@ -13,6 +13,9 @@ import {
 import { Slider } from '../ui/slider';
 import { StreamVideo } from './call-media';
 import { webRTCManager } from '@/rtc/WebRTCManager';
+import { useVoiceStore } from '@/store/voiceStore';
+import { useAuthStore } from '@/store/store';
+import type { Channel } from '@/types/api';
 
 interface CallTileProps {
 	userId: string;
@@ -152,3 +155,51 @@ export const ScreenTile: React.FC<ScreenTileProps> = ({ name, stream, width, hei
 		</div>
 	</div>
 );
+
+interface ParticipantTileProps {
+	userId: string;
+	channel: Channel;
+	width: number;
+	height: number;
+	onClick?: () => void;
+}
+
+/**
+ * A {@link CallTile} wired to the live call store: resolves the participant's name, camera stream and
+ * mute / speaking state. Shared by the in-chat call stage and the floating call panel.
+ */
+export const ParticipantTile: React.FC<ParticipantTileProps> = ({ userId, channel, width, height, onClick }) => {
+	const currentUser = useAuthStore((s) => s.user);
+	const isMe = userId === currentUser?.id;
+	const isMuted = useVoiceStore((s) => s.isMuted);
+	const isDeafened = useVoiceStore((s) => s.isDeafened);
+	const isVideoEnabled = useVoiceStore((s) => s.isVideoEnabled);
+	const isSpeaking = useVoiceStore((s) => s.speakingUsers.has(userId));
+	const localStream = useVoiceStore((s) => s.localStream);
+	const remoteStream = useVoiceStore((s) => s.remoteStreams[userId]);
+	const trackState = useVoiceStore((s) => s.participantTrackStates[userId]);
+	const volume = useVoiceStore((s) => s.userVolumes[userId]);
+	const isLocallyMuted = useVoiceStore((s) => s.userMutes.has(userId));
+
+	const cameraStream = isMe ? (isVideoEnabled ? localStream : null) : trackState?.video ? (remoteStream ?? null) : null;
+	const name =
+		channel.member_names?.[userId] || (isMe ? currentUser?.username : undefined) || `User ${userId.slice(0, 6)}`;
+
+	return (
+		<CallTile
+			userId={userId}
+			name={name}
+			avatarId={channel.member_avatars?.[userId]}
+			isMe={isMe}
+			isSpeaking={isSpeaking}
+			isMuted={isMe ? isMuted : trackState ? !trackState.audio : false}
+			isDeafened={isDeafened}
+			isLocallyMuted={isLocallyMuted}
+			volume={volume ?? 1}
+			cameraStream={cameraStream}
+			width={width}
+			height={height}
+			onClick={onClick}
+		/>
+	);
+};

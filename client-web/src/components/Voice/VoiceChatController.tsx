@@ -2,7 +2,6 @@ import React from 'react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useAuthStore, useChannelStore } from '@/store/store';
 import { VoiceChatPanel } from './VoiceChatPanel';
-import { webRTCManager } from '@/rtc/WebRTCManager';
 
 /**
  * Controller component that mounts the active call panel and keeps
@@ -11,9 +10,6 @@ import { webRTCManager } from '@/rtc/WebRTCManager';
 export const VoiceChatController: React.FC = () => {
 	const activeChannelId = useVoiceStore((state) => state.activeChannelId);
 	const isActive = useVoiceStore((state) => state.isActive);
-	const isMuted = useVoiceStore((state) => state.isMuted);
-	const isDeafened = useVoiceStore((state) => state.isDeafened);
-	const speakingUsers = useVoiceStore((state) => state.speakingUsers);
 	const channels = useChannelStore((state) => state.channels);
 	const currentUser = useAuthStore((state) => state.user);
 
@@ -33,6 +29,7 @@ export const VoiceChatController: React.FC = () => {
 		return list.length > 0 ? list : currentUserId ? [currentUserId] : [];
 	}, [participants, currentUserId]);
 
+	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 	const currentlyOpenChannel = useChannelStore((state) => state.activeChannel);
 	const isViewingCallChannel = currentlyOpenChannel?.id === activeChannelId;
 
@@ -45,16 +42,9 @@ export const VoiceChatController: React.FC = () => {
 			{/* Floating PiP panel is only shown when browsing a DIFFERENT channel than the active call */}
 			{!isViewingCallChannel && (
 				<VoiceChatPanel
-					isActive={isActive}
-					isMuted={isMuted}
-					isDeafened={isDeafened}
-					speakingUsers={speakingUsers}
-					onMuteToggle={() => webRTCManager.toggleMute()}
-					onDeafenToggle={() => webRTCManager.toggleDeafen()}
-					onDisconnect={() => webRTCManager.leave()}
+					channel={activeChannel}
 					members={displayParticipants}
-					memberAvatars={activeChannel.member_avatars || {}}
-					memberNames={activeChannel.member_names || {}}
+					onReturnToChat={() => setActiveChannel(activeChannel)}
 				/>
 			)}
 		</>

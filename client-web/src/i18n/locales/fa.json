@@ -373,7 +373,12 @@
     "deafen": "کر کردن صدا",
     "undeafen": "رفع کر کردن",
     "connecting": "در حال اتصال…",
-    "connectFailed": "اتصال به تماس برقرار نشد. دوباره تلاش کنید."
+    "connectFailed": "اتصال به تماس برقرار نشد. دوباره تلاش کنید.",
+    "incomingVoice": "تماس صوتی ورودی",
+    "accept": "پاسخ",
+    "decline": "رد",
+    "backToChat": "بازگشت به گفتگوی تماس",
+    "inCall": "{{count}} نفر در تماس"
   },
   "whisper": {
     "start": {

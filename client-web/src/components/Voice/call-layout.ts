@@ -42,6 +42,31 @@ export function fitGrid(count: number, width: number, height: number, gap = 12, 
 	return best;
 }
 
+/**
+ * Pick the tile aspect ratio for a stage: landscape 16:9 normally, portrait 3:4 when the stage is taller than wide
+ * (phones), so a handful of tiles can stack and fill the screen instead of becoming thin slivers.
+ *
+ * @param width - available width
+ * @param height - available height
+ * @returns tile width / height
+ */
+export function pickTileRatio(width: number, height: number): number {
+	return height > width ? 3 / 4 : 16 / 9;
+}
+
+/**
+ * Split `items` into rows of at most `cols`, so each row can be centred on its own (a lone last tile sits in the
+ * middle) without relying on flex-wrap, which silently re-wraps when the container is a pixel too narrow.
+ *
+ * @returns the rows, or an empty array when `cols` is not positive
+ */
+export function chunkRows<T>(items: readonly T[], cols: number): T[][] {
+	if (cols <= 0) return [];
+	const rows: T[][] = [];
+	for (let i = 0; i < items.length; i += cols) rows.push(items.slice(i, i + cols));
+	return rows;
+}
+
 /** Quality presets offered for screen sharing (replaces four separate resolution / fps / aspect / hint pickers). */
 export const STREAM_PRESETS = {
 	smooth: { resolution: '720p', frameRate: 60, contentHint: 'motion', aspectRatio: 'source' },
