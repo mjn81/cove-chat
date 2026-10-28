@@ -13,7 +13,7 @@ style of Supabase / Next.js docs. Visual mockup: [`landing-mockup.html`](./landi
 | 3 | Hosting | GitHub Pages (free, same repo, deploy via Actions) or Cloudflare Pages. Custom domain later. |
 | 4 | Download source | GitHub Releases API fetched **at build time** (rebuild on `release: published`), with a client-side fallback to the "latest" redirect links. No backend needed. |
 | 5 | Languages | EN first; structure for FA/AR from day one (same i18n story as the app, RTL via logical classes). Translate after launch. |
-| 6 | Domain / repo URL | Repo is `github.com/mjn81/nodetalk`. Need the final public name/URL (the repo still says `nodetalk`). Also: is there a Discord / Matrix community link? |
+| 6 | Domain / repo URL | Repo is `github.com/mjn81/cove-chat`. Need the final public name/URL (the repo still says `cove`). Also: is there a Discord / Matrix community link? |
 | 7 | Android / iOS | Android APK from Releases only for now. iOS shown as "roadmap". |
 | 8 | Roadmap source of truth | Keep `TODO.md` and generate `roadmap.json` from it, or replace `TODO.md` with the JSON. Recommend the JSON (structured, reusable on site). |
 
@@ -214,9 +214,9 @@ Per project rules: the agent never starts dev servers; verification is build + t
 - **No published releases / CI exist yet** (no `.github/workflows`, builds are produced by `make release`). The
   download page needs a release workflow that attaches server zips, desktop zips, APK, Docker image tags and
   `SHA256SUMS`. This is a prerequisite for phase 3.
-- The Docker image name (`<user>/nodetalk-server`) and registry must be decided and published.
+- The Docker image name (`<user>/cove-server`) and registry must be decided and published.
 - Product claims must stay honest: Cove is **server-trusted**, not end-to-end encrypted, except Whisper. The
   site says so plainly, in the hero sub-text and the security page.
-- Technical identifiers still say `nodetalk` (repo, Docker, binary). The site should show Cove everywhere user-facing
-  and be explicit where commands still use `nodetalk-server`.
+- Technical identifiers still say `cove` (repo, Docker, binary). The site should show Cove everywhere user-facing
+  and be explicit where commands still use `cove-server`.
 - Desktop (Wails) sections only describe shipped behaviour; no desktop-only work is implied.

@@ -21,7 +21,7 @@ Plan disk for uploads (`data/uploads`) and the database (`data/db`).
 
 ### About ffmpeg
 
-The server uses `ffmpeg` to convert uploaded videos to MP4 (H.264/AAC) so they play everywhere, and `ffprobe` to read their duration. The `mjn81/nodetalk-server` Docker image already includes both. When running the binary yourself, install ffmpeg with your package manager (`apt install ffmpeg`, `brew install ffmpeg`, `winget install ffmpeg`).
+The server uses `ffmpeg` to convert uploaded videos to MP4 (H.264/AAC) so they play everywhere, and `ffprobe` to read their duration. The `mjn81/cove-server` Docker image already includes both. When running the binary yourself, install ffmpeg with your package manager (`apt install ffmpeg`, `brew install ffmpeg`, `winget install ffmpeg`).
 
 Without it everything else works. Videos are stored and served as uploaded, so they only play where the viewer's browser or app supports the original format, and their duration may be missing. `server.ffmpeg_path` can point at a custom `ffmpeg` binary; `ffprobe` is always looked up on `PATH`.
 

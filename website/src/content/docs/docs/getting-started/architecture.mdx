@@ -17,7 +17,7 @@ import ArchitectureDiagram from '../../../../components/docs/ArchitectureDiagram
 
 ## Clients
 
-All clients talk to the same API. Web sessions use an httpOnly `nodetalk_session` cookie with a double-submit CSRF token; the desktop app uses a Bearer token. The web client is a static single-page app, so it can be served by nginx, Caddy or any file host.
+All clients talk to the same API. Web sessions use an httpOnly `cove_session` cookie with a double-submit CSRF token; the desktop app uses a Bearer token. The web client is a static single-page app, so it can be served by nginx, Caddy or any file host.
 
 ## What lives where
 

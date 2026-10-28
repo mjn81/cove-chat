@@ -7,7 +7,7 @@ The desktop app is a [Wails](https://wails.io) shell around the web client. It c
 
 ## Install
 
-Download the zip for your OS from the [latest release](https://github.com/mjn81/nodetalk/releases/latest), extract it and run the app. On first launch enter your server's address.
+Download the zip for your OS from the [latest release](https://github.com/mjn81/cove-chat/releases/latest), extract it and run the app. On first launch enter your server's address.
 
 ## Build it yourself
 

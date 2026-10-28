@@ -1,7 +1,17 @@
 /* Starlight refinements to match the landing site. */
 :root {
-  --sl-content-width: 46rem;
+  /* Wider reading column and slimmer sidebars: the defaults left large empty bands on desktop screens. */
+  --sl-content-width: 60rem;
+  --sl-sidebar-width: 16rem;
+  --sl-content-pad-x: 2rem;
   --sl-nav-height: 3.5rem;
+}
+/* Starlight grows the right column by half of all spare width, which is what left the big empty band. Pin it. */
+@media (min-width: 72rem) {
+  :root .right-sidebar-container {
+    width: 14.5rem;
+    margin-inline-start: 0;
+  }
 }
 .sl-markdown-content :not(pre) > code {
   background: var(--card);

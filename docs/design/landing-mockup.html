@@ -447,8 +447,8 @@ setInterval(()=>{ci.firstChild&&0;ci.textContent='aes256gcm:'+Array.from({length
 // terminal
 const code={
  docker:`<span class="c"># 1. grab the compose file and start Cove</span>\n<span class="k">curl</span> -O https://example.com/cove/docker-compose.yml\n<span class="k">docker compose</span> up -d\n<span class="s">✔ cove-server listening on :4000</span>`,
- bin:`<span class="c"># 1. download, unzip, run</span>\n<span class="k">unzip</span> nodetalk-server-linux-amd64.zip\n<span class="k">cp</span> config.toml.example config.toml\n./nodetalk-server\n<span class="s">✔ cove-server listening on :4000</span>`,
- src:`<span class="c"># Go 1.25 + pnpm required</span>\n<span class="k">git clone</span> https://github.com/mjn81/nodetalk\n<span class="k">make</span> front/install front/build\n<span class="k">make</span> build &amp;&amp; ./nodetalk-server`};
+ bin:`<span class="c"># 1. download, unzip, run</span>\n<span class="k">unzip</span> cove-server-linux-amd64.zip\n<span class="k">cp</span> config.toml.example config.toml\n./cove-server\n<span class="s">✔ cove-server listening on :4000</span>`,
+ src:`<span class="c"># Go 1.25 + pnpm required</span>\n<span class="k">git clone</span> https://github.com/mjn81/cove-chat\n<span class="k">make</span> front/install front/build\n<span class="k">make</span> build &amp;&amp; ./cove-server`};
 let cur='docker',typing;
 function show(k){cur=k;clearTimeout(typing);const el=$('#code');const html=code[k];let i=0,out='';const tokens=html.split(/(<[^>]+>)/);let buf=[];
  // reveal progressively by characters, keeping tags intact

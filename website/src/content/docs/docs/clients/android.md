@@ -7,7 +7,7 @@ The Android client is native (Kotlin and Jetpack Compose). It supports messaging
 
 ## Install
 
-Download the APK from the [latest release](https://github.com/mjn81/nodetalk/releases/latest) and allow installation from your browser or file manager when Android asks.
+Download the APK from the [latest release](https://github.com/mjn81/cove-chat/releases/latest) and allow installation from your browser or file manager when Android asks.
 
 ## Connect
 

@@ -30,10 +30,10 @@ const TABS: Tab[] = [
     label: 'Binary',
     lines: [
       ['c', '# 1. Download the server for your OS from the latest release'],
-      ['k', 'unzip nodetalk-server-linux-amd64.zip'],
+      ['k', 'unzip cove-server-linux-amd64.zip'],
       ['k', `curl -o config.toml ${REPO_URL}/raw/main/backend/config.toml.example`],
       ['c', '# 2. Run it (the web client is a separate static build or image)'],
-      ['k', 'chmod +x nodetalk-server-linux-amd64 && ./nodetalk-server-linux-amd64'],
+      ['k', 'chmod +x cove-server-linux-amd64 && ./cove-server-linux-amd64'],
       ['s', 'listening on :4000'],
     ],
   },
@@ -42,10 +42,10 @@ const TABS: Tab[] = [
     label: 'From source',
     lines: [
       ['c', '# Requires Go 1.25, Node and pnpm'],
-      ['k', `git clone ${REPO_URL} && cd nodetalk`],
+      ['k', `git clone ${REPO_URL} && cd cove-chat`],
       ['k', 'make build'],
       ['k', 'make front/install && make front/build'],
-      ['s', 'binary: ./nodetalk-server, web client: client-web/dist'],
+      ['s', 'binary: ./cove-server, web client: client-web/dist'],
     ],
   },
 ];

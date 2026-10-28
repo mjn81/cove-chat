@@ -12,10 +12,10 @@ description: Build the server and web client yourself with the project Makefile.
 ## Build
 
 ```bash
-git clone https://github.com/mjn81/nodetalk.git
-cd nodetalk
+git clone https://github.com/mjn81/cove-chat.git
+cd cove-chat
 
-make build            # server binary: ./nodetalk-server
+make build            # server binary: ./cove-server
 make front/install    # pnpm install --frozen-lockfile
 make front/build      # web client: client-web/dist/
 ```
@@ -26,7 +26,7 @@ make front/build      # web client: client-web/dist/
 
 ```bash
 cp backend/config.toml.example config.toml
-./nodetalk-server
+./cove-server
 ```
 
 Serve `client-web/dist/` with any static host. The web client reads its API address from `VITE_API_URL` at build time (the Docker image substitutes it at start instead).

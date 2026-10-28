@@ -113,7 +113,7 @@ function BootViz({ f }: { f: F['binary'] }) {
   const [ref, inView] = useVisible<HTMLDivElement>();
   return (
     <div className="boot" ref={ref}>
-      <div><span className="hl">$</span> ./nodetalk-server</div>
+      <div><span className="hl">$</span> ./cove-server</div>
       {f.boot.map((line, i) => (
         <motion.div key={line} initial={{ opacity: 0, x: -8 }} animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }} transition={{ delay: 0.5 + i * 0.45, duration: 0.4 }}>
           {i > 0 && i < f.boot.length - 1 ? <span className="ok">ok </span> : null}

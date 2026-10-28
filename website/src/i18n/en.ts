@@ -11,7 +11,7 @@ export const en = {
   nav: {
     features: 'Features', docs: 'Docs', roadmap: 'Roadmap', download: 'Download',
     menu: 'Menu', language: 'Language', github: 'GitHub repository',
-    star: 'Star', toLight: 'Switch to light theme', toDark: 'Switch to dark theme',
+    star: 'Star', skip: 'Skip to content', toLight: 'Switch to light theme', toDark: 'Switch to dark theme',
   },
   hero: {
     badgeFallback: 'Open source',

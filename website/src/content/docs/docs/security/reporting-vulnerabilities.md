@@ -5,7 +5,7 @@ description: How to report a security issue in Cove responsibly.
 
 Please do not open a public issue for a security problem.
 
-Use GitHub's private vulnerability reporting on the [repository's Security tab](https://github.com/mjn81/nodetalk/security/advisories/new). Include what you found, how to reproduce it, the version affected and your assessment of the impact.
+Use GitHub's private vulnerability reporting on the [repository's Security tab](https://github.com/mjn81/cove-chat/security/advisories/new). Include what you found, how to reproduce it, the version affected and your assessment of the impact.
 
 We aim to acknowledge reports promptly, fix confirmed issues, and credit reporters who want credit once a fix is released.
 

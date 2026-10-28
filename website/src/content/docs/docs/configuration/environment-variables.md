@@ -7,9 +7,9 @@ description: Variables read by the server and the web client container.
 
 | Variable | Effect |
 |---|---|
-| `NODETALK_CONFIG` | Path to the config file, instead of `./config.toml` |
-| `NODETALK_MASTER_PASSWORD` | Overrides `security.master_password`, so the secret can stay out of the file (12-factor style) |
-| `NODETALK_BACKUP_PASSPHRASE` | Passphrase used by `nodetalk-server restore <file>` |
+| `COVE_CONFIG` | Path to the config file, instead of `./config.toml` |
+| `COVE_MASTER_PASSWORD` | Overrides `security.master_password`, so the secret can stay out of the file (12-factor style) |
+| `COVE_BACKUP_PASSPHRASE` | Passphrase used by `cove-server restore <file>` |
 | `GO_ENV=development` or `NODE_ENV=development` | Development mode: extra logging and Swagger UI at `/api/docs/` |
 
 ## Web client container

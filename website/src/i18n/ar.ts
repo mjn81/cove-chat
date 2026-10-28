@@ -13,7 +13,7 @@ export const ar: Dict = {
   nav: {
     features: 'المزايا', docs: 'التوثيق', roadmap: 'خارطة الطريق', download: 'تنزيل',
     menu: 'القائمة', language: 'اللغة', github: 'مستودع GitHub',
-    star: 'نجمة', toLight: 'التبديل إلى المظهر الفاتح', toDark: 'التبديل إلى المظهر الداكن',
+    star: 'نجمة', skip: 'تخطي إلى المحتوى', toLight: 'التبديل إلى المظهر الفاتح', toDark: 'التبديل إلى المظهر الداكن',
   },
   hero: {
     badgeFallback: 'مفتوح المصدر',

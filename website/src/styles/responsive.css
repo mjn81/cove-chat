@@ -728,3 +728,21 @@
 }
 .legal a{color:var(--fg)}
 .legal a:hover{color:var(--primary)}
+
+/* Skip link: first focusable element, visible only on keyboard focus. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  inset-inline-start: 8px;
+  z-index: 100;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font: 600 14px var(--font-sans);
+  transform: translateY(-200%);
+  transition: transform 0.2s;
+}
+.skip-link:focus {
+  transform: none;
+}

@@ -172,7 +172,7 @@ Default: `3478`
 
 ### `voice.turn_realm`
 
-Default: `"nodetalk"`
+Default: `"cove"`
 
 ### `voice.turn_shared_secret`
 

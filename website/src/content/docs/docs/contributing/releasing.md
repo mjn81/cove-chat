@@ -16,8 +16,8 @@ This builds the server for Linux, Windows and macOS (Intel and Apple silicon), b
 1. Tag the commit: `git tag v0.1.0 && git push origin v0.1.0`.
 2. Create a GitHub release for the tag and write the notes.
 3. Upload the files from `release/dist/`:
-   - `nodetalk-server-linux-amd64.zip`, `nodetalk-server-windows-amd64.zip`, `nodetalk-server-darwin-*.zip`
-   - `nodetalk-desktop-mac-universal.zip`, `nodetalk-desktop-windows-amd64.zip`, `nodetalk-desktop-linux-amd64.zip`
+   - `cove-server-linux-amd64.zip`, `cove-server-windows-amd64.zip`, `cove-server-darwin-*.zip`
+   - `cove-desktop-mac-universal.zip`, `cove-desktop-windows-amd64.zip`, `cove-desktop-linux-amd64.zip`
    - the Android APK and a `SHA256SUMS` file
 4. Push Docker images: `make docker/build-multi DOCKER_USER=<name>`.
 

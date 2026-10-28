@@ -25,7 +25,7 @@ In the `data/` directory next to the server: the database in `data/db` and uploa
 
 ## Can servers talk to each other?
 
-Not yet. Federation is on the [roadmap](https://github.com/mjn81/nodetalk/blob/main/TODO.md).
+Not yet. Federation is on the [roadmap](https://github.com/mjn81/cove-chat/blob/main/TODO.md).
 
 ## What license is Cove under?
 

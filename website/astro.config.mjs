@@ -3,10 +3,47 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import starlight from '@astrojs/starlight';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
-// Override with SITE_URL / SITE_BASE when deploying to a custom domain or a GitHub Pages project path.
-const site = process.env.SITE_URL ?? 'https://mjn81.github.io';
-const base = process.env.SITE_BASE ?? '/nodetalk';
+// Production lives at https://covechat.dev (GitHub Pages custom domain, see public/CNAME). Override with SITE_URL / SITE_BASE for previews (for example a project path like /cove-chat).
+const site = process.env.SITE_URL ?? 'https://covechat.dev';
+const base = process.env.SITE_BASE ?? '/';
+
+/**
+ * Slugs (e.g. 'docs/getting-started/quick-start') that have a real translation under src/content/docs/<lang>.
+ * @param {string} lang
+ * @returns {Set<string>}
+ */
+function translatedSlugs(lang) {
+  const dir = join('src/content/docs', lang);
+  /** @type {Set<string>} */
+  const out = new Set();
+  /** @param {string} d */
+  const walk = (d) => {
+    if (!existsSync(d)) return;
+    for (const name of readdirSync(d)) {
+      const p = join(d, name);
+      if (statSync(p).isDirectory()) walk(p);
+      else out.add(relative(dir, p).replaceAll('\\', '/').replace(/\.(mdx?|markdown)$/, '').replace(/\/index$/, ''));
+    }
+  };
+  walk(dir);
+  return out;
+}
+/** @type {Record<string, Set<string>>} */
+const translated = { fa: translatedSlugs('fa'), ar: translatedSlugs('ar') };
+
+/**
+ * Untranslated fa/ar docs pages are English fallbacks (noindex), so they stay out of the sitemap.
+ * @param {string} page
+ */
+function inSitemap(page) {
+  const m = new URL(page).pathname.replace(base, '').match(/^\/(fa|ar)\/(docs(?:\/.*)?)$/);
+  if (!m) return true;
+  const slug = m[2].replace(/\/$/, '');
+  return translated[m[1]].has(slug);
+}
 
 export default defineConfig({
   site,
@@ -14,14 +51,20 @@ export default defineConfig({
   trailingSlash: 'always',
   integrations: [
     react(),
-    sitemap(),
+    sitemap({ filter: inSitemap }),
     starlight({
       title: 'Cove',
       description: 'Documentation for Cove, the self-hosted encrypted chat platform.',
       logo: { src: './src/assets/cove-mark.svg', alt: 'Cove' },
       favicon: '/favicon.svg',
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/mjn81/nodetalk' }],
-      editLink: { baseUrl: 'https://github.com/mjn81/nodetalk/edit/main/website/' },
+      routeMiddleware: './src/route-middleware.ts',
+      head: [
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: `${base}/apple-touch-icon.png` } },
+        { tag: 'link', attrs: { rel: 'manifest', href: `${base}/manifest.webmanifest` } },
+        { tag: 'meta', attrs: { name: 'theme-color', content: '#23201f' } },
+      ],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/mjn81/cove-chat' }],
+      editLink: { baseUrl: 'https://github.com/mjn81/cove-chat/edit/main/website/' },
       customCss: ['./src/styles/tokens.css', './src/styles/docs.css'],
       components: {
         ThemeSelect: './src/components/docs/ThemeSelect.astro',

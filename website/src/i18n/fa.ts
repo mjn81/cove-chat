@@ -13,7 +13,7 @@ export const fa: Dict = {
   nav: {
     features: 'امکانات', docs: 'مستندات', roadmap: 'نقشه راه', download: 'دانلود',
     menu: 'منو', language: 'زبان', github: 'مخزن گیت‌هاب',
-    star: 'ستاره', toLight: 'تغییر به تم روشن', toDark: 'تغییر به تم تیره',
+    star: 'ستاره', skip: 'رفتن به محتوا', toLight: 'تغییر به تم روشن', toDark: 'تغییر به تم تیره',
   },
   hero: {
     badgeFallback: 'متن‌باز',

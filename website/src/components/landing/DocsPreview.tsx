@@ -36,13 +36,13 @@ export default function DocsPreview({ lang }: { lang: Lang }) {
             <h6>Getting started</h6><span>Introduction</span><span className="on">Quick start</span><span>Architecture</span>
             <h6>Self-hosting</h6><span>Requirements</span><span>Docker</span><span>Reverse proxy and TLS</span><span>Backups</span>
           </aside>
-          <main>
+          <div className="dmain">
             <h4>Quick start</h4>
             <p>Run your own Cove server with Docker in about five minutes.</p>
             <div className="code mono">docker compose up -d</div>
             <div className="callout"><b>Tip.</b> Back up your master password. Losing it makes the database unrecoverable.</div>
             <p>Open the web client and create the first account. It becomes the owner.</p>
-          </main>
+          </div>
           <div className="toc"><b style={{ color: 'var(--fg)' }}>On this page</b><span style={{ color: 'var(--primary)' }}>Requirements</span><span>Run the server</span><span>Create the owner</span><span>Next steps</span></div>
         </div>
       </BlurFade>

@@ -8,6 +8,7 @@
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "dev": "astro dev",
+    "gen:og": "node scripts/gen-og.mjs",
     "gen": "node scripts/gen-config-reference.mjs && node scripts/gen-api-reference.mjs",
     "build": "pnpm gen && astro build",
     "preview": "astro preview",
@@ -36,6 +37,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^10.13.0",
     "eslint-plugin-astro": "^3.2.1",
+    "sharp": "^0.35.5",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0"
   }

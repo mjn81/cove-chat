@@ -7,7 +7,7 @@ The web client is a static React app. It needs to know where your API lives.
 
 ## Docker
 
-Use the `mjn81/nodetalk-webclient` image and set `VITE_API_URL`. See [Docker and Compose](../../self-hosting/docker/).
+Use the `mjn81/cove-webclient` image and set `VITE_API_URL`. See [Docker and Compose](../../self-hosting/docker/).
 
 ## Static hosting
 

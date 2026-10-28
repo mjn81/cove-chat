@@ -23,7 +23,7 @@ The server owner can download an **encrypted backup** from the *Server admin* ta
 Stop the server, then restore into an empty data directory:
 
 ```bash
-NODETALK_BACKUP_PASSPHRASE='your passphrase' ./nodetalk-server restore file.cove-backup
+COVE_BACKUP_PASSPHRASE='your passphrase' ./cove-server restore file.cove-backup
 ```
 
 If the database already has data the command refuses to run. Add `--force` to merge the backup into existing data.

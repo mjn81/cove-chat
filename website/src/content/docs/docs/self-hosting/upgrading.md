@@ -4,7 +4,7 @@ description: Safely move a Cove server to a new version.
 ---
 
 1. **Back up** `data/` and `config.toml` ([Backups and restore](../backups-restore/)).
-2. Read the [release notes](https://github.com/mjn81/nodetalk/releases) for breaking changes.
+2. Read the [release notes](https://github.com/mjn81/cove-chat/releases) for breaking changes.
 3. Replace the server.
    - Docker: change the image tag and run `docker compose pull && docker compose up -d`.
    - Binary: stop the service, replace the executable, start it again.

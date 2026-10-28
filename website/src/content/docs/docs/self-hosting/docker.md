@@ -7,15 +7,15 @@ Two images make up a deployment:
 
 | Image | Contents | Port |
 |---|---|---|
-| `mjn81/nodetalk-server` | The Go server | 4000 and the UDP ports |
-| `mjn81/nodetalk-webclient` | nginx serving the web client | 80 (mapped to 3000) |
+| `mjn81/cove-server` | The Go server | 4000 and the UDP ports |
+| `mjn81/cove-webclient` | nginx serving the web client | 80 (mapped to 3000) |
 
 ## Production compose file
 
 ```yaml title="docker-compose.yml"
 services:
   backend:
-    image: mjn81/nodetalk-server:latest
+    image: mjn81/cove-server:latest
     ports:
       - "4000:4000"
       - "3478:3478/udp"
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: mjn81/nodetalk-webclient:latest
+    image: mjn81/cove-webclient:latest
     ports:
       - "3000:80"
     environment:
@@ -51,7 +51,7 @@ You can keep secrets out of `config.toml`:
 
 ```yaml
     environment:
-      - NODETALK_MASTER_PASSWORD=${COVE_MASTER_PASSWORD}
+      - COVE_MASTER_PASSWORD=${COVE_MASTER_PASSWORD}
 ```
 
 See [Environment variables](../../configuration/environment-variables/) for the full list.

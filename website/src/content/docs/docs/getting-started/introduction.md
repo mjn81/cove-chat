@@ -22,7 +22,7 @@ Cove is **server-trusted**. Messages are encrypted in the client with AES-256-GC
 
 | Piece | What it does |
 |---|---|
-| Server (`nodetalk-server`) | REST API, WebSocket hub, WebRTC SFU, TURN, encrypted BadgerDB storage |
+| Server (`cove-server`) | REST API, WebSocket hub, WebRTC SFU, TURN, encrypted BadgerDB storage |
 | Web client | React single-page app, served as static files (Docker image or any web server) |
 | Desktop app | Wails shell around the web client for Windows, macOS and Linux |
 | Android app | Native Kotlin client |

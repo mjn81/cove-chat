@@ -9,8 +9,8 @@ This gets you a working server and web client on one machine. You need [Docker](
 
 ```bash
 mkdir cove && cd cove
-curl -O https://raw.githubusercontent.com/mjn81/nodetalk/main/examples/docker-compose/production/docker-compose.yml
-curl -o config.toml https://raw.githubusercontent.com/mjn81/nodetalk/main/backend/config.toml.example
+curl -O https://raw.githubusercontent.com/mjn81/cove-chat/main/examples/docker-compose/production/docker-compose.yml
+curl -o config.toml https://raw.githubusercontent.com/mjn81/cove-chat/main/backend/config.toml.example
 mkdir data
 ```
 
