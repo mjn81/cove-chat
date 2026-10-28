@@ -70,3 +70,18 @@ describe('findReachableServer', () => {
 		await expect(findReachableServer('', down)).resolves.toBeNull();
 	});
 });
+
+describe('findReachableServer behind a redirecting proxy', () => {
+	const redirected = (finalUrl: string) =>
+		({ ok: true, redirected: true, url: finalUrl, json: async () => ({ version: '0.9.1' }) }) as unknown as Response;
+
+	it('saves the https origin when http is redirected to https on the same host', async () => {
+		const fetcher = (async () => redirected('https://chat.example.com/api/version')) as unknown as typeof fetch;
+		await expect(findReachableServer('http://chat.example.com', fetcher)).resolves.toBe('https://chat.example.com');
+	});
+
+	it('does not follow a redirect to a different host', async () => {
+		const fetcher = (async () => redirected('https://elsewhere.example/api/version')) as unknown as typeof fetch;
+		await expect(findReachableServer('http://chat.example.com', fetcher)).resolves.toBe('http://chat.example.com');
+	});
+});

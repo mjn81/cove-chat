@@ -54,6 +54,22 @@ export function serverUrlCandidates(raw: string): string[] {
 }
 
 /**
+ * A server behind a TLS proxy answers plain http with a redirect to https. `fetch` follows it, so the probe
+ * succeeds, but a WebSocket upgrade does not follow redirects: saving the http origin would sign in fine and
+ * then never connect. When the probe was redirected to https on the same host, save the https origin instead.
+ */
+function upgradedOrigin(origin: string, res: Response): string {
+	if (!res.redirected || !res.url) return origin;
+	try {
+		const from = new URL(origin);
+		const to = new URL(res.url);
+		return from.protocol === 'http:' && to.protocol === 'https:' && from.hostname === to.hostname ? to.origin : origin;
+	} catch {
+		return origin;
+	}
+}
+
+/**
  * Probes each candidate origin for `GET /api/version` and returns the first that answers like a Cove
  * server (a JSON body with a `version`). Network errors, TLS failures and non-2xx answers move on to
  * the next candidate.
@@ -68,7 +84,7 @@ export async function findReachableServer(raw: string, fetcher: typeof fetch = f
 			const res = await fetcher(`${origin}/api/version`, { signal: AbortSignal.timeout(5000) });
 			if (!res.ok) continue;
 			const data = (await res.json()) as { version?: unknown };
-			if (data.version) return origin;
+			if (data.version) return upgradedOrigin(origin, res);
 		} catch {
 			// Try the next candidate; the caller reports one error if none works.
 		}
