@@ -40,7 +40,7 @@ While the backend uses a file, the web client (frontend) uses an environment var
 | `VITE_API_URL` | The public URL of your backend API | `http://localhost:8080` |
 
 > [!TIP]
-> For production, set `VITE_API_URL` to your public domain (e.g., `https://api.nodetalk.app`).
+> For production, set `VITE_API_URL` to your public domain (e.g., `https://api.cove.app`).
 
 ---
 
@@ -49,15 +49,15 @@ While the backend uses a file, the web client (frontend) uses an environment var
 ### Backend
 ```bash
 cd backend
-docker build -t nodetalk-server:latest .
-docker run -p 8080:8080 -p 9090:9090/udp -v ./data:/app/data nodetalk-server:latest
+docker build -t cove-server:latest .
+docker run -p 8080:8080 -p 9090:9090/udp -v ./data:/app/data cove-server:latest
 ```
 
 ### Web Client
 ```bash
 cd client-web
-docker build -t nodetalk-webclient:latest .
-docker run -p 3000:80 -e VITE_API_URL=http://your-backend-ip:8080 nodetalk-webclient:latest
+docker build -t cove-webclient:latest .
+docker run -p 3000:80 -e VITE_API_URL=http://your-backend-ip:8080 cove-webclient:latest
 ```
 
 ---
@@ -68,10 +68,10 @@ If you want to share your images on Docker Hub:
 
 ```bash
 # Tag images
-docker tag nodetalk-server:latest yourusername/nodetalk-server:latest
-docker tag nodetalk-webclient:latest yourusername/nodetalk-webclient:latest
+docker tag cove-server:latest yourusername/cove-server:latest
+docker tag cove-webclient:latest yourusername/cove-webclient:latest
 
 # Push images
-docker push yourusername/nodetalk-server:latest
-docker push yourusername/nodetalk-webclient:latest
+docker push yourusername/cove-server:latest
+docker push yourusername/cove-webclient:latest
 ```

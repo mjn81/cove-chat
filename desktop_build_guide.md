@@ -60,7 +60,7 @@ To build for Linux:
 cd client-desktop
 ~/go/bin/wails build -platform linux/amd64 -clean -s
 ```
-**Output**: `client-desktop/build/bin/nodetalk`
+**Output**: `client-desktop/build/bin/cove-chat`
 
 ---
 

@@ -7,7 +7,7 @@ release: clean backend/release wails/build/mac wails/build/windows wails/build/l
 GOBIN := $(HOME)/go/bin
 GO    := go
 PNPM  := pnpm
-BIN   := nodetalk-server
+BIN   := cove-server
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -126,15 +126,15 @@ wails/build/linux: build front/build ## Build Linux binary (amd64)
 
 backend/release: ## Build backend binaries for multiple platforms
 	mkdir -p release/backend
-	GOOS=linux   GOARCH=amd64 $(GO) build -o release/backend/nodetalk-server-linux-amd64 backend/cmd/server/main.go
-	GOOS=darwin  GOARCH=amd64 $(GO) build -o release/backend/nodetalk-server-darwin-amd64 backend/cmd/server/main.go
-	GOOS=darwin  GOARCH=arm64 $(GO) build -o release/backend/nodetalk-server-darwin-arm64 backend/cmd/server/main.go
-	GOOS=windows GOARCH=amd64 $(GO) build -o release/backend/nodetalk-server-windows-amd64.exe backend/cmd/server/main.go
+	GOOS=linux   GOARCH=amd64 $(GO) build -o release/backend/cove-server-linux-amd64 backend/cmd/server/main.go
+	GOOS=darwin  GOARCH=amd64 $(GO) build -o release/backend/cove-server-darwin-amd64 backend/cmd/server/main.go
+	GOOS=darwin  GOARCH=arm64 $(GO) build -o release/backend/cove-server-darwin-arm64 backend/cmd/server/main.go
+	GOOS=windows GOARCH=amd64 $(GO) build -o release/backend/cove-server-windows-amd64.exe backend/cmd/server/main.go
 	@echo "Backend binaries built in release/backend/"
 
 ## ── Docker ───────────────────────────────────────────────────────────────────
 docker/setup: ## Create and switch to a multi-platform builder
-	docker buildx create --name nodetalk-builder --use || docker buildx use nodetalk-builder
+	docker buildx create --name cove-builder --use || docker buildx use cove-builder
 	docker buildx inspect --bootstrap
 
 docker/build: ## Build production Docker images locally
@@ -142,15 +142,15 @@ docker/build: ## Build production Docker images locally
 
 docker/build-multi: ## Build and push multi-platform Docker images (usage: make docker/build-multi DOCKER_USER=name)
 	@if [ -z "$(DOCKER_USER)" ]; then echo "Error: DOCKER_USER is required."; exit 1; fi
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_USER)/nodetalk-server:latest --push ./backend
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_USER)/nodetalk-webclient:latest --push ./client-web
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_USER)/cove-server:latest --push ./backend
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_USER)/cove-webclient:latest --push ./client-web
 
 docker/push: docker/build ## Push images to Docker Hub (usage: make docker/push DOCKER_USER=name)
 	@if [ -z "$(DOCKER_USER)" ]; then echo "Error: DOCKER_USER is required. Example: make docker/push DOCKER_USER=myusername"; exit 1; fi
-	docker tag nodetalk-server:latest $(DOCKER_USER)/nodetalk-server:latest
-	docker tag nodetalk-webclient:latest $(DOCKER_USER)/nodetalk-webclient:latest
-	docker push $(DOCKER_USER)/nodetalk-server:latest
-	docker push $(DOCKER_USER)/nodetalk-webclient:latest
+	docker tag cove-server:latest $(DOCKER_USER)/cove-server:latest
+	docker tag cove-webclient:latest $(DOCKER_USER)/cove-webclient:latest
+	docker push $(DOCKER_USER)/cove-server:latest
+	docker push $(DOCKER_USER)/cove-webclient:latest
 
 ## ── Combined ─────────────────────────────────────────────────────────────────
 dev: ## Run backend + frontend concurrently (web mode)

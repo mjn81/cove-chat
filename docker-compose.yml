@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: nodetalk-server:latest
+    image: cove-server:latest
     ports:
       - "4000:4000"
       - "3478:3478/udp"
@@ -18,7 +18,7 @@ services:
     build:
       context: ./client-web
       dockerfile: Dockerfile
-    image: nodetalk-webclient:latest
+    image: cove-webclient:latest
     ports:
       - "3000:80"
     environment:

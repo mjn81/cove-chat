@@ -27,7 +27,7 @@
 ## Architecture
 
 ```
-nodetalk/
+cove/
 ├── backend/
 │   ├── cmd/server/        → Go server entry point
 │   ├── internal/
@@ -111,7 +111,7 @@ The first account registered on a fresh server becomes the **owner**. Owners and
 - **Registration:** `[registration] mode = "open" | "invite_only" | "closed"` in `config.toml`, or switch it live in the panel. Invitation codes (limited or unlimited uses, optional expiry) are created in the panel or declared as `[[registration.invites]]`.
 - **Settings:** the panel edits a whitelist of `config.toml` keys, keeping your comments (a `.bak` of the previous file is kept). Secrets are never shown. Network and session-security keys are owner-only.
 - **Owner tools:** admins are added by the owner. The owner can also download an encrypted backup, reset data (keeps the owner account) or delete the server; each asks for the password again.
-- **Restore a backup:** with the server stopped, run `NODETALK_BACKUP_PASSPHRASE=... ./server restore file.cove-backup` against an empty data directory (`--force` merges into existing data).
+- **Restore a backup:** with the server stopped, run `COVE_BACKUP_PASSPHRASE=... ./server restore file.cove-backup` against an empty data directory (`--force` merges into existing data).
 - **Lost owner login:** set `[admin] owner_username = "name"` and restart.
 
 ## Stress Testing

@@ -30,7 +30,7 @@ Better shape than web. `components/Common.kt` already has `NTTextField`, `NTPrim
 | Private one-off components | `ToggleRow`, `SegmentButton`, `FilterChip`, `ConversationRow`/`PersonRow`/`ResultRow`/`MenuRow`/`PermissionRow` (all list rows), `ToolbarButton`, `RoundIconButton`, `ControlButton`, `CallButton` (all icon buttons), each in its own file. |
 | No spacing/shape/type tokens | 9 different corner radii (8dp x37, 6dp x26, 4dp, 16dp, 12dp, 3dp, 5dp, 10dp, 32dp), ~155 literal `fontSize = N.sp`, ~100 literal paddings. |
 | Raw colours | ~50 `Color(0x..)` / `Color.White` literals in screens (VideoBubble, ConversationSearchDialog, NewConversationDialog, CallScreen...). |
-| Old naming | `NodeTalkTheme`, `NTxxx`, `NodeTalkExtendedColors`, `NodeTalkApp`. |
+| Old naming | `CoveTheme`, `NTxxx`, `CoveExtendedColors`, `CoveApp`. |
 
 ### Desktop
 Embeds the web build, so it inherits all web work. Only separate items: window title/icon (done), `isWails()`
@@ -91,7 +91,7 @@ into `domains/<domain>/` as it is touched (chat, voice, settings, friends). Swap
 1. `Dimens.kt` + `Shapes` + type roles; map the 9 radii to 3 (`sm/md/lg`) and the 155 `fontSize` literals to roles.
 2. Build the `Cove*` kit in `ui/components/` (table above); make `PanelDialog` the public `CoveDialog`.
 3. Migrate screens one at a time (dialogs first: Whisper, IncomingCall, NewConversation, Search, ChannelDialogs), replacing private rows/buttons.
-4. Replace ~50 raw colour literals with theme colours; rename `NodeTalkTheme`/`NT*` to `CoveTheme`/`Cove*` (Kotlin symbols only, package id untouched).
+4. Replace ~50 raw colour literals with theme colours; rename `CoveTheme`/`NT*` to `CoveTheme`/`Cove*` (Kotlin symbols only, package id untouched).
 
 **Phase 7 - Desktop check.** Build the web bundle, confirm Wails window, titlebar and scrollbars with the new theme and ModalShell; fix `isWails()` branches only if something differs.
 
@@ -99,5 +99,5 @@ into `domains/<domain>/` as it is touched (chat, voice, settings, friends). Swap
 
 1. Add `success`/`warning`/`overlay` semantic tokens (recommended) vs keep ad-hoc greens/yellows.
 2. Dialog sizes `sm / md / lg / media` (recommended) - or different breakpoints.
-3. Rename Android Kotlin symbols (`NodeTalkTheme` -> `CoveTheme`) during Phase 6 - recommended; package id stays.
+3. Rename Android Kotlin symbols (`CoveTheme` -> `CoveTheme`) during Phase 6 - recommended; package id stays.
 4. Execution: one session per phase for web (they touch the same files, so sequential) and a separate session for the Android kit in parallel.

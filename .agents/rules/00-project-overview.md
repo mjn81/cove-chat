@@ -36,7 +36,7 @@ Related rule files (read the ones relevant to your task):
 
 - Server-trusted encryption: channel keys are generated, wrapped by the KEK, and distributed by the server. Messages are encrypted client-side (AES-256-GCM); the server stores/routes ciphertext.
 - "Whisper" chats are zero-persistence E2EE — never persist their plaintext or keys server-side.
-- Web auth = httpOnly `nodetalk_session` cookie + double-submit CSRF (`nodetalk_csrf` cookie → `X-CSRF-Token` header). Desktop (Wails) = Bearer token. Do not "unify" these; the split is intentional (see `internal/auth/auth.go`).
+- Web auth = httpOnly `cove_session` cookie + double-submit CSRF (`cove_csrf` cookie → `X-CSRF-Token` header). Desktop (Wails) = Bearer token. Do not "unify" these; the split is intentional (see `internal/auth/auth.go`).
 - Never log secrets, tokens, keys, plaintext message bodies, or passwords.
 
 ## Calling & Media Architecture (Do not confuse)
@@ -52,8 +52,8 @@ Related rule files (read the ones relevant to your task):
   - No video or screen sharing is supported in this mode.
 
 
-## Branding (renamed from NodeTalk to Cove)
+## Branding
 
 - User-facing name is **Cove**. On the web use `APP_NAME` from `client-web/src/lib/brand.ts`; never hard-code it.
 - Logo sources live in `branding/` (`cove-mark.svg`, `cove-icon.svg`, PNGs). Palette: terracotta primary `#D9826A` (dark) / `#C4624A` (light) on warm neutrals; tokens in `client-web/src/index.css`, mirrored in `client-android/.../ui/theme/Color.kt`.
-- **Deliberately unchanged technical identifiers** (renaming breaks existing installs/sessions/data): Go module `nodetalk/backend`, Android `applicationId`/package `com.nodetalk.client`, Wails `appID`, `nodetalk_*` cookies and localStorage keys, IndexedDB names (`NodeTalkDB`, `NodeTalkWhisperDB`), desktop config dir. Migrate these only as an explicit, planned task.
+- **Technical identifiers use the Cove name** and are part of the contract between server and clients: Go module `cove/backend`, Android `applicationId`/package `com.cove.chat`, Wails `appID`, `cove_*` cookies and localStorage keys, IndexedDB names (`CoveDB`, `CoveWhisperDB`), `COVE_*` env vars, Whisper key-derivation context strings (`cove-whisper-*`), the desktop config dir. Changing any of them after release breaks installs, sessions or Whisper compatibility, so treat a rename as an explicit, planned task.

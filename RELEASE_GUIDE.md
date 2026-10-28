@@ -21,7 +21,7 @@ make release
 ```
 
 ### What this does:
-1.  **Backend**: Builds `nodetalk-server` for Linux, Windows, and macOS (Intel & Silicon).
+1.  **Backend**: Builds `cove-server` for Linux, Windows, and macOS (Intel & Silicon).
 2.  **Desktop**: Builds the Wails app for macOS (Universal), Windows (amd64), and Linux (amd64).
 3.  **Packaging**: Runs `scripts/package_release.sh` to zip these binaries for easy distribution.
 
@@ -44,12 +44,12 @@ git push origin v0.1.0
 
 ### Step C: Upload Assets
 Upload the following files from `release/dist/`:
-- `nodetalk-desktop-mac-universal.zip`
-- `nodetalk-desktop-windows-amd64.zip`
-- `nodetalk-desktop-linux-amd64.zip`
-- `nodetalk-server-linux-amd64.zip`
-- `nodetalk-server-windows-amd64.zip`
-- `nodetalk-server-darwin-universal.zip` (optional, for self-hosters on Mac)
+- `cove-desktop-mac-universal.zip`
+- `cove-desktop-windows-amd64.zip`
+- `cove-desktop-linux-amd64.zip`
+- `cove-server-linux-amd64.zip`
+- `cove-server-windows-amd64.zip`
+- `cove-server-darwin-universal.zip` (optional, for self-hosters on Mac)
 
 > [!TIP]
 > GitHub automatically generates "Source code (zip)" and "Source code (tar.gz)" from your tag, so you don't need to upload those manually.
@@ -68,8 +68,8 @@ make docker/push DOCKER_USER=yourusername
 ## 5. Summary of Build Artifacts
 | Artifact | Platform | Location |
 | :--- | :--- | :--- |
-| **macOS App** | macOS (Intel/M1/M2) | `release/dist/nodetalk-desktop-mac-universal.zip` |
-| **Windows App** | Windows 10/11 | `release/dist/nodetalk-desktop-windows-amd64.zip` |
-| **Linux App** | Ubuntu/Debian/etc | `release/dist/nodetalk-desktop-linux-amd64.zip` |
-| **Server Binary** | Linux (for VPS) | `release/dist/nodetalk-server-linux-amd64.zip` |
-| **Server Binary** | Windows (Self-host) | `release/dist/nodetalk-server-windows-amd64.zip` |
+| **macOS App** | macOS (Intel/M1/M2) | `release/dist/cove-desktop-mac-universal.zip` |
+| **Windows App** | Windows 10/11 | `release/dist/cove-desktop-windows-amd64.zip` |
+| **Linux App** | Ubuntu/Debian/etc | `release/dist/cove-desktop-linux-amd64.zip` |
+| **Server Binary** | Linux (for VPS) | `release/dist/cove-server-linux-amd64.zip` |
+| **Server Binary** | Windows (Self-host) | `release/dist/cove-server-windows-amd64.zip` |

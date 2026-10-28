@@ -1,6 +1,6 @@
 services:
   backend:
-    image: mjn81/nodetalk-server:latest
+    image: mjn81/cove-server:latest
     ports:
       - "4000:4000"
       - "3478:3478/udp"
@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: mjn81/nodetalk-webclient:latest
+    image: mjn81/cove-webclient:latest
     ports:
       - "3000:80"
     environment:

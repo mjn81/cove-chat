@@ -6,7 +6,7 @@ description: Go backend architecture, TDD, RBAC/access control, Swagger docs, lo
 
 # Backend Architecture & Standards (`backend/`)
 
-Stack: Go 1.25, standard `net/http` `ServeMux` (method+path patterns), BadgerDB v4 (encrypted at rest), `coder/websocket`, Pion WebRTC/TURN, swaggo for OpenAPI, module path `nodetalk/backend`.
+Stack: Go 1.25, standard `net/http` `ServeMux` (method+path patterns), BadgerDB v4 (encrypted at rest), `coder/websocket`, Pion WebRTC/TURN, swaggo for OpenAPI, module path `cove/backend`.
 
 ## 1. Engineering approach — strict TDD
 
@@ -47,7 +47,7 @@ backend/
 
 ## 3. Logging
 
-- **Always use `nodetalk/backend/internal/logger`** (`logger.Info/Infof`, `Warn/Warnf`, `Error/Errorf`, `Debug/Debugf`, `Fatal/Fatalf`).
+- **Always use `cove/backend/internal/logger`** (`logger.Info/Infof`, `Warn/Warnf`, `Error/Errorf`, `Debug/Debugf`, `Fatal/Fatalf`).
 - **Never** `fmt.Print*`, `log.Print*`, `log.Fatal*`, or `println` for diagnostics. (Sole exception: the intentional master-password banner in `internal/config/config.go`.)
 - Never log secrets, tokens, cookies, keys, passwords, or message plaintext/ciphertext bodies. Log IDs.
 
