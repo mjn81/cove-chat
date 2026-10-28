@@ -216,13 +216,3 @@ Default: `200               # total accounts allowed; 0 = no cap` (commented out
 
 Default: `3    # new accounts per client IP per rolling 24h; 0 = no cap` (commented out in the example; optional)
 
-## `[sessions]`
-
-### `sessions.geoip_db_path`
-
-Default: `"/etc/cove/GeoLite2-City.mmdb"` (commented out in the example; optional)
-
-### `sessions.login_notifications`
-
-Default: `true    # send a "new login" message from the Cove account on each sign-in` (commented out in the example; optional)
-
