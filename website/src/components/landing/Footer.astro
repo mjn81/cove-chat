@@ -4,6 +4,7 @@ import { dict, localUrl, type Lang } from '../../i18n';
 interface Props { version: string | null; lang: Lang }
 const { version, lang } = Astro.props;
 const f = dict(lang).footer;
+const betaChip = dict(lang).beta.chip;
 ---
 <footer class="foot">
   <div class="wrap">
@@ -34,6 +35,6 @@ const f = dict(lang).footer;
         <a href={localUrl(lang, '/docs/security/reporting-vulnerabilities/')}>{f.security}</a>
       </div>
     </div>
-    <div class="legal"><span>{f.legal} <a href="https://github.com/mjn81" rel="noopener noreferrer">mjn</a></span><span dir="ltr">{version ?? ''}</span></div>
+    <div class="legal"><span>{f.legal} <a href="https://github.com/mjn81" rel="noopener noreferrer">mjn</a></span><span dir="ltr">{version ? `${version} ` : ''}<span class="beta-chip">{betaChip}</span></span></div>
   </div>
 </footer>

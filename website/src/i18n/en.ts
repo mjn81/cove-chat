@@ -8,6 +8,11 @@ export const en = {
     roadmapTitle: 'Cove roadmap',
     roadmapDesc: 'What Cove has shipped, what is in progress, and what is coming next.',
   },
+  beta: {
+    chip: 'Beta',
+    title: 'Cove is in beta',
+    text: 'Expect rough edges. Back up your data and master password, and report problems on GitHub.',
+  },
   nav: {
     features: 'Features', docs: 'Docs', roadmap: 'Roadmap', download: 'Download',
     menu: 'Menu', language: 'Language', github: 'GitHub repository',

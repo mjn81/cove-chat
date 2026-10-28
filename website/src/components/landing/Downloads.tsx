@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, Copy, Download, ExternalLink, Globe, Laptop, Server, ShieldCheck, Smartphone, type LucideIcon } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, FlaskConical, Globe, Laptop, Server, ShieldCheck, Smartphone, type LucideIcon } from 'lucide-react';
 import { BlurFade, GithubIcon, SpotlightCard } from './primitives';
 import type { DownloadEntry, DownloadGroup, OsId } from '@/lib/downloads';
 import { REPO_URL, RELEASES_URL } from '@/lib/site';
@@ -47,11 +47,16 @@ function Row({ e, recommended, d }: { e: DownloadEntry; recommended: boolean; d:
  */
 export default function Downloads({ groups, tag, lang }: { groups: DownloadGroup[]; tag: string | null; lang: Lang }) {
   const d = dict(lang).download;
+  const beta = dict(lang).beta;
   const [os, setOs] = useState<OsId | null>(null);
   useEffect(() => setOs(detectOs()), []);
 
   return (
     <>
+      <div className="beta-note" role="note">
+        <FlaskConical />
+        <div><b>{beta.title}.</b> {beta.text}</div>
+      </div>
       <div className="dl">
         {groups.map((g, i) => {
           const Icon = GROUP_ICON[g.id];

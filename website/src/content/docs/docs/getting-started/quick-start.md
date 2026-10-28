@@ -3,6 +3,10 @@ title: Quick start
 description: Run your own Cove server and web client with Docker in about five minutes.
 ---
 
+:::caution[Beta]
+Cove is in beta. Expect rough edges, back up your data and master password, and report problems on [GitHub](https://github.com/mjn81/cove-chat/issues).
+:::
+
 This gets you a working server and web client on one machine. You need [Docker](https://docs.docker.com/get-docker/) with Compose.
 
 ## 1. Create a folder and fetch the files

@@ -216,7 +216,7 @@ export default function Hero({ version, lang }: { version: string | null; lang: 
       <div className="hero-bg"><div className="hero-grid" /><div className="hero-orb" /></div>
       <div className="wrap">
         <motion.a className="announce" href={localUrl(lang, '/roadmap/')} initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EASE }}>
-          <b>{version ?? d.badgeFallback}</b> {d.announce} <ArrowRight className="rtl-flip" />
+          <b>{dict(lang).beta.chip}{version ? ` ${version}` : ''}</b> {d.announce} <ArrowRight className="rtl-flip" />
         </motion.a>
         <Headline phrases={d.headline} />
         <motion.p className="lead" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.55, ease: EASE }}>

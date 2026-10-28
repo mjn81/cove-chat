@@ -729,6 +729,47 @@
 .legal a{color:var(--fg)}
 .legal a:hover{color:var(--primary)}
 
+.beta-chip {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--warning) 55%, var(--border));
+  color: var(--warning);
+  font: 700 10px/1.6 var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+[dir='rtl'] .beta-chip {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.beta-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning) 7%, var(--bg));
+  color: var(--muted-fg);
+  font-size: 14px;
+  text-align: start;
+}
+.beta-note svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--warning);
+}
+.beta-note b {
+  color: var(--fg);
+}
+
 /* Skip link: first focusable element, visible only on keyboard focus. */
 .skip-link {
   position: fixed;

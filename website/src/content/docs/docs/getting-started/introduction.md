@@ -3,6 +3,10 @@ title: Introduction
 description: What Cove is, who it is for, and how its trust model works.
 ---
 
+:::caution[Beta]
+Cove is in beta. Expect rough edges, back up your data and master password, and report problems on [GitHub](https://github.com/mjn81/cove-chat/issues).
+:::
+
 Cove is a self-hosted chat platform for communities that want to own their data. You run one server, people connect with the web, desktop or Android client, and everything (messages, files, voice and video) stays on hardware you control.
 
 ## What you get

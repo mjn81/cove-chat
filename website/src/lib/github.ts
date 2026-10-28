@@ -39,12 +39,14 @@ export function getReleaseInfo(): Promise<ReleaseInfo> {
 
 async function fetchReleaseInfo(): Promise<ReleaseInfo> {
   const [release, repo] = await Promise.all([
-    getJson<{ tag_name: string; assets: { name: string; size: number; browser_download_url: string }[] }>('/releases/latest'),
+    // /releases/latest skips pre-releases, and every 0.x release is a pre-release, so read the list instead.
+    getJson<{ tag_name: string; draft: boolean; assets: { name: string; size: number; browser_download_url: string }[] }[]>('/releases?per_page=10'),
     getJson<{ stargazers_count: number }>(''),
   ]);
+  const newest = release?.find((r) => !r.draft) ?? null;
   return {
-    tag: release?.tag_name ?? null,
-    assets: (release?.assets ?? []).map((a) => ({ name: a.name, size: a.size, url: a.browser_download_url })),
+    tag: newest?.tag_name ?? null,
+    assets: (newest?.assets ?? []).map((a) => ({ name: a.name, size: a.size, url: a.browser_download_url })),
     stars: repo?.stargazers_count ?? null,
   };
 }

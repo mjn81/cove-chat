@@ -88,6 +88,7 @@ export default function Nav({ links, stars, lang }: { links: NavLink[]; stars: n
       <a className="logo" href={localUrl(lang, '/')}>
         <img src={url('/favicon.svg')} width={26} height={26} alt="" style={{ display: 'block' }} />
         {APP_NAME}
+        <span className="beta-chip">{d.beta.chip}</span>
       </a>
       <div className="nav-links" onMouseLeave={() => setHover(null)}>
         {links.map((l) => (

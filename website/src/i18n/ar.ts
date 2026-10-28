@@ -10,6 +10,11 @@ export const ar: Dict = {
     roadmapTitle: 'خارطة طريق Cove',
     roadmapDesc: 'ما أنجزه Cove وما هو قيد التنفيذ وما هو قادم.',
   },
+  beta: {
+    chip: 'تجريبي',
+    title: 'Cove في مرحلة تجريبية',
+    text: 'توقّع بعض العيوب. احتفظ بنسخة احتياطية من بياناتك وكلمة المرور الرئيسية، وأبلغ عن المشاكل على GitHub.',
+  },
   nav: {
     features: 'المزايا', docs: 'التوثيق', roadmap: 'خارطة الطريق', download: 'تنزيل',
     menu: 'القائمة', language: 'اللغة', github: 'مستودع GitHub',
