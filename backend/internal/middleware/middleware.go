@@ -268,3 +268,7 @@ func JSON(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// ClientIP returns the client IP the same way the rate limiter sees it, honoring proxy headers
+// only when TrustProxyHeaders is on. Exported so handlers can apply per-IP policies consistently.
+func ClientIP(r *http.Request) string { return realIP(r) }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cove/backend/internal/auth"
+	"cove/backend/internal/config"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
 	"cove/backend/internal/storage"
@@ -49,6 +50,13 @@ type Handler struct {
 	ServerDomain string    // shown to the owner and required for the delete confirmation
 	StartedAt    time.Time // for the uptime shown in the overview
 	Shutdown     func()    // stops the process after "delete server"
+
+	// Demo holds the opt-in public-demo limits (config [demo]); the zero value is a normal server.
+	Demo config.DemoConfig
+
+	// signups is ephemeral by design: per-IP signup timestamps are only a short-lived abuse
+	// throttle, so losing them on restart is acceptable and they need no persistence.
+	signups signupLimiter
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 }

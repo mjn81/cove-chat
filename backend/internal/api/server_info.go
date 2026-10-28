@@ -9,6 +9,8 @@ type ServerInfoResponse struct {
 	RegistrationMode string `json:"registration_mode" example:"invite_only"`
 	// NeedsOwner is true on a fresh server: the next account created becomes the owner.
 	NeedsOwner bool `json:"needs_owner" example:"false"`
+	// Demo is true on a public demo instance; clients show a notice that data resets and is not private.
+	Demo bool `json:"demo" example:"false"`
 }
 
 // GetServerInfo godoc
@@ -24,5 +26,6 @@ func (h *Handler) GetServerInfo(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ServerInfoResponse{
 		RegistrationMode: h.registrationMode(),
 		NeedsOwner:       !h.Store.HasOwner(),
+		Demo:             h.Demo.Enabled,
 	})
 }

@@ -202,3 +202,17 @@ Default: `""` (commented out in the example; optional)
 Recovery for a lost owner login: set this to an existing username and restart
 to make that account the owner (the previous owner becomes an admin).
 
+## `[demo]`
+
+### `demo.enabled`
+
+Default: `false` (commented out in the example; optional)
+
+### `demo.max_users`
+
+Default: `200               # total accounts allowed; 0 = no cap` (commented out in the example; optional)
+
+### `demo.signups_per_ip_per_day`
+
+Default: `3    # new accounts per client IP per rolling 24h; 0 = no cap` (commented out in the example; optional)
+

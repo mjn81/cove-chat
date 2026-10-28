@@ -112,3 +112,11 @@ mode = "open"
 # Recovery for a lost owner login: set this to an existing username and restart
 # to make that account the owner (the previous owner becomes an admin).
 # owner_username = ""
+
+# ── Public demo ───────────────────────────────────────────────────────────
+# Off by default. Turn on for a public demo instance: clients show a "data resets, not private" notice
+# and sign-ups are capped. The first account on a fresh server is exempt from the per-IP limit.
+[demo]
+# enabled = false
+# max_users = 200               # total accounts allowed; 0 = no cap
+# signups_per_ip_per_day = 3    # new accounts per client IP per rolling 24h; 0 = no cap

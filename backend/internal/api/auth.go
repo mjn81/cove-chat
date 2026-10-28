@@ -28,9 +28,9 @@ import (
 //	@Param       body body RegisterRequest true "Registration payload"
 //	@Success     201 {object} RegisterResponse
 //	@Failure     400 {object} ErrorResponse
-//	@Failure     403 {object} ErrorResponse "registration closed, invite required or invite not valid"
+//	@Failure     403 {object} ErrorResponse "registration closed, invite required, invite not valid or demo server full"
 //	@Failure     409 {object} ErrorResponse
-//	@Failure     429 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse "too many sign-ups from this IP (demo mode)"
 //	@Router      /api/register [post]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var body RegisterRequest
@@ -70,6 +70,18 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			reservedCode = code
+		}
+	}
+
+	// Demo limits are checked after the invite is reserved only to keep one failure path; they are
+	// cheap, so the reservation is released on rejection just like a failed account creation.
+	if h.Demo.Enabled && !bootstrap {
+		if status, msg := h.demoSignupDenied(r); status != 0 {
+			if reservedCode != "" {
+				h.Store.ReleaseInviteUse(reservedCode)
+			}
+			writeError(w, status, msg)
+			return
 		}
 	}
 

@@ -1,5 +1,129 @@
 basePath: /
 definitions:
+  cove_backend_internal_models.AuditEntry:
+    properties:
+      action:
+        description: e.g. "invite.create"
+        type: string
+      actor_id:
+        type: string
+      actor_name:
+        type: string
+      at:
+        type: string
+      id:
+        type: string
+      target:
+        description: e.g. a username or invite code (never a secret)
+        type: string
+    type: object
+  cove_backend_internal_models.Channel:
+    properties:
+      aes_key_enc:
+        description: Channel AES-256 key encrypted with server KEK
+        items:
+          type: integer
+        type: array
+      avatar_id:
+        type: string
+      created_at:
+        type: string
+      creator_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      invite_link:
+        description: Unique public/private join link
+        type: string
+      is_private:
+        description: If true, hidden from public search
+        type: boolean
+      last_message_at:
+        description: 'Ephemeral: Populated in ListUserChannels'
+        type: string
+      last_message_ciphertext:
+        description: |-
+          Ephemeral, populated in ListUserChannels: the channel's most recent
+          message, still encrypted — lets the client render a sidebar preview
+          without a second round-trip. The server never sees the plaintext.
+        items:
+          type: integer
+        type: array
+      last_message_id:
+        type: string
+      last_message_nonce:
+        items:
+          type: integer
+        type: array
+      last_message_sender_id:
+        type: string
+      last_message_type:
+        $ref: '#/definitions/cove_backend_internal_models.MessageType'
+      name:
+        type: string
+      unread_count:
+        description: 'Ephemeral: Populated per-user in handlers'
+        type: integer
+    type: object
+  cove_backend_internal_models.Message:
+    properties:
+      channel_id:
+        type: string
+      ciphertext:
+        description: AES-256-GCM encrypted payload
+        items:
+          type: integer
+        type: array
+      compression:
+        description: '"none", "zstd", etc.'
+        type: string
+      edited_at:
+        type: string
+      id:
+        type: string
+      nonce:
+        description: GCM nonce (also prepended in ciphertext)
+        items:
+          type: integer
+        type: array
+      reply_to_id:
+        type: string
+      sender_id:
+        type: string
+      sent_at:
+        type: string
+      sig:
+        description: 'Reserved: future sender signature'
+        items:
+          type: integer
+        type: array
+      type:
+        allOf:
+        - $ref: '#/definitions/cove_backend_internal_models.MessageType'
+        description: '"text" | "file" | "voice" | "video"'
+    type: object
+  cove_backend_internal_models.MessageType:
+    enum:
+    - text
+    - file
+    - voice
+    - video
+    type: string
+    x-enum-varnames:
+    - MessageTypeText
+    - MessageTypeFile
+    - MessageTypeVoice
+    - MessageTypeVideo
+  cove_backend_internal_models.Presence:
+    properties:
+      current_status:
+        description: '"online" | "away" | "offline"'
+        type: string
+      last_seen:
+        type: string
+    type: object
   internal_api.AddMembersRequest:
     properties:
       user_ids:
@@ -359,6 +483,11 @@ definitions:
     type: object
   internal_api.ServerInfoResponse:
     properties:
+      demo:
+        description: Demo is true on a public demo instance; clients show a notice
+          that data resets and is not private.
+        example: false
+        type: boolean
       needs_owner:
         description: 'NeedsOwner is true on a fresh server: the next account created
           becomes the owner.'
@@ -488,130 +617,6 @@ definitions:
         type: integer
       version:
         example: V1.0.0
-        type: string
-    type: object
-  cove_backend_internal_models.AuditEntry:
-    properties:
-      action:
-        description: e.g. "invite.create"
-        type: string
-      actor_id:
-        type: string
-      actor_name:
-        type: string
-      at:
-        type: string
-      id:
-        type: string
-      target:
-        description: e.g. a username or invite code (never a secret)
-        type: string
-    type: object
-  cove_backend_internal_models.Channel:
-    properties:
-      aes_key_enc:
-        description: Channel AES-256 key encrypted with server KEK
-        items:
-          type: integer
-        type: array
-      avatar_id:
-        type: string
-      created_at:
-        type: string
-      creator_id:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      invite_link:
-        description: Unique public/private join link
-        type: string
-      is_private:
-        description: If true, hidden from public search
-        type: boolean
-      last_message_at:
-        description: 'Ephemeral: Populated in ListUserChannels'
-        type: string
-      last_message_ciphertext:
-        description: |-
-          Ephemeral, populated in ListUserChannels: the channel's most recent
-          message, still encrypted — lets the client render a sidebar preview
-          without a second round-trip. The server never sees the plaintext.
-        items:
-          type: integer
-        type: array
-      last_message_id:
-        type: string
-      last_message_nonce:
-        items:
-          type: integer
-        type: array
-      last_message_sender_id:
-        type: string
-      last_message_type:
-        $ref: '#/definitions/cove_backend_internal_models.MessageType'
-      name:
-        type: string
-      unread_count:
-        description: 'Ephemeral: Populated per-user in handlers'
-        type: integer
-    type: object
-  cove_backend_internal_models.Message:
-    properties:
-      channel_id:
-        type: string
-      ciphertext:
-        description: AES-256-GCM encrypted payload
-        items:
-          type: integer
-        type: array
-      compression:
-        description: '"none", "zstd", etc.'
-        type: string
-      edited_at:
-        type: string
-      id:
-        type: string
-      nonce:
-        description: GCM nonce (also prepended in ciphertext)
-        items:
-          type: integer
-        type: array
-      reply_to_id:
-        type: string
-      sender_id:
-        type: string
-      sent_at:
-        type: string
-      sig:
-        description: 'Reserved: future sender signature'
-        items:
-          type: integer
-        type: array
-      type:
-        allOf:
-        - $ref: '#/definitions/cove_backend_internal_models.MessageType'
-        description: '"text" | "file" | "voice" | "video"'
-    type: object
-  cove_backend_internal_models.MessageType:
-    enum:
-    - text
-    - file
-    - voice
-    - video
-    type: string
-    x-enum-varnames:
-    - MessageTypeText
-    - MessageTypeFile
-    - MessageTypeVoice
-    - MessageTypeVideo
-  cove_backend_internal_models.Presence:
-    properties:
-      current_status:
-        description: '"online" | "away" | "offline"'
-        type: string
-      last_seen:
         type: string
     type: object
 host: localhost:4000
@@ -1540,7 +1545,8 @@ paths:
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "403":
-          description: registration closed, invite required or invite not valid
+          description: registration closed, invite required, invite not valid or demo
+            server full
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "409":
@@ -1548,7 +1554,7 @@ paths:
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "429":
-          description: Too Many Requests
+          description: too many sign-ups from this IP (demo mode)
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
       summary: Register a new account

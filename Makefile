@@ -41,8 +41,8 @@ test: ## Run all tests with race detector
 lint: ## Run golangci-lint
 	cd backend && golangci-lint run ./...
 
-swagger: ## Regenerate Swagger docs (requires swag in GOBIN)
-	cd backend && $(GOBIN)/swag init -g cmd/server/main.go --output docs --parseDependency
+swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
+	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
 
 ## ── Frontend ─────────────────────────────────────────────────────────────────
 front/install: ## Install web client deps (pnpm, frozen lockfile)

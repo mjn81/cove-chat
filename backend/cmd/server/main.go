@@ -158,6 +158,7 @@ func main() {
 			MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
 			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
 		}),
+		Demo:         cfg.Demo,
 		ConfigPath:   config.Path(),
 		DataDir:      cfg.Database.Path,
 		ServerDomain: cfg.Server.Domain,

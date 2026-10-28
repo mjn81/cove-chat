@@ -27,6 +27,12 @@ import (
 // It is automatically cleaned up when the test ends.
 func testServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	return testServerWith(t, nil)
+}
+
+// testServerWith is testServer with a hook to adjust the Handler (for example enabling demo mode) before routing is built.
+func testServerWith(t *testing.T, tweak func(h *api.Handler)) *httptest.Server {
+	t.Helper()
 
 	dir := t.TempDir()
 	tmpMeta := dir + "/meta"
@@ -55,6 +61,9 @@ func testServer(t *testing.T) *httptest.Server {
 		Storage:       &storage.FileSystemStorage{BaseDir: uploadDir},
 		TokenTTL:      tokenTTL,
 		MaxFileSizeMB: 10,
+	}
+	if tweak != nil {
+		tweak(handler)
 	}
 	router := api.NewRouter(handler, 1000, 1000) // high limits for testing
 	return httptest.NewServer(router)

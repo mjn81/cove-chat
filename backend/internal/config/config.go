@@ -21,6 +21,7 @@ type Config struct {
 	Voice        VoiceConfig        `toml:"voice"`
 	Registration RegistrationConfig `toml:"registration"`
 	Admin        AdminConfig        `toml:"admin"`
+	Demo         DemoConfig         `toml:"demo"`
 }
 
 // Registration modes.
@@ -327,4 +328,15 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+// DemoConfig turns the server into a public, abuse-resistant demo. Everything is off by default;
+// the limits only apply while Enabled is true. The first account on a fresh server (the owner
+// bootstrap) is exempt from the per-IP limit so the operator can always set the instance up.
+type DemoConfig struct {
+	Enabled bool `toml:"enabled"`
+	// MaxUsers caps the total number of accounts; 0 means no cap.
+	MaxUsers int `toml:"max_users"`
+	// SignupsPerIPPerDay caps new accounts per client IP in any rolling 24h; 0 means no cap.
+	SignupsPerIPPerDay int `toml:"signups_per_ip_per_day"`
 }

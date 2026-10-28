@@ -29,6 +29,8 @@
       "login_failed": "فشل تسجيل الدخول",
       "register_failed": "فشل التسجيل",
       "registration_closed": "التسجيل مغلق على هذا الخادم.",
+      "demo_full": "اكتمل التسجيل في هذا العرض التجريبي حاليًا. حاول لاحقًا أو شغّل خادمك الخاص.",
+      "demo_signup_limit": "تم إنشاء عدد كبير من الحسابات من شبكتك اليوم. حاول مرة أخرى غدًا.",
       "invite_required": "هذا الخادم بدعوة فقط. أدخل رمز الدعوة.",
       "invite_invalid": "رمز الدعوة غير صالح."
     },
@@ -339,6 +341,12 @@
     "photo_counter": "{{current}} من {{total}}",
     "download_photo": "تنزيل الصورة",
     "photo_unavailable": "الصورة غير متاحة"
+  },
+  "window": {
+    "minimize": "تصغير",
+    "maximize": "تكبير",
+    "restore": "استعادة",
+    "close": "إغلاق"
   },
   "call": {
     "mute": "كتم",

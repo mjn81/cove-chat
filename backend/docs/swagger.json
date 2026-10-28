@@ -1427,7 +1427,7 @@
                         }
                     },
                     "403": {
-                        "description": "registration closed, invite required or invite not valid",
+                        "description": "registration closed, invite required, invite not valid or demo server full",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -1439,7 +1439,7 @@
                         }
                     },
                     "429": {
-                        "description": "Too Many Requests",
+                        "description": "too many sign-ups from this IP (demo mode)",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -1650,6 +1650,182 @@
         }
     },
     "definitions": {
+        "cove_backend_internal_models.AuditEntry": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "e.g. \"invite.create\"",
+                    "type": "string"
+                },
+                "actor_id": {
+                    "type": "string"
+                },
+                "actor_name": {
+                    "type": "string"
+                },
+                "at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "target": {
+                    "description": "e.g. a username or invite code (never a secret)",
+                    "type": "string"
+                }
+            }
+        },
+        "cove_backend_internal_models.Channel": {
+            "type": "object",
+            "properties": {
+                "aes_key_enc": {
+                    "description": "Channel AES-256 key encrypted with server KEK",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "avatar_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invite_link": {
+                    "description": "Unique public/private join link",
+                    "type": "string"
+                },
+                "is_private": {
+                    "description": "If true, hidden from public search",
+                    "type": "boolean"
+                },
+                "last_message_at": {
+                    "description": "Ephemeral: Populated in ListUserChannels",
+                    "type": "string"
+                },
+                "last_message_ciphertext": {
+                    "description": "Ephemeral, populated in ListUserChannels: the channel's most recent\nmessage, still encrypted — lets the client render a sidebar preview\nwithout a second round-trip. The server never sees the plaintext.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "last_message_id": {
+                    "type": "string"
+                },
+                "last_message_nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "last_message_sender_id": {
+                    "type": "string"
+                },
+                "last_message_type": {
+                    "$ref": "#/definitions/cove_backend_internal_models.MessageType"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unread_count": {
+                    "description": "Ephemeral: Populated per-user in handlers",
+                    "type": "integer"
+                }
+            }
+        },
+        "cove_backend_internal_models.Message": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "string"
+                },
+                "ciphertext": {
+                    "description": "AES-256-GCM encrypted payload",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "compression": {
+                    "description": "\"none\", \"zstd\", etc.",
+                    "type": "string"
+                },
+                "edited_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nonce": {
+                    "description": "GCM nonce (also prepended in ciphertext)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "reply_to_id": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                },
+                "sent_at": {
+                    "type": "string"
+                },
+                "sig": {
+                    "description": "Reserved: future sender signature",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "type": {
+                    "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/cove_backend_internal_models.MessageType"
+                        }
+                    ]
+                }
+            }
+        },
+        "cove_backend_internal_models.MessageType": {
+            "type": "string",
+            "enum": [
+                "text",
+                "file",
+                "voice",
+                "video"
+            ],
+            "x-enum-varnames": [
+                "MessageTypeText",
+                "MessageTypeFile",
+                "MessageTypeVoice",
+                "MessageTypeVideo"
+            ]
+        },
+        "cove_backend_internal_models.Presence": {
+            "type": "object",
+            "properties": {
+                "current_status": {
+                    "description": "\"online\" | \"away\" | \"offline\"",
+                    "type": "string"
+                },
+                "last_seen": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.AddMembersRequest": {
             "type": "object",
             "properties": {
@@ -2171,6 +2347,11 @@
         "internal_api.ServerInfoResponse": {
             "type": "object",
             "properties": {
+                "demo": {
+                    "description": "Demo is true on a public demo instance; clients show a notice that data resets and is not private.",
+                    "type": "boolean",
+                    "example": false
+                },
                 "needs_owner": {
                     "description": "NeedsOwner is true on a fresh server: the next account created becomes the owner.",
                     "type": "boolean",
@@ -2358,182 +2539,6 @@
                 "version": {
                     "type": "string",
                     "example": "V1.0.0"
-                }
-            }
-        },
-        "cove_backend_internal_models.AuditEntry": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "description": "e.g. \"invite.create\"",
-                    "type": "string"
-                },
-                "actor_id": {
-                    "type": "string"
-                },
-                "actor_name": {
-                    "type": "string"
-                },
-                "at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "target": {
-                    "description": "e.g. a username or invite code (never a secret)",
-                    "type": "string"
-                }
-            }
-        },
-        "cove_backend_internal_models.Channel": {
-            "type": "object",
-            "properties": {
-                "aes_key_enc": {
-                    "description": "Channel AES-256 key encrypted with server KEK",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "avatar_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "creator_id": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "invite_link": {
-                    "description": "Unique public/private join link",
-                    "type": "string"
-                },
-                "is_private": {
-                    "description": "If true, hidden from public search",
-                    "type": "boolean"
-                },
-                "last_message_at": {
-                    "description": "Ephemeral: Populated in ListUserChannels",
-                    "type": "string"
-                },
-                "last_message_ciphertext": {
-                    "description": "Ephemeral, populated in ListUserChannels: the channel's most recent\nmessage, still encrypted — lets the client render a sidebar preview\nwithout a second round-trip. The server never sees the plaintext.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "last_message_id": {
-                    "type": "string"
-                },
-                "last_message_nonce": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "last_message_sender_id": {
-                    "type": "string"
-                },
-                "last_message_type": {
-                    "$ref": "#/definitions/cove_backend_internal_models.MessageType"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "unread_count": {
-                    "description": "Ephemeral: Populated per-user in handlers",
-                    "type": "integer"
-                }
-            }
-        },
-        "cove_backend_internal_models.Message": {
-            "type": "object",
-            "properties": {
-                "channel_id": {
-                    "type": "string"
-                },
-                "ciphertext": {
-                    "description": "AES-256-GCM encrypted payload",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "compression": {
-                    "description": "\"none\", \"zstd\", etc.",
-                    "type": "string"
-                },
-                "edited_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "nonce": {
-                    "description": "GCM nonce (also prepended in ciphertext)",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "reply_to_id": {
-                    "type": "string"
-                },
-                "sender_id": {
-                    "type": "string"
-                },
-                "sent_at": {
-                    "type": "string"
-                },
-                "sig": {
-                    "description": "Reserved: future sender signature",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "type": {
-                    "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/cove_backend_internal_models.MessageType"
-                        }
-                    ]
-                }
-            }
-        },
-        "cove_backend_internal_models.MessageType": {
-            "type": "string",
-            "enum": [
-                "text",
-                "file",
-                "voice",
-                "video"
-            ],
-            "x-enum-varnames": [
-                "MessageTypeText",
-                "MessageTypeFile",
-                "MessageTypeVoice",
-                "MessageTypeVideo"
-            ]
-        },
-        "cove_backend_internal_models.Presence": {
-            "type": "object",
-            "properties": {
-                "current_status": {
-                    "description": "\"online\" | \"away\" | \"offline\"",
-                    "type": "string"
-                },
-                "last_seen": {
-                    "type": "string"
                 }
             }
         }

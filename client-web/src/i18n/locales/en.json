@@ -41,6 +41,8 @@
 			"login_failed": "Login failed",
 			"register_failed": "Registration failed",
 			"registration_closed": "Registration is closed on this server.",
+			"demo_full": "Sign-ups on this demo are full right now. Try again later or host your own server.",
+			"demo_signup_limit": "Too many accounts were created from your network today. Try again tomorrow.",
 			"invite_required": "This server is invite-only. Enter an invitation code.",
 			"invite_invalid": "That invitation code is not valid."
 		},
@@ -339,6 +341,12 @@
 		"photo_counter": "{{current}} of {{total}}",
 		"download_photo": "Download photo",
 		"photo_unavailable": "Image not available"
+	},
+	"window": {
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"restore": "Restore",
+		"close": "Close"
 	},
 	"call": {
 		"mute": "Mute",
