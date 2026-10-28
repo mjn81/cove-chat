@@ -11,6 +11,8 @@ type RegisterRequest struct {
 	Password string `json:"password" example:"s3cur3P@ss!"`
 	// InviteCode is required when the server runs in invite-only mode.
 	InviteCode string `json:"invite_code,omitempty" example:"K7M2-X9QF"`
+	// TurnstileToken is the Cloudflare Turnstile response, required when the server publishes a turnstile_site_key.
+	TurnstileToken string `json:"turnstile_token,omitempty" example:"0.abcDEF..."`
 }
 
 type RegisterResponse struct {

@@ -339,4 +339,9 @@ type DemoConfig struct {
 	MaxUsers int `toml:"max_users"`
 	// SignupsPerIPPerDay caps new accounts per client IP in any rolling 24h; 0 means no cap.
 	SignupsPerIPPerDay int `toml:"signups_per_ip_per_day"`
+	// TurnstileSiteKey is the public Cloudflare Turnstile key; the web client renders the widget with it.
+	TurnstileSiteKey string `toml:"turnstile_site_key"`
+	// TurnstileSecretKey verifies sign-up tokens server-side. Prefer the COVE_TURNSTILE_SECRET_KEY environment
+	// variable so the secret stays out of config.toml. The bot check is off unless both keys are set.
+	TurnstileSecretKey string `toml:"turnstile_secret_key"`
 }

@@ -54,6 +54,11 @@ type Handler struct {
 	// Demo holds the opt-in public-demo limits (config [demo]); the zero value is a normal server.
 	Demo config.DemoConfig
 
+	// Captcha verifies the sign-up bot-check token; nil disables the check. TurnstileSiteKey is the public
+	// key clients use to render the widget (published through /api/server-info).
+	Captcha          CaptchaVerifier
+	TurnstileSiteKey string
+
 	// signups is ephemeral by design: per-IP signup timestamps are only a short-lived abuse
 	// throttle, so losing them on restart is acceptable and they need no persistence.
 	signups signupLimiter

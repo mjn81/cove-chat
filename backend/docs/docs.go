@@ -1397,7 +1397,7 @@ const docTemplate = `{
         },
         "/api/register": {
             "post": {
-                "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\n**Access:** Public.",
+                "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\nOn a server that publishes a turnstile_site_key (public demo) every sign-up except the first must carry a valid turnstile_token.\n**Access:** Public.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1446,6 +1446,12 @@ const docTemplate = `{
                     },
                     "429": {
                         "description": "too many sign-ups from this IP (demo mode)",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "bot-check service unreachable",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -2319,6 +2325,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "s3cur3P@ss!"
                 },
+                "turnstile_token": {
+                    "description": "TurnstileToken is the Cloudflare Turnstile response, required when the server publishes a turnstile_site_key.",
+                    "type": "string",
+                    "example": "0.abcDEF..."
+                },
                 "username": {
                     "type": "string",
                     "example": "alice"
@@ -2367,6 +2378,11 @@ const docTemplate = `{
                     "description": "RegistrationMode is \"open\", \"invite_only\" or \"closed\".",
                     "type": "string",
                     "example": "invite_only"
+                },
+                "turnstile_site_key": {
+                    "description": "TurnstileSiteKey is set when sign-ups need a Cloudflare Turnstile token; the register page renders the widget with it.",
+                    "type": "string",
+                    "example": "0x4AAAAAAAexample"
                 }
             }
         },

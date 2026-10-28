@@ -11,6 +11,8 @@ type ServerInfoResponse struct {
 	NeedsOwner bool `json:"needs_owner" example:"false"`
 	// Demo is true on a public demo instance; clients show a notice that data resets and is not private.
 	Demo bool `json:"demo" example:"false"`
+	// TurnstileSiteKey is set when sign-ups need a Cloudflare Turnstile token; the register page renders the widget with it.
+	TurnstileSiteKey string `json:"turnstile_site_key,omitempty" example:"0x4AAAAAAAexample"`
 }
 
 // GetServerInfo godoc
@@ -23,9 +25,13 @@ type ServerInfoResponse struct {
 //	@Success     200 {object} ServerInfoResponse
 //	@Router      /api/server-info [get]
 func (h *Handler) GetServerInfo(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, ServerInfoResponse{
+	info := ServerInfoResponse{
 		RegistrationMode: h.registrationMode(),
 		NeedsOwner:       !h.Store.HasOwner(),
 		Demo:             h.Demo.Enabled,
-	})
+	}
+	if h.Captcha != nil {
+		info.TurnstileSiteKey = h.TurnstileSiteKey
+	}
+	writeJSON(w, http.StatusOK, info)
 }

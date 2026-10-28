@@ -120,3 +120,5 @@ mode = "open"
 # enabled = false
 # max_users = 200               # total accounts allowed; 0 = no cap
 # signups_per_ip_per_day = 3    # new accounts per client IP per rolling 24h; 0 = no cap
+# turnstile_site_key = ""      # Cloudflare Turnstile public key; with the secret it gates sign-up
+# turnstile_secret_key = ""    # prefer the COVE_TURNSTILE_SECRET_KEY env var over putting the secret here

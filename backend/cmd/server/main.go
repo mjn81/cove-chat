@@ -168,6 +168,16 @@ func main() {
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 
+	// Sign-up bot check (public demo): needs both Turnstile keys. The secret may come from the environment.
+	turnstileSecret := cfg.Demo.TurnstileSecretKey
+	if env := os.Getenv("COVE_TURNSTILE_SECRET_KEY"); env != "" {
+		turnstileSecret = env
+	}
+	if cfg.Demo.Enabled && turnstileSecret != "" && cfg.Demo.TurnstileSiteKey != "" {
+		apiHandler.Captcha = api.NewTurnstileVerifier(turnstileSecret)
+		apiHandler.TurnstileSiteKey = cfg.Demo.TurnstileSiteKey
+	}
+
 	rootMux := http.NewServeMux()
 	rootMux.Handle("/ws", hub)
 	// Swagger UI — available at /api/docs/ only in dev mode

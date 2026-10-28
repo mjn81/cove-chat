@@ -3,6 +3,7 @@
 import { logger } from '@/utils/logger';
 import { isWails } from '@/utils/wails';
 import axios, { AxiosError } from 'axios';
+import type { PublicServerInfo } from '@/domains/auth/types/auth.types';
 
 // ─────────────────────────────────────────────
 // Environment
@@ -186,21 +187,20 @@ export function request<T>(axiosCall: Promise<unknown>): Promise<T> {
 // ─────────────────────────────────────────────
 // Auth API
 // ─────────────────────────────────────────────
-export async function apiRegister(username: string, password: string, inviteCode?: string) {
+export async function apiRegister(username: string, password: string, inviteCode?: string, turnstileToken?: string) {
 	return request<{ id: string; username: string }>(
 		apiClient.post('/api/register', {
 			username,
 			password,
 			...(inviteCode ? { invite_code: inviteCode } : {}),
+			...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
 		}),
 	);
 }
 
 /** Public sign-up policy, so the register page can adapt before the user types. */
 export async function apiServerInfo() {
-	return request<{ registration_mode: 'open' | 'invite_only' | 'closed'; needs_owner: boolean }>(
-		apiClient.get('/api/server-info'),
-	);
+	return request<PublicServerInfo>(apiClient.get('/api/server-info'));
 }
 
 export async function apiLogin(username: string, password: string) {

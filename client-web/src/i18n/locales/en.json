@@ -44,7 +44,10 @@
 			"demo_full": "Sign-ups on this demo are full right now. Try again later or host your own server.",
 			"demo_signup_limit": "Too many accounts were created from your network today. Try again tomorrow.",
 			"invite_required": "This server is invite-only. Enter an invitation code.",
-			"invite_invalid": "That invitation code is not valid."
+			"invite_invalid": "That invitation code is not valid.",
+			"captcha_required": "Please complete the human check first.",
+			"captcha_failed": "The human check failed. Please try again.",
+			"captcha_unavailable": "The human check service is unavailable right now. Please try again in a minute."
 		},
 		"invite_code": "Invitation code"
 	},
@@ -824,5 +827,11 @@
 		"trustNote": "{{app}} stores your messages securely, but relies on the server for key management. Ensure you trust the host before sending sensitive data.",
 		"openSource": "{{app}} is open source",
 		"madeBy": "made with ❤️ by"
+	},
+	"demo": {
+		"banner": "Public demo · resets every night · do not share anything private",
+		"dismiss": "Dismiss",
+		"registerOnWeb": "Demo sign-ups need a quick human check, which only works in the browser. Create your demo account on the web, then sign in here.",
+		"registerOnWebLink": "Open the demo sign-up page"
 	}
 }

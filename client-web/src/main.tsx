@@ -17,6 +17,7 @@ import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
+import { DemoBanner } from './domains/demo/components/demo-banner';
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -38,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
 			<QueryClientProvider client={queryClient}>
 				<App />
 				<Toaster dir="auto" />
+				<DemoBanner />
 			</QueryClientProvider>
 		</ErrorBoundary>
 	</StrictMode>,
