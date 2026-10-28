@@ -262,5 +262,6 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", f.SizeBytes))
-	io.Copy(w, rc)
+	// A client that disconnects mid-download is expected; there is nobody left to report the error to.
+	_, _ = io.Copy(w, rc)
 }

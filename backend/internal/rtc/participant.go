@@ -27,18 +27,6 @@ const (
 	kindScreen trackKind = "screen"
 )
 
-func classifyTrack(remote *webrtc.TrackRemote) trackKind {
-	streamID := strings.ToLower(remote.StreamID())
-	trackID := strings.ToLower(remote.ID())
-	if streamID == "screen" || trackID == "screen" || strings.Contains(streamID, "screen") || strings.Contains(trackID, "screen") {
-		return kindScreen
-	}
-	if remote.Kind() == webrtc.RTPCodecTypeAudio {
-		return kindAudio
-	}
-	return kindVideo
-}
-
 func (p *Participant) classifyTrack(remote *webrtc.TrackRemote) trackKind {
 	streamID := strings.ToLower(remote.StreamID())
 	trackID := strings.ToLower(remote.ID())

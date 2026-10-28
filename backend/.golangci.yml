@@ -1,0 +1,24 @@
+version: "2"
+
+linters:
+  default: standard
+  settings:
+    errcheck:
+      # Cleanup calls whose failure cannot be acted on (the data is already written or the handle is going away).
+      exclude-functions:
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (net.Conn).Close
+        - (net.PacketConn).Close
+        - (*net.UDPConn).Close
+        - (net.Listener).Close
+        - (*bytes.Buffer).Write
+        - os.Remove
+        - os.RemoveAll
+        - fmt.Fprintf
+        - fmt.Fprintln
+  exclusions:
+    rules:
+      # Tests defer Close/cleanup freely; the unchecked errors there carry no signal.
+      - path: _test\.go
+        linters: [errcheck]

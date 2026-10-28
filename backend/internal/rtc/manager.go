@@ -99,6 +99,7 @@ func NewManager(cfg Config, membership MembershipChecker, sender Sender) (*Manag
 		// addition to) the interface-local address it actually bound —
 		// required whenever the process sits behind NAT/a container port
 		// mapping/a cloud load balancer, or clients could never reach it.
+		//nolint:staticcheck // SA1019: SetICEAddressRewriteRules is the replacement; migrating it needs a media test pass, tracked separately.
 		settingEngine.SetNAT1To1IPs([]string{cfg.PublicIP}, webrtc.ICECandidateTypeHost)
 	}
 

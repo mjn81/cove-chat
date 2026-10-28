@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"cove/backend/internal/crypto"
 	badger "github.com/dgraph-io/badger/v4"
@@ -185,9 +184,6 @@ const (
 func userKey(id string) string     { return prefixUser + id }
 func channelKey(id string) string  { return prefixChannel + id }
 func ucKey(uid, cid string) string { return prefixUserChannel + uid + ":" + cid }
-func messageKey(cid string, ts time.Time) string {
-	return fmt.Sprintf("%s%s:%019d", prefixMessage, cid, ts.UnixNano())
-}
 func presenceKey(uid string) string  { return prefixPresence + uid }
 func fileKey(id string) string       { return prefixFile + id }
 func sessionKey(token string) string { return prefixSession + token }
@@ -214,7 +210,7 @@ func BootstrapDEK(metaPath string, kek []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("db: failed to open meta store: %w", err)
 	}
-	defer metaDB.Close()
+	defer func() { _ = metaDB.Close() }()
 
 	var encryptedDEK []byte
 	err = metaDB.View(func(txn *badger.Txn) error {

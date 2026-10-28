@@ -58,7 +58,7 @@ func discoverViaSTUNServer(server string, timeout time.Duration) (string, error)
 	if err != nil {
 		return "", fmt.Errorf("dial %s: %w", server, err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	type result struct {
 		ip  string

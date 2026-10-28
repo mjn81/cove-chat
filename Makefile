@@ -38,8 +38,8 @@ run: dev-back ## Run standalone backend (alias for dev-back)
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
 
-lint: ## Run golangci-lint
-	cd backend && golangci-lint run ./...
+lint: ## Run golangci-lint (via go run, no install needed)
+	cd backend && $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
 
 swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
 	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
@@ -106,30 +106,35 @@ wails/dev: build ## Run Wails in dev mode (hot-reload desktop app)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
+	touch client-desktop/frontend/dist/.gitkeep
 	cd client-desktop && $(GOBIN)/wails dev -s
 
 wails/build: build front/build ## Build production Wails desktop binary
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
+	touch client-desktop/frontend/dist/.gitkeep
 	cd client-desktop && $(GOBIN)/wails build -clean -s
 
 wails/build/mac: build front/build ## Build macOS universal binary
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
+	touch client-desktop/frontend/dist/.gitkeep
 	cd client-desktop && $(GOBIN)/wails build -clean -platform darwin/universal -s
 
 wails/build/windows: build front/build ## Build Windows binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
+	touch client-desktop/frontend/dist/.gitkeep
 	cd client-desktop && $(GOBIN)/wails build -clean -platform windows/amd64 -s
 
 wails/build/linux: build front/build ## Build Linux binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
+	touch client-desktop/frontend/dist/.gitkeep
 	cd client-desktop && $(GOBIN)/wails build -clean -platform linux/amd64 -s
 
 backend/release: ## Build backend binaries for multiple platforms

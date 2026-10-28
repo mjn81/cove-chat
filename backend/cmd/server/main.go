@@ -321,7 +321,7 @@ func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
 	logger.Infof("UDP voice router on :%d", port)
 
 	go func() {
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		router.HandleConn(conn)
 	}()
 

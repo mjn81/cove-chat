@@ -321,7 +321,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		h.BroadcastPresence(session.UserID, "offline")
 	}
-	conn.Close(websocket.StatusNormalClosure, "goodbye")
+	_ = conn.Close(websocket.StatusNormalClosure, "goodbye")
 }
 
 // writePump handles outgoing messages from the Hub to the Client.
@@ -329,7 +329,7 @@ func (c *Client) writePump(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close(websocket.StatusAbnormalClosure, "write pump closed")
+		_ = c.conn.Close(websocket.StatusAbnormalClosure, "write pump closed")
 	}()
 
 	// Push channel keys in background immediately
@@ -364,7 +364,7 @@ func (c *Client) writePump(ctx context.Context) {
 // readPump handles incoming messages from the Client to the Hub.
 func (c *Client) readPump(ctx context.Context) {
 	defer func() {
-		c.conn.Close(websocket.StatusAbnormalClosure, "read pump closed")
+		_ = c.conn.Close(websocket.StatusAbnormalClosure, "read pump closed")
 	}()
 
 	for {
