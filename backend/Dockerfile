@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.26-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
 
 # TARGETOS and TARGETARCH are automatically set by Docker buildx
 ARG TARGETOS

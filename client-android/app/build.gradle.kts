@@ -29,8 +29,23 @@ android {
         }
     }
 
+    // Release signing comes from the environment (CI secrets). Without a keystore the release build falls
+    // back to the debug key so beta APKs stay installable; the workflow logs which one was used.
+    signingConfigs {
+        create("release") {
+            val keystore = System.getenv("COVE_KEYSTORE_FILE")
+            if (!keystore.isNullOrBlank()) {
+                storeFile = file(keystore)
+                storePassword = System.getenv("COVE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("COVE_KEY_ALIAS")
+                keyPassword = System.getenv("COVE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = if (System.getenv("COVE_KEYSTORE_FILE").isNullOrBlank()) signingConfigs.getByName("debug") else signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

@@ -1,0 +1,265 @@
+name: Release
+
+# Runs only on a version tag (v1.2.3 / v1.2.3-rc.1) or by hand. A manual run builds everything
+# but publishes nothing, which makes it the dry run for the pipeline. Nothing here runs on ordinary pushes.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Docker Hub is optional: without these secrets only GHCR is pushed.
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publish: ${{ steps.v.outputs.publish }}
+      rc: ${{ steps.v.outputs.rc }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match VERSION ($version). Bump VERSION and run 'make version/sync' first."
+              exit 1
+            fi
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          case "$version" in *-*) echo "rc=true" >> "$GITHUB_OUTPUT" ;; *) echo "rc=false" >> "$GITHUB_OUTPUT" ;; esac
+          # Every 0.x build and every -rc build is a GitHub pre-release: the website labels those Beta.
+          case "$version" in 0.*|*-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  server:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Cross-compile (CGO is off, so one runner builds every OS)
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+
+          mkdir -p dist
+          cd backend
+          for t in linux/amd64 linux/arm64 windows/amd64 darwin/amd64 darwin/arm64; do
+            os=${t%/*}; arch=${t#*/}
+            ext=""; [ "$os" = windows ] && ext=".exe"
+            name="cove-server-${os}-${arch}"
+            mkdir -p ../dist/tmp
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X cove/backend/internal/version.Version=${VERSION}" \
+              -o "../dist/tmp/${name}${ext}" ./cmd/server
+            (cd ../dist/tmp && zip -q "../${name}.zip" "${name}${ext}")
+            rm -rf ../dist/tmp
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server
+          path: dist/*.zip
+          if-no-files-found: error
+
+  desktop:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows/amd64
+            asset: cove-desktop-windows-amd64.zip
+          - os: macos-latest
+            platform: darwin/universal
+            asset: cove-desktop-mac-universal.zip
+          - os: ubuntu-latest
+            platform: linux/amd64
+            asset: cove-desktop-linux-amd64.zip
+            tags: webkit2_41
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: client-desktop/go.mod
+          cache-dependency-path: client-desktop/go.sum
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: client-web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: client-web/pnpm-lock.yaml
+      - name: Linux system libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+      - run: make front/install front/build
+      - name: Embed the web client
+        run: |
+          rm -rf client-desktop/frontend/dist
+          mkdir -p client-desktop/frontend/dist
+          cp -r client-web/dist/* client-desktop/frontend/dist/
+      - name: Build
+        working-directory: client-desktop
+        run: wails build -clean -s -platform ${{ matrix.platform }} ${{ matrix.tags && format('-tags {0}', matrix.tags) || '' }}
+      - name: Package
+        run: |
+
+          mkdir -p dist
+          cd client-desktop/build/bin
+          case "${{ runner.os }}" in
+            Windows) 7z a -tzip "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" Cove.exe ;;
+            macOS)   ditto -c -k --keepParent Cove.app "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" ;;
+            Linux)   zip -q "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" Cove ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      COVE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      COVE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      COVE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/cove.jks"
+            echo "COVE_KEYSTORE_FILE=$RUNNER_TEMP/cove.jks" >> "$GITHUB_ENV"
+            echo "Signing with the release keystore."
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; the APK is signed with the debug key and must not be shipped as a stable release."
+          fi
+      - name: Build APK and AAB
+        working-directory: client-android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease :app:bundleRelease
+      - name: Collect
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+
+          mkdir -p dist
+          cp client-android/app/build/outputs/apk/release/*.apk "dist/cove-android-${VERSION}.apk"
+          cp client-android/app/build/outputs/bundle/release/*.aab "dist/cove-android-${VERSION}.aab"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*
+          if-no-files-found: error
+
+  docker:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: cove-server
+            context: backend
+          - name: cove-webclient
+            context: client-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: needs.prepare.outputs.publish == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        if: needs.prepare.outputs.publish == 'true' && env.DOCKERHUB_TOKEN != ''
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
+            ${{ env.DOCKERHUB_USERNAME != '' && format('{0}/{1}', env.DOCKERHUB_USERNAME, matrix.name) || '' }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.rc == 'false' }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ needs.prepare.outputs.publish == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ needs.prepare.outputs.version }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  publish:
+    needs: [prepare, server, desktop, android, docker]
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Checksums
+        working-directory: assets
+        run: sha256sum * > SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: assets/*
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          flag=""; [ "$PRERELEASE" = "true" ] && flag="--prerelease"
+          gh release create "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" \
+            --title "Cove ${GITHUB_REF_NAME#v}" --generate-notes $flag
