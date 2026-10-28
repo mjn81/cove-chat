@@ -7,8 +7,8 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 // Production lives at https://covechat.dev (GitHub Pages custom domain, see public/CNAME). Override with SITE_URL / SITE_BASE for previews (for example a project path like /cove-chat).
-const site = process.env.SITE_URL ?? 'https://covechat.dev';
-const base = process.env.SITE_BASE ?? '/';
+const site = process.env.SITE_URL || 'https://covechat.dev';
+const base = process.env.SITE_BASE || '/';
 
 /**
  * Slugs (e.g. 'docs/getting-started/quick-start') that have a real translation under src/content/docs/<lang>.
