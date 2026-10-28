@@ -102,7 +102,7 @@ func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte, isDev bool,
 		sessions:        sessions,
 		kek:             kek,
 		isDev:           isDev,
-		originPatterns:  originPatternsFrom(frontendOrigin),
+		originPatterns:  append(originPatternsFrom(frontendOrigin), desktopOrigins...),
 		broadcast:       make(chan *envelope, 256),
 	}
 	go h.run()
@@ -121,6 +121,13 @@ func (h *Hub) SetVoiceRouter(r voiceUserRemover) {
 func (h *Hub) SetRTCManager(r RTCSignalHandler) {
 	h.rtc = r
 }
+
+// desktopOrigins are the Origin values the Wails desktop shell sends (Windows uses http://wails.localhost,
+// newer WebView2 setups https://wails.localhost, macOS and Linux wails://wails.localhost). They are never
+// the server's frontend_origin, and REST already allows them through CORS, so the WebSocket must too or the
+// desktop app signs in but stays offline. Allowing them is safe: the desktop authenticates with a Bearer
+// token in the subprotocol, never with an ambient cookie, and a hostile web page cannot send these Origins.
+var desktopOrigins = []string{"http://wails.localhost", "https://wails.localhost", "wails://wails.localhost"}
 
 // originPatternsFrom converts a comma-separated list of origins (e.g.
 // "https://chat.example.com,https://admin.example.com") into the
