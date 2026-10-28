@@ -16,7 +16,7 @@
 	},
 	"debounceMS": 100,
 	"devserver": "localhost:34115",
-	"appID": "com.nodetalk.app",
+	"appID": "com.cove.chat.desktop",
 	"platforms": [
 		{
 			"platform": "darwin/universal",

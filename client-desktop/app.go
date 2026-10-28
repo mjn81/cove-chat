@@ -39,9 +39,9 @@ func (a *App) loadConfig() {
 		if err != nil {
 			return
 		}
-		configDir = filepath.Join(home, ".nodetalk")
+		configDir = filepath.Join(home, ".cove")
 	} else {
-		configDir = filepath.Join(configDir, "NodeTalk")
+		configDir = filepath.Join(configDir, "Cove")
 	}
 
 	configPath := filepath.Join(configDir, "config.json")
@@ -60,9 +60,9 @@ func (a *App) saveConfig() {
 		if err != nil {
 			return
 		}
-		configDir = filepath.Join(home, ".nodetalk")
+		configDir = filepath.Join(home, ".cove")
 	} else {
-		configDir = filepath.Join(configDir, "NodeTalk")
+		configDir = filepath.Join(configDir, "Cove")
 	}
 
 	_ = os.MkdirAll(configDir, 0755)
@@ -98,8 +98,9 @@ func (a *App) SaveServerURL(url string) {
 	a.saveConfig()
 }
 
+// AppVersion returns the desktop app version.
 func (a *App) AppVersion() string {
-	return "0.1.0-dev"
+	return "0.9.0"
 }
 
 // SaveFile opens a save dialog and writes the data to the chosen path.

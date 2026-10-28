@@ -1,4 +1,4 @@
-module nodetalk/desktop
+module cove/desktop
 
 go 1.25.5
 

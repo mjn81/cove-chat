@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 // frontend/dist is embedded at build time via `wails build`.
@@ -38,6 +39,18 @@ func main() {
 
 		// Expose App struct methods to the frontend via window.go.*
 		Bind: []any{app},
+
+		// Windows: keep the OS-drawn frame so the native minimize / maximize /
+		// close buttons, snap layouts and DPI scaling work. The web UI draws no
+		// custom title bar. Transparency is off because Win10 renders it poorly.
+		Frameless: false,
+		Windows: &windows.Options{
+			Theme:                             windows.SystemDefault,
+			WebviewIsTransparent:              false,
+			WindowIsTranslucent:               false,
+			DisableFramelessWindowDecorations: true,
+			ZoomFactor:                        1.0,
+		},
 
 		// macOS specific
 		Mac: &mac.Options{
