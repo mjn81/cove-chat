@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.2](https://github.com/mjn81/cove-chat/compare/v0.9.1...v0.9.2) (2026-10-28)
+
+
+### Features
+
+* **clients:** https-first server addresses, public demo shortcut, connect docs ([b77ca22](https://github.com/mjn81/cove-chat/commit/b77ca225e791afb20f6f4f3d80f25961079ce10f))
+* **demo:** Turnstile sign-up bot check and a dismissible demo banner ([d8f3853](https://github.com/mjn81/cove-chat/commit/d8f3853e7630b934db3887ef70813d6475415400))
+
+
+### Bug Fixes
+
+* **ci:** publish only our own artifacts, skip docker build records ([3434224](https://github.com/mjn81/cove-chat/commit/3434224b13aba840961d4d4b6ff59363bd995ae3))
+* **clients:** save the https origin when http is redirected to https ([5150dbd](https://github.com/mjn81/cove-chat/commit/5150dbd2b1379cd26ad04f3204e8a2e64eb2c8e3))
+* **website:** restore nav blur, per-arch download links, rebuild site after each release ([898075c](https://github.com/mjn81/cove-chat/commit/898075c1aa8be48270928f3bd475bdb5a8e33b1e))
+* **ws:** allow the Wails desktop origins on the WebSocket ([af48b7f](https://github.com/mjn81/cove-chat/commit/af48b7f05f0aa9fdeb0d0bea07c44bd0b4b291ca))
+
 ## [0.9.1](https://github.com/mjn81/cove-chat/compare/v0.9.0...v0.9.1) (2026-10-28)
 
 
