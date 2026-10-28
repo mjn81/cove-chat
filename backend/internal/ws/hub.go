@@ -65,6 +65,10 @@ type Hub struct {
 	voiceRouter voiceUserRemover
 	rtc         RTCSignalHandler
 
+	// background counts connection work that still reads the store (the handler goroutine and the channel-key
+	// push). Close waits for it, so shutting down never closes the database underneath a live connection.
+	background sync.WaitGroup
+
 	isDev          bool
 	originPatterns []string
 
@@ -148,7 +152,32 @@ func originPatternsFrom(frontendOrigin string) []string {
 	return patterns
 }
 
-// Close gracefully disconnects all active WebSocket clients.
+// beginBackground registers one unit of work that Close must wait for. It reports false once the hub is
+// closed, in which case the caller must not start the work. Add happens under the same lock that sets the
+// closed flag, so it can never race with the Wait in Close.
+func (h *Hub) beginBackground() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		return false
+	}
+	h.background.Add(1)
+	return true
+}
+
+// goBackground runs fn in a goroutine that Close waits for; it does nothing once the hub is closed.
+func (h *Hub) goBackground(fn func()) {
+	if !h.beginBackground() {
+		return
+	}
+	go func() {
+		defer h.background.Done()
+		fn()
+	}()
+}
+
+// Close gracefully disconnects all active WebSocket clients and waits for their teardown, so the caller can
+// close the database right after it returns.
 func (h *Hub) Close() {
 	h.mu.Lock()
 	if h.closed {
@@ -166,6 +195,7 @@ func (h *Hub) Close() {
 	for _, c := range allClients {
 		_ = c.conn.Close(websocket.StatusGoingAway, "server shutting down")
 	}
+	h.background.Wait()
 }
 
 // DisconnectAllExcept closes every WebSocket except those of keepUserID. The
@@ -257,6 +287,12 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.Warnf("ws: upgrade failed for user %s: %v", session.UserID, err)
 		return
 	}
+	// Track this connection until its teardown (which still uses the store) has finished.
+	if !h.beginBackground() {
+		_ = conn.Close(websocket.StatusGoingAway, "server shutting down")
+		return
+	}
+	defer h.background.Done()
 	// Set a generous read limit for encrypted file/voice payloads (20 MB).
 	conn.SetReadLimit(20 << 20)
 
@@ -340,7 +376,7 @@ func (c *Client) writePump(ctx context.Context) {
 	}()
 
 	// Push channel keys in background immediately
-	go c.writeChannelKeys(ctx, c.hub.store, c.hub.kek)
+	c.hub.goBackground(func() { c.writeChannelKeys(ctx, c.hub.store, c.hub.kek) })
 
 	for {
 		select {
