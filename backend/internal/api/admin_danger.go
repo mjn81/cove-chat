@@ -13,8 +13,8 @@ import (
 
 	"golang.org/x/crypto/argon2"
 
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 )
 
 // backupMagic prefixes every archive so restore can reject foreign files early.

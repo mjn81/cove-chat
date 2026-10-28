@@ -12,15 +12,15 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/models"
 )
 
 // Cookie names and header used for the web client's httpOnly-cookie session.
 // The desktop (Wails) client continues to use the Authorization header
 // instead, since Wails' webview does not reliably persist httpOnly cookies.
 const (
-	SessionCookieName = "nodetalk_session"
-	CSRFCookieName    = "nodetalk_csrf"
+	SessionCookieName = "cove_session"
+	CSRFCookieName    = "cove_csrf"
 	CSRFHeaderName    = "X-CSRF-Token"
 )
 
@@ -180,10 +180,10 @@ func (ss *SessionStore) sweepExpired() {
 // httpOnly cookies. The token's base64url padding ('=') is stripped by the
 // client since '=' isn't a legal character in an HTTP token / WS subprotocol
 // value, and restored here.
-const wsAuthSubprotocolPrefix = "nodetalk-token."
+const wsAuthSubprotocolPrefix = "cove-token."
 
 // wsAuthSubprotocol scans the Sec-WebSocket-Protocol header for a
-// "nodetalk-token.<token>" entry. It returns the exact subprotocol string
+// "cove-token.<token>" entry. It returns the exact subprotocol string
 // (which must be echoed back to the client verbatim per RFC 6455 to accept
 // the connection) and the decoded session token.
 func wsAuthSubprotocol(r *http.Request) (proto, token string, ok bool) {

@@ -42,7 +42,7 @@ const (
 	colorYellow    = "\033[33m" // Warn yellow
 	colorRed       = "\033[31m" // Error red
 	colorBoldRed   = "\033[1;31m"
-	colorMagenta   = "\033[35m" // Debug magenta
+	colorMagenta   = "\033[35m"       // Debug magenta
 	colorPurple    = "\033[38;5;141m" // Light purple/lavender (Banner title & stats)
 	colorLightBlue = "\033[38;5;147m" // Lavender-blue (Banner version)
 	colorWhite     = "\033[97m"       // Bright white (Banner URL)
@@ -226,16 +226,16 @@ func init() {
 // ── Startup Box Banner ────────────────────────────────────────────────────────
 
 type BannerConfig struct {
-	AppName    string
-	Version    string
-	Host       string
-	Port       int
-	BoundHost  string
-	BoundPort  int
-	Handlers   int
-	Processes  int
-	Prefork    string
-	PID        int
+	AppName   string
+	Version   string
+	Host      string
+	Port      int
+	BoundHost string
+	BoundPort int
+	Handlers  int
+	Processes int
+	Prefork   string
+	PID       int
 }
 
 // PrintBanner prints a terminal banner box matching the Fiber style.

@@ -222,10 +222,10 @@ func TestInviteCreationValidation(t *testing.T) {
 
 	past := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
 	cases := []map[string]any{
-		{"max_uses": -1},                       // negative
-		{"max_uses": 1, "expires_at": past},    // already expired
-		{"max_uses": 1, "expires_at": "soon"},  // not a date
-		{"max_uses": 1, "code": "abc"},         // too short to be safe
+		{"max_uses": -1},                        // negative
+		{"max_uses": 1, "expires_at": past},     // already expired
+		{"max_uses": 1, "expires_at": "soon"},   // not a date
+		{"max_uses": 1, "code": "abc"},          // too short to be safe
 		{"max_uses": 1, "code": "has spaces!!"}, // illegal characters
 	}
 	for _, body := range cases {

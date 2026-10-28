@@ -1,16 +1,16 @@
 package tests
 
 import (
-	"mime/multipart"
 	"bytes"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
+	"cove/backend/internal/api"
 )
 
 const testPassphrase = "a-long-archive-passphrase"

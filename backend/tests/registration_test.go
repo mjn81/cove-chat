@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/models"
 )
 
 func ptrTime(t time.Time) *time.Time { return &t }

@@ -5,14 +5,14 @@ import (
 	"strings"
 	"time"
 
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 	"github.com/google/uuid"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
 )
 
-// Store wraps the DB with all NodeTalk repository logic — users, channels,
+// Store wraps the DB with all Cove repository logic — users, channels,
 // messages, presence, and files.
 type Store struct {
 	db *db.DB

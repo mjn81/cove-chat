@@ -16,15 +16,15 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
-	"nodetalk/backend/internal/voice"
-	"nodetalk/backend/internal/ws"
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
+	"cove/backend/internal/voice"
+	"cove/backend/internal/ws"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -56,7 +56,7 @@ func TestStressBackend(t *testing.T) {
 	var wg sync.WaitGroup
 	results := make(chan time.Duration, totalExpected)
 	errors := make(chan error, totalExpected*5) // buffer for multiple errors per flow
-	
+
 	var completedCount int64
 
 	start := time.Now()
@@ -97,7 +97,7 @@ func TestStressBackend(t *testing.T) {
 	for l := range results {
 		latencies = append(latencies, l)
 	}
-	
+
 	errCount := 0
 	var lastErr error
 	for e := range errors {
@@ -132,17 +132,21 @@ func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, passw
 	// A. Register
 	regBody := jsonBodyRaw(api.RegisterRequest{Username: username, Password: password})
 	resp, err := http.Post(srv.URL+"/api/register", "application/json", regBody)
-	if err != nil { return err }
-	if resp.StatusCode != http.StatusCreated { 
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusCreated {
 		resp.Body.Close()
-		return fmt.Errorf("register status %d", resp.StatusCode) 
+		return fmt.Errorf("register status %d", resp.StatusCode)
 	}
 	resp.Body.Close()
 
 	// B. Login
 	loginBody := jsonBodyRaw(api.LoginRequest{Username: username, Password: password})
 	resp, err = http.Post(srv.URL+"/api/login", "application/json", loginBody)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	var loginResp api.LoginResponse
 	json.NewDecoder(resp.Body).Decode(&loginResp)
 	resp.Body.Close()
@@ -152,7 +156,9 @@ func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, passw
 	c, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{
 		HTTPHeader: http.Header{"Authorization": []string{"Bearer " + loginResp.Token}},
 	})
-	if err != nil { return fmt.Errorf("ws dial: %v", err) }
+	if err != nil {
+		return fmt.Errorf("ws dial: %v", err)
+	}
 	defer c.Close(websocket.StatusNormalClosure, "")
 
 	// D. Send WS Message (optional, but let's just wait for presence)
@@ -163,19 +169,25 @@ func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, passw
 
 	// E. Voice UDP Registration
 	udpConn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil { return fmt.Errorf("udp dial: %v", err) }
+	if err != nil {
+		return fmt.Errorf("udp dial: %v", err)
+	}
 	defer udpConn.Close()
 
 	// Packet format: [Type=Register][Token]
 	regPkt := append([]byte{voice.PacketTypeRegister}, []byte(loginResp.Token)...)
 	_, err = udpConn.Write(regPkt)
-	if err != nil { return fmt.Errorf("udp write: %v", err) }
+	if err != nil {
+		return fmt.Errorf("udp write: %v", err)
+	}
 
 	// API Me call (one more REST)
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/me", nil)
 	req.Header.Set("Authorization", "Bearer "+loginResp.Token)
 	resp, err = http.DefaultClient.Do(req)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	resp.Body.Close()
 
 	return nil
@@ -186,11 +198,11 @@ func setupComplexTestServer(t *testing.T) (*httptest.Server, *net.UDPAddr, func(
 	kek := crypto.DeriveKEK("stress-test-master-password")
 	dek, _ := db.BootstrapDEK(dir+"/meta", kek)
 	database, _ := db.Open(dir+"/main", dek)
-	
+
 	dataStore := store.New(database)
 	sessions := auth.NewSessionStore(24 * time.Hour)
 	hub := ws.NewHub(dataStore, sessions, kek, true, "http://localhost:5173")
-	
+
 	handler := &api.Handler{
 		Store:         dataStore,
 		Sessions:      sessions,
@@ -236,7 +248,7 @@ func getEnvInt(key string, defaultVal int) int {
 func generateStressReport(totalDuration time.Duration, latencies []time.Duration, errCount int, totalExpected int) string {
 	successCount := len(latencies)
 	rps := float64(successCount) / totalDuration.Seconds()
-	
+
 	avg := time.Duration(0)
 	p50 := time.Duration(0)
 	p95 := time.Duration(0)
@@ -288,7 +300,7 @@ func drawProgressBar(current, total int64, startTime time.Time) {
 	const barWidth = 30
 	percent := float64(current) / float64(total)
 	filled := int(percent * barWidth)
-	
+
 	bar := make([]byte, barWidth)
 	for i := 0; i < barWidth; i++ {
 		if i < filled {
@@ -299,10 +311,10 @@ func drawProgressBar(current, total int64, startTime time.Time) {
 			bar[i] = '-'
 		}
 	}
-	
+
 	elapsed := time.Since(startTime)
 	rps := float64(current) / elapsed.Seconds()
-	
-	fmt.Printf("\rProgress: [%s] %d/%d (%.1f%%) | %.1f flows/s | %v   ", 
+
+	fmt.Printf("\rProgress: [%s] %d/%d (%.1f%%) | %.1f flows/s | %v   ",
 		string(bar), current, total, percent*100, rps, elapsed.Round(time.Second))
 }

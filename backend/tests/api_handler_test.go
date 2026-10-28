@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
 )
 
 // ─────────────────────────────────────────────────────────────
@@ -404,7 +404,7 @@ func TestAccountDeletion(t *testing.T) {
 	// The first account on a server is its owner and cannot delete itself.
 	registerAndLogin(t, srv, "founder", "password123!")
 	token1 := registerAndLogin(t, srv, "victor", "password123!")
-	
+
 	// Delete
 	resp := mustDo(t, newJSONReq(t, http.MethodDelete, srv.URL+"/api/users/me", token1, nil))
 	if resp.StatusCode != http.StatusOK {
@@ -504,7 +504,7 @@ func TestMessageEncryptionAndStorage(t *testing.T) {
 
 	// 3. Encrypt a message using the channel key
 	plaintext := "This is a very secret message that should not be in plaintext in the DB"
-	
+
 	// Get the raw channel key (decrypted from DB record using KEK)
 	rawChannelKey, err := s.DecryptChannelKey(ch, kek)
 	if err != nil {
@@ -518,7 +518,7 @@ func TestMessageEncryptionAndStorage(t *testing.T) {
 	}
 
 	// 4. Save the message to the store
-	// The models.Message struct has separate Ciphertext and Nonce fields, 
+	// The models.Message struct has separate Ciphertext and Nonce fields,
 	// though EncryptAES256GCM returns them combined [nonce | ciphertext].
 	msg := &models.Message{
 		ID:         "msg-1",
@@ -565,7 +565,7 @@ func TestMessageEncryptionAndStorage(t *testing.T) {
 	// We need to check if the serialized JSON contains the plaintext string.
 	// Note: since dek is used for BadgerDB encryption, we can't easily read from disk,
 	// but we can check the logical JSON before it hits the disk encryption layer.
-	
+
 	msgJSON, _ := json.Marshal(gotMsg)
 	if bytes.Contains(msgJSON, []byte(plaintext)) {
 		t.Errorf("FAIL: Plaintext found in serialized Message JSON: %s", string(msgJSON))

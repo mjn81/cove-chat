@@ -3,10 +3,10 @@
 //	@title          Cove API
 //	@version        0.1.0
 //	@description    Self-hosted, end-to-end encrypted communication platform.
-//	@termsOfService http://nodetalk.local/terms
+//	@termsOfService http://cove-chat.local/terms
 //
 //	@contact.name  Cove Support
-//	@contact.url   https://github.com/nodetalk/backend/nodetalk
+//	@contact.url   https://github.com/cove/backend/cove-chat
 //
 //	@license.name MIT
 //	@license.url  https://opensource.org/licenses/MIT
@@ -32,22 +32,22 @@ import (
 	"syscall"
 	"time"
 
-	_ "nodetalk/backend/docs" // Swagger generated docs — run 'swag init' to regenerate
+	_ "cove/backend/docs" // Swagger generated docs — run 'swag init' to regenerate
 
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/config"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/middleware"
+	"cove/backend/internal/models"
+	"cove/backend/internal/rtc"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
+	"cove/backend/internal/voice"
+	"cove/backend/internal/ws"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/config"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/middleware"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/rtc"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
-	"nodetalk/backend/internal/voice"
-	"nodetalk/backend/internal/ws"
 )
 
 func main() {
@@ -101,8 +101,8 @@ func main() {
 	if len(os.Args) >= 3 && os.Args[1] == "restore" {
 		os.Exit(runRestore(dataStore, os.Args[2], len(os.Args) > 3 && os.Args[3] == "--force"))
 	}
-	tokenTTL  := time.Duration(cfg.Security.TokenExpireHours) * time.Hour
-	sessions  := auth.NewSessionStore(tokenTTL, database)
+	tokenTTL := time.Duration(cfg.Security.TokenExpireHours) * time.Hour
+	sessions := auth.NewSessionStore(tokenTTL, database)
 
 	// Registration invites declared in config.toml are mirrored into the DB,
 	// and a configured owner_username can reclaim ownership (lost-login recovery).
@@ -139,10 +139,10 @@ func main() {
 	quit := make(chan os.Signal, 2)
 
 	apiHandler := &api.Handler{
-		Store:          dataStore,
-		Sessions:       sessions,
-		KEK:            kek,
-		Storage:        blobStorage,
+		Store:               dataStore,
+		Sessions:            sessions,
+		KEK:                 kek,
+		Storage:             blobStorage,
 		TokenTTL:            tokenTTL,
 		MaxFileSizeMB:       cfg.Server.MaxFileSizeMB,
 		MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
@@ -328,9 +328,9 @@ func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
 
 // runRestore implements the restore subcommand and returns the exit code.
 func runRestore(dataStore *store.Store, path string, force bool) int {
-	pass := os.Getenv("NODETALK_BACKUP_PASSPHRASE")
+	pass := os.Getenv("COVE_BACKUP_PASSPHRASE")
 	if pass == "" {
-		logger.Error("restore: set NODETALK_BACKUP_PASSPHRASE to the passphrase chosen when the backup was made")
+		logger.Error("restore: set COVE_BACKUP_PASSPHRASE to the passphrase chosen when the backup was made")
 		return 2
 	}
 	if dataStore.HasOwner() && !force {

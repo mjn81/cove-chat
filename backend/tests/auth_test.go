@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/models"
 )
 
 func TestSessionCreateAndValidate(t *testing.T) {
@@ -77,14 +77,14 @@ func TestBearerTokenExtraction(t *testing.T) {
 		wantErr bool
 	}{
 		{"Bearer abc123", "abc123", false},
-		{"bearer abc123", "", true},   // case-sensitive
+		{"bearer abc123", "", true}, // case-sensitive
 		{"", "", true},
 		{"Basic aGVsbG8=", "", true},
-		{"Bearer ", "", false},       // empty token is technically extracted
+		{"Bearer ", "", false}, // empty token is technically extracted
 	}
 	for _, tc := range tests {
 		req := &struct{ h string }{h: tc.header}
-		_ = req // just checking the helper compiles and is importable
+		_ = req        // just checking the helper compiles and is importable
 		_ = time.Now() // keep time import used
 	}
 }

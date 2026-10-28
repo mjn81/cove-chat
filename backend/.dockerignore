@@ -1,4 +1,4 @@
-nodetalk-server
+cove-server
 data/
 *.db
 *.log

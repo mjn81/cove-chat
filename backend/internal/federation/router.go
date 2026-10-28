@@ -1,6 +1,6 @@
-// Package federation provides the inter-node communication router for NodeTalk.
+// Package federation provides the inter-node communication router for Cove.
 //
-// NodeTalk uses Matrix-style addressing via the :domain suffix, e.g.:
+// Cove uses Matrix-style addressing via the :domain suffix, e.g.:
 //
 //	alice:node1.example.com -> bob:node2.example.com
 //
@@ -11,14 +11,14 @@ package federation
 
 import (
 	"context"
+	"cove/backend/internal/logger"
 	"fmt"
 	"net/http"
-	"nodetalk/backend/internal/logger"
 	"strings"
 	"time"
 )
 
-// Router handles outbound message delivery to remote NodeTalk nodes.
+// Router handles outbound message delivery to remote Cove nodes.
 // Remote nodes are addressed as "user:domain" in the recipient field.
 type Router struct {
 	localDomain string
@@ -54,17 +54,17 @@ func ParseRecipient(recipient string) (username, domain string, err error) {
 	return parts[0], parts[1], nil
 }
 
-// FederatedMessage is the envelope sent between NodeTalk nodes over HTTPS.
+// FederatedMessage is the envelope sent between Cove nodes over HTTPS.
 type FederatedMessage struct {
-	FromNode   string `json:"from_node"`
-	ToNode     string `json:"to_node"`
-	SenderID   string `json:"sender_id"`
+	FromNode    string `json:"from_node"`
+	ToNode      string `json:"to_node"`
+	SenderID    string `json:"sender_id"`
 	RecipientID string `json:"recipient_id"`
-	ChannelID  string `json:"channel_id"`
-	Type       string `json:"type"`       // "text" | "file" | "voice"
-	Ciphertext []byte `json:"ciphertext"` // Already encrypted — node cannot read
-	Nonce      []byte `json:"nonce"`
-	SentAt     int64  `json:"sent_at"`    // Unix nano
+	ChannelID   string `json:"channel_id"`
+	Type        string `json:"type"`       // "text" | "file" | "voice"
+	Ciphertext  []byte `json:"ciphertext"` // Already encrypted — node cannot read
+	Nonce       []byte `json:"nonce"`
+	SentAt      int64  `json:"sent_at"` // Unix nano
 }
 
 // Deliver sends a federated message to the target node.
@@ -74,7 +74,7 @@ type FederatedMessage struct {
 //   - Implement node-to-node authentication (shared secret or mTLS).
 //   - Add retry with exponential backoff for transient failures.
 //   - Implement delivery receipts.
-//   - Implement node discovery via DNS SRV records (_nodetalk._tcp.domain).
+//   - Implement node discovery via DNS SRV records (_cove._tcp.domain).
 func (r *Router) Deliver(ctx context.Context, msg *FederatedMessage) error {
 	targetURL := fmt.Sprintf("https://%s/api/fed/inbound", msg.ToNode)
 	logger.Infof("federation: [STUB] would deliver message to %s", targetURL)

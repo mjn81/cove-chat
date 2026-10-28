@@ -43,8 +43,8 @@ func TestPrintBanner(t *testing.T) {
 	defaultLogger.useColor = false
 
 	PrintBanner(BannerConfig{
-		AppName:   "NodeTalk Server",
-		Version:   "NodeTalk v0.9.0",
+		AppName:   "Cove Server",
+		Version:   "Cove v0.9.0",
 		Host:      "127.0.0.1",
 		Port:      4000,
 		BoundHost: "0.0.0.0",
@@ -59,7 +59,7 @@ func TestPrintBanner(t *testing.T) {
 	if !strings.Contains(output, "┌") || !strings.Contains(output, "┘") {
 		t.Errorf("Banner missing border: %q", output)
 	}
-	if !strings.Contains(output, "NodeTalk Server") {
+	if !strings.Contains(output, "Cove Server") {
 		t.Errorf("Banner missing app name: %q", output)
 	}
 	if !strings.Contains(output, "http://127.0.0.1:4000") {

@@ -102,7 +102,7 @@ func TestTURNServer_UDPAndTCPBothRespondToSTUNBinding(t *testing.T) {
 // with) agree with each other, which is easy to silently break by editing
 // one side (e.g. changing the realm or secret plumbing) without the other.
 func TestTURNServer_MintedCredentialsAuthenticate(t *testing.T) {
-	ts := &turnServer{cfg: Config{TURNSharedSecret: "shhh", TURNRealm: "nodetalk", TURNCredentialTTL: time.Minute}}
+	ts := &turnServer{cfg: Config{TURNSharedSecret: "shhh", TURNRealm: "cove", TURNCredentialTTL: time.Minute}}
 	username, password, err := ts.mintCredentials("alice")
 	if err != nil {
 		t.Fatalf("mintCredentials: %v", err)

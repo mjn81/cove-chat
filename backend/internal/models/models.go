@@ -10,25 +10,25 @@ import (
 
 // User represents an authenticated account stored under u:{id}.
 type User struct {
-	ID                      string    `json:"id"`
-	Username                string    `json:"username"`
-	PwdHash                 []byte    `json:"pwd_hash"`                            // Argon2id SaltedHash JSON blob
-	Domain                  string    `json:"domain"`                              // e.g. "localhost" or "chat.example.com"
-	Status                  string    `json:"status"`                              // Active status: "online" | "away" | "dnd" | "offline"
-	StatusPreference        string    `json:"status_preference"`                   // "online" | "away" | "dnd" | "offline" | "auto"
-	AvatarID                string    `json:"avatar_id"`                           // Reference to file storage
-	AvatarIDs               []string  `json:"avatar_ids,omitempty"`                // History/gallery of avatar IDs (max 5)
-	BannerColor             string    `json:"banner_color,omitempty"`              // Hex color code for profile banner (e.g. #5865F2)
-	CustomMsg               string    `json:"custom_msg"`                          // Optional status message
-	AllowChannelAdds        string    `json:"allow_channel_adds,omitempty"`        // "everyone" | "friends" | "nobody" (default: "everyone")
-	DMPermission            string    `json:"dm_permission,omitempty"`             // "everyone" | "friends" | "nobody" (default: "everyone")
-	FriendRequestPermission string    `json:"friend_request_permission,omitempty"` // "everyone" | "nobody" (default: "everyone")
-	PublicKey               []byte    `json:"pub_key"`                             // Reserved for future E2EE key exchange
+	ID                      string   `json:"id"`
+	Username                string   `json:"username"`
+	PwdHash                 []byte   `json:"pwd_hash"`                            // Argon2id SaltedHash JSON blob
+	Domain                  string   `json:"domain"`                              // e.g. "localhost" or "chat.example.com"
+	Status                  string   `json:"status"`                              // Active status: "online" | "away" | "dnd" | "offline"
+	StatusPreference        string   `json:"status_preference"`                   // "online" | "away" | "dnd" | "offline" | "auto"
+	AvatarID                string   `json:"avatar_id"`                           // Reference to file storage
+	AvatarIDs               []string `json:"avatar_ids,omitempty"`                // History/gallery of avatar IDs (max 5)
+	BannerColor             string   `json:"banner_color,omitempty"`              // Hex color code for profile banner (e.g. #5865F2)
+	CustomMsg               string   `json:"custom_msg"`                          // Optional status message
+	AllowChannelAdds        string   `json:"allow_channel_adds,omitempty"`        // "everyone" | "friends" | "nobody" (default: "everyone")
+	DMPermission            string   `json:"dm_permission,omitempty"`             // "everyone" | "friends" | "nobody" (default: "everyone")
+	FriendRequestPermission string   `json:"friend_request_permission,omitempty"` // "everyone" | "nobody" (default: "everyone")
+	PublicKey               []byte   `json:"pub_key"`                             // Reserved for future E2EE key exchange
 	// ServerRole is the account's role on the server itself (not in a channel):
 	// "" (member), "admin" or "owner". It is only ever set by the server and is
 	// never read from a client payload.
-	ServerRole string `json:"server_role,omitempty"`
-	CreatedAt               time.Time `json:"created_at"`
+	ServerRole string    `json:"server_role,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // ---- Channel --------------------------------------------------------------- //

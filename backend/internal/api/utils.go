@@ -21,7 +21,7 @@ func writeError(w http.ResponseWriter, code int, msg string) {
 
 func uniqueStrings(s []string) []string {
 	seen := make(map[string]struct{})
-	out  := make([]string, 0, len(s))
+	out := make([]string, 0, len(s))
 	for _, v := range s {
 		if _, ok := seen[v]; !ok {
 			seen[v] = struct{}{}

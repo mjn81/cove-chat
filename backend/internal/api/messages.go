@@ -1,10 +1,10 @@
 package api
 
 import (
+	"cove/backend/internal/auth"
+	"cove/backend/internal/models"
 	"net/http"
 	"strconv"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/models"
 )
 
 // ============================
@@ -12,6 +12,7 @@ import (
 // ============================
 
 // ListMessages godoc
+//
 //	@Summary     List recent messages for a channel
 //	@Description Returns messages newest-first. Supports cursor pagination.
 //	@Tags        messages

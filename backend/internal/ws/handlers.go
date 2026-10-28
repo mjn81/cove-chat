@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/models"
 	"github.com/segmentio/ksuid"
 )
 
@@ -417,4 +417,3 @@ func (c *Client) handleWhisperClose(raw *models.WSMessage) error {
 	c.hub.SendToUser(otherID, relayedMsg)
 	return nil
 }
-

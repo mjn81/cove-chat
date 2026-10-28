@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 
 	"github.com/pion/webrtc/v4"
 )

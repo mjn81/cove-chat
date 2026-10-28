@@ -3,7 +3,7 @@ package api
 import (
 	"sync"
 
-	"nodetalk/backend/internal/config"
+	"cove/backend/internal/config"
 )
 
 // SettingsInit seeds Settings from the loaded config.

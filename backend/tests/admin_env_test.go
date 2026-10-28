@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
 )
 
 const testPassword = "correct-horse-battery"

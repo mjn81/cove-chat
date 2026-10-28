@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 
 	"github.com/pion/interceptor"
 	"github.com/pion/interceptor/pkg/intervalpli"

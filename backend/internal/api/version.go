@@ -11,6 +11,7 @@ type VersionResponse struct {
 }
 
 // GetVersion godoc
+//
 //	@Summary     Get the current server build version
 //	@Description Returns the semantic version of the Cove backend currently running.
 //	@Tags        system

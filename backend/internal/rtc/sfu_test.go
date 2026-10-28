@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/models"
 
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
@@ -209,32 +209,32 @@ func (c *testClient) run() {
 				}
 				c.signal(MsgSubscribeAnswer, SDPPayload{ChannelID: c.channelID, SDP: *c.subscribePC.LocalDescription()})
 
-		case MsgICECandidate:
-			var p ICECandidatePayload
-			_ = json.Unmarshal(msg.Payload, &p)
-			var pc *webrtc.PeerConnection
-			if p.Target == TargetPublish {
-				pc = c.publishPC
-			} else {
-				pc = c.subscribePC
+			case MsgICECandidate:
+				var p ICECandidatePayload
+				_ = json.Unmarshal(msg.Payload, &p)
+				var pc *webrtc.PeerConnection
+				if p.Target == TargetPublish {
+					pc = c.publishPC
+				} else {
+					pc = c.subscribePC
+				}
+				_ = pc.AddICECandidate(p.Candidate)
+
+			case MsgPublishAnswer:
+				c.publishAnswer <- msg
+
+			case MsgTrackState:
+				var p TrackStatePayload
+				_ = json.Unmarshal(msg.Payload, &p)
+				select {
+				case c.trackState <- p:
+				default:
+				}
+
+			case MsgJoined, MsgParticipantJoined, MsgParticipantLeft, MsgError:
+				// Not needed by this test's assertions.
 			}
-			_ = pc.AddICECandidate(p.Candidate)
-
-		case MsgPublishAnswer:
-			c.publishAnswer <- msg
-
-		case MsgTrackState:
-			var p TrackStatePayload
-			_ = json.Unmarshal(msg.Payload, &p)
-			select {
-			case c.trackState <- p:
-			default:
-			}
-
-		case MsgJoined, MsgParticipantJoined, MsgParticipantLeft, MsgError:
-			// Not needed by this test's assertions.
 		}
-	}
 	}
 }
 
@@ -541,7 +541,7 @@ func TestNewManager_TURNDisabledGracefullyWithoutPublicIP(t *testing.T) {
 	if mgr.turn != nil {
 		t.Fatal("expected no embedded TURN server to be started without a public IP")
 	}
-	if servers := mgr.mintICEServers("someone"); servers != nil {
+	if servers := mgr.mintICEServers("someone"); len(servers) != 0 {
 		t.Fatalf("expected no ICE servers to be minted without TURN, got %v", servers)
 	}
 }
@@ -1087,7 +1087,6 @@ func TestSFU_RequestKeyframeSignaling(t *testing.T) {
 	}
 }
 
-
 func TestSFU_BothUsersScreenShareSimultaneously(t *testing.T) {
 	channelID := "chan-both-screen"
 	sender := newFakeSender()
@@ -1134,7 +1133,6 @@ func TestSFU_BothUsersScreenShareSimultaneously(t *testing.T) {
 		t.Fatal("Alice never received Bob's screen track while already screen sharing!")
 	}
 }
-
 
 func TestSFU_InspectSubscriberSDPOffer(t *testing.T) {
 	channelID := "chan-sdp-test"

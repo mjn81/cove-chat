@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/api"
+	"cove/backend/internal/models"
 )
 
 func TestDeleteDM_ForBoth(t *testing.T) {

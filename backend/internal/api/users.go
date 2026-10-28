@@ -1,11 +1,11 @@
 package api
 
 import (
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/models"
 	"encoding/json"
 	"net/http"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/models"
 )
 
 // ============================
@@ -13,6 +13,7 @@ import (
 // ============================
 
 // Me godoc
+//
 //	@Summary     Get current authenticated user
 //	@Tags        users
 //	@Produce     json
@@ -44,6 +45,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteAccount godoc
+//
 //	@Summary     Delete current user account
 //	@Tags        users
 //	@Produce     json
@@ -72,6 +74,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateProfile godoc
+//
 //	@Summary     Update current user profile
 //	@Tags        users
 //	@Accept      json
@@ -228,6 +231,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchUsers godoc
+//
 //	@Summary     Search globally for users by username
 //	@Tags        users
 //	@Produce     json
@@ -246,7 +250,7 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "search failed")
 		return
 	}
-	
+
 	var res []UserResponse
 	for _, u := range users {
 		res = append(res, UserResponse{
@@ -267,6 +271,7 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUser godoc
+//
 //	@Summary     Get a user by ID
 //	@Tags        users
 //	@Produce     json
@@ -306,6 +311,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 // ============================
 
 // GetPresence godoc
+//
 //	@Summary     Get presence status for a user
 //	@Tags        users
 //	@Produce     json

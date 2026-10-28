@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nodetalk/backend/internal/config"
+	"cove/backend/internal/config"
 )
 
 const sampleConfig = `# Cove Configuration File
@@ -153,8 +153,8 @@ func TestPatchFileCreatesMissingFileWithOwnerOnlyPermissions(t *testing.T) {
 
 func TestLoadRejectsUnknownRegistrationMode(t *testing.T) {
 	path := writeTemp(t, "[registration]\nmode = \"whatever\"\n")
-	t.Setenv("NODETALK_CONFIG", path)
-	t.Setenv("NODETALK_MASTER_PASSWORD", "x")
+	t.Setenv("COVE_CONFIG", path)
+	t.Setenv("COVE_MASTER_PASSWORD", "x")
 	if _, err := config.Load(); err == nil {
 		t.Fatal("expected Load to reject an unknown registration mode")
 	}
@@ -162,8 +162,8 @@ func TestLoadRejectsUnknownRegistrationMode(t *testing.T) {
 
 func TestLoadDefaultsToOpenRegistrationAndParsesStaticInvites(t *testing.T) {
 	path := writeTemp(t, "[server]\ndomain = \"x\"\n")
-	t.Setenv("NODETALK_CONFIG", path)
-	t.Setenv("NODETALK_MASTER_PASSWORD", "x")
+	t.Setenv("COVE_CONFIG", path)
+	t.Setenv("COVE_MASTER_PASSWORD", "x")
 	cfg, err := config.Load()
 	if err != nil {
 		t.Fatal(err)
@@ -181,7 +181,7 @@ expires_at = "2026-12-31T23:59:59Z"
 max_uses = 25
 note = "launch"
 `)
-	t.Setenv("NODETALK_CONFIG", path)
+	t.Setenv("COVE_CONFIG", path)
 	cfg, err = config.Load()
 	if err != nil {
 		t.Fatal(err)
@@ -195,8 +195,8 @@ note = "launch"
 // master password is supplied through the environment).
 func loadConfigFrom(t *testing.T, path string) *config.Config {
 	t.Helper()
-	t.Setenv("NODETALK_CONFIG", path)
-	t.Setenv("NODETALK_MASTER_PASSWORD", "test-master-password")
+	t.Setenv("COVE_CONFIG", path)
+	t.Setenv("COVE_MASTER_PASSWORD", "test-master-password")
 	cfg, err := config.Load()
 	if err != nil {
 		t.Fatalf("Load(%s): %v", path, err)

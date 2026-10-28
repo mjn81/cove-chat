@@ -12,6 +12,7 @@ type ServerInfoResponse struct {
 }
 
 // GetServerInfo godoc
+//
 //	@Summary     Public server information
 //	@Description Tells clients whether sign-up is open, invite-only or closed, so the register screen can show the right form.
 //	@Description **Access:** Public.

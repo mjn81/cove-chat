@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
 	"github.com/google/uuid"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
 )
 
 // ErrInviteInvalid is returned for every reason an invite cannot be used

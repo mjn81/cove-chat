@@ -1,13 +1,13 @@
 package tests
 
 import (
+	"cove/backend/internal/auth"
+	"cove/backend/internal/models"
+	"cove/backend/internal/voice"
 	"errors"
 	"net"
 	"testing"
 	"time"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/voice"
 )
 
 // fakeMembership lets tests control which (user, channel) pairs are
@@ -43,23 +43,28 @@ func TestVoiceRouter_ChannelSession(t *testing.T) {
 		t.Fatalf("failed to listen: %v", err)
 	}
 	defer conn.Close()
-	
+
 	serverAddr := conn.LocalAddr().(*net.UDPAddr)
 	go router.HandleConn(conn)
 
 	// 4. Setup Clients
 	dial := func() *net.UDPConn {
 		c, err := net.DialUDP("udp", nil, serverAddr)
-		if err != nil { t.Fatalf("dial failed: %v", err) }
+		if err != nil {
+			t.Fatalf("dial failed: %v", err)
+		}
 		return c
 	}
-	c1 := dial(); defer c1.Close()
-	c2 := dial(); defer c2.Close()
-	c3 := dial(); defer c3.Close()
+	c1 := dial()
+	defer c1.Close()
+	c2 := dial()
+	defer c2.Close()
+	c3 := dial()
+	defer c3.Close()
 
 	// 5. Register & Join Channel
 	channelID := "channel-36-chars-uuid-mock-id-value!"
-	
+
 	registerAndJoin := func(c *net.UDPConn, token string) {
 		c.Write(append([]byte{voice.PacketTypeRegister}, []byte(token)...))
 		time.Sleep(10 * time.Millisecond)
@@ -73,7 +78,7 @@ func TestVoiceRouter_ChannelSession(t *testing.T) {
 
 	// 6. Test Broadcasting
 	audioPayload := []byte("hello-channel")
-	
+
 	// C1 sends audio to the channel
 	pkt := append([]byte{voice.PacketTypeAudio}, []byte(channelID)...)
 	pkt = append(pkt, audioPayload...)

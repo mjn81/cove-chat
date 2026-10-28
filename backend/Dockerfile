@@ -19,7 +19,7 @@ COPY . .
 
 # Build the binary
 # We explicitly set GOARCH to TARGETARCH to ensure we build for the target platform
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -o nodetalk-server ./cmd/server
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -o cove-server ./cmd/server
 
 # Run stage
 FROM alpine:latest
@@ -31,7 +31,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates ffmpeg
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/nodetalk-server .
+COPY --from=builder /app/cove-server .
 
 # Create directory for data persistence
 RUN mkdir -p /app/data
@@ -40,4 +40,4 @@ RUN mkdir -p /app/data
 EXPOSE 4000 9090/udp
 
 # Command to run the application
-CMD ["./nodetalk-server"]
+CMD ["./cove-server"]

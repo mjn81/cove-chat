@@ -1,11 +1,11 @@
 package voice
 
 import (
+	"cove/backend/internal/auth"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 	"errors"
 	"net"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
 	"strings"
 	"sync"
 )
@@ -68,9 +68,9 @@ func (r *Router) notifyVoiceUpdate(channelID string, targetedUserID string) {
 		users = append(users, u)
 	}
 	r.mu.RUnlock()
-	
+
 	logger.Infof("voice: BROADCASTING state for channel %s. Participants: [%s]", channelID, strings.Join(users, ", "))
-	
+
 	r.notifier.BroadcastVoiceState(channelID, users)
 	if targetedUserID != "" {
 		r.notifier.SendVoiceState(targetedUserID, channelID, users)
@@ -239,7 +239,9 @@ func (r *Router) handleLeave(addr *net.UDPAddr, channelID string) {
 	r.mu.RLock()
 	userID, ok := r.userMap[addr.String()]
 	r.mu.RUnlock()
-	if !ok { return }
+	if !ok {
+		return
+	}
 
 	r.mu.Lock()
 

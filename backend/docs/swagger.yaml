@@ -64,7 +64,7 @@ definitions:
     properties:
       entries:
         items:
-          $ref: '#/definitions/nodetalk_backend_internal_models.AuditEntry'
+          $ref: '#/definitions/cove_backend_internal_models.AuditEntry'
         type: array
     type: object
   internal_api.BackupRequest:
@@ -490,7 +490,7 @@ definitions:
         example: V1.0.0
         type: string
     type: object
-  nodetalk_backend_internal_models.AuditEntry:
+  cove_backend_internal_models.AuditEntry:
     properties:
       action:
         description: e.g. "invite.create"
@@ -507,7 +507,7 @@ definitions:
         description: e.g. a username or invite code (never a secret)
         type: string
     type: object
-  nodetalk_backend_internal_models.Channel:
+  cove_backend_internal_models.Channel:
     properties:
       aes_key_enc:
         description: Channel AES-256 key encrypted with server KEK
@@ -550,14 +550,14 @@ definitions:
       last_message_sender_id:
         type: string
       last_message_type:
-        $ref: '#/definitions/nodetalk_backend_internal_models.MessageType'
+        $ref: '#/definitions/cove_backend_internal_models.MessageType'
       name:
         type: string
       unread_count:
         description: 'Ephemeral: Populated per-user in handlers'
         type: integer
     type: object
-  nodetalk_backend_internal_models.Message:
+  cove_backend_internal_models.Message:
     properties:
       channel_id:
         type: string
@@ -591,10 +591,10 @@ definitions:
         type: array
       type:
         allOf:
-        - $ref: '#/definitions/nodetalk_backend_internal_models.MessageType'
+        - $ref: '#/definitions/cove_backend_internal_models.MessageType'
         description: '"text" | "file" | "voice" | "video"'
     type: object
-  nodetalk_backend_internal_models.MessageType:
+  cove_backend_internal_models.MessageType:
     enum:
     - text
     - file
@@ -606,7 +606,7 @@ definitions:
     - MessageTypeFile
     - MessageTypeVoice
     - MessageTypeVideo
-  nodetalk_backend_internal_models.Presence:
+  cove_backend_internal_models.Presence:
     properties:
       current_status:
         description: '"online" | "away" | "offline"'
@@ -618,12 +618,12 @@ host: localhost:4000
 info:
   contact:
     name: Cove Support
-    url: https://github.com/nodetalk/backend/nodetalk
+    url: https://github.com/cove/backend/cove-chat
   description: Self-hosted, end-to-end encrypted communication platform.
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-  termsOfService: http://nodetalk.local/terms
+  termsOfService: http://cove-chat.local/terms
   title: Cove API
   version: 0.1.0
 paths:
@@ -1209,7 +1209,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
+              $ref: '#/definitions/cove_backend_internal_models.Channel'
             type: array
       security:
       - BearerAuth: []
@@ -1232,7 +1232,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
+            $ref: '#/definitions/cove_backend_internal_models.Channel'
       security:
       - BearerAuth: []
       summary: Create a channel or direct message
@@ -1276,7 +1276,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/nodetalk_backend_internal_models.Channel'
+            $ref: '#/definitions/cove_backend_internal_models.Channel'
       security:
       - BearerAuth: []
       summary: Get a channel by ID
@@ -1407,7 +1407,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/nodetalk_backend_internal_models.Message'
+              $ref: '#/definitions/cove_backend_internal_models.Message'
             type: array
       security:
       - BearerAuth: []
@@ -1624,7 +1624,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/nodetalk_backend_internal_models.Presence'
+            $ref: '#/definitions/cove_backend_internal_models.Presence'
       security:
       - BearerAuth: []
       summary: Get presence status for a user

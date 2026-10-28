@@ -64,7 +64,7 @@ func VerifyPassword(password string, stored []byte) (bool, error) {
 // The KEK is used to encrypt/decrypt the database DEK, never stored raw.
 func DeriveKEK(masterPassword string) []byte {
 	// Deterministic salt for KEK derivation — not secret, but domain-separated.
-	salt := []byte("nodetalk:kek:v1:")
+	salt := []byte("cove:kek:v1:")
 	padded := make([]byte, saltLen)
 	copy(padded, salt)
 	return argon2.IDKey([]byte(masterPassword), padded, argonTime, argonMemory, argonThreads, argonKeyLen)

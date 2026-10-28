@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/config"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/config"
+	"cove/backend/internal/store"
 )
 
 // ============================
@@ -16,6 +16,7 @@ import (
 // ============================
 
 // Register godoc
+//
 //	@Summary     Register a new account
 //	@Description Creates a new Cove user account. Depends on the server's registration mode:
 //	@Description **open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.
@@ -104,6 +105,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // Login godoc
+//
 //	@Summary     Log in and obtain a session token
 //	@Tags        auth
 //	@Accept      json
@@ -156,6 +158,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logout godoc
+//
 //	@Summary     Log out and invalidate session
 //	@Tags        auth
 //	@Produce     json

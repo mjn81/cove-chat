@@ -2,18 +2,18 @@ package api
 
 import (
 	"bytes"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
+	"cove/backend/internal/storage"
 	"encoding/base64"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/storage"
-	"github.com/google/uuid"
 )
 
 // ---- Files ----------------------------------------------------------------- //
@@ -264,4 +264,3 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", f.SizeBytes))
 	io.Copy(w, rc)
 }
-

@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
-	"nodetalk/backend/internal/ws"
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
+	"cove/backend/internal/ws"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -409,4 +409,3 @@ func TestWhisperRelay_OfflineTargetDeliveredOnLogin(t *testing.T) {
 		}
 	}
 }
-

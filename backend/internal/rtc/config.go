@@ -2,7 +2,7 @@
 // Unit) for group audio/video calling and screen sharing, scaling to small
 // group calls (default cap: 10 participants) without any external media
 // server, TURN provider, or signaling service — everything here runs
-// in-process as part of the NodeTalk backend binary.
+// in-process as part of the Cove backend binary.
 //
 // Design summary (see plan discussion for the full rationale):
 //   - Each participant holds TWO WebRTC PeerConnections to the server:
@@ -92,7 +92,7 @@ func (c Config) WithDefaults() Config {
 		c.TURNPort = 3478
 	}
 	if c.TURNRealm == "" {
-		c.TURNRealm = "nodetalk"
+		c.TURNRealm = "cove"
 	}
 	if c.TURNCredentialTTL <= 0 {
 		c.TURNCredentialTTL = 10 * time.Minute

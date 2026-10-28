@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/models"
 )
 
 // ListRelationships returns all active outgoing relationships (friends, outgoing requests, blocked) for the caller.

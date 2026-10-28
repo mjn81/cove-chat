@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 )
 
 type adminActorKey struct{}

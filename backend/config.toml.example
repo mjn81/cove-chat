@@ -81,7 +81,7 @@ public_ip = "auto"
 # NAT traversal at all.
 embedded_turn_enabled = true
 embedded_turn_port = 3478
-turn_realm = "nodetalk"
+turn_realm = "cove"
 # Drives short-lived, per-call HMAC-derived TURN credentials (TURN REST API
 # convention) — never a static shared secret handed to clients directly.
 # Generated automatically on first run and persisted here, like

@@ -208,14 +208,14 @@ func defaults() *Config {
 			PublicIP:            "auto",
 			EmbeddedTURNEnabled: true,
 			EmbeddedTURNPort:    3478,
-			TURNRealm:           "nodetalk",
+			TURNRealm:           "cove",
 		},
 	}
 }
 
-// Path returns the config file in use: NODETALK_CONFIG or ./config.toml.
+// Path returns the config file in use: COVE_CONFIG or ./config.toml.
 func Path() string {
-	if envPath := os.Getenv("NODETALK_CONFIG"); envPath != "" {
+	if envPath := os.Getenv("COVE_CONFIG"); envPath != "" {
 		return envPath
 	}
 	return configPath
@@ -238,7 +238,7 @@ func Load() (*Config, error) {
 	}
 
 	// Override master password from environment if set (12-Factor App pattern).
-	if envPwd := os.Getenv("NODETALK_MASTER_PASSWORD"); envPwd != "" {
+	if envPwd := os.Getenv("COVE_MASTER_PASSWORD"); envPwd != "" {
 		cfg.Security.MasterPassword = envPwd
 	}
 
@@ -258,7 +258,7 @@ func Load() (*Config, error) {
 		if err := PatchFile(path, []Change{{Section: "security", Key: "master_password", Value: pwd}}); err != nil {
 			// Non-fatal — just warn, the server can still run.
 			fmt.Fprintf(os.Stderr, "WARNING: Could not persist master password to %s: %v\n", path, err)
-			fmt.Fprintln(os.Stderr, "Store the password shown above manually in config.toml or NODETALK_MASTER_PASSWORD.")
+			fmt.Fprintln(os.Stderr, "Store the password shown above manually in config.toml or COVE_MASTER_PASSWORD.")
 		}
 	}
 
@@ -296,7 +296,7 @@ func printPasswordWarning(pwd string) {
 	border := "================================================================"
 	fmt.Println()
 	fmt.Println(border)
-	fmt.Println("  !!  NODETALK: MASTER PASSWORD GENERATED — ACTION REQUIRED  !!")
+	fmt.Println("  !!  COVE: MASTER PASSWORD GENERATED — ACTION REQUIRED  !!")
 	fmt.Println(border)
 	fmt.Printf("  Password: %s\n", pwd)
 	fmt.Println()

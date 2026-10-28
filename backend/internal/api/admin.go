@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"nodetalk/backend/internal/config"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/config"
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
+	"cove/backend/internal/store"
 )
 
 // appVersion is reported by /api/version and the admin overview.
@@ -117,6 +117,7 @@ type TransferOwnerRequest struct {
 // ---- Overview --------------------------------------------------------------- //
 
 // AdminOverview godoc
+//
 //	@Summary     Server overview
 //	@Description Counts, uptime and registration mode for the admin dashboard.
 //	@Description **Access:** Server Admin.
@@ -178,6 +179,7 @@ func dirSize(dir string) int64 {
 // ---- Config ----------------------------------------------------------------- //
 
 // AdminGetConfig godoc
+//
 //	@Summary     Editable server settings
 //	@Description Lists the settings the panel may change with their saved values. Secrets and file paths are never included.
 //	@Description **Access:** Server Admin.
@@ -203,6 +205,7 @@ func (h *Handler) AdminGetConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminUpdateConfig godoc
+//
 //	@Summary     Change server settings
 //	@Description Validates every change, writes them into config.toml (comments are kept) and applies live-editable ones immediately. The whole request is rejected if any change is invalid.
 //	@Description **Access:** Server Admin. Owner-only settings need the owner and their password.
@@ -328,6 +331,7 @@ func inviteView(inv *models.Invite, now time.Time) InviteResponse {
 }
 
 // AdminListInvites godoc
+//
 //	@Summary     List invitation codes
 //	@Description **Access:** Server Admin.
 //	@Tags        admin
@@ -352,6 +356,7 @@ func (h *Handler) AdminListInvites(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminCreateInvite godoc
+//
 //	@Summary     Create an invitation code
 //	@Description Limited-use (max_uses > 0) or unlimited (max_uses = 0), with an optional expiry date. Leave `code` empty for a random one.
 //	@Description **Access:** Server Admin.
@@ -408,6 +413,7 @@ func (h *Handler) AdminCreateInvite(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminRevokeInvite godoc
+//
 //	@Summary     Revoke an invitation code
 //	@Description Codes declared in config.toml cannot be revoked here; remove them from the file.
 //	@Description **Access:** Server Admin.
@@ -444,6 +450,7 @@ func (h *Handler) AdminRevokeInvite(w http.ResponseWriter, r *http.Request) {
 // ---- Audit ------------------------------------------------------------------ //
 
 // AdminAudit godoc
+//
 //	@Summary     Recent admin actions
 //	@Description **Access:** Server Admin.
 //	@Tags        admin
@@ -468,6 +475,7 @@ func (h *Handler) AdminAudit(w http.ResponseWriter, r *http.Request) {
 // ---- Admins and ownership --------------------------------------------------- //
 
 // AdminListAdmins godoc
+//
 //	@Summary     List admins
 //	@Description **Access:** Server Admin.
 //	@Tags        admin
@@ -501,6 +509,7 @@ func (h *Handler) findAccount(w http.ResponseWriter, r *http.Request) *models.Us
 }
 
 // AdminGrantAdmin godoc
+//
 //	@Summary     Give an account admin access
 //	@Description **Access:** Server Owner, with their password.
 //	@Tags        admin
@@ -520,6 +529,7 @@ func (h *Handler) AdminGrantAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminRevokeAdmin godoc
+//
 //	@Summary     Remove an account's admin access
 //	@Description **Access:** Server Owner, with their password.
 //	@Tags        admin
@@ -565,6 +575,7 @@ func (h *Handler) setAdminRole(w http.ResponseWriter, r *http.Request, role, act
 }
 
 // AdminTransferOwner godoc
+//
 //	@Summary     Hand the owner role to another account
 //	@Description The previous owner stays on as an admin. Needs the owner's password and the confirmation phrase `TRANSFER`.
 //	@Description **Access:** Server Owner.

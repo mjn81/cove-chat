@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v4"

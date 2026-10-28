@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 
 	"github.com/pion/stun/v4"
 )

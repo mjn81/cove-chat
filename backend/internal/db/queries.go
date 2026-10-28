@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/models"
 	"github.com/segmentio/ksuid"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -115,8 +115,12 @@ func (d *DB) GetUserChannel(userID, channelID string) (*models.UserChannel, erro
 		return nil, err
 	}
 	// Migration/Safety: Ensure IDs are set
-	if uc.UserID == "" { uc.UserID = userID }
-	if uc.ChannelID == "" { uc.ChannelID = channelID }
+	if uc.UserID == "" {
+		uc.UserID = userID
+	}
+	if uc.ChannelID == "" {
+		uc.ChannelID = channelID
+	}
 	return &uc, nil
 }
 
@@ -132,11 +136,11 @@ func (d *DB) UpdateUserChannelReadTime(userID, channelID string, t time.Time) er
 	uc, err := d.GetUserChannel(userID, channelID)
 	if err != nil {
 		uc = &models.UserChannel{
-			UserID: userID, 
-			ChannelID: channelID, 
-			JoinedAt: time.Now().UTC(),
-			Status: models.StatusActive,
-			Role: models.RoleMember,
+			UserID:    userID,
+			ChannelID: channelID,
+			JoinedAt:  time.Now().UTC(),
+			Status:    models.StatusActive,
+			Role:      models.RoleMember,
 		}
 	}
 	uc.LastReadAt = t
@@ -149,10 +153,10 @@ func (d *DB) CountUnreadMessages(userID, channelID string) (int, error) {
 	if err := d.get(ucKey(userID, channelID), &uc); err != nil {
 		return 0, nil
 	}
-	
+
 	count := 0
 	prefix := []byte(fmt.Sprintf("%s%s:", prefixMessage, channelID))
-	
+
 	err := d.bdb.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
@@ -198,10 +202,9 @@ func (d *DB) CountUnreadMessages(userID, channelID string) (int, error) {
 		}
 		return nil
 	})
-	
+
 	return count, err
 }
-
 
 // ListUserChannels fetches all channels a user belongs to and is active in.
 func (d *DB) ListUserChannels(userID string) ([]*models.Channel, error) {
@@ -252,7 +255,7 @@ func (d *DB) ListChannelMembers(channelID string) ([]*models.UserChannel, error)
 	var members []*models.UserChannel
 	// Note: uc is indexed by user_id:channel_id, so listing members for a channelID
 	// requires a full scan of uc or a secondary index cid:uid.
-	// For now, NodeTalk uses a small-scale approach, but we should add cid:uid index if scaled.
+	// For now, Cove uses a small-scale approach, but we should add cid:uid index if scaled.
 	// RE-EVALUATION: Actually, we scan all uc:* keys to find members of this CID.
 	err := d.bdb.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -531,7 +534,6 @@ func (d *DB) ListIncomingRequests(toUserID string) ([]*models.Relationship, erro
 	})
 	return list, err
 }
-
 
 // ============================================================
 //  Server administration: owner, invites, audit

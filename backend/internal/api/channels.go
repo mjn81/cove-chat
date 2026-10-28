@@ -2,11 +2,11 @@ package api
 
 import (
 	"context"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 	"encoding/json"
 	"net/http"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
 	"strings"
 	"time"
 )

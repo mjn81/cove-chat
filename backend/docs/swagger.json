@@ -3,10 +3,10 @@
     "info": {
         "description": "Self-hosted, end-to-end encrypted communication platform.",
         "title": "Cove API",
-        "termsOfService": "http://nodetalk.local/terms",
+        "termsOfService": "http://cove-chat.local/terms",
         "contact": {
             "name": "Cove Support",
-            "url": "https://github.com/nodetalk/backend/nodetalk"
+            "url": "https://github.com/cove/backend/cove-chat"
         },
         "license": {
             "name": "MIT",
@@ -904,7 +904,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                                "$ref": "#/definitions/cove_backend_internal_models.Channel"
                             }
                         }
                     }
@@ -941,7 +941,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
                         }
                     }
                 }
@@ -1009,7 +1009,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
                         }
                     }
                 }
@@ -1256,7 +1256,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/nodetalk_backend_internal_models.Message"
+                                "$ref": "#/definitions/cove_backend_internal_models.Message"
                             }
                         }
                     }
@@ -1622,7 +1622,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Presence"
+                            "$ref": "#/definitions/cove_backend_internal_models.Presence"
                         }
                     }
                 }
@@ -1744,7 +1744,7 @@
                 "entries": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/nodetalk_backend_internal_models.AuditEntry"
+                        "$ref": "#/definitions/cove_backend_internal_models.AuditEntry"
                     }
                 }
             }
@@ -2361,7 +2361,7 @@
                 }
             }
         },
-        "nodetalk_backend_internal_models.AuditEntry": {
+        "cove_backend_internal_models.AuditEntry": {
             "type": "object",
             "properties": {
                 "action": {
@@ -2386,7 +2386,7 @@
                 }
             }
         },
-        "nodetalk_backend_internal_models.Channel": {
+        "cove_backend_internal_models.Channel": {
             "type": "object",
             "properties": {
                 "aes_key_enc": {
@@ -2443,7 +2443,7 @@
                     "type": "string"
                 },
                 "last_message_type": {
-                    "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
+                    "$ref": "#/definitions/cove_backend_internal_models.MessageType"
                 },
                 "name": {
                     "type": "string"
@@ -2454,7 +2454,7 @@
                 }
             }
         },
-        "nodetalk_backend_internal_models.Message": {
+        "cove_backend_internal_models.Message": {
             "type": "object",
             "properties": {
                 "channel_id": {
@@ -2504,13 +2504,13 @@
                     "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
+                            "$ref": "#/definitions/cove_backend_internal_models.MessageType"
                         }
                     ]
                 }
             }
         },
-        "nodetalk_backend_internal_models.MessageType": {
+        "cove_backend_internal_models.MessageType": {
             "type": "string",
             "enum": [
                 "text",
@@ -2525,7 +2525,7 @@
                 "MessageTypeVideo"
             ]
         },
-        "nodetalk_backend_internal_models.Presence": {
+        "cove_backend_internal_models.Presence": {
             "type": "object",
             "properties": {
                 "current_status": {

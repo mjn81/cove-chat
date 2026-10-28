@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
+	"cove/backend/internal/store"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -216,9 +216,9 @@ func (h *Hub) dispatch(e *envelope) {
 }
 
 // ServeHTTP upgrades an HTTP request to a WebSocket connection.
-// Authentication is via the `nodetalk_session` cookie, an Authorization
+// Authentication is via the `cove_session` cookie, an Authorization
 // header, or (for the Wails desktop client, whose webview doesn't reliably
-// persist httpOnly cookies) a `nodetalk-token.<token>` WebSocket subprotocol.
+// persist httpOnly cookies) a `cove-token.<token>` WebSocket subprotocol.
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, _, err := auth.ResolveToken(r)
 	if err != nil {
@@ -490,7 +490,7 @@ func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
 	// Broadcast to remaining members
 	h.broadcast <- &envelope{channelID: channelID, msg: msg}
 
-	// Also send targeted notification to the user who left/was kicked 
+	// Also send targeted notification to the user who left/was kicked
 	// so their UI can react (e.g. remove channel from sidebar)
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -767,5 +767,3 @@ func (h *Hub) SendToUser(userID string, msg *models.WSMessage) bool {
 	}
 	return true
 }
-
-

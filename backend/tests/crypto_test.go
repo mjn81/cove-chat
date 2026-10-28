@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"nodetalk/backend/internal/crypto"
+	"cove/backend/internal/crypto"
 )
 
 func TestHashAndVerifyPassword(t *testing.T) {
@@ -76,7 +76,7 @@ func TestEncryptDecryptAES256GCM(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plaintext := []byte("Hello, NodeTalk! 🔐")
+	plaintext := []byte("Hello, Cove! 🔐")
 	ciphertext, err := crypto.EncryptAES256GCM(key, plaintext)
 	if err != nil {
 		t.Fatalf("EncryptAES256GCM() error = %v", err)

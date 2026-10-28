@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"nodetalk/backend/internal/logger"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
+	"cove/backend/internal/store"
 
 	"github.com/coder/websocket/wsjson"
 )

@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/api"
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
 )
 
 // ─────────────────────────────────────────────────────────────
@@ -101,12 +101,12 @@ func loginWithCookies(t *testing.T, srv *httptest.Server, username, password str
 
 	var csrf string
 	for _, c := range loginResp.Cookies() {
-		if c.Name == "nodetalk_csrf" {
+		if c.Name == "cove_csrf" {
 			csrf = c.Value
 		}
 	}
 	if csrf == "" {
-		t.Fatal("nodetalk_csrf cookie not set on login")
+		t.Fatal("cove_csrf cookie not set on login")
 	}
 	return client, csrf
 }
@@ -133,31 +133,31 @@ func TestLogin_SetsSessionAndCSRFCookies(t *testing.T) {
 	var sawSession, sawCSRF bool
 	for _, c := range resp.Cookies() {
 		switch c.Name {
-		case "nodetalk_session":
+		case "cove_session":
 			sawSession = true
 			if !c.HttpOnly {
-				t.Error("nodetalk_session cookie must be HttpOnly")
+				t.Error("cove_session cookie must be HttpOnly")
 			}
 			// testServer runs with IsDev: false (the zero value), matching a
 			// production deployment — cookies must be Secure in that case.
 			if !c.Secure {
-				t.Error("nodetalk_session cookie must be Secure when not in dev mode")
+				t.Error("cove_session cookie must be Secure when not in dev mode")
 			}
-		case "nodetalk_csrf":
+		case "cove_csrf":
 			sawCSRF = true
 			if c.HttpOnly {
-				t.Error("nodetalk_csrf cookie must NOT be HttpOnly (client needs to read it)")
+				t.Error("cove_csrf cookie must NOT be HttpOnly (client needs to read it)")
 			}
 			if !c.Secure {
-				t.Error("nodetalk_csrf cookie must be Secure when not in dev mode")
+				t.Error("cove_csrf cookie must be Secure when not in dev mode")
 			}
 		}
 	}
 	if !sawSession {
-		t.Error("login response did not set nodetalk_session cookie")
+		t.Error("login response did not set cove_session cookie")
 	}
 	if !sawCSRF {
-		t.Error("login response did not set nodetalk_csrf cookie")
+		t.Error("login response did not set cove_csrf cookie")
 	}
 }
 
@@ -205,15 +205,15 @@ func TestLogin_AlwaysUsesSameSiteLax_RegardlessOfOrigin(t *testing.T) {
 
 			var sawSession bool
 			for _, c := range resp.Cookies() {
-				if c.Name == "nodetalk_session" {
+				if c.Name == "cove_session" {
 					sawSession = true
 					if c.SameSite != http.SameSiteLaxMode {
-						t.Errorf("nodetalk_session SameSite = %v, want SameSiteLaxMode for origin %q", c.SameSite, origin)
+						t.Errorf("cove_session SameSite = %v, want SameSiteLaxMode for origin %q", c.SameSite, origin)
 					}
 				}
 			}
 			if !sawSession {
-				t.Fatal("login response did not set nodetalk_session cookie")
+				t.Fatal("login response did not set cove_session cookie")
 			}
 		})
 	}

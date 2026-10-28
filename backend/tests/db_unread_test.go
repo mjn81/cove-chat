@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"nodetalk/backend/internal/crypto"
-	"nodetalk/backend/internal/db"
-	"nodetalk/backend/internal/models"
+	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
+	"cove/backend/internal/models"
 
 	"github.com/segmentio/ksuid"
 )

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 
 	"golang.org/x/time/rate"
 )
@@ -241,7 +241,7 @@ func CORS(next http.Handler, isDev bool, allowedOrigins string) http.Handler {
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		
+
 		// 3. Handle allowed headers (Content-Type, Authorization, and any requested headers)
 		requestedHeaders := r.Header.Get("Access-Control-Request-Headers")
 		if requestedHeaders != "" {

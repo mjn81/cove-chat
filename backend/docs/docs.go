@@ -9,10 +9,10 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://nodetalk.local/terms",
+        "termsOfService": "http://cove-chat.local/terms",
         "contact": {
             "name": "Cove Support",
-            "url": "https://github.com/nodetalk/backend/nodetalk"
+            "url": "https://github.com/cove/backend/cove-chat"
         },
         "license": {
             "name": "MIT",
@@ -910,7 +910,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                                "$ref": "#/definitions/cove_backend_internal_models.Channel"
                             }
                         }
                     }
@@ -947,7 +947,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
                         }
                     }
                 }
@@ -1015,7 +1015,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Channel"
+                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
                         }
                     }
                 }
@@ -1262,7 +1262,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/nodetalk_backend_internal_models.Message"
+                                "$ref": "#/definitions/cove_backend_internal_models.Message"
                             }
                         }
                     }
@@ -1628,7 +1628,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.Presence"
+                            "$ref": "#/definitions/cove_backend_internal_models.Presence"
                         }
                     }
                 }
@@ -1750,7 +1750,7 @@ const docTemplate = `{
                 "entries": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/nodetalk_backend_internal_models.AuditEntry"
+                        "$ref": "#/definitions/cove_backend_internal_models.AuditEntry"
                     }
                 }
             }
@@ -2367,7 +2367,7 @@ const docTemplate = `{
                 }
             }
         },
-        "nodetalk_backend_internal_models.AuditEntry": {
+        "cove_backend_internal_models.AuditEntry": {
             "type": "object",
             "properties": {
                 "action": {
@@ -2392,7 +2392,7 @@ const docTemplate = `{
                 }
             }
         },
-        "nodetalk_backend_internal_models.Channel": {
+        "cove_backend_internal_models.Channel": {
             "type": "object",
             "properties": {
                 "aes_key_enc": {
@@ -2449,7 +2449,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "last_message_type": {
-                    "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
+                    "$ref": "#/definitions/cove_backend_internal_models.MessageType"
                 },
                 "name": {
                     "type": "string"
@@ -2460,7 +2460,7 @@ const docTemplate = `{
                 }
             }
         },
-        "nodetalk_backend_internal_models.Message": {
+        "cove_backend_internal_models.Message": {
             "type": "object",
             "properties": {
                 "channel_id": {
@@ -2510,13 +2510,13 @@ const docTemplate = `{
                     "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/nodetalk_backend_internal_models.MessageType"
+                            "$ref": "#/definitions/cove_backend_internal_models.MessageType"
                         }
                     ]
                 }
             }
         },
-        "nodetalk_backend_internal_models.MessageType": {
+        "cove_backend_internal_models.MessageType": {
             "type": "string",
             "enum": [
                 "text",
@@ -2531,7 +2531,7 @@ const docTemplate = `{
                 "MessageTypeVideo"
             ]
         },
-        "nodetalk_backend_internal_models.Presence": {
+        "cove_backend_internal_models.Presence": {
             "type": "object",
             "properties": {
                 "current_status": {

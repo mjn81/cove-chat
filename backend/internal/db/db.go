@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/crypto"
 	badger "github.com/dgraph-io/badger/v4"
-	"nodetalk/backend/internal/crypto"
 )
 
-// DB wraps a BadgerDB instance with NodeTalk-specific key-value helpers.
+// DB wraps a BadgerDB instance with Cove-specific key-value helpers.
 type DB struct {
 	bdb      *badger.DB
 	once     sync.Once
@@ -167,29 +167,29 @@ func (d *DB) listByPrefix(prefix string, newFn func() any) ([]any, error) {
 // ---- Domain Key Helpers ---------------------------------------------------- //
 
 const (
-	prefixUser        = "u:"
-	prefixChannel     = "c:"
-	prefixUserChannel = "uc:"
-	prefixMessage     = "m:"
-	prefixPresence    = "p:"
-	prefixFile               = "f:"
-	prefixSession            = "s:"
-	prefixRelationship       = "rel:"
-	prefixRelationshipInbox  = "reli:"
-	prefixInvite             = "inv:"
-	prefixAudit              = "aud:"
-	keyOwner                 = "srv:owner"
-	keyDEK                   = "sys:dek"
+	prefixUser              = "u:"
+	prefixChannel           = "c:"
+	prefixUserChannel       = "uc:"
+	prefixMessage           = "m:"
+	prefixPresence          = "p:"
+	prefixFile              = "f:"
+	prefixSession           = "s:"
+	prefixRelationship      = "rel:"
+	prefixRelationshipInbox = "reli:"
+	prefixInvite            = "inv:"
+	prefixAudit             = "aud:"
+	keyOwner                = "srv:owner"
+	keyDEK                  = "sys:dek"
 )
 
-func userKey(id string) string        { return prefixUser + id }
-func channelKey(id string) string     { return prefixChannel + id }
-func ucKey(uid, cid string) string    { return prefixUserChannel + uid + ":" + cid }
+func userKey(id string) string     { return prefixUser + id }
+func channelKey(id string) string  { return prefixChannel + id }
+func ucKey(uid, cid string) string { return prefixUserChannel + uid + ":" + cid }
 func messageKey(cid string, ts time.Time) string {
 	return fmt.Sprintf("%s%s:%019d", prefixMessage, cid, ts.UnixNano())
 }
-func presenceKey(uid string) string { return prefixPresence + uid }
-func fileKey(id string) string      { return prefixFile + id }
+func presenceKey(uid string) string  { return prefixPresence + uid }
+func fileKey(id string) string       { return prefixFile + id }
 func sessionKey(token string) string { return prefixSession + token }
 func relationshipKey(fromID, toID string) string {
 	return prefixRelationship + fromID + ":" + toID

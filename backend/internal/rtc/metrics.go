@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 )
 
 // metrics holds process-wide SFU counters. Forwarding is the hot path (one

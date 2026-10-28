@@ -6,13 +6,13 @@ import (
 	"runtime"
 	"testing"
 
-	"nodetalk/backend/internal/config"
+	"cove/backend/internal/config"
 )
 
 func TestLoadDefaults(t *testing.T) {
 	// Note: cannot use t.Parallel() with t.Setenv
-	path := filepath.Join(t.TempDir(), "nodetalk_test_nonexistent.toml")
-	t.Setenv("NODETALK_CONFIG", path)
+	path := filepath.Join(t.TempDir(), "cove_test_nonexistent.toml")
+	t.Setenv("COVE_CONFIG", path)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -36,8 +36,8 @@ func TestLoadDefaults(t *testing.T) {
 // the process umask and can leave it world-readable on a permissively
 // configured host.
 func TestPersistedConfigHasRestrictivePermissions(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "nodetalk_test_perms.toml")
-	t.Setenv("NODETALK_CONFIG", path)
+	path := filepath.Join(t.TempDir(), "cove_test_perms.toml")
+	t.Setenv("COVE_CONFIG", path)
 	defer os.Remove(path)
 
 	if _, err := config.Load(); err != nil {
@@ -61,8 +61,8 @@ func TestPersistedConfigHasRestrictivePermissions(t *testing.T) {
 // the same way as master_password, never left empty or defaulted to a
 // fixed value.
 func TestVoiceDefaultsAndTURNSecretGenerated(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "nodetalk_test_voice.toml")
-	t.Setenv("NODETALK_CONFIG", path)
+	path := filepath.Join(t.TempDir(), "cove_test_voice.toml")
+	t.Setenv("COVE_CONFIG", path)
 	defer os.Remove(path)
 
 	cfg, err := config.Load()
@@ -100,9 +100,9 @@ func TestVoiceDefaultsAndTURNSecretGenerated(t *testing.T) {
 
 func TestEnvVarOverride(t *testing.T) {
 	// Note: cannot use t.Parallel() with t.Setenv
-	path := filepath.Join(t.TempDir(), "nodetalk_test_env.toml")
-	t.Setenv("NODETALK_CONFIG", path)
-	t.Setenv("NODETALK_MASTER_PASSWORD", "env-override-password")
+	path := filepath.Join(t.TempDir(), "cove_test_env.toml")
+	t.Setenv("COVE_CONFIG", path)
+	t.Setenv("COVE_MASTER_PASSWORD", "env-override-password")
 
 	cfg, err := config.Load()
 	if err != nil {

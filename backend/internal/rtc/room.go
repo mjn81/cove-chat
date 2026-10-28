@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"nodetalk/backend/internal/logger"
+	"cove/backend/internal/logger"
 
 	"github.com/pion/webrtc/v4"
 )

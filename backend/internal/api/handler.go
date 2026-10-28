@@ -1,15 +1,15 @@
-// Package api provides HTTP REST handlers for the NodeTalk API.
+// Package api provides HTTP REST handlers for the Cove API.
 package api
 
 import (
 	"net/http"
 	"time"
 
-	"nodetalk/backend/internal/auth"
-	"nodetalk/backend/internal/middleware"
-	"nodetalk/backend/internal/models"
-	"nodetalk/backend/internal/storage"
-	"nodetalk/backend/internal/store"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/middleware"
+	"cove/backend/internal/models"
+	"cove/backend/internal/storage"
+	"cove/backend/internal/store"
 )
 
 type ChannelBroadcaster interface {
@@ -53,12 +53,11 @@ type Handler struct {
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 }
 
-
 // NewRouter wires the full HTTP API with rate limiting.
 func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux := http.NewServeMux()
 
-	authLimiter   := middleware.NewRateLimiter(authRPS, int(authRPS)*2)
+	authLimiter := middleware.NewRateLimiter(authRPS, int(authRPS)*2)
 	globalLimiter := middleware.NewRateLimiter(globalRPS, int(globalRPS)*2)
 	protect := func(handler http.HandlerFunc) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(handler))
@@ -75,61 +74,61 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	protectOwner := func(handler http.HandlerFunc) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(h.requireAdmin(true, handler)))
 	}
-	mux.Handle("GET /api/admin/overview",                protectAdmin(h.AdminOverview))
-	mux.Handle("GET /api/admin/config",                  protectAdmin(h.AdminGetConfig))
-	mux.Handle("PATCH /api/admin/config",                protectAdmin(h.AdminUpdateConfig))
-	mux.Handle("GET /api/admin/invites",                 protectAdmin(h.AdminListInvites))
-	mux.Handle("POST /api/admin/invites",                protectAdmin(h.AdminCreateInvite))
-	mux.Handle("DELETE /api/admin/invites/{code}",       protectAdmin(h.AdminRevokeInvite))
-	mux.Handle("GET /api/admin/audit",                   protectAdmin(h.AdminAudit))
-	mux.Handle("GET /api/admin/admins",                  protectAdmin(h.AdminListAdmins))
-	mux.Handle("PUT /api/admin/admins/{username}",       protectOwner(h.AdminGrantAdmin))
-	mux.Handle("DELETE /api/admin/admins/{username}",    protectOwner(h.AdminRevokeAdmin))
-	mux.Handle("POST /api/admin/owner/transfer",         protectOwner(h.AdminTransferOwner))
-	mux.Handle("POST /api/admin/backup",                 protectOwner(h.AdminBackup))
-	mux.Handle("POST /api/admin/restore",                protectOwner(h.AdminRestore))
-	mux.Handle("POST /api/admin/reset",                  protectOwner(h.AdminReset))
-	mux.Handle("POST /api/admin/delete",                 protectOwner(h.AdminDeleteServer))
+	mux.Handle("GET /api/admin/overview", protectAdmin(h.AdminOverview))
+	mux.Handle("GET /api/admin/config", protectAdmin(h.AdminGetConfig))
+	mux.Handle("PATCH /api/admin/config", protectAdmin(h.AdminUpdateConfig))
+	mux.Handle("GET /api/admin/invites", protectAdmin(h.AdminListInvites))
+	mux.Handle("POST /api/admin/invites", protectAdmin(h.AdminCreateInvite))
+	mux.Handle("DELETE /api/admin/invites/{code}", protectAdmin(h.AdminRevokeInvite))
+	mux.Handle("GET /api/admin/audit", protectAdmin(h.AdminAudit))
+	mux.Handle("GET /api/admin/admins", protectAdmin(h.AdminListAdmins))
+	mux.Handle("PUT /api/admin/admins/{username}", protectOwner(h.AdminGrantAdmin))
+	mux.Handle("DELETE /api/admin/admins/{username}", protectOwner(h.AdminRevokeAdmin))
+	mux.Handle("POST /api/admin/owner/transfer", protectOwner(h.AdminTransferOwner))
+	mux.Handle("POST /api/admin/backup", protectOwner(h.AdminBackup))
+	mux.Handle("POST /api/admin/restore", protectOwner(h.AdminRestore))
+	mux.Handle("POST /api/admin/reset", protectOwner(h.AdminReset))
+	mux.Handle("POST /api/admin/delete", protectOwner(h.AdminDeleteServer))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "admin.errors.not_found")
 	}))
 
 	// Public
-	mux.Handle("GET /api/version",   http.HandlerFunc(h.GetVersion))
+	mux.Handle("GET /api/version", http.HandlerFunc(h.GetVersion))
 	mux.Handle("GET /api/server-info", http.HandlerFunc(h.GetServerInfo))
 	mux.Handle("POST /api/register", authLimiter.Limit(http.HandlerFunc(h.Register)))
-	mux.Handle("POST /api/login",    authLimiter.Limit(http.HandlerFunc(h.Login)))
+	mux.Handle("POST /api/login", authLimiter.Limit(http.HandlerFunc(h.Login)))
 
 	// Protected
-	mux.Handle("POST /api/logout",                       protect(h.Logout))
-	mux.Handle("GET /api/me",                            protect(h.Me))
-	mux.Handle("DELETE /api/users/me",                   protect(h.DeleteAccount))
-	mux.Handle("PATCH /api/users/me",                    protect(h.UpdateProfile))
-	mux.Handle("GET /api/users",                         protect(h.SearchUsers))
-	mux.Handle("GET /api/users/{id}",                    protect(h.GetUser))
-	mux.Handle("GET /api/users/{id}/presence",           protect(h.GetPresence))
+	mux.Handle("POST /api/logout", protect(h.Logout))
+	mux.Handle("GET /api/me", protect(h.Me))
+	mux.Handle("DELETE /api/users/me", protect(h.DeleteAccount))
+	mux.Handle("PATCH /api/users/me", protect(h.UpdateProfile))
+	mux.Handle("GET /api/users", protect(h.SearchUsers))
+	mux.Handle("GET /api/users/{id}", protect(h.GetUser))
+	mux.Handle("GET /api/users/{id}/presence", protect(h.GetPresence))
 
 	// Relationships (Friends / Blocking / Requests)
-	mux.Handle("GET /api/relationships",                 protect(h.ListRelationships))
-	mux.Handle("GET /api/relationships/incoming",        protect(h.ListIncomingRequests))
-	mux.Handle("GET /api/users/{id}/relationship",       protect(h.GetRelationship))
-	mux.Handle("PUT /api/users/{id}/relationship",       protect(h.HandleRelationshipAction))
+	mux.Handle("GET /api/relationships", protect(h.ListRelationships))
+	mux.Handle("GET /api/relationships/incoming", protect(h.ListIncomingRequests))
+	mux.Handle("GET /api/users/{id}/relationship", protect(h.GetRelationship))
+	mux.Handle("PUT /api/users/{id}/relationship", protect(h.HandleRelationshipAction))
 
-	mux.Handle("POST /api/channels",                     protect(h.CreateChannel))
-	mux.Handle("GET /api/channels",                      protect(h.ListChannels))
-	mux.Handle("GET /api/channels/explore",              protect(h.ExploreChannels))
-	mux.Handle("GET /api/channels/{id}",                 protectMember(h.GetChannel))
-	mux.Handle("PATCH /api/channels/{id}",               protectMember(h.UpdateChannel))
-	mux.Handle("DELETE /api/channels/{id}",              protectMember(h.DeleteChannel))
-	mux.Handle("POST /api/join/{link}",                  protect(h.JoinChannel))
-	mux.Handle("GET /api/channels/{id}/members",         protectMember(h.GetChannelMembers))
-	mux.Handle("POST /api/channels/{id}/members",        protectMember(h.AddMembers))
+	mux.Handle("POST /api/channels", protect(h.CreateChannel))
+	mux.Handle("GET /api/channels", protect(h.ListChannels))
+	mux.Handle("GET /api/channels/explore", protect(h.ExploreChannels))
+	mux.Handle("GET /api/channels/{id}", protectMember(h.GetChannel))
+	mux.Handle("PATCH /api/channels/{id}", protectMember(h.UpdateChannel))
+	mux.Handle("DELETE /api/channels/{id}", protectMember(h.DeleteChannel))
+	mux.Handle("POST /api/join/{link}", protect(h.JoinChannel))
+	mux.Handle("GET /api/channels/{id}/members", protectMember(h.GetChannelMembers))
+	mux.Handle("POST /api/channels/{id}/members", protectMember(h.AddMembers))
 	mux.Handle("PATCH /api/channels/{id}/members/{uid}", protectMember(h.UpdateMember))
 	mux.Handle("DELETE /api/channels/{id}/members/{uid}", protectMember(h.RemoveMember))
-	mux.Handle("GET /api/channels/{id}/messages",        protectMember(h.ListMessages))
-	
-	mux.Handle("POST /api/files",                        protect(h.UploadFile))
-	mux.Handle("GET /api/files/{id}",                    protect(h.DownloadFile))
+	mux.Handle("GET /api/channels/{id}/messages", protectMember(h.ListMessages))
+
+	mux.Handle("POST /api/files", protect(h.UploadFile))
+	mux.Handle("GET /api/files/{id}", protect(h.DownloadFile))
 
 	return middleware.CORS(mux, h.IsDev, h.FrontendOrigin)
 }
