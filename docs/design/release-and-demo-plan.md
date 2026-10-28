@@ -126,23 +126,39 @@ The server is not only for the demo. Uses, by value:
 
 Not recommended: a **self-hosted GitHub runner** on this machine. On a public repo, forked pull requests could run arbitrary code on it. Heavy work stays on GitHub's runners; the server only receives deploys over SSH with a key limited to a deploy user.
 
+### 7.0 Server reality check (read over SSH, nothing changed yet)
+
+Ubuntu 24.04, 6 CPU, 11 GB RAM (about 8 GB available), Docker 29 + Compose v5, `ufw` active. **It is already a shared box:**
+
+- A separate project (`nova-*`: frontend, backend, Postgres, Redis, Qdrant, crawlers), **nginx-proxy-manager** on ports 80/443, Portainer and another container are running.
+- Disk is **80% used** (32 GB free of 154 GB).
+- SSH: port 4060, root login and password login are both enabled; other login accounts exist (`ubuntu`, `ftmgh`, `firstserver`).
+- Docker-published ports bypass `ufw` (for example `5173` from the nova frontend is reachable from the internet although `ufw` only lists 4060).
+
+Consequences for the plan:
+
+1. **Use the existing nginx-proxy-manager** for HTTPS (Let's Encrypt) instead of adding Caddy, which would fight over 80/443. Each Cove instance joins a private Docker network; NPM proxy hosts `demo.covechat.dev` and `staging.covechat.dev` forward to it (WebSocket support on).
+2. Call media needs UDP `3478` and `50000-50100` (demo) plus a second range for staging; both are free. Open them in `ufw` and publish only those.
+3. Cove containers get hard CPU/memory/disk limits, and a weekly `docker image prune` so they cannot push the disk past ~85%.
+4. SSH hardening must not lock out the other accounts: only make root key-only (`PermitRootLogin prohibit-password`) and add a `deploy` user; global `PasswordAuthentication no` only after you confirm nobody else logs in with a password.
+
 ### 7.1 Server hardening first
 
 1. Install the deploy public key; create a non-root `deploy` user with docker access.
-2. Disable SSH password login and root login; **rotate the current password**.
-3. `ufw`: SSH (restricted if possible), 80, 443, 3478/udp, 50000-50100/udp; 4000/3000 stay internal.
+2. Root becomes key-only (`PermitRootLogin prohibit-password`); global password login is switched off only after you confirm nobody else needs it. **Rotate the current root password.**
+3. `ufw`: keep 4060; add 3478/udp and the Cove media ranges. 80/443 are already served by nginx-proxy-manager; Cove app ports (4000/3000) stay on an internal Docker network.
 4. `fail2ban`, unattended security upgrades, log rotation, swap if RAM is small.
-5. Read Docker/Compose versions and CPU/RAM/disk once key access works.
+5. Done: Docker/Compose, CPU/RAM/disk read (see 7.0).
 
 ### 7.2 Layout
 
 ```
-demo.covechat.dev / staging.covechat.dev --> Caddy (automatic HTTPS)
-                                              |-- /api/*, websocket --> cove-server
+demo.covechat.dev / staging.covechat.dev --> nginx-proxy-manager (existing, Let's Encrypt)
+                                              |-- /api/*, websocket --> cove-server (internal network)
                                               '-- everything else   --> cove-webclient
 ```
 
-One origin per instance, so cookies and CORS just work. DNS is **DNS-only** (not proxied) so call media (UDP) reaches the server. Compose, Caddyfile, seed script and runbook live in `ops/` (no secrets); each instance keeps its own `.env` on the server. Containers get CPU/memory caps so a busy call day cannot starve the others.
+One origin per instance, so cookies and CORS just work. DNS is **DNS-only** (not proxied) so call media (UDP) reaches the server. Compose, proxy notes, seed script and runbook live in `ops/` (no secrets); each instance keeps its own `.env` on the server. Containers get CPU/memory caps so a busy call day cannot starve the others.
 
 ### 7.3 Deploy and reset
 
