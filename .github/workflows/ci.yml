@@ -23,6 +23,7 @@ jobs:
       web: ${{ steps.f.outputs.web }}
       android: ${{ steps.f.outputs.android }}
       version: ${{ steps.f.outputs.version }}
+      ops: ${{ steps.f.outputs.ops }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -41,6 +42,9 @@ jobs:
             android:
               - 'client-android/**'
               - 'VERSION'
+              - '.github/workflows/ci.yml'
+            ops:
+              - 'ops/**'
               - '.github/workflows/ci.yml'
             version:
               - 'VERSION'
@@ -115,9 +119,25 @@ jobs:
           node-version: 24
       - run: make version/check
 
+  ops:
+    needs: changes
+    if: needs.changes.outputs.ops == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell scripts
+        run: shellcheck ops/*.sh
+      - name: Compose files render
+        run: |
+          export INSTANCE=demo TAG=0.0.0 INSTANCE_HOST=x.example MEDIA_PORT_MIN=50000 MEDIA_PORT_MAX=50100 COVE_MASTER_PASSWORD=x
+          docker compose -f ops/docker-compose.yml config -q
+          docker compose -f ops/proxy/docker-compose.yml config -q
+      - name: Caddyfile is valid
+        run: docker run --rm -v "$PWD/ops/proxy:/etc/caddy:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+
   ci-gate:
     if: always()
-    needs: [changes, backend, web, android, version]
+    needs: [changes, backend, web, android, version, ops]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if any job failed or was cancelled

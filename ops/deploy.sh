@@ -25,6 +25,10 @@ healthy() {
 }
 
 echo "Deploying $instance at $tag (previous: ${previous:-none})"
+
+# Public entry point: Caddy keeps running across deploys; this only applies a changed Caddyfile.
+( cd proxy && docker compose up -d >/dev/null && docker exec cove-proxy caddy reload --config /etc/caddy/Caddyfile >/dev/null )
+
 TAG="$tag" compose pull
 TAG="$tag" compose up -d --remove-orphans
 

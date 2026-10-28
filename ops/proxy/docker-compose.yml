@@ -1,0 +1,34 @@
+# The single public entry point (ports 80/443). Caddy obtains and renews Let's Encrypt certificates by
+# itself, so there is no panel and nothing to click: add a site block to Caddyfile and run ops/deploy.sh.
+name: cove-proxy
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: cove-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # The directory (not the file) is mounted so an edited Caddyfile is visible to `caddy reload`.
+      - ./:/etc/caddy:ro
+      # Certificates and the ACME account live here; losing it only means re-issuing (rate limits apply).
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [proxy-network]
+    mem_limit: 128m
+    cpus: 0.5
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  proxy-network:
+    external: true

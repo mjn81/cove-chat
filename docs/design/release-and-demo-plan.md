@@ -137,7 +137,7 @@ Ubuntu 24.04, 6 CPU, 11 GB RAM (about 8 GB available), Docker 29 + Compose v5, `
 
 Consequences for the plan:
 
-1. **Use the existing nginx-proxy-manager** for HTTPS (Let's Encrypt) instead of adding Caddy, which would fight over 80/443. Each Cove instance joins a private Docker network; NPM proxy hosts `demo.covechat.dev` and `staging.covechat.dev` forward to it (WebSocket support on).
+1. **Caddy replaced nginx-proxy-manager (decided 2026-10-29)**: a terminal-only reverse proxy with automatic, self-renewing Let's Encrypt certificates and no admin panel. NPM only served its own admin page and a dead tunnel host, so it was stopped (its data is archived at `/opt/backups/nginx-proxy-manager-2026-10-29.tgz`, not deleted). Caddy lives in `ops/proxy/` and joins the existing `proxy-network`; adding a site is one block in the Caddyfile plus `ops/deploy.sh`.
 2. Call media needs UDP `3478` and `50000-50100` (demo) plus a second range for staging; both are free. Open them in `ufw` and publish only those.
 3. Cove containers get hard CPU/memory/disk limits, and a weekly `docker image prune` so they cannot push the disk past ~85%.
 4. SSH hardening must not lock out the other accounts: only make root key-only (`PermitRootLogin prohibit-password`) and add a `deploy` user; global `PasswordAuthentication no` only after you confirm nobody else logs in with a password.
@@ -146,14 +146,14 @@ Consequences for the plan:
 
 1. Install the deploy public key; create a non-root `deploy` user with docker access.
 2. Root becomes key-only (`PermitRootLogin prohibit-password`); global password login is switched off only after you confirm nobody else needs it. **Rotate the current root password.**
-3. `ufw`: keep 4060; add 3478/udp and the Cove media ranges. 80/443 are already served by nginx-proxy-manager; Cove app ports (4000/3000) stay on an internal Docker network.
+3. `ufw`: keep 4060; add 3478/udp and the Cove media ranges. 80/443 are served by Caddy (`cove-proxy`); Cove app ports (4000/3000) stay on an internal Docker network.
 4. `fail2ban`, unattended security upgrades, log rotation, swap if RAM is small.
 5. Done: Docker/Compose, CPU/RAM/disk read (see 7.0).
 
 ### 7.2 Layout
 
 ```
-demo.covechat.dev / staging.covechat.dev --> nginx-proxy-manager (existing, Let's Encrypt)
+demo.covechat.dev / staging.covechat.dev --> Caddy (ops/proxy, automatic Let's Encrypt)
                                               |-- /api/*, websocket --> cove-server (internal network)
                                               '-- everything else   --> cove-webclient
 ```
@@ -187,7 +187,7 @@ New routes and fields follow the repo rules (RBAC, Swagger, named DTOs, 401/403 
 | 2 | `ci.yml` (path-filtered, cached, gated) | none |
 | 3 | `release.yml` + dry run on `v0.9.1-rc.1` (pre-release) | secrets |
 | 4 | release-please, `/changelog`, downloads matrix updates | none |
-| 5 | Server hardening, `ops/`, Caddy, staging + demo deploys | key installed |
+| 5 | Server hardening, `ops/`, Caddy proxy, staging + demo deploys | key installed |
 | 6 | Demo mode backend + web banner + Turnstile | Turnstile keys |
 | 7 | Nightly soak/restore drills, status page, docs (Releasing, ops runbook) | none |
 
