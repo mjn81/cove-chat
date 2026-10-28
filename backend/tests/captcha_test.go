@@ -280,3 +280,21 @@ func errorKey(t *testing.T, r *http.Response) string {
 	decodeJSON(t, r, &e)
 	return e.Error
 }
+
+// Issuing a challenge is cheap and a solution is only worth something at /api/register, which has its own
+// limit. The challenge must therefore not share the strict sign-in limiter: a person who retries, or several
+// people behind one address, would otherwise be told the check failed.
+func TestCaptchaAPI_ChallengeIsNotThrottledLikeSignIn(t *testing.T) {
+	srv := testServerWithLimits(t, 1000, 1, func(h *api.Handler) {
+		h.Captcha = captcha.New(nil, 5*time.Minute)
+		h.Settings = api.NewSettings(api.SettingsInit{
+			RegistrationMode: "open", MaxFileSizeMB: 10, MaxVideoSizeMB: 50, MaxVideoDurationSec: 60,
+			CaptchaEnabled: true, CaptchaDifficulty: "low",
+		})
+	})
+	for i := 0; i < 12; i++ {
+		if r := mustDo(t, newJSONReq(t, "GET", srv.URL+"/api/captcha/challenge", "", nil)); r.StatusCode != http.StatusOK {
+			t.Fatalf("challenge request %d = %d, want 200 (sign-in limit is 1 request per second)", i+1, r.StatusCode)
+		}
+	}
+}

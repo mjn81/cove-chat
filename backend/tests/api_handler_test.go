@@ -33,6 +33,12 @@ func testServer(t *testing.T) *httptest.Server {
 // testServerWith is testServer with a hook to adjust the Handler (for example enabling demo mode) before routing is built.
 func testServerWith(t *testing.T, tweak func(h *api.Handler)) *httptest.Server {
 	t.Helper()
+	return testServerWithLimits(t, 1000, 1000, tweak)
+}
+
+// testServerWithLimits is testServerWith with explicit rate limits (requests per second per IP).
+func testServerWithLimits(t *testing.T, globalRPS, authRPS float64, tweak func(h *api.Handler)) *httptest.Server {
+	t.Helper()
 
 	dir := t.TempDir()
 	tmpMeta := dir + "/meta"
@@ -65,7 +71,7 @@ func testServerWith(t *testing.T, tweak func(h *api.Handler)) *httptest.Server {
 	if tweak != nil {
 		tweak(handler)
 	}
-	router := api.NewRouter(handler, 1000, 1000) // high limits for testing
+	router := api.NewRouter(handler, globalRPS, authRPS)
 	return httptest.NewServer(router)
 }
 
