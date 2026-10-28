@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 dir="instances/demo"
+# shellcheck source=/dev/null  (.env exists only on the server)
 set -a; . "$dir/.env"; set +a
 tag="$(cat "$dir/.last-good")"
 export INSTANCE=demo TAG="$tag"
