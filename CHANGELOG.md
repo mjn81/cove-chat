@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.4](https://github.com/mjn81/cove-chat/compare/v0.9.3...v0.9.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **auth:** don't throttle the sign-up challenge with the sign-in limiter ([e6d035e](https://github.com/mjn81/cove-chat/commit/e6d035ec16310aa47f49886070e7e17f3f6aca7a))
+
 ## [0.9.3](https://github.com/mjn81/cove-chat/compare/v0.9.2...v0.9.3) (2026-10-28)
 
 
