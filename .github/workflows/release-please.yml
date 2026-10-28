@@ -1,0 +1,37 @@
+name: Release PR
+
+# Keeps a "Release vX.Y.Z" PR up to date from conventional commits. Merging it bumps VERSION, writes the
+# changelog, tags and creates the GitHub release; the build matrix in release.yml then attaches the assets.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    env:
+      # A personal token (repo scope) makes the release PR run CI and lets the tag push start release.yml itself.
+      # Without it we fall back to GITHUB_TOKEN, which cannot trigger other workflows, so we dispatch release.yml below.
+      HAS_PAT: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      - name: Start the build for the new tag
+        if: steps.rp.outputs.release_created == 'true' && env.HAS_PAT != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.rp.outputs.tag_name }}
+        run: gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"

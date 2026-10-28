@@ -255,11 +255,46 @@ jobs:
       - uses: actions/attest-build-provenance@v2
         with:
           subject-path: assets/*
-      - name: Create the release
+      - name: Attach to the release (created by release-please, or here for a hand-pushed tag)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          flag=""; [ "$PRERELEASE" = "true" ] && flag="--prerelease"
-          gh release create "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" \
-            --title "Cove ${GITHUB_REF_NAME#v}" --generate-notes $flag
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" \
+              --title "Cove ${GITHUB_REF_NAME#v}" --generate-notes
+          fi
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --prerelease="$PRERELEASE"
+
+  # Betas go to the public demo first. Skipped until the deploy secrets exist, so dry runs and early tags are unaffected.
+  deploy-demo:
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.publish == 'true' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: demo
+    concurrency:
+      group: deploy-demo
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the deploy key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Sync ops files and deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          ssh_opts="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes"
+          # Only the checked-in files are copied; each instance keeps its own .env on the server.
+          tar -C ops --exclude='.env' --exclude='.last-good' -cf - . | ssh $ssh_opts deploy@"$HOST" 'mkdir -p ~/cove-ops && tar -C ~/cove-ops -xf -'
+          ssh $ssh_opts deploy@"$HOST" "chmod +x ~/cove-ops/*.sh && ~/cove-ops/deploy.sh demo $VERSION"

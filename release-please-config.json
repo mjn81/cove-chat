@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "cove",
+      "version-file": "VERSION",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "prerelease": true,
+      "include-component-in-tag": false,
+      "extra-files": [
+        { "type": "json", "path": "client-web/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "client-desktop/wails.json", "jsonpath": "$.info.productVersion" }
+      ]
+    }
+  }
+}

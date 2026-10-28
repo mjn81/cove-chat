@@ -1,0 +1,52 @@
+# One Cove instance (demo or staging). Run through ops/deploy.sh, which sets INSTANCE and TAG.
+# Both services join the existing nginx-proxy-manager network so HTTPS terminates there; only the
+# media ports (UDP) are published on the host. No secrets in this file: they live in instances/<name>/.env.
+name: cove-${INSTANCE}
+
+services:
+  server:
+    image: ${SERVER_IMAGE:-ghcr.io/mjn81/cove-server}:${TAG}
+    container_name: cove-${INSTANCE}-server
+    restart: unless-stopped
+    environment:
+      COVE_MASTER_PASSWORD: ${COVE_MASTER_PASSWORD:?set COVE_MASTER_PASSWORD in instances/${INSTANCE}/.env}
+      COVE_CONFIG: /app/config.toml
+    volumes:
+      - ./instances/${INSTANCE}/config.toml:/app/config.toml
+      - cove-data:/app/data
+    ports:
+      - "${TURN_PORT:-3478}:3478/udp"
+      - "${MEDIA_PORT_MIN}-${MEDIA_PORT_MAX}:${MEDIA_PORT_MIN}-${MEDIA_PORT_MAX}/udp"
+    networks: [proxy-network]
+    mem_limit: ${SERVER_MEM:-768m}
+    cpus: ${SERVER_CPUS:-1.5}
+    pids_limit: 512
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/version"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/mjn81/cove-webclient}:${TAG}
+    container_name: cove-${INSTANCE}-web
+    restart: unless-stopped
+    environment:
+      # Same origin as the site: the proxy sends /api and /ws to the server, everything else here.
+      VITE_API_URL: https://${INSTANCE_HOST}
+    networks: [proxy-network]
+    mem_limit: 128m
+    cpus: 0.25
+    security_opt: [no-new-privileges:true]
+
+volumes:
+  cove-data:
+
+networks:
+  proxy-network:
+    external: true
