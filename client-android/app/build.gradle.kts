@@ -5,6 +5,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+
+// Single source of truth is the root VERSION file (MAJOR.MINOR.PATCH[-pre]); versionCode is MAJOR*10000 + MINOR*100 + PATCH.
+val cove: Pair<Int, String> = rootProject.projectDir.parentFile.resolve("VERSION").readText().trim().let { v ->
+    val (major, minor, patch) = v.substringBefore("-").split(".").map { it.toInt() }
+    (major * 10000 + minor * 100 + patch) to v
+}
+
 android {
     namespace = "com.cove.chat"
     compileSdk = 35
@@ -13,8 +20,8 @@ android {
         applicationId = "com.cove.chat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = cove.first
+        versionName = cove.second
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

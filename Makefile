@@ -1,4 +1,4 @@
-.PHONY: site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -15,6 +15,12 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 ## ── Backend ──────────────────────────────────────────────────────────────────
+version/sync: ## Propagate VERSION into web + desktop manifests
+	node scripts/sync-version.mjs
+
+version/check: ## Fail if manifests drift from VERSION
+	node scripts/sync-version.mjs --check
+
 tidy: ## go mod tidy
 	cd backend && $(GO) mod tidy
 

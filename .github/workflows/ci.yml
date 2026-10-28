@@ -1,0 +1,124 @@
+name: CI
+
+# Only the jobs whose files changed run. `ci-gate` is the single required status check, so skipped
+# jobs never block a merge and branch protection does not need to list each job.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.f.outputs.backend }}
+      web: ${{ steps.f.outputs.web }}
+      android: ${{ steps.f.outputs.android }}
+      version: ${{ steps.f.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'VERSION'
+              - 'Makefile'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'client-web/**'
+              - 'Makefile'
+              - '.github/workflows/ci.yml'
+            android:
+              - 'client-android/**'
+              - 'VERSION'
+              - '.github/workflows/ci.yml'
+            version:
+              - 'VERSION'
+              - 'client-web/package.json'
+              - 'client-desktop/wails.json'
+              - 'scripts/sync-version.mjs'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: backend
+      - run: make test
+      - name: Server cross-compiles without CGO
+        run: |
+          cd backend
+          for t in linux/amd64 linux/arm64 windows/amd64 darwin/arm64; do
+            CGO_ENABLED=0 GOOS=${t%/*} GOARCH=${t#*/} go build -o /dev/null ./cmd/server
+          done
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: client-web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: client-web/pnpm-lock.yaml
+      - run: make front/install
+      - run: make front/typecheck
+      - run: make front/lint
+      - run: make front/test
+      - run: make front/build
+
+  android:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x client-android/gradlew
+      - run: make android/compile ANDROID_JDK="$JAVA_HOME"
+
+  version:
+    needs: changes
+    if: needs.changes.outputs.version == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: make version/check
+
+  ci-gate:
+    if: always()
+    needs: [changes, backend, web, android, version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job failed or was cancelled
+        run: |
+          echo '${{ toJSON(needs) }}' | jq -e 'all(.[]; .result == "success" or .result == "skipped")'
