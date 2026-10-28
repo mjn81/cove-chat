@@ -4,11 +4,10 @@ FROM golang:1.26-alpine AS builder
 # TARGETOS and TARGETARCH are automatically set by Docker buildx
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION=0.9.0
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev
 
 # Copy go.mod and go.sum first for better caching
 COPY go.mod go.sum ./
@@ -19,7 +18,7 @@ COPY . .
 
 # Build the binary
 # We explicitly set GOARCH to TARGETARCH to ensure we build for the target platform
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH go build -o cove-server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -trimpath -ldflags "-s -w -X cove/backend/internal/version.Version=$VERSION" -o cove-server ./cmd/server
 
 # Run stage
 FROM alpine:latest

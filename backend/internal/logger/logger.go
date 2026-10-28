@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"cove/backend/internal/version"
 )
 
 type Level int
@@ -244,7 +246,7 @@ func PrintBanner(cfg BannerConfig) {
 		cfg.AppName = "Cove Server"
 	}
 	if cfg.Version == "" {
-		cfg.Version = "Cove v0.9.0"
+		cfg.Version = version.Display()
 	}
 	if cfg.Host == "" {
 		cfg.Host = "127.0.0.1"

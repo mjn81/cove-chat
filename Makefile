@@ -8,6 +8,8 @@ GOBIN := $(HOME)/go/bin
 GO    := go
 PNPM  := pnpm
 BIN   := cove-server
+VERSION := $(shell cat VERSION)
+LDFLAGS := -s -w -X cove/backend/internal/version.Version=$(VERSION)
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -17,7 +19,7 @@ tidy: ## go mod tidy
 	cd backend && $(GO) mod tidy
 
 build: ## Build standalone web server binary
-	cd backend && $(GO) build -o ../$(BIN) ./cmd/server
+	cd backend && $(GO) build -ldflags "$(LDFLAGS)" -o ../$(BIN) ./cmd/server
 
 dev dev-back run: export GO_ENV := development
 dev dev-back run: export NODE_ENV := development
@@ -126,10 +128,10 @@ wails/build/linux: build front/build ## Build Linux binary (amd64)
 
 backend/release: ## Build backend binaries for multiple platforms
 	mkdir -p release/backend
-	GOOS=linux   GOARCH=amd64 $(GO) build -o release/backend/cove-server-linux-amd64 backend/cmd/server/main.go
-	GOOS=darwin  GOARCH=amd64 $(GO) build -o release/backend/cove-server-darwin-amd64 backend/cmd/server/main.go
-	GOOS=darwin  GOARCH=arm64 $(GO) build -o release/backend/cove-server-darwin-arm64 backend/cmd/server/main.go
-	GOOS=windows GOARCH=amd64 $(GO) build -o release/backend/cove-server-windows-amd64.exe backend/cmd/server/main.go
+	GOOS=linux   GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o release/backend/cove-server-linux-amd64 backend/cmd/server/main.go
+	GOOS=darwin  GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o release/backend/cove-server-darwin-amd64 backend/cmd/server/main.go
+	GOOS=darwin  GOARCH=arm64 $(GO) build -ldflags "$(LDFLAGS)" -o release/backend/cove-server-darwin-arm64 backend/cmd/server/main.go
+	GOOS=windows GOARCH=amd64 $(GO) build -ldflags "$(LDFLAGS)" -o release/backend/cove-server-windows-amd64.exe backend/cmd/server/main.go
 	@echo "Backend binaries built in release/backend/"
 
 ## ── Docker ───────────────────────────────────────────────────────────────────

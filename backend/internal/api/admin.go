@@ -14,10 +14,11 @@ import (
 	"cove/backend/internal/db"
 	"cove/backend/internal/models"
 	"cove/backend/internal/store"
+	"cove/backend/internal/version"
 )
 
 // appVersion is reported by /api/version and the admin overview.
-const appVersion = "0.9.0"
+var appVersion = version.Version
 
 // ---- DTOs ------------------------------------------------------------------ //
 

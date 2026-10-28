@@ -45,6 +45,7 @@ import (
 	"cove/backend/internal/rtc"
 	"cove/backend/internal/storage"
 	"cove/backend/internal/store"
+	"cove/backend/internal/version"
 	"cove/backend/internal/voice"
 	"cove/backend/internal/ws"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -245,7 +246,7 @@ func main() {
 	}
 	logger.PrintBanner(logger.BannerConfig{
 		AppName:   "Cove Server",
-		Version:   "Cove v0.9.0",
+		Version:   version.Display(),
 		Host:      host,
 		Port:      cfg.Server.HTTPPort,
 		BoundHost: "0.0.0.0",
