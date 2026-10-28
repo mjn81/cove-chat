@@ -226,6 +226,8 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
       - uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: ${{ matrix.context }}
           platforms: linux/amd64,linux/arm64
@@ -249,6 +251,8 @@ jobs:
         with:
           path: assets
           merge-multiple: true
+          # Only our own artifacts: build-push-action also uploads *.dockerbuild records that break the download.
+          pattern: "{server,android,desktop-*}"
       - name: Checksums
         working-directory: assets
         run: sha256sum * > SHA256SUMS
