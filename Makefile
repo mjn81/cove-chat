@@ -1,4 +1,4 @@
-.PHONY: version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -92,6 +92,10 @@ ANDROID_JDK ?= $(firstword $(wildcard $(HOME)/.jdks/jbr-21* $(HOME)/.jdks/jbr-17
 android/compile: ## Compile the Android client (Kotlin only, fast check)
 	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)
 	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:compileDebugKotlin
+
+android/test: ## Run the Android JVM unit tests (pure logic)
+	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)
+	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:testDebugUnitTest
 
 android/build: ## Build the Android debug APK
 	@test -n "$(ANDROID_JDK)" || (echo "No JDK 17-23 found; install one or pass ANDROID_JDK=..."; exit 1)

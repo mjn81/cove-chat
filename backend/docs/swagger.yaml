@@ -198,6 +198,30 @@ definitions:
       password:
         type: string
     type: object
+  internal_api.CaptchaChallengeResponse:
+    properties:
+      algorithm:
+        example: SHA-256
+        type: string
+      challenge:
+        description: Challenge is hex(SHA-256(salt + n)) for a secret number n the
+          client has to find.
+        example: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+        type: string
+      maxnumber:
+        description: MaxNumber is the upper bound of the search range [0, maxnumber].
+        example: 100000
+        type: integer
+      salt:
+        description: Salt is random and carries the expiry as ?expires=<unix>.
+        example: 3f9a1c2b4d5e6f708192a3b4?expires=1893456000
+        type: string
+      signature:
+        description: Signature is hex(HMAC-SHA256(server key, challenge)); the server
+          checks it when the solution comes back.
+        example: c0ffee...
+        type: string
+    type: object
   internal_api.ChannelResponse:
     properties:
       avatar_id:
@@ -453,17 +477,18 @@ definitions:
     type: object
   internal_api.RegisterRequest:
     properties:
+      captcha:
+        description: |-
+          Captcha is the solved ALTCHA payload (base64 JSON) for a challenge from GET /api/captcha/challenge. It is
+          required when /api/server-info reports captcha_required.
+        example: eyJhbGdvcml0aG0iOiJTSEEtMjU2IiwuLi59
+        type: string
       invite_code:
         description: InviteCode is required when the server runs in invite-only mode.
         example: K7M2-X9QF
         type: string
       password:
         example: s3cur3P@ss!
-        type: string
-      turnstile_token:
-        description: TurnstileToken is the Cloudflare Turnstile response, required
-          when the server publishes a turnstile_site_key.
-        example: 0.abcDEF...
         type: string
       username:
         example: alice
@@ -488,6 +513,12 @@ definitions:
     type: object
   internal_api.ServerInfoResponse:
     properties:
+      captcha_required:
+        description: |-
+          CaptchaRequired is true when sign-up needs a solved proof-of-work challenge (GET /api/captcha/challenge).
+          It is false while the server still has no owner, because that first account is always allowed.
+        example: false
+        type: boolean
       demo:
         description: Demo is true on a public demo instance; clients show a notice
           that data resets and is not private.
@@ -501,11 +532,6 @@ definitions:
       registration_mode:
         description: RegistrationMode is "open", "invite_only" or "closed".
         example: invite_only
-        type: string
-      turnstile_site_key:
-        description: TurnstileSiteKey is set when sign-ups need a Cloudflare Turnstile
-          token; the register page renders the widget with it.
-        example: 0x4AAAAAAAexample
         type: string
     type: object
   internal_api.StatusResponse:
@@ -1215,6 +1241,36 @@ paths:
       summary: Restore a backup
       tags:
       - admin
+  /api/captcha/challenge:
+    get:
+      description: |-
+        Returns an ALTCHA v1 challenge. The client searches for the number n in [0, maxnumber] with
+        SHA-256(salt + n) equal to `challenge`, then sends the base64 JSON
+        {algorithm, challenge, number, salt, signature} as `captcha` when registering.
+        Each solution works once and expires after a few minutes. Returns 404 when the check is off.
+        **Access:** Public.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.CaptchaChallengeResponse'
+        "404":
+          description: the sign-up check is not enabled on this server
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      summary: Get a sign-up proof-of-work challenge
+      tags:
+      - auth
   /api/channels:
     get:
       produces:
@@ -1535,7 +1591,7 @@ paths:
         Creates a new Cove user account. Depends on the server's registration mode:
         **open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.
         The very first account on a fresh server is always accepted and becomes the server owner.
-        On a server that publishes a turnstile_site_key (public demo) every sign-up except the first must carry a valid turnstile_token.
+        When the sign-up check is on (captcha_required in /api/server-info) every sign-up except the first must carry a solved proof-of-work challenge in `captcha`.
         **Access:** Public.
       parameters:
       - description: Registration payload

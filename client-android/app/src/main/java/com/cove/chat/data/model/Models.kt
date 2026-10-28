@@ -56,7 +56,9 @@ data class LoginRequest(
 data class RegisterRequest(
     val username: String,
     val password: String,
-    @SerialName("invite_code") val inviteCode: String? = null
+    @SerialName("invite_code") val inviteCode: String? = null,
+    /** Solved sign-up proof-of-work payload (see `solveCaptcha`); null when the server does not ask for one. */
+    val captcha: String? = null
 )
 
 @Serializable

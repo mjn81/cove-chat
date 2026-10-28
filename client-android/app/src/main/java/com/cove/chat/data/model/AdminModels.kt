@@ -8,7 +8,9 @@ import kotlinx.serialization.json.JsonElement
 @Serializable
 data class ServerInfo(
     @SerialName("registration_mode") val registrationMode: String = "open",
-    @SerialName("needs_owner") val needsOwner: Boolean = false
+    @SerialName("needs_owner") val needsOwner: Boolean = false,
+    /** True when an admin turned on the sign-up proof-of-work check; the app solves it automatically. */
+    @SerialName("captcha_required") val captchaRequired: Boolean = false
 )
 
 @Serializable

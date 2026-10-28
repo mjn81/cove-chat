@@ -22,6 +22,7 @@ type Config struct {
 	Registration RegistrationConfig `toml:"registration"`
 	Admin        AdminConfig        `toml:"admin"`
 	Demo         DemoConfig         `toml:"demo"`
+	Captcha      CaptchaConfig      `toml:"captcha"`
 }
 
 // Registration modes.
@@ -164,6 +165,7 @@ const configPath = "config.toml"
 // defaults returns the built-in configuration every file is decoded on top of.
 func defaults() *Config {
 	return &Config{
+		Captcha: CaptchaConfig{Difficulty: "medium"},
 		Server: ServerConfig{
 			Domain:              "localhost",
 			HTTPPort:            4000,
@@ -314,6 +316,11 @@ func (c *Config) Validate() error {
 	default:
 		return fmt.Errorf("config: registration.mode must be %q, %q or %q, got %q", RegistrationOpen, RegistrationInviteOnly, RegistrationClosed, c.Registration.Mode)
 	}
+	switch c.Captcha.Difficulty {
+	case "low", "medium", "high":
+	default:
+		return fmt.Errorf("config: captcha.difficulty must be \"low\", \"medium\" or \"high\", got %q", c.Captcha.Difficulty)
+	}
 	for i, inv := range c.Registration.Invites {
 		if strings.TrimSpace(inv.Code) == "" {
 			return fmt.Errorf("config: registration.invites[%d] has an empty code", i)
@@ -328,6 +335,15 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+// CaptchaConfig is the self-hosted sign-up check: a proof-of-work challenge (ALTCHA) every client solves
+// automatically, so mass sign-ups cost CPU time without any third-party service. Both keys can be changed
+// live from the admin panel.
+type CaptchaConfig struct {
+	Enabled bool `toml:"enabled"`
+	// Difficulty is "low", "medium" (default) or "high": how much work a client does per sign-up.
+	Difficulty string `toml:"difficulty"`
 }
 
 // DemoConfig turns the server into a public, abuse-resistant demo. Everything is off by default;

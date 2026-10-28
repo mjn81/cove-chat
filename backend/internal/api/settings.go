@@ -3,6 +3,7 @@ package api
 import (
 	"sync"
 
+	"cove/backend/internal/captcha"
 	"cove/backend/internal/config"
 )
 
@@ -12,6 +13,8 @@ type SettingsInit struct {
 	MaxFileSizeMB       int
 	MaxVideoSizeMB      int
 	MaxVideoDurationSec int
+	CaptchaEnabled      bool
+	CaptchaDifficulty   string
 }
 
 // Settings holds the configuration values that can change while the server
@@ -52,6 +55,23 @@ func (s *Settings) SetRegistrationMode(mode string) bool {
 	s.init.RegistrationMode = mode
 	s.mu.Unlock()
 	return true
+}
+
+// Captcha returns whether sign-up needs a solved challenge and how large the search range is.
+func (s *Settings) Captcha() (enabled bool, maxNumber int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.init.CaptchaEnabled, captcha.MaxNumberFor(s.init.CaptchaDifficulty)
+}
+
+// SetCaptcha updates the sign-up check; an unknown difficulty is ignored and the previous one kept.
+func (s *Settings) SetCaptcha(enabled bool, difficulty string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.init.CaptchaEnabled = enabled
+	if captcha.ValidDifficulty(difficulty) {
+		s.init.CaptchaDifficulty = difficulty
+	}
 }
 
 // Limits returns the upload and video limits currently in force.

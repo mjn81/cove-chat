@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cove/backend/internal/auth"
+	"cove/backend/internal/captcha"
 	"cove/backend/internal/config"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
@@ -54,10 +55,9 @@ type Handler struct {
 	// Demo holds the opt-in public-demo limits (config [demo]); the zero value is a normal server.
 	Demo config.DemoConfig
 
-	// Captcha verifies the sign-up bot-check token; nil disables the check. TurnstileSiteKey is the public
-	// key clients use to render the widget (published through /api/server-info).
-	Captcha          CaptchaVerifier
-	TurnstileSiteKey string
+	// Captcha issues and verifies the sign-up proof-of-work challenges. Whether it is enforced is a live
+	// setting (Settings), so the admin panel can switch it on and off without a restart.
+	Captcha *captcha.Service
 
 	// signups is ephemeral by design: per-IP signup timestamps are only a short-lived abuse
 	// throttle, so losing them on restart is acceptable and they need no persistence.
@@ -111,6 +111,8 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("GET /api/server-info", http.HandlerFunc(h.GetServerInfo))
 	mux.Handle("POST /api/register", authLimiter.Limit(http.HandlerFunc(h.Register)))
 	mux.Handle("POST /api/login", authLimiter.Limit(http.HandlerFunc(h.Login)))
+	// Same limiter as sign-in: the challenge is cheap to issue but must not be farmable.
+	mux.Handle("GET /api/captcha/challenge", authLimiter.Limit(http.HandlerFunc(h.GetCaptchaChallenge)))
 
 	// Protected
 	mux.Handle("POST /api/logout", protect(h.Logout))

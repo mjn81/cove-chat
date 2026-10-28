@@ -15,6 +15,7 @@ import com.cove.chat.data.model.CreateInviteRequest
 import com.cove.chat.data.model.Invite
 import com.cove.chat.data.model.InvitesResponse
 import com.cove.chat.data.model.PasswordRequest
+import com.cove.chat.data.CaptchaChallenge
 import com.cove.chat.data.model.ServerInfo
 import com.cove.chat.data.model.TransferOwnerRequest
 import com.cove.chat.data.model.UpdateConfigRequest
@@ -286,6 +287,11 @@ class ApiClient(private val prefs: PreferencesManager) {
     /** Public: whether sign-up is open, invite-only or closed, and whether the next account becomes the owner. */
     suspend fun getServerInfo(): Result<ServerInfo> = runCatching {
         client.get(url("/api/server-info")).ok().body()
+    }
+
+    /** Fetches a sign-up proof-of-work challenge; fails when the server has the check turned off (404). */
+    suspend fun getCaptchaChallenge(): Result<CaptchaChallenge> = runCatching {
+        client.get(url("/api/captcha/challenge")).ok().body()
     }
 
     suspend fun adminOverview(): Result<AdminOverview> = runCatching {

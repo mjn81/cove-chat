@@ -118,5 +118,8 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
 
+    // JVM unit tests for pure logic (voice trim maths, ...)
+    testImplementation("junit:junit:4.13.2")
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

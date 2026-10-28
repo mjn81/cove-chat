@@ -884,6 +884,44 @@
                 }
             }
         },
+        "/api/captcha/challenge": {
+            "get": {
+                "description": "Returns an ALTCHA v1 challenge. The client searches for the number n in [0, maxnumber] with\nSHA-256(salt + n) equal to `challenge`, then sends the base64 JSON\n{algorithm, challenge, number, salt, signature} as `captcha` when registering.\nEach solution works once and expires after a few minutes. Returns 404 when the check is off.\n**Access:** Public.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get a sign-up proof-of-work challenge",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CaptchaChallengeResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "the sign-up check is not enabled on this server",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/channels": {
             "get": {
                 "security": [
@@ -1391,7 +1429,7 @@
         },
         "/api/register": {
             "post": {
-                "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\nOn a server that publishes a turnstile_site_key (public demo) every sign-up except the first must carry a valid turnstile_token.\n**Access:** Public.",
+                "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\nWhen the sign-up check is on (captcha_required in /api/server-info) every sign-up except the first must carry a solved proof-of-work challenge in `captcha`.\n**Access:** Public.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1942,6 +1980,35 @@
                 }
             }
         },
+        "internal_api.CaptchaChallengeResponse": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string",
+                    "example": "SHA-256"
+                },
+                "challenge": {
+                    "description": "Challenge is hex(SHA-256(salt + n)) for a secret number n the client has to find.",
+                    "type": "string",
+                    "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+                },
+                "maxnumber": {
+                    "description": "MaxNumber is the upper bound of the search range [0, maxnumber].",
+                    "type": "integer",
+                    "example": 100000
+                },
+                "salt": {
+                    "description": "Salt is random and carries the expiry as ?expires=\u003cunix\u003e.",
+                    "type": "string",
+                    "example": "3f9a1c2b4d5e6f708192a3b4?expires=1893456000"
+                },
+                "signature": {
+                    "description": "Signature is hex(HMAC-SHA256(server key, challenge)); the server checks it when the solution comes back.",
+                    "type": "string",
+                    "example": "c0ffee..."
+                }
+            }
+        },
         "internal_api.ChannelResponse": {
             "type": "object",
             "properties": {
@@ -2310,6 +2377,11 @@
         "internal_api.RegisterRequest": {
             "type": "object",
             "properties": {
+                "captcha": {
+                    "description": "Captcha is the solved ALTCHA payload (base64 JSON) for a challenge from GET /api/captcha/challenge. It is\nrequired when /api/server-info reports captcha_required.",
+                    "type": "string",
+                    "example": "eyJhbGdvcml0aG0iOiJTSEEtMjU2IiwuLi59"
+                },
                 "invite_code": {
                     "description": "InviteCode is required when the server runs in invite-only mode.",
                     "type": "string",
@@ -2318,11 +2390,6 @@
                 "password": {
                     "type": "string",
                     "example": "s3cur3P@ss!"
-                },
-                "turnstile_token": {
-                    "description": "TurnstileToken is the Cloudflare Turnstile response, required when the server publishes a turnstile_site_key.",
-                    "type": "string",
-                    "example": "0.abcDEF..."
                 },
                 "username": {
                     "type": "string",
@@ -2358,6 +2425,11 @@
         "internal_api.ServerInfoResponse": {
             "type": "object",
             "properties": {
+                "captcha_required": {
+                    "description": "CaptchaRequired is true when sign-up needs a solved proof-of-work challenge (GET /api/captcha/challenge).\nIt is false while the server still has no owner, because that first account is always allowed.",
+                    "type": "boolean",
+                    "example": false
+                },
                 "demo": {
                     "description": "Demo is true on a public demo instance; clients show a notice that data resets and is not private.",
                     "type": "boolean",
@@ -2372,11 +2444,6 @@
                     "description": "RegistrationMode is \"open\", \"invite_only\" or \"closed\".",
                     "type": "string",
                     "example": "invite_only"
-                },
-                "turnstile_site_key": {
-                    "description": "TurnstileSiteKey is set when sign-ups need a Cloudflare Turnstile token; the register page renders the widget with it.",
-                    "type": "string",
-                    "example": "0x4AAAAAAAexample"
                 }
             }
         },

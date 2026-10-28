@@ -11,8 +11,9 @@ type ServerInfoResponse struct {
 	NeedsOwner bool `json:"needs_owner" example:"false"`
 	// Demo is true on a public demo instance; clients show a notice that data resets and is not private.
 	Demo bool `json:"demo" example:"false"`
-	// TurnstileSiteKey is set when sign-ups need a Cloudflare Turnstile token; the register page renders the widget with it.
-	TurnstileSiteKey string `json:"turnstile_site_key,omitempty" example:"0x4AAAAAAAexample"`
+	// CaptchaRequired is true when sign-up needs a solved proof-of-work challenge (GET /api/captcha/challenge).
+	// It is false while the server still has no owner, because that first account is always allowed.
+	CaptchaRequired bool `json:"captcha_required" example:"false"`
 }
 
 // GetServerInfo godoc
@@ -30,8 +31,6 @@ func (h *Handler) GetServerInfo(w http.ResponseWriter, r *http.Request) {
 		NeedsOwner:       !h.Store.HasOwner(),
 		Demo:             h.Demo.Enabled,
 	}
-	if h.Captcha != nil {
-		info.TurnstileSiteKey = h.TurnstileSiteKey
-	}
+	info.CaptchaRequired = h.captchaOn() && !info.NeedsOwner
 	writeJSON(w, http.StatusOK, info)
 }

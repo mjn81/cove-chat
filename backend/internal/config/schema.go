@@ -70,6 +70,10 @@ var schema = []Setting{
 		get: func(c *Config) any { return c.Server.HTTPPort }},
 	{Key: "server.dev", Group: "network", Type: "bool", OwnerOnly: true, RestartRequired: true,
 		get: func(c *Config) any { return c.Server.Dev }},
+	{Key: "captcha.enabled", Group: "security", Type: "bool",
+		get: func(c *Config) any { return c.Captcha.Enabled }},
+	{Key: "captcha.difficulty", Group: "security", Type: "enum", Options: []string{"low", "medium", "high"},
+		get: func(c *Config) any { return c.Captcha.Difficulty }},
 	{Key: "security.token_expire_hours", Group: "security", Type: "int", Min: 1, Max: 8760, OwnerOnly: true, RestartRequired: true,
 		get: func(c *Config) any { return c.Security.TokenExpireHours }},
 }

@@ -293,6 +293,7 @@ func (h *Handler) applyLiveSettings() {
 	}
 	h.Settings.SetRegistrationMode(cfg.Registration.Mode)
 	h.Settings.SetLimits(cfg.Server.MaxFileSizeMB, cfg.Server.MaxVideoSizeMB, cfg.Server.MaxVideoDurationSec)
+	h.Settings.SetCaptcha(cfg.Captcha.Enabled, cfg.Captcha.Difficulty)
 }
 
 // ---- Invites ---------------------------------------------------------------- //

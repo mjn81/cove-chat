@@ -120,5 +120,11 @@ mode = "open"
 # enabled = false
 # max_users = 200               # total accounts allowed; 0 = no cap
 # signups_per_ip_per_day = 3    # new accounts per client IP per rolling 24h; 0 = no cap
-# turnstile_site_key = ""      # Cloudflare Turnstile public key; with the secret it gates sign-up
-# turnstile_secret_key = ""    # prefer the COVE_TURNSTILE_SECRET_KEY env var over putting the secret here
+
+# ── Sign-up protection ────────────────────────────────────────────────────
+# A self-hosted proof-of-work check (ALTCHA): every Cove client solves a small puzzle automatically when
+# someone registers, so bulk sign-ups cost the attacker CPU time. No third-party service, no tracking.
+# Both keys can also be changed live from the admin panel. The very first account is always exempt.
+[captcha]
+# enabled = false
+# difficulty = "medium"   # low | medium | high (about 12k, 50k and 200k hashes on average)

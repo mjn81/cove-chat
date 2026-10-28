@@ -4,6 +4,7 @@ import { logger } from '@/utils/logger';
 import { isWails } from '@/utils/wails';
 import axios, { AxiosError } from 'axios';
 import type { PublicServerInfo } from '@/domains/auth/types/auth.types';
+import type { AltchaChallenge } from '@/lib/altcha';
 
 // ─────────────────────────────────────────────
 // Environment
@@ -187,13 +188,13 @@ export function request<T>(axiosCall: Promise<unknown>): Promise<T> {
 // ─────────────────────────────────────────────
 // Auth API
 // ─────────────────────────────────────────────
-export async function apiRegister(username: string, password: string, inviteCode?: string, turnstileToken?: string) {
+export async function apiRegister(username: string, password: string, inviteCode?: string, captcha?: string) {
 	return request<{ id: string; username: string }>(
 		apiClient.post('/api/register', {
 			username,
 			password,
 			...(inviteCode ? { invite_code: inviteCode } : {}),
-			...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+			...(captcha ? { captcha } : {}),
 		}),
 	);
 }
@@ -201,6 +202,11 @@ export async function apiRegister(username: string, password: string, inviteCode
 /** Public sign-up policy, so the register page can adapt before the user types. */
 export async function apiServerInfo() {
 	return request<PublicServerInfo>(apiClient.get('/api/server-info'));
+}
+
+/** Fetches a sign-up proof-of-work challenge (ALTCHA). 404 when the server has the check turned off. */
+export async function apiCaptchaChallenge() {
+	return request<AltchaChallenge>(apiClient.get('/api/captcha/challenge'));
 }
 
 export async function apiLogin(username: string, password: string) {

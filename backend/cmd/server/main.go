@@ -36,6 +36,7 @@ import (
 
 	"cove/backend/internal/api"
 	"cove/backend/internal/auth"
+	"cove/backend/internal/captcha"
 	"cove/backend/internal/config"
 	"cove/backend/internal/crypto"
 	"cove/backend/internal/db"
@@ -154,6 +155,8 @@ func main() {
 		FrontendOrigin:      cfg.Server.FrontendOrigin,
 		Settings: api.NewSettings(api.SettingsInit{
 			RegistrationMode:    cfg.Registration.Mode,
+			CaptchaEnabled:      cfg.Captcha.Enabled,
+			CaptchaDifficulty:   cfg.Captcha.Difficulty,
 			MaxFileSizeMB:       cfg.Server.MaxFileSizeMB,
 			MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
 			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
@@ -168,15 +171,8 @@ func main() {
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 
-	// Sign-up bot check (public demo): needs both Turnstile keys. The secret may come from the environment.
-	turnstileSecret := cfg.Demo.TurnstileSecretKey
-	if env := os.Getenv("COVE_TURNSTILE_SECRET_KEY"); env != "" {
-		turnstileSecret = env
-	}
-	if cfg.Demo.Enabled && turnstileSecret != "" && cfg.Demo.TurnstileSiteKey != "" {
-		apiHandler.Captcha = api.NewTurnstileVerifier(turnstileSecret)
-		apiHandler.TurnstileSiteKey = cfg.Demo.TurnstileSiteKey
-	}
+	// Sign-up proof-of-work. The service always exists; the admin panel switches enforcement on and off live.
+	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)
 
 	rootMux := http.NewServeMux()
 	rootMux.Handle("/ws", hub)

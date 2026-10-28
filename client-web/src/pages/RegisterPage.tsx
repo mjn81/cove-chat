@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { BASE_URL } from '@/api/client';
 import { useGetServerInfo } from '@/domains/auth/api/use-get-server-info';
-import { TurnstileWidget } from '@/domains/auth/components/turnstile-widget';
+import { CaptchaField } from '@/domains/auth/components/captcha-field';
 import { useAuthStore } from '@/store/store';
 import {
 	Card,
@@ -32,7 +32,7 @@ export default function RegisterPage() {
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-	// Tokens are single use, so a failed attempt asks the widget for a fresh challenge.
+	// Solutions are single use, so a failed attempt remounts the check to get a fresh challenge.
 	const [captchaReset, setCaptchaReset] = useState(0);
 
 	// The first account on a fresh server is always allowed (it becomes the
@@ -41,11 +41,9 @@ export default function RegisterPage() {
 	const open = !info || info.needs_owner || info.registration_mode === 'open';
 	const closed = !open && info?.registration_mode === 'closed';
 	const needsInvite = !open && info?.registration_mode === 'invite_only';
-	// A public demo publishes a Turnstile key; every sign-up except the owner bootstrap must pass the bot check.
-	const siteKey = info?.turnstile_site_key;
-	const needsCaptcha = Boolean(siteKey) && !info?.needs_owner;
-	// The desktop shell is not an origin Turnstile can verify, so it sends people to the web page instead.
-	const webOnly = needsCaptcha && isWails();
+	// An admin can require a proof-of-work check (solved automatically by this client); the server never asks
+	// for it on the first account, which becomes the owner.
+	const needsCaptcha = Boolean(info?.captcha_required);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -110,21 +108,7 @@ export default function RegisterPage() {
 						</p>
 					)}
 
-					{!closed && webOnly && (
-						<div className="space-y-3 rounded-md border border-border p-4 text-center text-sm text-muted-foreground">
-							<p>{t('demo.registerOnWeb')}</p>
-							<a
-								href={`${BASE_URL}/register`}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="font-medium text-primary hover:underline"
-							>
-								{t('demo.registerOnWebLink')}
-							</a>
-						</div>
-					)}
-
-					{!closed && !webOnly && (
+					{!closed && (
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
 							<Label
@@ -207,9 +191,7 @@ export default function RegisterPage() {
 								/>
 							</div>
 						)}
-						{needsCaptcha && siteKey && (
-							<TurnstileWidget siteKey={siteKey} onToken={setCaptchaToken} resetKey={captchaReset} />
-						)}
+						{needsCaptcha && <CaptchaField key={captchaReset} onPayload={setCaptchaToken} />}
 						<Button
 							type="submit"
 							className="w-full h-11 bg-primary hover:opacity-90 text-primary-foreground font-medium text-base mt-2 transition-colors"

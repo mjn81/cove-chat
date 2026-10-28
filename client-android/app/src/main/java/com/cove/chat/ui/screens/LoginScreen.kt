@@ -46,6 +46,9 @@ import com.cove.chat.CoveApp
 import com.cove.chat.data.model.LoginRequest
 import com.cove.chat.data.model.RegisterRequest
 import com.cove.chat.data.model.ServerInfo
+import com.cove.chat.data.solveCaptcha
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.cove.chat.ui.components.adm
 import com.cove.chat.ui.components.adminError
 import androidx.compose.runtime.LaunchedEffect
@@ -81,15 +84,28 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var inviteCode by remember { mutableStateOf("") }
     var serverInfo by remember { mutableStateOf<ServerInfo?>(null) }
+    // Sign-up proof-of-work: solved in the background as soon as the register form shows and the server asks for it.
+    var captchaPayload by remember { mutableStateOf<String?>(null) }
+    var captchaFailed by remember { mutableStateOf(false) }
+    var captchaAttempt by remember { mutableStateOf(0) }
 
     // The register form depends on the server's sign-up policy. A failed lookup leaves the plain form and the server decides.
     LaunchedEffect(isRegister) { if (isRegister) serverInfo = api.getServerInfo().getOrNull() }
     val mode = serverInfo?.takeIf { !it.needsOwner }?.registrationMode
     val needsInvite = isRegister && mode == "invite_only"
     val registrationClosed = isRegister && mode == "closed"
+    val needsCaptcha = isRegister && serverInfo?.let { it.captchaRequired && !it.needsOwner } == true
+    LaunchedEffect(needsCaptcha, captchaAttempt) {
+        captchaPayload = null
+        captchaFailed = false
+        if (needsCaptcha) {
+            val solved = api.getCaptchaChallenge().getOrNull()?.let { withContext(Dispatchers.Default) { solveCaptcha(it) } }
+            if (solved != null) captchaPayload = solved else captchaFailed = true
+        }
+    }
 
     fun submit() {
-        if (loading || registrationClosed) return
+        if (loading || registrationClosed || (needsCaptcha && captchaPayload == null)) return
         if (username.isBlank() || password.isBlank()) {
             error = "Please enter both username and password."
             return
@@ -99,7 +115,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
         scope.launch {
             val name = username.trim()
             val result = if (isRegister) {
-                api.register(RegisterRequest(name, password, inviteCode.trim().ifEmpty { null }.takeIf { needsInvite })).fold(
+                api.register(RegisterRequest(name, password, inviteCode.trim().ifEmpty { null }.takeIf { needsInvite }, captchaPayload.takeIf { needsCaptcha })).fold(
                     onSuccess = { api.login(LoginRequest(name, password)) },
                     onFailure = { Result.failure(it) }
                 )
@@ -112,7 +128,11 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                     app.webSocketManager.connect()
                     onLoginSuccess()
                 },
-                onFailure = { error = adminError(it.message ?: "Authentication failed.") }
+                onFailure = {
+                    error = adminError(it.message ?: "Authentication failed.")
+                    // A solution is single use, so a rejected sign-up needs a fresh one.
+                    if (isRegister && needsCaptcha) captchaAttempt++
+                }
             )
         }
     }
@@ -200,6 +220,11 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                 }
             }
 
+            if (needsCaptcha) {
+                Spacer(Modifier.height(16.dp))
+                CaptchaStatus(solved = captchaPayload != null, failed = captchaFailed, onRetry = { captchaAttempt++ })
+            }
+
             Spacer(Modifier.height(16.dp))
             CoveButton(
                 text = if (isRegister) "Continue" else "Log In",
@@ -207,7 +232,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 size = ButtonSize.Lg,
                 loading = loading,
-                enabled = !registrationClosed && (!needsInvite || inviteCode.isNotBlank())
+                enabled = !registrationClosed && (!needsInvite || inviteCode.isNotBlank()) && (!needsCaptcha || captchaPayload != null)
             )
 
             Spacer(Modifier.height(16.dp))

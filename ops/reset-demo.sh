@@ -23,7 +23,7 @@ for _ in $(seq 1 30); do
 done
 
 # Talk to the server from inside its own container: no public route, so the per-IP signup limit and
-# Turnstile do not apply to the seed. The first account on a fresh server becomes the owner.
+# sign-up check do not apply to the seed. The first account on a fresh server becomes the owner.
 run() { docker exec -i cove-demo-server wget -qO- --header='Content-Type: application/json' --post-data="$2" "http://127.0.0.1:4000$1"; }
 run /api/register "{\"username\":\"$DEMO_OWNER_USER\",\"password\":\"$DEMO_OWNER_PASSWORD\"}" >/dev/null
 login="$(run /api/login "{\"username\":\"$DEMO_OWNER_USER\",\"password\":\"$DEMO_OWNER_PASSWORD\"}")"

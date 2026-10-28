@@ -11,8 +11,9 @@ type RegisterRequest struct {
 	Password string `json:"password" example:"s3cur3P@ss!"`
 	// InviteCode is required when the server runs in invite-only mode.
 	InviteCode string `json:"invite_code,omitempty" example:"K7M2-X9QF"`
-	// TurnstileToken is the Cloudflare Turnstile response, required when the server publishes a turnstile_site_key.
-	TurnstileToken string `json:"turnstile_token,omitempty" example:"0.abcDEF..."`
+	// Captcha is the solved ALTCHA payload (base64 JSON) for a challenge from GET /api/captcha/challenge. It is
+	// required when /api/server-info reports captcha_required.
+	Captcha string `json:"captcha,omitempty" example:"eyJhbGdvcml0aG0iOiJTSEEtMjU2IiwuLi59"`
 }
 
 type RegisterResponse struct {

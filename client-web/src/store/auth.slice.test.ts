@@ -172,7 +172,7 @@ describe('auth.slice register', () => {
 		expect(mockConnectWS).toHaveBeenCalledWith('carol-token');
 	});
 
-	it('passes the bot-check token to the register call', async () => {
+	it('passes the solved sign-up check to the register call', async () => {
 		mockApiRegister.mockResolvedValue({ id: 'u3', username: 'dave' });
 		mockApiLogin.mockResolvedValue({
 			id: 'u3',
@@ -183,8 +183,8 @@ describe('auth.slice register', () => {
 			token: 'dave-token',
 		});
 
-		await useAuthStore.getState().register('dave', 'password123', undefined, 'turnstile-token');
+		await useAuthStore.getState().register('dave', 'password123', undefined, 'solved-payload');
 
-		expect(mockApiRegister).toHaveBeenCalledWith('dave', 'password123', undefined, 'turnstile-token');
+		expect(mockApiRegister).toHaveBeenCalledWith('dave', 'password123', undefined, 'solved-payload');
 	});
 });

@@ -31,6 +31,8 @@ mode = "open"
 enabled = true
 max_users = 200
 signups_per_ip_per_day = 3
-# Public Cloudflare Turnstile key; the secret is in the server .env as COVE_TURNSTILE_SECRET_KEY.
-# Needs a server image with the bot check (0.9.2 or newer).
-turnstile_site_key = "0x4AAAAAAFqPZetIkRB_q8Lc"
+
+# Self-hosted proof-of-work check on sign-up (ALTCHA): clients solve it automatically. Admins can change this live.
+[captcha]
+enabled = true
+difficulty = "medium"

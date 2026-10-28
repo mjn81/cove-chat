@@ -39,7 +39,7 @@ export interface AuthSlice {
 
 	initAuth: () => Promise<void>;
 	login: (u: string, p: string) => Promise<void>;
-	register: (u: string, p: string, inviteCode?: string, turnstileToken?: string) => Promise<void>;
+	register: (u: string, p: string, inviteCode?: string, captcha?: string) => Promise<void>;
 	logout: () => Promise<void>;
 	fetchRelationships: () => Promise<void>;
 	fetchIncomingRequests: () => Promise<void>;
@@ -133,8 +133,8 @@ export const useAuthStore = create<AuthSlice>()(
 				get().fetchIncomingRequests();
 			},
 
-			register: async (u, p, inviteCode, turnstileToken) => {
-				await apiRegister(u, p, inviteCode, turnstileToken);
+			register: async (u, p, inviteCode, captcha) => {
+				await apiRegister(u, p, inviteCode, captcha);
 				await get().login(u, p);
 			},
 

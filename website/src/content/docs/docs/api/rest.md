@@ -33,6 +33,7 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 
 | Method | Path | Summary | Access |
 | --- | --- | --- | --- |
+| `GET` | `/api/captcha/challenge` | Get a sign-up proof-of-work challenge | Public. |
 | `POST` | `/api/login` | Log in and obtain a session token | Public |
 | `POST` | `/api/logout` | Log out and invalidate session | Authenticated |
 | `POST` | `/api/register` | Register a new account | Public. |

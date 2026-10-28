@@ -4,6 +4,6 @@ export interface PublicServerInfo {
 	needs_owner: boolean;
 	/** True on a public demo instance: data resets and nothing private should be entered. */
 	demo?: boolean;
-	/** Cloudflare Turnstile public key; present only when sign-up needs a bot-check token. */
-	turnstile_site_key?: string;
+	/** True when sign-up needs a solved proof-of-work challenge (an admin enabled it); false for the first account. */
+	captcha_required?: boolean;
 }

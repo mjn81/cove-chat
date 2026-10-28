@@ -21,7 +21,7 @@ import (
 //	@Description Creates a new Cove user account. Depends on the server's registration mode:
 //	@Description **open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.
 //	@Description The very first account on a fresh server is always accepted and becomes the server owner.
-//	@Description On a server that publishes a turnstile_site_key (public demo) every sign-up except the first must carry a valid turnstile_token.
+//	@Description When the sign-up check is on (captcha_required in /api/server-info) every sign-up except the first must carry a solved proof-of-work challenge in `captcha`.
 //	@Description **Access:** Public.
 //	@Tags        auth
 //	@Accept      json
@@ -50,10 +50,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	// to register, otherwise a closed or invite-only server could never be set up.
 	bootstrap := !h.Store.HasOwner()
 
-	// The bot check runs before an invite use or a per-IP slot is consumed. The bootstrap owner is exempt so
-	// an operator can always set a fresh server up.
-	if h.Captcha != nil && !bootstrap {
-		if status, msg := h.captchaDenied(r, body.TurnstileToken); status != 0 {
+	// The proof-of-work check runs before an invite use or a per-IP slot is consumed. The bootstrap owner is
+	// exempt so an operator can always set a fresh server up.
+	if h.captchaOn() && !bootstrap {
+		if status, msg := h.captchaDenied(body.Captcha); status != 0 {
 			writeError(w, status, msg)
 			return
 		}

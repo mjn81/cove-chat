@@ -216,3 +216,13 @@ Default: `200               # total accounts allowed; 0 = no cap` (commented out
 
 Default: `3    # new accounts per client IP per rolling 24h; 0 = no cap` (commented out in the example; optional)
 
+## `[captcha]`
+
+### `captcha.enabled`
+
+Default: `false` (commented out in the example; optional)
+
+### `captcha.difficulty`
+
+Default: `"medium"   # low \| medium \| high (about 12k, 50k and 200k hashes on average)` (commented out in the example; optional)
+

@@ -11,8 +11,6 @@ services:
     environment:
       COVE_MASTER_PASSWORD: ${COVE_MASTER_PASSWORD:?set COVE_MASTER_PASSWORD in instances/${INSTANCE}/.env}
       COVE_CONFIG: /app/config.toml
-      # Optional (demo): with turnstile_site_key in config.toml this turns on the sign-up bot check.
-      COVE_TURNSTILE_SECRET_KEY: ${COVE_TURNSTILE_SECRET_KEY:-}
     volumes:
       - ./instances/${INSTANCE}/config.toml:/app/config.toml
       - cove-data:/app/data
