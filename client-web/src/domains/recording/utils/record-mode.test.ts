@@ -20,7 +20,7 @@ describe('record mode', () => {
 	});
 
 	it('ignores corrupt stored values', () => {
-		localStorage.setItem('nodetalk_record_mode', 'banana');
+		localStorage.setItem('cove_record_mode', 'banana');
 		expect(loadRecordMode()).toBe('voice');
 	});
 });

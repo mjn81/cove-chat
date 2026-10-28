@@ -12,7 +12,7 @@ export default function LanguageSwitcher() {
 
 	const handleChange = (code: string) => {
 		i18n.changeLanguage(code);
-		localStorage.setItem('nodetalk_lang', code);
+		localStorage.setItem('cove_lang', code);
 	};
 
 	return (

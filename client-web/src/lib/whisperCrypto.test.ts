@@ -272,3 +272,26 @@ describe('whisperCrypto', () => {
 	});
 });
 
+
+// Known-answer test: expected value computed independently with Node's crypto (ECDH + HKDF-SHA512), so a
+// change to the 'cove-whisper-*' context strings (which would break Whisper between clients) fails here.
+describe('whisper key derivation context strings', () => {
+	it('derives the pinned safety fingerprint for fixed keys', async () => {
+		const alicePriv = await window.crypto.subtle.importKey(
+			'jwk',
+			{"kty":"EC","x":"7oyc9WjI0SALfOjYaT--nfXdm5PF5ek2-NOrocvVHAA","y":"iJ13BPgvGXDYtrYHAeHExj8jjp1gYKVx5oGG0TCjhqM","crv":"P-256","d":"dz5Kha1IcG4Q-ESsqn55-kGKC9P_IVktoWJ_nn6zUmY"},
+			{ name: 'ECDH', namedCurve: 'P-256' },
+			false,
+			['deriveBits'],
+		);
+		const bobPub = await window.crypto.subtle.importKey(
+			'jwk',
+			{"kty":"EC","x":"EuWnlYl2xJCxMk6-hzoJJl2M62jRDYQNZWwA2MOI2q0","y":"vrbPJLkmGCpxA80ms8SdilG6d5BdhnWzbe6ViUb_JwM","crv":"P-256"},
+			{ name: 'ECDH', namedCurve: 'P-256' },
+			true,
+			[],
+		);
+		const secrets = await deriveWhisperSecrets(alicePriv, bobPub, 'session-1', 'user-bob', 'user-alice');
+		expect(secrets.fingerprintHex).toBe('DFD3C7878E91A761ACE4EF10120B8CDD');
+	});
+});

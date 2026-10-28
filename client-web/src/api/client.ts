@@ -108,7 +108,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
 	if (isWails()) {
 		try {
-			const token = localStorage.getItem('nodetalk_token');
+			const token = localStorage.getItem('cove_token');
 			if (token) {
 				config.headers.set('Authorization', `Bearer ${token}`);
 			}
@@ -121,7 +121,7 @@ apiClient.interceptors.request.use((config) => {
 		// and travels automatically.
 		const method = (config.method || 'get').toLowerCase();
 		if (MUTATING_METHODS.has(method)) {
-			const csrf = getCookie('nodetalk_csrf');
+			const csrf = getCookie('cove_csrf');
 			if (csrf) {
 				config.headers.set('X-CSRF-Token', csrf);
 			}

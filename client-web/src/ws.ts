@@ -144,7 +144,7 @@ let unloadListenerRegistered = false;
 // Prefix for the WebSocket subprotocol used to carry the session token
 // during the handshake (desktop/Wails client only — see getFullWsUrl).
 // Must match the backend's wsAuthSubprotocolPrefix in internal/auth/auth.go.
-const WS_TOKEN_SUBPROTOCOL_PREFIX = 'nodetalk-token.';
+const WS_TOKEN_SUBPROTOCOL_PREFIX = 'cove-token.';
 
 export function wsConnect(token?: string): void {
 	if (!worker) {
@@ -156,7 +156,7 @@ export function wsConnect(token?: string): void {
 					new URL('./ws/shared.worker.ts', import.meta.url),
 					{
 						type: 'module',
-						name: 'nodetalk-ws',
+						name: 'cove-ws',
 					},
 				);
 
@@ -216,7 +216,7 @@ function getFullWsUrl(explicitToken?: string): { url: string; protocols?: string
 	let token = explicitToken || '';
 	if (!token) {
 		try {
-			token = localStorage.getItem('nodetalk_token') || '';
+			token = localStorage.getItem('cove_token') || '';
 			if (token) {
 				console.info('[ws] extracted token from localStorage');
 			}

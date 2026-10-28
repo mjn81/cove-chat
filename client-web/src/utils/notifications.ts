@@ -61,7 +61,7 @@ export function showBrowserNotification(title: string, body: string, icon?: stri
   const notif = new Notification(title, {
     body,
     icon: icon || '/logo192.png', // Fallback to app logo
-    tag: 'nodetalk-msg', // Consolidate multiple notifications
+    tag: 'cove-msg', // Consolidate multiple notifications
     silent: true, // We play our own custom sounds
   });
 

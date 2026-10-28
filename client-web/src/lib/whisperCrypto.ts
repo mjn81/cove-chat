@@ -124,7 +124,7 @@ export async function deriveWhisperSecrets(
 		['deriveKey', 'deriveBits'],
 	);
 
-	const salt = new TextEncoder().encode('nodetalk-whisper-salt-v1');
+	const salt = new TextEncoder().encode('cove-whisper-salt-v1');
 
 	// 3. Derive AES-256-GCM session key (non-extractable)
 	const sessionKey = await window.crypto.subtle.deriveKey(
@@ -132,7 +132,7 @@ export async function deriveWhisperSecrets(
 			name: 'HKDF',
 			hash: 'SHA-256',
 			salt,
-			info: new TextEncoder().encode('nodetalk-whisper-v1-aes-' + sessionId),
+			info: new TextEncoder().encode('cove-whisper-v1-aes-' + sessionId),
 		},
 		hkdfKey,
 		{
@@ -150,7 +150,7 @@ export async function deriveWhisperSecrets(
 			name: 'HKDF',
 			hash: 'SHA-512',
 			salt,
-			info: new TextEncoder().encode('nodetalk-whisper-v1-safety-number-' + sortedUsers),
+			info: new TextEncoder().encode('cove-whisper-v1-safety-number-' + sortedUsers),
 		},
 		hkdfKey,
 		256, // 32 bytes (enough for 12 groups of 16-bit blocks)

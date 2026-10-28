@@ -18,7 +18,7 @@ interface VoiceCallStageProps {
 const GAP = 12;
 /** Below this stage width the filmstrip moves from the side to the bottom. */
 const SIDE_STRIP_MIN_WIDTH = 720;
-const STAGE_HEIGHT_KEY = 'nodetalk_call_stage_height';
+const STAGE_HEIGHT_KEY = 'cove_call_stage_height';
 
 /**
  * Call stage embedded in the chat layout. Participants are fixed 16:9 tiles sized by `fitGrid` (never stretched);

@@ -16,7 +16,7 @@ import { evictStaleAvatars, prewarmAvatars } from '@/lib/avatarCache';
 function persistDesktopToken(token: string | undefined) {
 	if (!isWails() || !token) return;
 	try {
-		localStorage.setItem('nodetalk_token', token);
+		localStorage.setItem('cove_token', token);
 	} catch {
 		// Ignore access errors
 	}
@@ -25,7 +25,7 @@ function persistDesktopToken(token: string | undefined) {
 function clearDesktopToken() {
 	if (!isWails()) return;
 	try {
-		localStorage.removeItem('nodetalk_token');
+		localStorage.removeItem('cove_token');
 	} catch {
 		// Ignore access errors
 	}

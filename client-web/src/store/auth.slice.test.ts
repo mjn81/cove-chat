@@ -73,7 +73,7 @@ describe('auth.slice login — web (non-Wails)', () => {
 
 		await useAuthStore.getState().login('alice', 'password123');
 
-		expect(localStorage.getItem('nodetalk_token')).toBeNull();
+		expect(localStorage.getItem('cove_token')).toBeNull();
 	});
 
 	it('excludes the token from the persisted (localStorage "auth") user object', async () => {
@@ -127,19 +127,19 @@ describe('auth.slice login — desktop (Wails)', () => {
 
 		await useAuthStore.getState().login('bob', 'password123');
 
-		expect(localStorage.getItem('nodetalk_token')).toBe('desktop-token');
+		expect(localStorage.getItem('cove_token')).toBe('desktop-token');
 	});
 });
 
 describe('auth.slice logout', () => {
 	it('clears the desktop token on logout when running under Wails', async () => {
 		mockIsWails.mockReturnValue(true);
-		localStorage.setItem('nodetalk_token', 'stale-token');
+		localStorage.setItem('cove_token', 'stale-token');
 		mockApiLogout.mockResolvedValue(undefined);
 
 		await useAuthStore.getState().logout();
 
-		expect(localStorage.getItem('nodetalk_token')).toBeNull();
+		expect(localStorage.getItem('cove_token')).toBeNull();
 	});
 
 	it('is a no-op on the desktop token for the web build (nothing to clear)', async () => {
@@ -148,7 +148,7 @@ describe('auth.slice logout', () => {
 
 		await useAuthStore.getState().logout();
 
-		expect(localStorage.getItem('nodetalk_token')).toBeNull();
+		expect(localStorage.getItem('cove_token')).toBeNull();
 	});
 });
 

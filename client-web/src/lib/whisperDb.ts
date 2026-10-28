@@ -30,7 +30,7 @@ export class WhisperDB extends Dexie {
 	messages!: Table<StoredWhisperMessage, string>;
 
 	constructor() {
-		super('NodeTalkWhisperDB');
+		super('CoveWhisperDB');
 
 		this.version(1).stores({
 			sessions: 'sessionId, peerId, createdAt, lastActivity',

@@ -77,7 +77,7 @@ describe('voiceStore handledCallChannels persistence', () => {
 		useVoiceStore.getState().dismissIncomingCall();
 
 		expect(useVoiceStore.getState().handledCallChannels.has('dm-123')).toBe(true);
-		expect(sessionStorage.getItem('nodetalk_handled_calls')).toContain('dm-123');
+		expect(sessionStorage.getItem('cove_handled_calls')).toContain('dm-123');
 	});
 
 	it('persists handled call channels to sessionStorage upon leaveVoice', () => {
@@ -85,7 +85,7 @@ describe('voiceStore handledCallChannels persistence', () => {
 		useVoiceStore.getState().leaveVoice();
 
 		expect(useVoiceStore.getState().handledCallChannels.has('dm-456')).toBe(true);
-		expect(sessionStorage.getItem('nodetalk_handled_calls')).toContain('dm-456');
+		expect(sessionStorage.getItem('cove_handled_calls')).toContain('dm-456');
 	});
 
 	it('removes channel from handledCallChannels and sessionStorage upon resetHandledCall', () => {
@@ -94,7 +94,7 @@ describe('voiceStore handledCallChannels persistence', () => {
 
 		useVoiceStore.getState().resetHandledCall('dm-789');
 		expect(useVoiceStore.getState().handledCallChannels.has('dm-789')).toBe(false);
-		expect(sessionStorage.getItem('nodetalk_handled_calls')).not.toContain('dm-789');
+		expect(sessionStorage.getItem('cove_handled_calls')).not.toContain('dm-789');
 	});
 });
 

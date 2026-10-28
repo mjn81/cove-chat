@@ -39,11 +39,11 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 
 	// Persisted volume and mute state
 	const [volume, setVolume] = useState(() => {
-		const saved = localStorage.getItem('nodetalk_player_volume');
+		const saved = localStorage.getItem('cove_player_volume');
 		return saved !== null ? parseFloat(saved) : 1;
 	});
 	const [isMuted, setIsMuted] = useState(() => {
-		const saved = localStorage.getItem('nodetalk_player_muted');
+		const saved = localStorage.getItem('cove_player_muted');
 		return saved === 'true';
 	});
 
@@ -204,10 +204,10 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 	const handleVolumeChange = (values: number[]) => {
 		const newVol = values[0];
 		setVolume(newVol);
-		localStorage.setItem('nodetalk_player_volume', String(newVol));
+		localStorage.setItem('cove_player_volume', String(newVol));
 		if (newVol > 0 && isMuted) {
 			setIsMuted(false);
-			localStorage.setItem('nodetalk_player_muted', 'false');
+			localStorage.setItem('cove_player_muted', 'false');
 		}
 		resetHideTimer();
 	};
@@ -215,7 +215,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 	const toggleMute = () => {
 		const nextMuted = !isMuted;
 		setIsMuted(nextMuted);
-		localStorage.setItem('nodetalk_player_muted', String(nextMuted));
+		localStorage.setItem('cove_player_muted', String(nextMuted));
 		if (videoRef.current) {
 			videoRef.current.muted = nextMuted;
 		}

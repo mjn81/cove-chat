@@ -17,7 +17,7 @@ const resources = {
 };
 
 // Detect saved language preference, fall back to browser language, then 'en'
-const savedLang = localStorage.getItem('nodetalk_lang');
+const savedLang = localStorage.getItem('cove_lang');
 const browserLang = navigator.language.split('-')[0];
 const defaultLang = savedLang ?? (resources[browserLang as keyof typeof resources] ? browserLang : 'en');
 

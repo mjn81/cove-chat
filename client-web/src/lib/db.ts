@@ -37,15 +37,15 @@ export type StorageCategory =
 	| 'messages';
 
 /**
- * NodeTalkDB - Local IndexedDB for message and file persistence.
+ * CoveDB - Local IndexedDB for message and file persistence.
  * Implements a unified storage abstraction layer over Dexie.
  */
-export class NodeTalkDB extends Dexie {
+export class CoveDB extends Dexie {
 	messages!: Table<CachedMessage>;
 	files!: Table<CachedFile>;
 
 	constructor() {
-		super('NodeTalkDB');
+		super('CoveDB');
 
 		this.version(2).stores({
 			messages: 'id, channel_id, sent_at',
@@ -194,5 +194,5 @@ export class NodeTalkDB extends Dexie {
 	}
 }
 
-export const db = new NodeTalkDB();
+export const db = new CoveDB();
 export const storageService = db;

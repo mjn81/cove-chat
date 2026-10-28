@@ -34,7 +34,7 @@ export const DEFAULT_SCREEN_SHARE_SETTINGS: ScreenShareSettings = {
 };
 
 
-const HANDLED_CALLS_STORAGE_KEY = 'nodetalk_handled_calls';
+const HANDLED_CALLS_STORAGE_KEY = 'cove_handled_calls';
 
 function loadHandledCalls(): Set<string> {
 	try {
@@ -333,7 +333,7 @@ export const useVoiceStore = create<VoiceState>((set) => ({
 		set((state) => {
 			const updated = { ...state.screenShareSettings, ...settings };
 			try {
-				localStorage.setItem('nodetalk_screenshare_settings', JSON.stringify(updated));
+				localStorage.setItem('cove_screenshare_settings', JSON.stringify(updated));
 			} catch {
 				/* ignore */
 			}

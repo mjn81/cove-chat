@@ -39,7 +39,7 @@ export default function NotFoundPage() {
 						</Link>
 					</Button>
 					<Button asChild variant="secondary" className="flex-1 h-11 text-[14px] font-bold bg-secondary hover:bg-secondary/80 rounded-md transition-all active:scale-95 shadow-none">
-						<a href="https://github.com/mjn81/nodetalk" target="_blank" rel="noreferrer">
+						<a href="https://github.com/mjn81/cove-chat" target="_blank" rel="noreferrer">
 							Report a bug
 						</a>
 					</Button>

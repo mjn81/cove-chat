@@ -1,8 +1,8 @@
 /** What the composer's record button captures when tapped. */
 export type RecordMode = 'voice' | 'video';
 
-// Same `nodetalk_*` naming as the other persisted keys (renaming would reset existing installs).
-const STORAGE_KEY = 'nodetalk_record_mode';
+// Same `cove_*` naming as the other persisted keys.
+const STORAGE_KEY = 'cove_record_mode';
 
 /** @returns the other mode (a long press on the record button flips voice <-> video). */
 export function toggleRecordMode(mode: RecordMode): RecordMode {
