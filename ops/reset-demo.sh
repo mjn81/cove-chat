@@ -5,7 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 dir="instances/demo"
-# shellcheck source=/dev/null  (.env exists only on the server)
+# The .env file exists only on the server, so shellcheck cannot follow it.
+# shellcheck source=/dev/null
 set -a; . "$dir/.env"; set +a
 tag="$(cat "$dir/.last-good")"
 export INSTANCE=demo TAG="$tag"
