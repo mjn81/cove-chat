@@ -6,12 +6,40 @@ export function AppVersion() {
   return window['go']['main']['App']['AppVersion']();
 }
 
+export function ClearSession() {
+  return window['go']['main']['App']['ClearSession']();
+}
+
+export function CloseWindow() {
+  return window['go']['main']['App']['CloseWindow']();
+}
+
+export function GetAutostart() {
+  return window['go']['main']['App']['GetAutostart']();
+}
+
+export function GetCacheKey() {
+  return window['go']['main']['App']['GetCacheKey']();
+}
+
+export function GetCloseToTray() {
+  return window['go']['main']['App']['GetCloseToTray']();
+}
+
+export function GetLockStatus() {
+  return window['go']['main']['App']['GetLockStatus']();
+}
+
 export function GetMicrophonePermissionStatus() {
   return window['go']['main']['App']['GetMicrophonePermissionStatus']();
 }
 
 export function GetServerURL() {
   return window['go']['main']['App']['GetServerURL']();
+}
+
+export function GetSession() {
+  return window['go']['main']['App']['GetSession']();
 }
 
 export function JoinVoiceChannel(arg1) {
@@ -22,8 +50,24 @@ export function LeaveVoiceChannel() {
   return window['go']['main']['App']['LeaveVoiceChannel']();
 }
 
+export function Lock() {
+  return window['go']['main']['App']['Lock']();
+}
+
+export function QuitApp() {
+  return window['go']['main']['App']['QuitApp']();
+}
+
+export function RemovePasscode(arg1) {
+  return window['go']['main']['App']['RemovePasscode'](arg1);
+}
+
 export function RequestMicrophonePermission() {
   return window['go']['main']['App']['RequestMicrophonePermission']();
+}
+
+export function RevealFile(arg1) {
+  return window['go']['main']['App']['RevealFile'](arg1);
 }
 
 export function SaveFile(arg1, arg2) {
@@ -34,8 +78,28 @@ export function SaveServerURL(arg1) {
   return window['go']['main']['App']['SaveServerURL'](arg1);
 }
 
+export function SaveSession(arg1) {
+  return window['go']['main']['App']['SaveSession'](arg1);
+}
+
 export function SendVoiceAudio(arg1) {
   return window['go']['main']['App']['SendVoiceAudio'](arg1);
+}
+
+export function SetAutoLock(arg1) {
+  return window['go']['main']['App']['SetAutoLock'](arg1);
+}
+
+export function SetAutostart(arg1) {
+  return window['go']['main']['App']['SetAutostart'](arg1);
+}
+
+export function SetCloseToTray(arg1) {
+  return window['go']['main']['App']['SetCloseToTray'](arg1);
+}
+
+export function SetPasscode(arg1, arg2) {
+  return window['go']['main']['App']['SetPasscode'](arg1, arg2);
 }
 
 export function ShowNotification(arg1, arg2) {
@@ -48,4 +112,8 @@ export function StartVoiceChat(arg1, arg2, arg3, arg4) {
 
 export function StopVoiceChat() {
   return window['go']['main']['App']['StopVoiceChat']();
+}
+
+export function Unlock(arg1) {
+  return window['go']['main']['App']['Unlock'](arg1);
 }

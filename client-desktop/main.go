@@ -3,6 +3,8 @@ package main
 import (
 	"embed"
 	"log"
+	"path/filepath"
+	"runtime"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -35,21 +37,31 @@ func main() {
 		// Lifecycle hooks
 		OnStartup:  app.Startup,
 		OnShutdown: app.Shutdown,
+
+		// Closing hides to the tray (see window.go); only the tray's Quit really exits.
+		OnBeforeClose: app.beforeClose,
+		StartHidden:   startedHidden() && runtime.GOOS != "darwin",
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "com.cove.chat.desktop",
+			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.showWindow() },
+		},
 		OnDomReady: app.DomReady,
 
 		// Expose App struct methods to the frontend via window.go.*
 		Bind: []any{app},
 
-		// Windows: keep the OS-drawn frame so the native minimize / maximize /
-		// close buttons, snap layouts and DPI scaling work. The web UI draws no
-		// custom title bar. Transparency is off because Win10 renders it poorly.
-		Frameless: false,
+		// The web UI draws its own title bar (see DesktopTitleBar) so the window reads as one surface, like
+		// Telegram. Windows and Linux therefore run frameless; macOS keeps its native traffic lights inset into
+		// that bar via the transparent full-size title bar below.
+		Frameless: runtime.GOOS != "darwin",
 		Windows: &windows.Options{
-			Theme:                             windows.SystemDefault,
-			WebviewIsTransparent:              false,
-			WindowIsTranslucent:               false,
-			DisableFramelessWindowDecorations: true,
-			ZoomFactor:                        1.0,
+			Theme:                windows.SystemDefault,
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
+			ZoomFactor:           1.0,
+			// Keep the web view's storage (localStorage, IndexedDB with cached keys) in the app data folder with the
+			// rest of the user's data, instead of a folder named after the executable.
+			WebviewUserDataPath: filepath.Join(dataDir(), "webview"),
 		},
 
 		// macOS specific

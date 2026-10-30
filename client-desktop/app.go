@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"os"
 	"path/filepath"
 
 	"github.com/gen2brain/beeep"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // Config holds the application configuration.
 type Config struct {
 	ServerURL string `json:"server_url"`
+	// CloseToTray keeps Cove running in the background when the window is closed. Nil means the default (on).
+	CloseToTray *bool `json:"close_to_tray,omitempty"`
 }
 
 // App is the Wails application struct.
@@ -21,60 +21,47 @@ type App struct {
 	ctx          context.Context
 	config       Config
 	voiceManager *VoiceManager
+	secrets      secretStore
+	vault        vaultState
+	win          windowState
 }
 
 // NewApp creates the application struct.
-func NewApp() *App {
-	app := &App{}
+func NewApp() *App { return NewAppWithSecrets(newResilientStore(keyringStore{})) }
+
+// NewAppWithSecrets creates the application struct on top of a given secret store (the OS keystore in
+// production, an in-memory fake in tests), then loads the saved config and migrates any legacy plaintext session.
+func NewAppWithSecrets(secrets secretStore) *App {
+	app := &App{secrets: secrets}
 	app.loadConfig()
+	app.migrateLegacySession()
 	return app
 }
 
-// loadConfig loads the configuration from the user's config directory.
-func (a *App) loadConfig() {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		// Fallback to home if config dir is not available
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return
-		}
-		configDir = filepath.Join(home, ".cove")
-	} else {
-		configDir = filepath.Join(configDir, "Cove")
-	}
+func configPath() string { return filepath.Join(dataDir(), "config.json") }
 
-	configPath := filepath.Join(configDir, "config.json")
-	data, err := os.ReadFile(configPath)
+// loadConfig loads the configuration from the app data folder.
+func (a *App) loadConfig() {
+	data, err := os.ReadFile(configPath())
 	if err != nil {
 		return
 	}
 	_ = json.Unmarshal(data, &a.config)
 }
 
-// saveConfig saves the configuration to the user's config directory.
+// saveConfig persists the configuration to the app data folder.
 func (a *App) saveConfig() {
-	configDir, err := os.UserConfigDir()
+	data, err := json.MarshalIndent(a.config, "", "  ")
 	if err != nil {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return
-		}
-		configDir = filepath.Join(home, ".cove")
-	} else {
-		configDir = filepath.Join(configDir, "Cove")
+		return
 	}
-
-	_ = os.MkdirAll(configDir, 0755)
-
-	configPath := filepath.Join(configDir, "config.json")
-	data, _ := json.MarshalIndent(a.config, "", "  ")
-	_ = os.WriteFile(configPath, data, 0644)
+	_ = writePrivateFile(configPath(), data)
 }
 
 // Startup is called when the Wails app starts.
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+	a.startTray()
 }
 
 // DomReady is called after the frontend DOM is fully loaded.
@@ -101,27 +88,6 @@ func (a *App) SaveServerURL(url string) {
 // AppVersion returns the desktop app version.
 func (a *App) AppVersion() string {
 	return "0.9.0"
-}
-
-// SaveFile opens a save dialog and writes the data to the chosen path.
-func (a *App) SaveFile(filename string, base64Data string) error {
-	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		DefaultFilename: filename,
-		Title:           "Save File",
-	})
-	if err != nil {
-		return err
-	}
-	if path == "" {
-		return nil // User cancelled
-	}
-
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, data, 0644)
 }
 
 // ShowNotification shows a native desktop notification.
