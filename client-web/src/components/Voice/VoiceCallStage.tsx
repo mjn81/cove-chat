@@ -183,7 +183,7 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 			style={!isFullscreen ? { height: `${stageHeight}px` } : undefined}
 			className={
 				isFullscreen
-					? 'fixed inset-0 z-50 flex flex-col overflow-hidden bg-popover'
+					? 'fixed inset-x-0 bottom-0 top-[var(--titlebar-h,0px)] z-50 flex flex-col overflow-hidden bg-popover'
 					: 'relative flex w-full shrink-0 select-none flex-col overflow-hidden border-b border-border bg-popover'
 			}
 		>

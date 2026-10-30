@@ -163,7 +163,7 @@ export default function AppPage() {
 
 					{/* Right Sidebar Drawer (Members) - Only accessible from Chat View */}
 					<div
-						className={`fixed inset-y-0 end-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
+						className={`fixed bottom-0 top-[var(--titlebar-h,0px)] end-0 w-full sm:w-[320px] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${
 							isRightSidebarOpen && activeChannel ? 'translate-x-0' : 'translate-x-full'
 						}`}
 					>
@@ -173,7 +173,7 @@ export default function AppPage() {
 					{/* Overlay for Right Sidebar on Tablets/Small Desktop */}
 					{isRightSidebarOpen && activeChannel && (
 						<div
-							className="fixed inset-0 bg-black/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+							className="fixed inset-x-0 bottom-0 top-[var(--titlebar-h,0px)] bg-black/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
 							onClick={() => setRightSidebarOpen(false)}
 						/>
 					)}

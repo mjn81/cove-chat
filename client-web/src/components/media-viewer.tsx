@@ -88,7 +88,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
 				<DialogOverlay className="z-[100] bg-overlay/95" />
 				<DialogPrimitive.Content
 					aria-describedby={undefined}
-					className="pointer-events-none fixed inset-0 z-[101] flex select-none items-center justify-center p-3 text-overlay-foreground outline-none sm:p-6"
+					className="pointer-events-none fixed inset-x-0 bottom-0 top-[var(--titlebar-h,0px)] z-[101] flex select-none items-center justify-center p-3 text-overlay-foreground outline-none sm:p-6"
 					onClick={() => onOpenChange(false)}
 				>
 					<DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>

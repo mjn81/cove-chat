@@ -74,7 +74,9 @@ export const DesktopTitleBar: React.FC = () => {
 		<div
 			dir="ltr"
 			style={{ ...DRAG, height: TITLEBAR_HEIGHT }}
-			className="flex w-full shrink-0 select-none items-center border-b border-border bg-card"
+			// z-[110] keeps the bar (and so the drag area and the macOS traffic-light zone) above dialogs, sheets and the
+			// media viewer, whose layers start below it via `top-[var(--titlebar-h,0px)]`.
+			className="relative z-[110] flex w-full shrink-0 select-none items-center border-b border-border bg-card"
 		>
 			{/* Empty on purpose: like Telegram, the bar is just a drag handle and the caption buttons. */}
 			<div className="min-w-0 flex-1" style={{ paddingInlineStart: mac ? MAC_TRAFFIC_LIGHTS_INSET : 0 }} />
