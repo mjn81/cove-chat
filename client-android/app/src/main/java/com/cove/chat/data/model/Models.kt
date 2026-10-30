@@ -82,6 +82,10 @@ data class Channel(
     @SerialName("member_avatars") val memberAvatars: Map<String, String> = emptyMap(),
     @SerialName("member_roles") val memberRoles: Map<String, Int> = emptyMap(),
     @SerialName("member_statuses") val memberStatuses: Map<String, String> = emptyMap(),
+    /** Flags the server's built-in Cove account among the members (login notices, owner announcements). */
+    @SerialName("member_system") val memberSystem: Map<String, Boolean> = emptyMap(),
+    /** Group photo (a file id), empty when the group has none. */
+    @SerialName("avatar_id") val avatarId: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("unread_count") val unreadCount: Int = 0,
     @SerialName("last_message_at") val lastMessageAt: String = "",
@@ -92,6 +96,9 @@ data class Channel(
 ) {
     /** Same rule as `isDirectMessage` in client-web/src/utils/channel.ts. */
     val isDirectMessage: Boolean get() = members.size == 2 && name.isBlank()
+
+    /** A chat with the Cove system account: read-only, no calls, nobody to reply to. */
+    val isSystemChat: Boolean get() = memberSystem.values.any { it }
 
     /** Same rule as `getChannelDisplayName` in client-web/src/utils/channel.ts. */
     fun displayName(currentUserId: String?): String {
@@ -237,8 +244,20 @@ data class RelationshipActionRequest(val action: String)
 data class UpdateChannelRequest(
     val name: String? = null,
     val description: String? = null,
-    @SerialName("is_private") val isPrivate: Boolean? = null
+    @SerialName("is_private") val isPrivate: Boolean? = null,
+    /** A file id to set the group photo, or "" to remove it. */
+    @SerialName("avatar_id") val avatarId: String? = null
 )
+
+/** Result of adding members: who joined and who was refused, with the server's reason. */
+@Serializable
+data class AddMembersResponse(
+    val added: List<String> = emptyList(),
+    val skipped: List<SkippedMember> = emptyList()
+)
+
+@Serializable
+data class SkippedMember(@SerialName("user_id") val userId: String = "", val reason: String = "")
 
 @Serializable
 data class AddMembersRequest(@SerialName("user_ids") val userIds: List<String>)
@@ -287,4 +306,32 @@ data class UpdateProfileRequest(
     @SerialName("allow_channel_adds") val allowChannelAdds: String? = null,
     @SerialName("dm_permission") val dmPermission: String? = null,
     @SerialName("friend_request_permission") val friendRequestPermission: String? = null
+)
+
+/** One signed-in device from `GET /api/sessions` (mirrors `SessionResponse`). Never carries the bearer token. */
+@Serializable
+data class SessionInfo(
+    val id: String,
+    @SerialName("device_name") val deviceName: String = "",
+    @SerialName("app_name") val appName: String = "",
+    val platform: String = "",
+    val ip: String = "",
+    val city: String = "",
+    val country: String = "",
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("last_active_at") val lastActiveAt: String = "",
+    /** True for the session that made the request, i.e. this phone. */
+    val current: Boolean = false
+)
+
+/** Public details behind an invite link (`GET /api/join/{link}`), so a card can show them before joining. */
+@Serializable
+data class InvitePreview(
+    val id: String,
+    val name: String = "",
+    val description: String = "",
+    @SerialName("avatar_id") val avatarId: String? = null,
+    @SerialName("is_private") val isPrivate: Boolean = false,
+    @SerialName("member_count") val memberCount: Int = 0,
+    @SerialName("already_member") val alreadyMember: Boolean = false
 )

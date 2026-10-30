@@ -37,6 +37,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -53,6 +54,9 @@ import com.cove.chat.data.model.AddMembersRequest
 import com.cove.chat.data.model.Relationship
 import com.cove.chat.data.model.RelationshipActionRequest
 import com.cove.chat.data.model.UpdateChannelRequest
+import com.cove.chat.data.model.SessionInfo
+import com.cove.chat.data.model.AddMembersResponse
+import com.cove.chat.data.model.InvitePreview
 import com.cove.chat.data.model.UpdateProfileRequest
 import com.cove.chat.data.model.UpdateMemberRequest
 import com.cove.chat.data.model.UploadedFile
@@ -75,8 +79,26 @@ class ApiClient(private val prefs: PreferencesManager) {
         coerceInputValues = true
     }
 
+    /** "Google Pixel 8 (Android 15)": what the user sees in their Devices list. */
+    private val deviceLabel: String by lazy {
+        val maker = android.os.Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+        val model = android.os.Build.MODEL.removePrefix(android.os.Build.MANUFACTURER).trim()
+        "$maker $model (Android ${android.os.Build.VERSION.RELEASE})"
+    }
+
+    private val appLabel: String by lazy {
+        val app = com.cove.chat.CoveApp.instance
+        val version = runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }.getOrNull()
+        if (version.isNullOrBlank()) "Cove Android" else "Cove Android $version"
+    }
+
     private val client = HttpClient(OkHttp) {
         install(ContentNegotiation) { json(json) }
+        // The server records these at login for the Devices list and login notices.
+        install(DefaultRequest) {
+            header("X-Cove-Device", deviceLabel)
+            header("X-Cove-App", appLabel)
+        }
         install(HttpTimeout) {
             connectTimeoutMillis = 8_000
             requestTimeoutMillis = 120_000
@@ -132,6 +154,23 @@ class ApiClient(private val prefs: PreferencesManager) {
         client.get(url("/api/me")) { bearer() }.ok().body<AuthUser>().also { prefs.serverRole = it.serverRole.orEmpty() }
     }
 
+    /** The signed-in devices of this account, most recently active first. */
+    suspend fun getSessions(): Result<List<SessionInfo>> = runCatching {
+        client.get(url("/api/sessions")) { bearer() }.ok().body()
+    }
+
+    /** Ends one of this account's sessions by its public id. */
+    suspend fun terminateSession(id: String): Result<Unit> = runCatching {
+        client.delete(url("/api/sessions/$id")) { bearer() }.ok()
+        Unit
+    }
+
+    /** Ends every session except this phone's. */
+    suspend fun terminateOtherSessions(): Result<Unit> = runCatching {
+        client.post(url("/api/sessions/terminate-others")) { bearer() }.ok()
+        Unit
+    }
+
     suspend fun getChannels(): Result<List<Channel>> = runCatching {
         client.get(url("/api/channels")) { bearer() }.ok().body()
     }
@@ -151,9 +190,19 @@ class ApiClient(private val prefs: PreferencesManager) {
         }.ok().body()
     }
 
-    suspend fun joinChannel(inviteLink: String): Result<Unit> = runCatching {
-        client.post(url("/api/join/$inviteLink")) { bearer() }.ok()
-        Unit
+    /** Joins the channel behind an invite link and returns it. */
+    suspend fun joinChannel(inviteLink: String): Result<Channel> = runCatching {
+        client.post(url("/api/join/$inviteLink")) { bearer() }.ok().body()
+    }
+
+    /** What an invite link points to (name, photo, member count, whether you are already in it). */
+    suspend fun previewInvite(inviteLink: String): Result<InvitePreview> = runCatching {
+        client.get(url("/api/join/$inviteLink")) { bearer() }.ok().body()
+    }
+
+    /** Replaces a channel's invite link (admins); the old link stops working. Returns the updated channel. */
+    suspend fun regenerateInvite(channelId: String): Result<Channel> = runCatching {
+        client.post(url("/api/channels/$channelId/invite/regenerate")) { bearer() }.ok().body()
     }
 
     suspend fun leaveChannel(channelId: String, userId: String): Result<Unit> = runCatching {
@@ -213,13 +262,12 @@ class ApiClient(private val prefs: PreferencesManager) {
         Unit
     }
 
-    suspend fun addMembers(channelId: String, userIds: List<String>): Result<Unit> = runCatching {
+    suspend fun addMembers(channelId: String, userIds: List<String>): Result<AddMembersResponse> = runCatching {
         client.post(url("/api/channels/$channelId/members")) {
             contentType(ContentType.Application.Json)
             bearer()
             setBody(AddMembersRequest(userIds))
-        }.ok()
-        Unit
+        }.ok().body()
     }
 
     suspend fun setMemberRole(channelId: String, userId: String, role: Int): Result<Unit> = runCatching {

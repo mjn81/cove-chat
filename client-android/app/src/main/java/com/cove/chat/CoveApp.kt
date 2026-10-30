@@ -1,6 +1,7 @@
 package com.cove.chat
 
 import android.app.Application
+import com.cove.chat.data.local.LocalData
 import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.remote.ApiClient
 import com.cove.chat.data.remote.WebSocketManager
@@ -14,7 +15,11 @@ import com.cove.chat.rtc.WebRTCManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CoveApp : Application() {
     lateinit var preferencesManager: PreferencesManager
@@ -32,6 +37,27 @@ class CoveApp : Application() {
     lateinit var whisperManager: com.cove.chat.whisper.WhisperManager
         private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val _sessionEnded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits when the server ended this device's session; the navigation graph then returns to the login screen. */
+    val sessionEnded: SharedFlow<Unit> = _sessionEnded.asSharedFlow()
+
+    /** Signs out of this phone without contacting the server (lock-screen "Sign out" for a forgotten passcode). */
+    fun endSessionLocally() {
+        signOutLocally()
+        com.cove.chat.security.AppLock.reset()
+        _sessionEnded.tryEmit(Unit)
+    }
+
+    /** The local half of signing out: stop the socket, forget the session, wipe what this phone cached. */
+    fun signOutLocally() {
+        webSocketManager.disconnect()
+        whisperManager.reset()
+        preferencesManager.clearAuth()
+        LocalData.wipe(this)
+        BackgroundConnection.sync(this)
+    }
 
     companion object {
         lateinit var instance: CoveApp
@@ -69,6 +95,12 @@ class CoveApp : Application() {
                 val title = channel?.displayName(me) ?: "Cove"
                 val sender = channel?.memberNames?.get(m.senderId) ?: title
                 notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText())
+            }
+        }
+        appScope.launch {
+            webSocketManager.authFailedFlow.collect {
+                withContext(Dispatchers.Main) { signOutLocally() }
+                _sessionEnded.emit(Unit)
             }
         }
         CallCoordinator.start(this)

@@ -59,6 +59,8 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
@@ -169,6 +171,12 @@ fun ChatScreen(
     var replyTo by remember { mutableStateOf<Message?>(null) }
     var editing by remember { mutableStateOf<Message?>(null) }
     var selectedId by remember { mutableStateOf<String?>(null) }
+    // Message briefly highlighted after a jump from a quote or the reply strip.
+    var highlightId by remember { mutableStateOf<String?>(null) }
+    // Invite code whose join card is open as a dialog (tapped from a link in a message).
+    var inviteDialog by remember { mutableStateOf<String?>(null) }
+    // Messages that arrived while the list was scrolled away from the bottom; shown on the jump-to-latest button.
+    var newCount by remember { mutableStateOf(0) }
     var searching by remember { mutableStateOf(false) }
     var search by remember { mutableStateOf("") }
     var showMembers by remember { mutableStateOf(false) }
@@ -204,7 +212,7 @@ fun ChatScreen(
             if (m.channelId == channelId && messages.none { it.id == m.id }) {
                 messages = listOf(m) + messages
                 ws.sendReadReceipt(channelId)
-                if (listState.firstVisibleItemIndex <= 1) listState.animateScrollToItem(0)
+                if (listState.firstVisibleItemIndex <= 1) listState.animateScrollToItem(0) else if (m.senderId != me) newCount++
             }
         }
     }
@@ -249,12 +257,30 @@ fun ChatScreen(
         else messages.filter { m -> m.type == "text" && bodyOf(m).contains(search, ignoreCase = true) }
     }
 
+    /** Scrolls to a message already in the list and flashes it; older, unloaded messages just say so. */
+    fun jumpTo(id: String) {
+        val index = shown.indexOfFirst { it.id == id }
+        if (index < 0) { toast("Original message isn't loaded."); return }
+        scope.launch {
+            listState.animateScrollToItem(index)
+            highlightId = id
+            delay(1600)
+            if (highlightId == id) highlightId = null
+        }
+    }
+
+    val showJump by remember { derivedStateOf { listState.firstVisibleItemIndex > 2 } }
+    LaunchedEffect(showJump) { if (!showJump) newCount = 0 }
+
     var uploading by remember { mutableStateOf(false) }
     fun upload(uri: android.net.Uri?, asPhoto: Boolean) {
         if (uri == null) return
         uploading = true
+        val reply = replyTo
         scope.launch {
-            sendAttachment(context, uri, channelId, asPhoto).onFailure { toast(it.message ?: "Couldn't send the file.") }
+            sendAttachment(context, uri, channelId, asPhoto, replyToId = reply?.id)
+                .onSuccess { replyTo = null }
+                .onFailure { toast(it.message ?: "Couldn't send the file.") }
             uploading = false
         }
     }
@@ -268,46 +294,54 @@ fun ChatScreen(
     }
     var recording by remember { mutableStateOf(false) }
     var elapsed by remember { mutableStateOf(0) }
+    // A stopped recording waiting in the composer for review (play, trim) before it is sent.
+    var pendingVoice by remember { mutableStateOf<VoiceRecorder.Result?>(null) }
     LaunchedEffect(recording) {
         elapsed = 0
         while (recording) { delay(1000); elapsed++ }
     }
-    DisposableEffect(Unit) { onDispose { recorder.cancel() } }
-    var videoFile by remember { mutableStateOf<java.io.File?>(null) }
-    val captureVideo = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-        val f = videoFile
-        videoFile = null
-        if (res.resultCode == android.app.Activity.RESULT_OK && f != null && f.exists() && f.length() > 0) {
+    DisposableEffect(Unit) { onDispose { recorder.cancel(); pendingVoice?.file?.delete() } }
+    var showVideoRecorder by remember { mutableStateOf(false) }
+    if (showVideoRecorder) VideoMessageDialog(
+        maxSeconds = 60,
+        onDismiss = { showVideoRecorder = false },
+        onSend = { f ->
+            showVideoRecorder = false
             uploading = true
             scope.launch {
-                runCatching { sendVideoFile(f, channelId) }.onFailure { toast(it.message ?: "Couldn't send the video.") }
+                val reply = replyTo
+                runCatching { sendVideoFile(f, channelId, reply?.id) }.onSuccess { replyTo = null }.onFailure { toast(it.message ?: "Couldn't send the video.") }
                 uploading = false
             }
-        } else f?.delete()
-    }
-    fun startVideo() {
-        val dir = java.io.File(context.cacheDir, "video").apply { mkdirs() }
-        val f = java.io.File(dir, "vid_${System.currentTimeMillis()}.mp4")
-        videoFile = f
-        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
-        val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
-            .putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
-            .putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, 60)
-            .putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 0)
-            .addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runCatching { captureVideo.launch(intent) }.onFailure { toast("No camera app available."); videoFile = null }
-    }
+        }
+    )
     fun finishRecording() {
         recording = false
         val result = recorder.stop()
         if (result == null) { toast("Recording too short."); return }
         uploading = true
+        val reply = replyTo
         scope.launch {
-            runCatching { sendVoiceFile(result, channelId) }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
+            runCatching { sendVoiceFile(result, channelId, reply?.id) }.onSuccess { replyTo = null }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
             uploading = false
         }
     }
 
+
+    fun stopForPreview() {
+        recording = false
+        val result = recorder.stop()
+        if (result == null) toast("Recording too short.") else pendingVoice = result
+    }
+    fun sendPending(result: VoiceRecorder.Result) {
+        pendingVoice = null
+        uploading = true
+        val reply = replyTo
+        scope.launch {
+            runCatching { sendVoiceFile(result, channelId, reply?.id) }.onSuccess { replyTo = null }.onFailure { toast(it.message ?: "Couldn't send the voice message.") }
+            uploading = false
+        }
+    }
 
     fun send() {
         val text = input.trim()
@@ -346,7 +380,7 @@ fun ChatScreen(
                 if (isDm) {
                     UserAvatar(channel?.members?.firstOrNull { it != me } ?: channelId, size = 38.dp, avatarId = channel?.memberAvatars?.get(channel?.members?.firstOrNull { it != me }))
                 } else {
-                    InitialsAvatar(channelId, title, size = 38.dp)
+                    com.cove.chat.ui.components.ChannelAvatar(channelId, title, channel?.avatarId, size = 38.dp)
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
@@ -357,12 +391,19 @@ fun ChatScreen(
                 CoveIconButton(Icons.Outlined.Search, "Search", { searching = !searching; if (!searching) search = "" }, iconSize = 21.dp)
                 if (!isDm) {
                     CoveIconButton(Icons.Outlined.Groups, "Show Members", { showMembers = true }, iconSize = 21.dp)
-                    CoveIconButton(Icons.Outlined.Tune, "Channel Settings", { showSettings = true }, iconSize = 21.dp)
+                    // Only admins can change settings; everyone else gets the read-only channel info.
+                    CoveIconButton(
+                        if (myRole >= 10) Icons.Outlined.Tune else Icons.Outlined.Info,
+                        if (myRole >= 10) "Channel Settings" else "Channel info", { showSettings = true }, iconSize = 21.dp
+                    )
                 }
-                if (isDm) channel?.members?.firstOrNull { it != me }?.let { peer ->
-                    CoveIconButton(Icons.Outlined.Lock, "Start Whisper", { onStartWhisper(peer, title) }, iconSize = 21.dp)
+                // The Cove system account cannot be whispered or called.
+                if (channel?.isSystemChat != true) {
+                    if (isDm) channel?.members?.firstOrNull { it != me }?.let { peer ->
+                        CoveIconButton(Icons.Outlined.Lock, "Start Whisper", { onStartWhisper(peer, title) }, iconSize = 21.dp)
+                    }
+                    CoveIconButton(Icons.Outlined.Phone, "Start Voice Call", { onStartCall(false) }, iconSize = 21.dp)
                 }
-                CoveIconButton(Icons.Outlined.Phone, "Start Voice Call", { onStartCall(false) }, iconSize = 21.dp)
             }
             SectionDivider()
         }
@@ -377,10 +418,11 @@ fun ChatScreen(
         VoicePlayerBar()
 
         // Messages (reversed: index 0 is the newest, drawn at the bottom)
+        Box(Modifier.weight(1f).fillMaxWidth()) {
         LazyColumn(
             state = listState,
             reverseLayout = true,
-            modifier = Modifier.weight(1f).fillMaxWidth().chatBackgroundPattern()
+            modifier = Modifier.fillMaxSize().chatBackgroundPattern()
         ) {
             items(shown.size, key = { shown[it].id }) { i ->
                 val m = shown[i]
@@ -396,11 +438,15 @@ fun ChatScreen(
                         avatarId = channel?.memberAvatars?.get(m.senderId),
                         showHeader = !sameBlock,
                         selected = selectedId == m.id,
+                        highlighted = highlightId == m.id,
                         quoted = m.replyToId?.let { rid -> messages.firstOrNull { it.id == rid } },
                         quotedAuthor = m.replyToId?.let { rid -> messages.firstOrNull { it.id == rid }?.let { nameOf(it.senderId) } },
                         canEdit = m.senderId == me && m.type == "text",
                         canDelete = m.senderId == me || myRole >= 10,
                         keyVersion = keyVersion,
+                        onQuoteClick = { m.replyToId?.let { jumpTo(it) } },
+                        onOpenChat = onOpenChat,
+                        onInvite = { inviteDialog = it },
                         onMention = { u -> mentionMembers.firstOrNull { it.username.equals(u, ignoreCase = true) }?.let { profileMention = it } },
                         onToggle = { selectedId = if (selectedId == m.id) null else m.id },
                         onReply = { replyTo = m; editing = null; selectedId = null },
@@ -425,6 +471,23 @@ fun ChatScreen(
             item(key = "welcome") { WelcomeHeader(title, isDm) }
         }
 
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showJump,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
+            enter = androidx.compose.animation.scaleIn() + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut()
+        ) {
+            Box(contentAlignment = Alignment.TopEnd) {
+                Box(
+                    Modifier.padding(top = 6.dp).size(44.dp).clip(CircleShape).background(c.card).border(1.dp, c.border, CircleShape)
+                        .clickable { scope.launch { listState.animateScrollToItem(0); newCount = 0 } },
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.KeyboardArrowDown, "Scroll to latest", tint = c.textPrimary, modifier = Modifier.size(26.dp)) }
+                if (newCount > 0) com.cove.chat.ui.components.CoveBadge(newCount)
+            }
+        }
+        }
+
         // @mention suggestions: tapping one inserts it (the web popup needed Enter).
         val mentionQuery = detectMention(input)
         if (mentionQuery != null) {
@@ -435,12 +498,20 @@ fun ChatScreen(
             )
         }
 
-        ChatInputBar(
+        if (channel?.isSystemChat == true) {
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxWidth().background(CoveTheme.extendedColors.card).navigationBarsPadding().padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("This is an automated account. Replies aren't delivered.", color = CoveTheme.extendedColors.textMuted, fontSize = CoveType.label.fontSize)
+            }
+        } else ChatInputBar(
             input = input,
             onInputChange = { input = it },
             targetLabel = if (isDm) "@$title" else "#$title",
-            context = (replyTo ?: editing)?.let { InputContext(editing != null, nameOf(it.senderId), bodyOf(it)) },
+            context = (replyTo ?: editing)?.let { InputContext(editing != null, nameOf(it.senderId), bodyOf(it), it.id) },
             onCancelContext = { replyTo = null; if (editing != null) { editing = null; input = "" } },
+            onJumpToContext = { (replyTo ?: editing)?.let { jumpTo(it.id) } },
             uploading = uploading,
             recording = recording,
             elapsedSeconds = elapsed,
@@ -455,7 +526,12 @@ fun ChatScreen(
             },
             onCancelRecording = { recording = false; recorder.cancel() },
             onFinishRecording = { finishRecording() },
-            onVideo = { if (!uploading) startVideo() }
+            onStopRecording = { stopForPreview() },
+            liveLevels = recorder.liveLevels,
+            pendingVoice = pendingVoice,
+            onSendPendingVoice = { sendPending(it) },
+            onDiscardPendingVoice = { pendingVoice?.file?.delete(); pendingVoice = null },
+            onVideo = { if (!uploading) showVideoRecorder = true }
         )
     }
 
@@ -486,10 +562,23 @@ fun ChatScreen(
         )
     }
 
+    inviteDialog?.let { code ->
+        com.cove.chat.ui.components.CoveDialog(onDismiss = { inviteDialog = null }, title = "Invitation") {
+            Box(Modifier.padding(16.dp)) {
+                InviteCard(code, onOpenChannel = { id, name -> inviteDialog = null; onOpenChat(id, name) })
+            }
+        }
+    }
+
     val reloadChannel: () -> Unit = {
         scope.launch { api.getChannels().onSuccess { l -> channel = l.firstOrNull { it.id == channelId } } }
     }
-    if (showMembers) channel?.let { MembersDialog(it, me, onDismiss = { showMembers = false }, onChanged = reloadChannel) }
+    if (showMembers) channel?.let { ch ->
+        MembersDialog(
+            ch, me, onDismiss = { showMembers = false }, onChanged = reloadChannel,
+            onViewProfile = { id -> showMembers = false; profileMention = MentionMember(id, ch.memberNames[id] ?: "Unknown", ch.memberAvatars[id]) }
+        )
+    }
     if (showSettings) channel?.let {
         ChannelSettingsDialog(
             channel = it,
@@ -552,6 +641,24 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
     }
 }
 
+/** True for a message made only of up to three emoji, which is shown large like Telegram does. */
+private fun isEmojiOnly(text: String): Boolean {
+    val t = text.trim()
+    if (t.isEmpty() || t.length > 24) return false
+    var symbols = 0
+    var i = 0
+    while (i < t.length) {
+        val cp = t.codePointAt(i)
+        i += Character.charCount(cp)
+        when {
+            Character.getType(cp) == Character.OTHER_SYMBOL.toInt() || cp in 0x1F1E6..0x1F1FF -> symbols++
+            cp == 0x200D || cp in 0xFE00..0xFE0F || cp in 0x1F3FB..0x1F3FF || cp == 0x20E3 -> Unit // joiners, selectors, skin tones
+            else -> return false
+        }
+    }
+    return symbols in 1..6
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageRow(
@@ -560,11 +667,15 @@ private fun MessageRow(
     avatarId: String?,
     showHeader: Boolean,
     selected: Boolean,
+    highlighted: Boolean,
     quoted: Message?,
     quotedAuthor: String?,
     canEdit: Boolean,
     canDelete: Boolean,
     keyVersion: Int,
+    onQuoteClick: () -> Unit,
+    onOpenChat: (channelId: String, name: String) -> Unit,
+    onInvite: (code: String) -> Unit,
     onMention: (username: String) -> Unit,
     onToggle: () -> Unit,
     onReply: () -> Unit,
@@ -583,7 +694,13 @@ private fun MessageRow(
     val swipe = remember { androidx.compose.animation.core.Animatable(0f) }
     val swipeScope = rememberCoroutineScope()
     val sign = if (com.cove.chat.ui.components.AppLanguage.isRtl) -1f else 1f
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var crossed by remember { mutableStateOf(false) }
     val primary = MaterialTheme.colorScheme.primary
+    val flash by androidx.compose.animation.animateColorAsState(
+        if (highlighted) primary.copy(alpha = 0.2f) else Color.Transparent,
+        androidx.compose.animation.core.tween(350), label = "jumpFlash"
+    )
     Box(Modifier.fillMaxWidth()) {
     val pull = (kotlin.math.abs(swipe.value) / trigger).coerceIn(0f, 1f)
     if (swipe.value != 0f) {
@@ -601,18 +718,26 @@ private fun MessageRow(
                 detectHorizontalDragGestures(
                     onDragEnd = {
                         val v = swipe.value * sign
+                        crossed = false
                         swipeScope.launch {
                             if (v > trigger) onReply() else if (v < -trigger) onForward()
                             swipe.animateTo(0f)
                         }
                     },
-                    onDragCancel = { swipeScope.launch { swipe.animateTo(0f) } }
+                    onDragCancel = { crossed = false; swipeScope.launch { swipe.animateTo(0f) } }
                 ) { change, drag ->
                     change.consume()
-                    swipeScope.launch { swipe.snapTo((swipe.value + drag * 0.7f).coerceIn(-maxDrag, maxDrag)) }
+                    swipeScope.launch {
+                        val next = (swipe.value + drag * 0.7f).coerceIn(-maxDrag, maxDrag)
+                        swipe.snapTo(next)
+                        // A tick when the pull passes the point where letting go triggers reply / forward.
+                        val over = kotlin.math.abs(next) >= trigger
+                        if (over && !crossed) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        crossed = over
+                    }
                 }
             }
-            .background(if (selected) c.accent.copy(alpha = 0.35f) else Color.Transparent)
+            .background(if (selected) c.accent.copy(alpha = 0.35f) else flash)
             // Long-press is reserved for copying the text (MessageText); tapping still toggles the action bar.
             .clickable(onClick = onToggle)
             .padding(horizontal = 16.dp, vertical = if (showHeader) 6.dp else 1.dp)
@@ -628,15 +753,22 @@ private fun MessageRow(
                     }
                 }
                 if (m.replyToId != null) {
+                    // Same look as the composer's reply strip; tapping jumps to the original.
                     Row(
-                        Modifier.padding(vertical = 2.dp).clip(CoveShapes.sm).background(c.card).padding(horizontal = 8.dp, vertical = 4.dp),
+                        Modifier
+                            .padding(vertical = 3.dp)
+                            .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                            .clip(CoveShapes.md)
+                            .background(c.card)
+                            .clickable(onClick = onQuoteClick)
+                            .padding(end = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(Modifier.width(3.dp).height(24.dp).background(MaterialTheme.colorScheme.primary))
+                        Box(Modifier.width(3.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
                         Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text(quotedAuthor ?: "Original message", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
-                            Text(quoted?.let { bodyOf(it) } ?: "Not loaded", color = c.textMuted, fontSize = CoveType.caption.fontSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Column(Modifier.padding(vertical = 6.dp)) {
+                            Text(quotedAuthor ?: "Original message", color = MaterialTheme.colorScheme.primary, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text(quoted?.let { bodyOf(it) } ?: "Tap to find the original", color = c.textMuted, fontSize = CoveType.caption.fontSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -649,14 +781,16 @@ private fun MessageRow(
                     }
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
-                        text, color = c.textPrimary, fontSize = CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f, fill = false), onMention = onMention
+                        text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f, fill = false), onMention = onMention, onInvite = onInvite
                     )
                     if (m.editedAt != null) {
                         Spacer(Modifier.width(6.dp))
                         Text("(edited)", color = c.textMuted, fontSize = 10.sp)
                     }
                 }
+                // A channel invite in the text gets a card with the channel's details and a Join / Open button.
+                if (fileMeta == null) InviteLinks.code(text)?.let { InviteCard(it, onOpenChat, Modifier.padding(top = 6.dp)) }
             }
         }
         if (selected) {

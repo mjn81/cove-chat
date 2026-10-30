@@ -5,6 +5,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.size
 import com.cove.chat.ui.components.ButtonSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -137,7 +144,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
         }
     }
 
-    Box(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(c.chatCanvas)
@@ -145,10 +152,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
             .navigationBarsPadding()
             .imePadding()
     ) {
+        val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         Column(
             Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .fillMaxWidth()
+                .heightIn(min = maxHeight)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = if (imeVisible) 16.dp else 88.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -272,6 +282,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onChangeServer: () -> Unit) {
                 )
             }
         }
-        OpenSourceFooter(Modifier.align(Alignment.BottomCenter))
+        if (!imeVisible) OpenSourceFooter(Modifier.align(Alignment.BottomCenter))
     }
 }

@@ -111,6 +111,14 @@ object Translations {
     private fun word(s: String, lang: String) = (if (lang == "fa") fa else ar)[s] ?: s
 
     val patterns = listOf(
+        p("Created (.+)", { "ایجاد شده در ${it.groupValues[1]}" }, { "أُنشئت في ${it.groupValues[1]}" }),
+        p("Add (\\d+) (?:member|members)", { "افزودن ${it.groupValues[1]} عضو" }, { "إضافة ${it.groupValues[1]} أعضاء" }),
+        p("Couldn't add (.+): (.+)", { "افزودن ${it.groupValues[1]} ممکن نبود: ${it.groupValues[2]}" }, { "تعذّرت إضافة ${it.groupValues[1]}: ${it.groupValues[2]}" }),
+        p("(\\d+) min ago", { "${it.groupValues[1]} دقیقه پیش" }, { "منذ ${it.groupValues[1]} د" }),
+        p("(\\d+) h ago", { "${it.groupValues[1]} ساعت پیش" }, { "منذ ${it.groupValues[1]} س" }),
+        p("(\\d+) d ago", { "${it.groupValues[1]} روز پیش" }, { "منذ ${it.groupValues[1]} ي" }),
+        p("Too many attempts\\. Try again in (\\d+) s", { "تلاش‌های زیاد. ${it.groupValues[1]} ثانیه دیگر دوباره امتحان کنید" }, { "محاولات كثيرة. حاول مجددًا بعد ${it.groupValues[1]} ث" }),
+        p("Sign (.+) out of your account\\?", { "${it.groupValues[1]} از حساب شما خارج شود؟" }, { "هل تريد تسجيل خروج ${it.groupValues[1]} من حسابك؟" }),
         p("(\\d+) members", { "${it.groupValues[1]} عضو" }, { "${it.groupValues[1]} أعضاء" }),
         p("(\\d+) in call", { "${it.groupValues[1]} نفر در تماس" }, { "${it.groupValues[1]} في المكالمة" }),
         p("(Private|Public) · (\\d+) members",

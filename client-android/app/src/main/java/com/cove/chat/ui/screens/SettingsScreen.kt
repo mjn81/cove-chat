@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Notifications
@@ -83,6 +85,7 @@ private enum class SettingsPage(val title: String, val icon: ImageVector) {
     Account("My Account", Icons.Outlined.Person),
     Friends("Friends", Icons.Outlined.Group),
     Privacy("Privacy & Safety", Icons.Outlined.Shield),
+    Devices("Devices", Icons.Outlined.Devices),
     Appearance("Appearance", Icons.Outlined.Palette),
     Notifications("Notifications", Icons.Outlined.Notifications),
     Voice("Voice & Video", Icons.Outlined.GraphicEq),
@@ -112,6 +115,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
             app.webSocketManager.disconnect()
             app.whisperManager.reset()
             app.preferencesManager.clearAuth()
+            com.cove.chat.data.local.LocalData.wipe(app)
             com.cove.chat.service.BackgroundConnection.sync(app)
             onLogout()
         }
@@ -122,6 +126,8 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
             .fillMaxSize()
             .background(if (page == null) c.card else c.chatCanvas)
             .navigationBarsPadding()
+            // Shrink to the space above the keyboard so a focused field (passcode, name) scrolls into view.
+            .imePadding()
     ) {
         val current = page
         if (current == null) {
@@ -133,7 +139,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                 ) { Icon(Icons.Outlined.Close, "Close", tint = c.textPrimary, modifier = Modifier.size(20.dp)) }
             }
             Column(Modifier.padding(horizontal = 12.dp)) {
-                listOf(SettingsPage.Account, SettingsPage.Friends, SettingsPage.Privacy).forEach { item ->
+                listOf(SettingsPage.Account, SettingsPage.Friends, SettingsPage.Privacy, SettingsPage.Devices).forEach { item ->
                     CoveListRow(
                         title = item.title,
                         selected = item == SettingsPage.Account,
@@ -193,6 +199,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     SettingsPage.Friends -> FriendsPage(onOpenChat, onStartWhisper)
                     SettingsPage.Account -> AccountSettings(onLogout = { logout() })
                     SettingsPage.Privacy -> PrivacySettings()
+                    SettingsPage.Devices -> DevicesPage()
                     SettingsPage.Notifications -> NotificationSettings()
                     SettingsPage.Voice -> VoiceSettings()
                     SettingsPage.Storage -> StorageSettings()

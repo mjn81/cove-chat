@@ -37,6 +37,13 @@ fun NavGraph() {
         else -> "server"
     }
 
+    // The server ended this device's session (terminated from another device): back to the login screen.
+    LaunchedEffect(Unit) {
+        CoveApp.instance.sessionEnded.collect {
+            navController.navigate("login") { popUpTo(0) { inclusive = true } }
+        }
+    }
+
     // Notification tap: jump to that chat once logged in.
     val pending = OpenChatRequest.channelId
     LaunchedEffect(pending) {

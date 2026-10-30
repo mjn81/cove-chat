@@ -70,11 +70,15 @@ fun MessageText(
     linkColor: Color,
     modifier: Modifier = Modifier,
     lineHeight: TextUnit = 22.sp,
-    onMention: (username: String) -> Unit = {}
+    onMention: (username: String) -> Unit = {},
+    onInvite: ((code: String) -> Unit)? = null
 ) {
     val c = CoveTheme.extendedColors
     val onMentionState = rememberUpdatedState(onMention)
-    val body = remember(text, linkColor) { linkifiedText(text, linkColor) { onMentionState.value(it) } }
+    val onInviteState = rememberUpdatedState(onInvite)
+    val body = remember(text, linkColor, onInvite != null) {
+        linkifiedText(text, linkColor, { onMentionState.value(it) }, if (onInvite != null) ({ code -> onInviteState.value?.invoke(code) }) else null)
+    }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val clipboard = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current

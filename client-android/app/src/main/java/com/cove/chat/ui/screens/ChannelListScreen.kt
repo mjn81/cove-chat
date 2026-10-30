@@ -223,7 +223,7 @@ fun ChannelListScreen(
                                 val other = ch.members.firstOrNull { it != CoveApp.instance.preferencesManager.userId } ?: ch.id
                                 UserAvatar(other, size = 40.dp, avatarId = ch.memberAvatars[other])
                             } else {
-                                InitialsAvatar(ch.id, name, size = 40.dp)
+                                com.cove.chat.ui.components.ChannelAvatar(ch.id, name, ch.avatarId, size = 40.dp)
                             }
                         },
                         trailing = if (ch.unreadCount > 0) ({ CoveBadge(ch.unreadCount) }) else null

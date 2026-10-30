@@ -15,6 +15,7 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
+import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
@@ -82,6 +83,11 @@ class WebSocketManager(private val prefs: PreferencesManager) {
     private val _signalingFlow =MutableSharedFlow<Pair<String, JsonElement>>(extraBufferCapacity = 64)
     val signalingFlow: SharedFlow<Pair<String, JsonElement>> = _signalingFlow.asSharedFlow()
 
+    private val _authFailedFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits once when the server rejects or ends this device's session (terminated elsewhere, password change). */
+    val authFailedFlow: SharedFlow<Unit> = _authFailedFlow.asSharedFlow()
+
     private val _connectionState = MutableSharedFlow<Boolean>(replay = 1)
     val connectionState: SharedFlow<Boolean> = _connectionState.asSharedFlow()
 
@@ -97,6 +103,7 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                     continue
                 }
 
+                var sessionEnded = false
                 try {
                     val wsUrl = baseUrl.replaceFirst("http", "ws") + "/ws"
                     client.webSocket(urlString = wsUrl, request = {
@@ -119,12 +126,19 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                         } finally {
                             heartbeat.cancel()
                         }
+                        // The server closes with "policy violation" when it terminates this session.
+                        sessionEnded = closeReason.await()?.code == CloseReason.Codes.VIOLATED_POLICY.code
                     }
-                } catch (_: Exception) {
-                    // fall through to the reconnect backoff below
+                } catch (e: Exception) {
+                    // A 401 on the upgrade means the token is no longer valid; anything else is a network blip.
+                    if (e.message?.contains("401") == true) sessionEnded = true
                 } finally {
                     activeSession = null
                     _connectionState.emit(false)
+                }
+                if (sessionEnded) {
+                    _authFailedFlow.emit(Unit)
+                    return@launch
                 }
                 delay(3000)
             }

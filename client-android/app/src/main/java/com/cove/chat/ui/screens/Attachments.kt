@@ -128,7 +128,7 @@ fun decryptPreview(channelId: String, meta: FileMeta): ByteArray? {
  * whose body is the JSON metadata. Mirrors `ChatInputArea` + `encryptAndCompressFile` in client-web.
  * [asPhoto] re-encodes images to WebP; otherwise bytes are sent untouched.
  */
-suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhoto: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhoto: Boolean, replyToId: String? = null): Result<Unit> = withContext(Dispatchers.IO) {
     runCatching {
         val app = CoveApp.instance
         val resolver = context.contentResolver
@@ -144,7 +144,7 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
             }
         }
         val preview = if (mime.startsWith("image/") && mime != "image/gif") thumbnailWebp(bytes) else null
-        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto, preview = preview)
+        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto, preview = preview, replyToId = replyToId)
     }
 }
 
@@ -160,7 +160,8 @@ suspend fun sendPrepared(
     type: String,
     asDocument: Boolean = false,
     durationSec: Int? = null,
-    preview: ByteArray? = null
+    preview: ByteArray? = null,
+    replyToId: String? = null
 ) {
     val app = CoveApp.instance
     val originalSize = bytes.size.toLong()
@@ -180,7 +181,7 @@ suspend fun sendPrepared(
         thumbNonce = thumbNonce,
         processingStatus = if (type == "video") "processing" else null
     )
-    val ok = app.webSocketManager.sendChatMessage(channelId, metaJson.encodeToString(meta), type = type, compression = "zstd")
+    val ok = app.webSocketManager.sendChatMessage(channelId, metaJson.encodeToString(meta), type = type, compression = "zstd", replyToId = replyToId)
     if (!ok) error("Not connected. Try again.")
 }
 

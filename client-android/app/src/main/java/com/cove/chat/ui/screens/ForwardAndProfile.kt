@@ -56,7 +56,7 @@ fun ForwardDialog(currentChannelId: String, onDismiss: () -> Unit, onPick: (chan
                         onClick = { onPick(ch.id) },
                         leading = {
                             if (peer != null) UserAvatar(peer, size = 36.dp, avatarId = ch.memberAvatars[peer])
-                            else InitialsAvatar(ch.id, ch.name, size = 36.dp)
+                            else com.cove.chat.ui.components.ChannelAvatar(ch.id, ch.name, ch.avatarId, size = 36.dp)
                         }
                     )
                 }
@@ -72,7 +72,7 @@ fun ChannelProfileDialog(channel: Channel, me: String, onDismiss: () -> Unit, on
     CoveDialog(onDismiss, title = "Group profile") {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                InitialsAvatar(channel.id, channel.name, size = 64.dp)
+                com.cove.chat.ui.components.ChannelAvatar(channel.id, channel.name, channel.avatarId, size = 64.dp)
                 Spacer(Modifier.width(Spacing.md))
                 Column {
                     Text(channel.name.ifBlank { channel.displayName(me) }, color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold)

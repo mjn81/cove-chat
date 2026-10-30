@@ -95,6 +95,24 @@ fun InitialsAvatar(id: String, name: String, size: Dp = 40.dp, modifier: Modifie
     }
 }
 
+/** A group's photo when it has one (cached after the first load), otherwise its coloured initials. */
+@Composable
+fun ChannelAvatar(id: String, name: String, avatarId: String?, size: Dp = 40.dp, modifier: Modifier = Modifier) {
+    if (!avatarId.isNullOrBlank()) {
+        var photo by remember(avatarId) { mutableStateOf(AvatarCache.peek(avatarId)) }
+        LaunchedEffect(avatarId) { if (photo == null) photo = AvatarCache.load(avatarId) }
+        photo?.let {
+            androidx.compose.foundation.Image(
+                bitmap = it.asImageBitmap(), contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = modifier.size(size).clip(CircleShape)
+            )
+            return
+        }
+    }
+    InitialsAvatar(id, name, size, modifier)
+}
+
 /**
  * Exact port of `minidenticon(seed, 80, 50)` (minidenticons 4.2.1) as used by client-web `Avatar`,
  * so a user gets the same pattern and colour on web and mobile.
@@ -105,11 +123,22 @@ private fun miniHash(seed: String): Long {
     return (h and 0xFFFFFFFFL) shr 2
 }
 
+/** Sentinel avatar id the server gives its built-in Cove account; drawn from the bundled brand mark. */
+const val SYSTEM_AVATAR_ID = "system:cove"
+
 /**
  * Profile photo when [avatarId] is set (loaded and cached from the server), otherwise the identicon.
  */
 @Composable
 fun UserAvatar(userId: String, size: Dp = 36.dp, modifier: Modifier = Modifier, avatarId: String? = null) {
+    if (avatarId == SYSTEM_AVATAR_ID) {
+        // The server's Cove account has no uploaded photo: show the brand mark on a white disc.
+        androidx.compose.foundation.layout.Box(
+            modifier.size(size).clip(CircleShape).background(Color.White),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) { CoveMark(size * 0.62f) }
+        return
+    }
     if (!avatarId.isNullOrBlank()) {
         var photo by remember(avatarId) { mutableStateOf(AvatarCache.peek(avatarId)) }
         LaunchedEffect(avatarId) { if (photo == null) photo = AvatarCache.load(avatarId) }

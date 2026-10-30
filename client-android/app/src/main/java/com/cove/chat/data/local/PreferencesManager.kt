@@ -89,6 +89,25 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString("server_role", "") ?: ""
         set(value) = prefs.edit().putString("server_role", value).apply()
 
+    /** Salted PBKDF2 hash of the local passcode (Base64), or null when no passcode is set. */
+    var lockHash: String?
+        get() = prefs.getString("lock_hash", null)
+        set(value) = prefs.edit().putString("lock_hash", value).apply()
+
+    var lockSalt: String?
+        get() = prefs.getString("lock_salt", null)
+        set(value) = prefs.edit().putString("lock_salt", value).apply()
+
+    /** Seconds in the background before the passcode is required again; 0 = immediately, -1 = only on restart. */
+    var lockTimeoutSeconds: Int
+        get() = prefs.getInt("lock_timeout_seconds", 60)
+        set(value) = prefs.edit().putInt("lock_timeout_seconds", value).apply()
+
+    /** Recently used emoji (space separated, newest first) shown first in the emoji panel. */
+    var recentEmojis: String
+        get() = prefs.getString("recent_emojis", "") ?: ""
+        set(value) = prefs.edit().putString("recent_emojis", value).apply()
+
     fun clearAuth() {
         prefs.edit()
             .remove("server_role")
@@ -96,6 +115,9 @@ class PreferencesManager(context: Context) {
             .remove("user_id")
             .remove("username")
             .remove("avatar_id")
+            // The passcode protects this account on this phone; it goes with the account.
+            .remove("lock_hash")
+            .remove("lock_salt")
             .apply()
     }
 }

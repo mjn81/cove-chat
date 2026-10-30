@@ -82,9 +82,17 @@ class VoiceRecorder(private val context: Context) {
     private var startedAt = 0L
     private val handler = Handler(Looper.getMainLooper())
     private val levels = ArrayList<Int>()
+
+    /** The most recent mic levels (0-100), newest last, for the live waveform while recording. */
+    val liveLevels = androidx.compose.runtime.mutableStateListOf<Int>()
     private val sampler = object : Runnable {
         override fun run() {
-            recorder?.let { levels.add(runCatching { it.maxAmplitude }.getOrDefault(0)) }
+            recorder?.let {
+                val raw = runCatching { it.maxAmplitude }.getOrDefault(0)
+                levels.add(raw)
+                liveLevels.add(minOf(100, (raw / 32767f * 100f * 1.6f).toInt()))
+                if (liveLevels.size > 120) liveLevels.removeAt(0)
+            }
             if (recorder != null) handler.postDelayed(this, 80)
         }
     }
@@ -103,6 +111,7 @@ class VoiceRecorder(private val context: Context) {
         recorder = r
         file = out
         levels.clear()
+        liveLevels.clear()
         startedAt = SystemClock.elapsedRealtime()
         handler.post(sampler)
         true
@@ -148,16 +157,16 @@ class VoiceRecorder(private val context: Context) {
 internal fun mmss(seconds: Int) = "%d:%02d".format(seconds / 60, seconds % 60)
 
 /** Encrypts and sends a finished voice recording together with its encrypted waveform. */
-suspend fun sendVoiceFile(result: VoiceRecorder.Result, channelId: String) = withContext(Dispatchers.IO) {
+suspend fun sendVoiceFile(result: VoiceRecorder.Result, channelId: String, replyToId: String? = null) = withContext(Dispatchers.IO) {
     try {
-        sendPrepared(channelId, result.file.readBytes(), "audio/mp4", "voice-message.m4a", "voice", durationSec = result.seconds, preview = result.peaks)
+        sendPrepared(channelId, result.file.readBytes(), "audio/mp4", "voice-message.m4a", "voice", durationSec = result.seconds, preview = result.peaks, replyToId = replyToId)
     } finally {
         result.file.delete()
     }
 }
 
 /** Encrypts and sends a video recorded with the system camera (max 60 s, enforced by the capture intent). */
-suspend fun sendVideoFile(file: File, channelId: String) = withContext(Dispatchers.IO) {
+suspend fun sendVideoFile(file: File, channelId: String, replyToId: String? = null) = withContext(Dispatchers.IO) {
     try {
         var seconds = 0
         var preview: ByteArray? = null
@@ -168,7 +177,7 @@ suspend fun sendVideoFile(file: File, channelId: String) = withContext(Dispatche
             preview = r.getFrameAtTime(0)?.let { thumbnailWebp(it) }
             r.release()
         }
-        sendPrepared(channelId, file.readBytes(), "video/mp4", "video-message.mp4", "video", durationSec = seconds, preview = preview)
+        sendPrepared(channelId, file.readBytes(), "video/mp4", "video-message.mp4", "video", durationSec = seconds, preview = preview, replyToId = replyToId)
     } finally {
         file.delete()
     }

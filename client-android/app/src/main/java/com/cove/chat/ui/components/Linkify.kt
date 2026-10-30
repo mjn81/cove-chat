@@ -67,7 +67,9 @@ fun tokenizeMessage(text: String): List<MessageToken> {
  * Builds the displayed message: links are tappable (the default handler opens the browser/mail app) and styled in
  * [linkColor] with an underline; `@mentions` are bold in the same colour, like the web client.
  */
-fun linkifiedText(text: String, linkColor: Color, onMention: ((username: String) -> Unit)? = null): AnnotatedString = buildAnnotatedString {
+fun linkifiedText(
+    text: String, linkColor: Color, onMention: ((username: String) -> Unit)? = null, onInvite: ((code: String) -> Unit)? = null
+): AnnotatedString = buildAnnotatedString {
     for (t in tokenizeMessage(text)) when (t) {
         is MessageToken.Plain -> append(t.value)
         is MessageToken.Mention -> if (onMention == null) {
@@ -78,8 +80,12 @@ fun linkifiedText(text: String, linkColor: Color, onMention: ((username: String)
                 LinkAnnotation.Clickable(t.value, TextLinkStyles(SpanStyle(color = linkColor, fontWeight = FontWeight.Medium))) { onMention(t.value.removePrefix("@")) }
             ) { append(t.value) }
         }
-        is MessageToken.Link -> withLink(
-            LinkAnnotation.Url(t.href, TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)))
-        ) { append(t.value) }
+        is MessageToken.Link -> {
+            val style = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline))
+            val invite = if (onInvite != null) com.cove.chat.ui.screens.InviteLinks.code(t.href) else null
+            // A channel invite opens in the app (join card) instead of the browser.
+            val link = if (invite != null) LinkAnnotation.Url(t.href, style) { onInvite?.invoke(invite) } else LinkAnnotation.Url(t.href, style)
+            withLink(link) { append(t.value) }
+        }
     }
 }

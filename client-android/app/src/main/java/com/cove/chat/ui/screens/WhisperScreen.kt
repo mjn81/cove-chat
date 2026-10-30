@@ -28,6 +28,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -236,42 +241,33 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
     val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { sendPicked(it, false) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { sendPicked(it, false) }
 
-    var videoFile by remember { mutableStateOf<java.io.File?>(null) }
-    val captureVideo = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-        val f = videoFile
-        videoFile = null
-        if (res.resultCode == Activity.RESULT_OK && f != null && f.exists() && f.length() > 0) {
-            if (f.length() > WHISPER_MAX_BYTES) { toast("Couldn't read that file, or it is larger than 10 MB."); f.delete(); return@rememberLauncherForActivityResult }
-            busy = true
-            scope.launch {
-                runCatching {
-                    var seconds: Int? = null
+    var showVideoRecorder by remember { mutableStateOf(false) }
+    if (showVideoRecorder) VideoMessageDialog(
+        maxSeconds = 30,
+        onDismiss = { showVideoRecorder = false },
+        onSend = { f ->
+            showVideoRecorder = false
+            if (f.length() > WHISPER_MAX_BYTES) { toast("Couldn't read that file, or it is larger than 10 MB."); f.delete() }
+            else {
+                busy = true
+                scope.launch {
                     runCatching {
-                        val r = android.media.MediaMetadataRetriever()
-                        r.setDataSource(f.absolutePath)
-                        seconds = ((r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L) / 1000).toInt()
-                        r.release()
+                        var seconds: Int? = null
+                        runCatching {
+                            val r = android.media.MediaMetadataRetriever()
+                            r.setDataSource(f.absolutePath)
+                            seconds = ((r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L) / 1000).toInt()
+                            r.release()
+                        }
+                        val bytes = f.readBytes()
+                        manager.sendFile(sessionId, WhisperFile("video-message.mp4", "video/mp4", bytes.size.toLong(), "video", seconds, null, bytes))
                     }
-                    val bytes = f.readBytes()
-                    manager.sendFile(sessionId, WhisperFile("video-message.mp4", "video/mp4", bytes.size.toLong(), "video", seconds, null, bytes))
+                    f.delete()
+                    busy = false
                 }
-                f.delete()
-                busy = false
             }
-        } else f?.delete()
-    }
-    fun startVideo() {
-        val dir = java.io.File(context.cacheDir, "video").apply { mkdirs() }
-        val f = java.io.File(dir, "whisper_${System.currentTimeMillis()}.mp4")
-        videoFile = f
-        val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
-        val intent = Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
-            .putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
-            .putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, 30)
-            .putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 0)
-            .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runCatching { captureVideo.launch(intent) }.onFailure { toast("No camera app available."); videoFile = null }
-    }
+        }
+    )
 
     if (session == null) {
         Box(Modifier.fillMaxSize().background(CoveWhisperBg).statusBarsPadding(), contentAlignment = Alignment.Center) {
@@ -291,7 +287,12 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
                 Box(Modifier.size(48.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
                     Icon(Icons.Outlined.ChevronLeft, "Back", tint = CoveWhisperPrimary, modifier = Modifier.size(28.dp).mirrorInRtl())
                 }
-                UserAvatar(session.peerId, size = 36.dp)
+                Box {
+                    UserAvatar(session.peerId, size = 36.dp)
+                    Box(Modifier.align(Alignment.BottomEnd).size(15.dp).clip(CircleShape).background(CoveWhisperBg), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Lock, null, tint = CoveWhisperPrimary, modifier = Modifier.size(9.dp))
+                    }
+                }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(session.peerName, color = CoveWhisperPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -324,33 +325,42 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (session.status == WhisperStatus.Pending) {
-                Column(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = CoveWhisperPrimary, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
-                    Spacer(Modifier.height(16.dp))
-                    Text("Waiting for ${session.peerName} to accept…", color = CoveWhisperTextMuted, textAlign = TextAlign.Center)
-                    Text("Cancel", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { manager.close(sessionId); onBack() }.padding(16.dp))
+                WhisperStateScreen(Icons.Outlined.Lock, pulse = true, message = "Waiting for ${session.peerName} to accept…") {
+                    CoveButton("Cancel request", { manager.close(sessionId); onBack() }, variant = ButtonVariant.Outline, size = ButtonSize.Md, contentColor = MaterialTheme.colorScheme.error)
                 }
             } else if (session.status == WhisperStatus.Burned || (ended && session.messages.isEmpty())) {
-                Column(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(if (session.status == WhisperStatus.Burned) Icons.Outlined.LocalFireDepartment else Icons.Outlined.Lock, null, tint = CoveWhisperTextMuted, modifier = Modifier.size(40.dp))
-                    Spacer(Modifier.height(12.dp))
-                    Text(session.endedReason ?: "This Whisper has ended.", color = CoveWhisperTextMuted, textAlign = TextAlign.Center)
-                    Text("Close", color = CoveWhisperPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { manager.forget(sessionId); onBack() }.padding(16.dp))
+                WhisperStateScreen(
+                    if (session.status == WhisperStatus.Burned) Icons.Outlined.LocalFireDepartment else Icons.Outlined.Lock,
+                    pulse = false, message = session.endedReason ?: "This Whisper has ended."
+                ) {
+                    WhisperPrimaryButton("Close") { manager.forget(sessionId); onBack() }
                 }
             } else {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     item {
-                        Text(
-                            if (session.persists) "Messages are encrypted on both devices and kept only on them. Compare the safety number to verify who you're talking to."
-                            else "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to.",
-                            color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
-                        )
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(CoveShapes.lg).background(CoveWhisperCard).padding(Spacing.md),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Lock, null, tint = CoveWhisperPrimary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(Spacing.md))
+                            Text(
+                                if (session.persists) "Messages are encrypted on both devices and kept only on them. Compare the safety number to verify who you're talking to."
+                                else "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to.",
+                                color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize
+                            )
+                        }
                     }
-                    items(session.messages.toList(), key = { it.id }) { m -> WhisperBubble(m, mine = m.senderId == me, now = now) }
+                    val msgs = session.messages.toList()
+                    itemsIndexed(msgs, key = { _, m -> m.id }) { i, m ->
+                        val prev = msgs.getOrNull(i - 1)
+                        if (prev == null || whisperDay(prev.sentAt) != whisperDay(m.sentAt)) WhisperDaySeparator(m.sentAt)
+                        WhisperBubble(m, mine = m.senderId == me, now = now, expiryMode = session.expiryMode)
+                    }
                     if (ended) item {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(session.endedReason ?: "This Whisper has ended.", color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, textAlign = TextAlign.Center)
-                            Text("Delete from this device", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { manager.forget(sessionId); onBack() }.padding(16.dp))
+                            CoveButton("Delete from this device", { manager.forget(sessionId); onBack() }, variant = ButtonVariant.Outline, size = ButtonSize.Sm, contentColor = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -382,7 +392,7 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
                 AttachAction(Icons.Outlined.Image, "Photo or Video") { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
                 AttachAction(Icons.Outlined.MusicNote, "Audio") { pickAudio.launch("audio/*") },
                 AttachAction(Icons.Outlined.Description, "Document / File") { pickFile.launch("*/*") },
-                AttachAction(Icons.Outlined.Videocam, "Video message") { startVideo() }
+                AttachAction(Icons.Outlined.Videocam, "Video message") { showVideoRecorder = true }
             ),
             container = CoveWhisperPopover, accent = CoveWhisperPrimary, labelColor = CoveWhisperPrimary, onDismiss = { sheetOpen = false }
         )
@@ -397,9 +407,22 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
             }
         ) {
             Text("If this matches the number on ${session.peerName}'s device, nobody is intercepting your Whisper.", color = CoveWhisperTextMuted, style = CoveType.label, fontWeight = FontWeight.Normal)
-            val groups = (session.safetyNumber ?: "").split(" ").chunked(4)
-            groups.forEach { row -> Text(row.joinToString("   "), color = CoveWhisperPrimary, style = CoveType.title, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) }
-            if (session.verified) Text("Verified", color = MaterialTheme.colorScheme.primary, style = CoveType.label)
+            // 12 groups of 5 digits laid out as a 3-column grid, easy to read aloud and compare.
+            val rows = (session.safetyNumber ?: "").split(" ").filter { it.isNotBlank() }.chunked(3)
+            Column(Modifier.fillMaxWidth().clip(CoveShapes.md).background(CoveWhisperCard).padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                rows.forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        row.forEach { group -> androidx.compose.material3.Text(group, color = CoveWhisperPrimary, fontSize = 18.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontWeight = FontWeight.Medium, letterSpacing = 1.sp) }
+                    }
+                }
+            }
+            if (session.verified) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.VerifiedUser, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Verified", color = MaterialTheme.colorScheme.primary, style = CoveType.label)
+                }
+            }
         }
     }
     if (confirmEnd) {
@@ -420,20 +443,69 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
     }
 }
 
-/** One message: text or attachment, with its disappearing countdown when the session uses an expiry mode. */
+/** Total lifetime of a message in a timed session, for the countdown bar; null when messages do not expire by time. */
+private fun expiryTotalMs(mode: String): Long? = when (mode) {
+    "5m" -> 5 * 60_000L
+    "1h" -> 60 * 60_000L
+    "24h" -> 24 * 60 * 60_000L
+    else -> null
+}
+
+private fun whisperDay(ms: Long): java.time.LocalDate = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+
+private fun whisperTime(ms: Long): String =
+    java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+
+/** Centered pill with "Today", "Yesterday" or the date, like the main chat's day separators. */
 @Composable
-private fun WhisperBubble(m: WhisperMessage, mine: Boolean, now: Long) {
+private fun WhisperDaySeparator(ms: Long) {
+    val day = whisperDay(ms)
+    val today = java.time.LocalDate.now()
+    val label = when (day) {
+        today -> "Today"
+        today.minusDays(1) -> "Yesterday"
+        else -> day.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM))
+    }
+    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+        Text(label, color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, modifier = Modifier.clip(CircleShape).background(CoveWhisperCard).padding(horizontal = 12.dp, vertical = 4.dp))
+    }
+}
+
+/**
+ * One message as a rounded bubble with its send time. In timed sessions the bubble also shows the live countdown and a
+ * thin bar that drains as the message approaches its disappearance.
+ */
+@Composable
+private fun WhisperBubble(m: WhisperMessage, mine: Boolean, now: Long, expiryMode: String) {
     val fg = if (mine) Color.Black else CoveWhisperPrimary
     val bg = if (mine) CoveWhisperPrimary else CoveWhisperAccent
+    val shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (mine) 18.dp else 4.dp, bottomEnd = if (mine) 4.dp else 18.dp)
+    val total = expiryTotalMs(expiryMode)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
         if (m.file != null) WhisperFileBubble(m, mine)
         if (!m.text.isNullOrEmpty()) {
-            Text(
-                m.text, color = fg, fontSize = 16.sp,
-                modifier = Modifier.clip(CoveShapes.md).background(bg).padding(horizontal = 12.dp, vertical = 8.dp)
-            )
+            Column(Modifier.widthIn(max = 300.dp).clip(shape).background(bg).padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 5.dp)) {
+                Text(m.text, color = fg, fontSize = 16.sp)
+                Row(Modifier.align(Alignment.End).padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    m.expiresAt?.let { exp ->
+                        Icon(Icons.Outlined.Schedule, null, tint = fg.copy(alpha = 0.55f), modifier = Modifier.size(11.dp))
+                        Spacer(Modifier.width(3.dp))
+                        Text(formatRemaining(exp - now), color = fg.copy(alpha = 0.55f), fontSize = 11.sp)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(whisperTime(m.sentAt), color = fg.copy(alpha = 0.55f), fontSize = 11.sp)
+                }
+                val exp = m.expiresAt
+                if (exp != null && total != null) {
+                    Box(Modifier.padding(top = 4.dp).fillMaxWidth().height(2.dp).clip(CircleShape).background(fg.copy(alpha = 0.12f))) {
+                        Box(Modifier.fillMaxWidth(((exp - now).toFloat() / total).coerceIn(0f, 1f)).height(2.dp).background(fg.copy(alpha = 0.5f)))
+                    }
+                }
+            }
         }
-        m.expiresAt?.let { exp ->
+        // An attachment without text keeps its countdown below it.
+        if (m.text.isNullOrEmpty()) m.expiresAt?.let { exp ->
             Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Schedule, null, tint = CoveWhisperTextMuted, modifier = Modifier.size(11.dp))
                 Spacer(Modifier.width(3.dp))
@@ -443,7 +515,42 @@ private fun WhisperBubble(m: WhisperMessage, mine: Boolean, now: Long) {
     }
 }
 
-/** Whisper composer: "+" attachment sheet, text field, and one trailing mic (tap to record) / send button. */
+/** Big status graphic (icon in a soft disc), message and actions, used for the pending, ended and burned screens. */
+@Composable
+private fun WhisperStateScreen(icon: androidx.compose.ui.graphics.vector.ImageVector, pulse: Boolean, message: String, actions: @Composable ColumnScope.() -> Unit) {
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "whisperPulse")
+    val scale by transition.animateFloat(
+        1f, if (pulse) 1.12f else 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100), androidx.compose.animation.core.RepeatMode.Reverse), label = "pulseScale"
+    )
+    val glow by transition.animateFloat(
+        if (pulse) 0.35f else 0.0f, if (pulse) 0.0f else 0.0f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100), androidx.compose.animation.core.RepeatMode.Reverse), label = "pulseGlow"
+    )
+    Column(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.size(96.dp).graphicsLayer { scaleX = scale; scaleY = scale }.clip(CircleShape).background(CoveWhisperPrimary.copy(alpha = glow)))
+            Box(Modifier.size(72.dp).clip(CircleShape).background(CoveWhisperAccent), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = CoveWhisperPrimary, modifier = Modifier.size(32.dp))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(message, color = CoveWhisperTextMuted, textAlign = TextAlign.Center, fontSize = CoveType.body.fontSize)
+        Spacer(Modifier.height(20.dp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), content = actions)
+    }
+}
+
+/** The Whisper composer's colours: darker card and its own accent, on the shared [ChatInputBar]. */
+private fun whisperComposerPalette() = ComposerPalette(
+    card = CoveWhisperCard, border = CoveWhisperAccent, focusBorder = CoveWhisperPrimary.copy(alpha = 0.7f),
+    text = CoveWhisperPrimary, muted = CoveWhisperTextMuted, accent = CoveWhisperPrimary, onAccent = Color.Black, popover = CoveWhisperCard
+)
+
+/**
+ * Whisper composer. Same component as the main chat (pill, emoji, mic/send swap, hold-to-talk with slide gestures)
+ * in the Whisper palette; attachments open the Whisper screen's own sheet and nothing is uploaded to the server.
+ */
 @Composable
 private fun WhisperInputBar(
     input: String, onInput: (String) -> Unit, busy: Boolean,
@@ -453,47 +560,31 @@ private fun WhisperInputBar(
     val recorder = remember { VoiceRecorder(context) }
     var recording by remember { mutableStateOf(false) }
     var seconds by remember { mutableStateOf(0) }
+    var pending by remember { mutableStateOf<VoiceRecorder.Result?>(null) }
     LaunchedEffect(recording) { seconds = 0; while (recording) { delay(1000); seconds++ } }
-    DisposableEffect(Unit) { onDispose { recorder.cancel() } }
+    DisposableEffect(Unit) { onDispose { recorder.cancel(); pending?.file?.delete() } }
 
-    Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        if (recording) {
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable { recording = false; recorder.cancel() }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Outlined.Delete, "Cancel recording", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(26.dp))
-            }
-            Row(Modifier.weight(1f).heightIn(min = 48.dp).clip(CoveShapes.lg).background(CoveWhisperCard).border(1.dp, CoveWhisperAccent, CoveShapes.lg).padding(horizontal = Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(12.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error))
-                Spacer(Modifier.width(Spacing.sm))
-                Text(mmss(seconds), color = CoveWhisperPrimary, fontSize = 16.sp)
-            }
-            Box(Modifier.size(48.dp).clip(CircleShape).background(CoveWhisperPrimary).clickable {
-                recording = false
-                val r = recorder.stop()
-                if (r == null) toast("Recording too short.") else onVoice(r)
-            }, contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Outlined.Send, "Send voice message", tint = Color.Black, modifier = Modifier.size(24.dp).mirrorInRtl()) }
-        } else {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(CoveWhisperAccent).clickable(enabled = !busy, onClick = onAttach), contentAlignment = Alignment.Center) {
-                if (busy) CircularProgressIndicator(color = CoveWhisperPrimary, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
-                else Icon(Icons.Outlined.Add, "Add attachment", tint = CoveWhisperPrimary, modifier = Modifier.size(28.dp))
-            }
-            Box(Modifier.weight(1f).heightIn(min = 48.dp, max = 140.dp).clip(CoveShapes.lg).background(CoveWhisperCard).border(1.dp, CoveWhisperAccent, CoveShapes.lg).padding(horizontal = Spacing.lg, vertical = 12.dp), contentAlignment = Alignment.CenterStart) {
-                if (input.isEmpty()) Text("Whisper…", color = CoveWhisperTextMuted, fontSize = 16.sp)
-                BasicTextField(
-                    value = input, onValueChange = onInput,
-                    textStyle = TextStyle(color = CoveWhisperPrimary, fontSize = 16.sp, lineHeight = 24.sp, textDirection = TextDirection.Content),
-                    cursorBrush = SolidColor(CoveWhisperPrimary), modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-                )
-            }
-            if (input.isNotBlank()) {
-                Box(Modifier.size(48.dp).clip(CircleShape).background(CoveWhisperPrimary).clickable(onClick = onSend), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Outlined.Send, "Send message", tint = Color.Black, modifier = Modifier.size(24.dp).mirrorInRtl())
-                }
-            } else {
-                Box(Modifier.size(48.dp).clip(CircleShape).background(CoveWhisperAccent).clickable(enabled = !busy) {
-                    if (recorder.start()) recording = true else toast("Couldn't start the microphone.")
-                }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Mic, "Record voice message", tint = CoveWhisperPrimary, modifier = Modifier.size(24.dp)) }
-            }
-        }
-    }
+    ChatInputBar(
+        input = input, onInputChange = onInput, targetLabel = "", placeholder = "Whisper…",
+        context = null, onCancelContext = {},
+        uploading = busy, recording = recording, elapsedSeconds = seconds,
+        onSend = onSend, onAttach = onAttach,
+        onStartRecording = { if (recorder.start()) recording = true else toast("Couldn't start the microphone.") },
+        onCancelRecording = { recording = false; recorder.cancel() },
+        onFinishRecording = {
+            recording = false
+            val r = recorder.stop()
+            if (r == null) toast("Recording too short.") else onVoice(r)
+        },
+        onStopRecording = {
+            recording = false
+            val r = recorder.stop()
+            if (r == null) toast("Recording too short.") else pending = r
+        },
+        liveLevels = recorder.liveLevels,
+        pendingVoice = pending,
+        onSendPendingVoice = { r -> pending = null; onVoice(r) },
+        onDiscardPendingVoice = { pending?.file?.delete(); pending = null },
+        palette = whisperComposerPalette()
+    )
 }

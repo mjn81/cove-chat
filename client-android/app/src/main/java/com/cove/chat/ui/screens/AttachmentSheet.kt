@@ -35,7 +35,8 @@ import com.cove.chat.ui.theme.CoveShapes
 import com.cove.chat.ui.theme.Spacing
 
 /** One big labelled action in the attachment sheet. */
-class AttachAction(val icon: ImageVector, val label: String, val run: () -> Unit)
+/** [tint] gives the action its own solid colour (Telegram-style tile); null uses the sheet's single accent. */
+class AttachAction(val icon: ImageVector, val label: String, val tint: Color? = null, val run: () -> Unit)
 
 /**
  * Bottom sheet with a grid of large labelled attachment actions (min 88dp cells, 56dp round icons), shared by the
@@ -55,8 +56,8 @@ fun AttachmentSheet(actions: List<AttachAction>, container: Color, accent: Color
                     Modifier.clip(CoveShapes.lg).clickable { onDismiss(); a.run() }.padding(Spacing.sm).heightIn(min = 88.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
                 ) {
-                    Box(Modifier.size(56.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                        Icon(a.icon, null, tint = accent, modifier = Modifier.size(28.dp))
+                    Box(Modifier.size(56.dp).clip(CircleShape).background(a.tint ?: accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                        Icon(a.icon, null, tint = if (a.tint != null) Color.White else accent, modifier = Modifier.size(28.dp))
                     }
                     Spacer(Modifier.height(Spacing.xs))
                     Text(a.label, color = labelColor, fontSize = 14.sp, textAlign = TextAlign.Center, maxLines = 2)

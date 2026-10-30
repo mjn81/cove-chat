@@ -81,7 +81,7 @@ private fun parseColor(hex: String?, fallback: Color): Color =
     runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(fallback)
 
 /** Center-crops to a square, caps at 512px and re-encodes as WebP (what the web avatar cropper produces). */
-private fun squareAvatarBytes(source: ByteArray): ByteArray? {
+internal fun squareAvatarBytes(source: ByteArray): ByteArray? {
     val bmp = BitmapFactory.decodeByteArray(source, 0, source.size) ?: return null
     val side = minOf(bmp.width, bmp.height)
     val square = Bitmap.createBitmap(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side)
@@ -265,6 +265,7 @@ fun PrivacySettings() {
         Spacer(Modifier.height(10.dp))
         FieldLabel("Who can send me friend requests")
         CoveChoiceList(PermissionAll2, friendReq, enabled = loaded) { v -> val old = friendReq; friendReq = v; save(UpdateProfileRequest(friendRequestPermission = v)) { friendReq = old } }
+        PasscodeSettings()
     }
 }
 

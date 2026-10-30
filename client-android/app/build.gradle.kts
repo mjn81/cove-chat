@@ -118,6 +118,13 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
 
+    // In-app camera for video messages (replaces launching the system recorder)
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.video)
+    implementation(libs.camerax.view)
+
     // JVM unit tests for pure logic (voice trim maths, ...)
     testImplementation("junit:junit:4.13.2")
 
