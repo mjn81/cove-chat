@@ -33,6 +33,7 @@ jobs:
           cache-dependency-path: website/pnpm-lock.yaml
       - run: make site/install
       - run: make site/lint
+      - run: make site/test
       - run: make site/typecheck
       - run: make site/build
         env:

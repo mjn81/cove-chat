@@ -51,10 +51,14 @@
 .rows{display:flex;flex-direction:column;gap:8px}
 .row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-size:13px;transition:border-color .2s,transform .25s var(--ease)}
 a.row:hover{border-color:var(--primary);transform:translateX(2px)}
+/* A copy row is a <button>: take the row's size from .row (13px) and the page font, not the browser's button defaults. */
+button.row{font-family:inherit;color:inherit;text-align:start;cursor:pointer;width:100%}
+button.row:hover{border-color:var(--primary)}
 .row .rl{flex:1;display:flex;align-items:center;gap:9px}
 .row .rl svg{width:15px;height:15px;color:var(--muted-fg)}
 .row .rm{color:var(--muted-fg);font-size:12px;font-family:var(--font-mono)}
 .row.soon{opacity:.5}
+.row.soon.rec{opacity:1}
 .row.rec{border-color:color-mix(in srgb,var(--primary) 60%,var(--border));background:color-mix(in srgb,var(--primary) 8%,var(--bg))}
 .rec-tag{font:700 10px var(--font-sans);background:var(--primary);color:var(--primary-fg);padding:2px 7px;border-radius:999px}
 .dl-foot{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:28px;color:var(--muted-fg);font-size:13px}

@@ -56,8 +56,9 @@
 }
 .row .rl {
   min-width: 0;
-  flex-wrap: wrap;
-  row-gap: 4px;
+  /* Keep the "Your OS" tag on the label's line; a long label wraps inside itself instead. */
+  flex-wrap: nowrap;
+  overflow-wrap: anywhere;
 }
 .row .rm {
   white-space: nowrap;

@@ -13,7 +13,8 @@
     "build": "pnpm gen && astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.1",
@@ -39,6 +40,7 @@
     "eslint-plugin-astro": "^3.2.1",
     "sharp": "^0.35.5",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0"
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   }
 }

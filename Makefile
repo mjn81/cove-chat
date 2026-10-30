@@ -1,4 +1,4 @@
-.PHONY: version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -83,6 +83,9 @@ site/typecheck: ## Type-check the website (astro check)
 
 site/lint: ## Run ESLint on the website
 	$(PNPM) -C website lint
+
+site/test: ## Run the website unit tests (Vitest)
+	$(PNPM) -C website test
 
 ## ── Android ─────────────────────────────────────────────────────────────────
 # Gradle 8.11 cannot start on JDK 24+ (Android Studio now bundles JDK 25), so builds are pinned to a JDK 17-23.

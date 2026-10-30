@@ -2,20 +2,12 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Check, Copy, Download, ExternalLink, FlaskConical, Globe, Laptop, Server, ShieldCheck, Smartphone, type LucideIcon } from 'lucide-react';
 import { BlurFade, GithubIcon, SpotlightCard } from './primitives';
-import type { DownloadEntry, DownloadGroup, OsId } from '@/lib/downloads';
+import type { DownloadEntry, DownloadGroup } from '@/lib/downloads';
+import { detectOs, type DetectedOs } from '@/lib/detect-os';
 import { REPO_URL, RELEASES_URL } from '@/lib/site';
 import { dict, type Dict, type Lang } from '@/i18n';
 
 const GROUP_ICON: Record<DownloadGroup['id'], LucideIcon> = { server: Server, desktop: Laptop, mobile: Smartphone };
-
-function detectOs(): OsId | null {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return 'android';
-  if (/windows/i.test(ua)) return 'windows';
-  if (/mac/i.test(ua)) return 'macos';
-  if (/linux|x11/i.test(ua)) return 'linux';
-  return null;
-}
 
 function Row({ e, recommended, d }: { e: DownloadEntry; recommended: boolean; d: Dict['download'] }) {
   const [copied, setCopied] = useState(false);
@@ -31,7 +23,7 @@ function Row({ e, recommended, d }: { e: DownloadEntry; recommended: boolean; d:
   if (e.copy) {
     const text = e.copy;
     return (
-      <button type="button" className={cls} style={{ cursor: 'pointer', font: 'inherit', color: 'inherit', textAlign: 'start' }} onClick={async () => {
+      <button type="button" className={cls} onClick={async () => {
         try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard denied */ }
       }}>{body}</button>
     );
@@ -48,8 +40,8 @@ function Row({ e, recommended, d }: { e: DownloadEntry; recommended: boolean; d:
 export default function Downloads({ groups, tag, lang }: { groups: DownloadGroup[]; tag: string | null; lang: Lang }) {
   const d = dict(lang).download;
   const beta = dict(lang).beta;
-  const [os, setOs] = useState<OsId | null>(null);
-  useEffect(() => setOs(detectOs()), []);
+  const [os, setOs] = useState<DetectedOs | null>(null);
+  useEffect(() => setOs(detectOs(navigator.userAgent, navigator.maxTouchPoints)), []);
 
   return (
     <>
@@ -72,7 +64,7 @@ export default function Downloads({ groups, tag, lang }: { groups: DownloadGroup
                     <a className="row" href={`${REPO_URL}#quick-start`}><span className="rl"><Globe />{d.webClient}</span><span className="rm">{d.webClientMeta}</span><ExternalLink size={14} /></a>
                   )}
                   {g.id === 'mobile' && (
-                    <div className="row soon"><span className="rl">{d.ios}</span><span className="rm">{d.soon}</span></div>
+                    <div className={`row soon ${os === 'ios' ? 'rec' : ''}`}><span className="rl">{d.ios}{os === 'ios' && <span className="rec-tag">{d.yourOs}</span>}</span><span className="rm">{d.soon}</span></div>
                   )}
                 </div>
               </SpotlightCard>
