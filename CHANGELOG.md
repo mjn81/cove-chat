@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.5](https://github.com/mjn81/cove-chat/compare/v0.9.4...v0.9.5) (2026-10-30)
+
+
+### Features
+
+* **android:** passcode lock, devices page, invite cards, voice and video trimming, in-app video message recorder ([93e2fb9](https://github.com/mjn81/cove-chat/commit/93e2fb98c8e2ca92ad59291570bf8d4ad993e207))
+* **backend:** active devices, login notices from a Cove system account, invite previews, offline GeoIP ([b50a92a](https://github.com/mjn81/cove-chat/commit/b50a92a87a6a6b78534395304b9f0fc039292f3e))
+* **desktop:** OS keystore for the session, passcode lock, tray and autostart, safer downloads ([b1673a6](https://github.com/mjn81/cove-chat/commit/b1673a6517b1c66f6ec2754765c9a4708ab74add))
+* **web:** devices list, owner notices, invite join cards, encrypted local cache and desktop passcode UI ([07a9fca](https://github.com/mjn81/cove-chat/commit/07a9fcad9abdfd88b32637adc634bb888d6c7825))
+* **website:** refined navigation and responsive layout; regenerate API and config references ([60bcee5](https://github.com/mjn81/cove-chat/commit/60bcee51c779dd7eb4389b82a99007686701dd4c))
+
+
+### Bug Fixes
+
+* **desktop:** title bar stays above overlays and full-screen layers start below it ([4ab8394](https://github.com/mjn81/cove-chat/commit/4ab8394e13d15ff0cedaefe9bede461a76f124f0))
+* **website:** download rows use one font size, tag stays beside the label, iOS no longer detected as macOS ([07ecf67](https://github.com/mjn81/cove-chat/commit/07ecf672992a6396f526742ee6955e311f8118a8))
+
 ## [0.9.4](https://github.com/mjn81/cove-chat/compare/v0.9.3...v0.9.4) (2026-10-28)
 
 
