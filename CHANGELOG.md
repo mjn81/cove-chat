@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.6](https://github.com/mjn81/cove-chat/compare/v0.9.5...v0.9.6) (2026-10-30)
+
+
+### Features
+
+* **desktop:** glyph taskbar and tray icon that follows the Windows light/dark theme ([62b1679](https://github.com/mjn81/cove-chat/commit/62b1679bfa1e47d7580cb07fe198cae9074fa434))
+* **desktop:** Telegram-style macOS window chrome, traffic lights inside the nav column ([bb4e305](https://github.com/mjn81/cove-chat/commit/bb4e305d93b26af220244218bf310a2760868f5a))
+
+
+### Bug Fixes
+
+* **backend:** allow the real macOS and Linux desktop origin (wails://wails) ([990daa8](https://github.com/mjn81/cove-chat/commit/990daa8ec3407fd9896fc797ebb3745646a58b1e))
+
 ## [0.9.5](https://github.com/mjn81/cove-chat/compare/v0.9.4...v0.9.5) (2026-10-30)
 
 
