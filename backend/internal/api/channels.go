@@ -34,6 +34,12 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	memberSet := uniqueStrings(append(body.Members, session.UserID))
+	for _, id := range memberSet {
+		if id == models.SystemUserID {
+			writeError(w, http.StatusForbidden, "this account cannot be added to chats")
+			return
+		}
+	}
 
 	// DM de-duplication: if this is a DM, check if it already exists
 	isDM := (&models.Channel{Name: body.Name}).IsDM(len(memberSet))
@@ -319,19 +325,24 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 // JoinChannel godoc
 //
 //	@Summary     Join a channel via a unique invite link
+//	@Description Joins the channel and returns it. Members who were kicked cannot rejoin through a link; members who left can.
+//	@Description **Access:** Authenticated.
 //	@Tags        channels
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Param       link path string true "Unique Channel Invite Link"
-//	@Success     200 {object} StatusResponse
+//	@Success     200 {object} ChannelResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/join/{link} [post]
 func (h *Handler) JoinChannel(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
-	link := r.PathValue("link")
 
-	ch, err := h.Store.GetChannelByInviteLink(link)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "channel not found")
+	ch, _, ok := h.groupByInviteLink(w, r.PathValue("link"))
+	if !ok {
 		return
 	}
 
@@ -339,6 +350,11 @@ func (h *Handler) JoinChannel(w http.ResponseWriter, r *http.Request) {
 	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err == nil && uc.Status == models.StatusActive {
 		writeJSON(w, http.StatusOK, h.toChannelResponse(ch, session.UserID))
+		return
+	}
+	// A kick is an admin decision: the public link must not undo it (an admin can still re-add the user).
+	if err == nil && uc.Status == models.StatusKicked {
+		writeError(w, http.StatusForbidden, "you were removed from this channel and cannot rejoin with its link")
 		return
 	}
 
@@ -352,6 +368,97 @@ func (h *Handler) JoinChannel(w http.ResponseWriter, r *http.Request) {
 		h.Hub.BroadcastMemberJoined(ch.ID, session.UserID)
 	}
 
+	writeJSON(w, http.StatusOK, h.toChannelResponse(ch, session.UserID))
+}
+
+// groupByInviteLink resolves an invite link to a group channel and its active member count.
+// Unknown links and DMs both answer 404, so a link never reveals a direct conversation.
+func (h *Handler) groupByInviteLink(w http.ResponseWriter, link string) (*models.Channel, int, bool) {
+	ch, err := h.Store.GetChannelByInviteLink(link)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "channel not found")
+		return nil, 0, false
+	}
+	members, err := h.Store.GetChannelMembers(ch.ID)
+	if err != nil {
+		logger.Errorf("api: invite link: list members of channel %s: %v", ch.ID, err)
+		writeError(w, http.StatusInternalServerError, "could not load channel")
+		return nil, 0, false
+	}
+	if ch.IsDM(len(members)) {
+		writeError(w, http.StatusNotFound, "channel not found")
+		return nil, 0, false
+	}
+	return ch, len(members), true
+}
+
+// PreviewInvite godoc
+//
+//	@Summary     Preview the channel behind an invite link
+//	@Description Returns public-facing details so a client can show a join card before joining. Direct messages are never previewable.
+//	@Description **Access:** Authenticated.
+//	@Tags        channels
+//	@Produce     json
+//	@Security    BearerAuth
+//	@Param       link path string true "Unique Channel Invite Link"
+//	@Success     200 {object} InvitePreviewResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
+//	@Router      /api/join/{link} [get]
+func (h *Handler) PreviewInvite(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
+
+	ch, count, ok := h.groupByInviteLink(w, r.PathValue("link"))
+	if !ok {
+		return
+	}
+	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
+	writeJSON(w, http.StatusOK, InvitePreviewResponse{
+		ID:            ch.ID,
+		Name:          ch.Name,
+		Description:   ch.Description,
+		AvatarID:      ch.AvatarID,
+		IsPrivate:     ch.IsPrivate,
+		MemberCount:   count,
+		AlreadyMember: err == nil && uc.Status == models.StatusActive,
+	})
+}
+
+// RegenerateInvite godoc
+//
+//	@Summary     Replace a channel's invite link
+//	@Description Issues a new random invite link; the previous link stops working immediately.
+//	@Description **Access:** Channel Admin.
+//	@Tags        channels
+//	@Produce     json
+//	@Security    BearerAuth
+//	@Param       id path string true "Channel ID"
+//	@Success     200 {object} ChannelResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
+//	@Router      /api/channels/{id}/invite/regenerate [post]
+func (h *Handler) RegenerateInvite(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
+	ch := ChannelFromContext(r.Context())
+
+	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
+	if err != nil || uc.Role < models.RoleAdmin {
+		writeError(w, http.StatusForbidden, "insufficient permissions")
+		return
+	}
+	if err := h.Store.RegenerateInviteLink(ch); err != nil {
+		logger.Errorf("api: regenerate invite for channel %s: %v", ch.ID, err)
+		writeError(w, http.StatusInternalServerError, "failed to regenerate invite link")
+		return
+	}
+	if h.Hub != nil {
+		h.Hub.BroadcastChannelUpdated(ch)
+	}
 	writeJSON(w, http.StatusOK, h.toChannelResponse(ch, session.UserID))
 }
 
@@ -594,6 +701,7 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 	memberDomains := make(map[string]string)
 	memberStatuses := make(map[string]string)
 	memberRoles := make(map[string]int)
+	memberSystem := make(map[string]bool)
 	members, err := h.Store.GetChannelMembers(ch.ID)
 
 	userRole := models.RoleMember
@@ -609,11 +717,22 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 			u, err := h.Store.GetUser(m.UserID)
 			if err == nil {
 				memberNames[m.UserID] = u.Username
+				if u.IsSystem {
+					// The system account's name carries this server's domain so users know who is notifying them.
+					memberNames[m.UserID] = h.systemDisplayName()
+					memberSystem[m.UserID] = true
+				}
 				memberAvatars[m.UserID] = u.AvatarID
 				memberDomains[m.UserID] = u.Domain
 				memberStatuses[m.UserID] = u.Status
 			}
 		}
+	}
+
+	// The link is a join credential: only admins and the owner get to see (and re-share) it.
+	inviteLink := ""
+	if userRole >= models.RoleAdmin {
+		inviteLink = ch.InviteLink
 	}
 
 	return ChannelResponse{
@@ -622,7 +741,7 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 		Description:           ch.Description,
 		AvatarID:              ch.AvatarID,
 		IsPrivate:             ch.IsPrivate,
-		InviteLink:            ch.InviteLink,
+		InviteLink:            inviteLink,
 		CreatorID:             ch.CreatorID,
 		UserRole:              userRole,
 		Members:               memberIDs,
@@ -631,6 +750,7 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 		MemberDomains:         memberDomains,
 		MemberStatuses:        memberStatuses,
 		MemberRoles:           memberRoles,
+		MemberSystem:          memberSystem,
 		CreatedAt:             ch.CreatedAt,
 		UnreadCount:           ch.UnreadCount,
 		LastMessageAt:         lastMessageAt,

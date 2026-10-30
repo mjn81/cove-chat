@@ -4,6 +4,7 @@ import (
 	"cove/backend/internal/auth"
 	"cove/backend/internal/crypto"
 	"cove/backend/internal/models"
+	"cove/backend/internal/store"
 	"encoding/json"
 	"net/http"
 )
@@ -96,10 +97,15 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "user not found")
 		return
 	}
+	passwordChanged := false
 
 	if body.Username != "" && body.Username != u.Username {
 		if len(body.Username) < 3 {
 			writeError(w, http.StatusBadRequest, "username too short")
+			return
+		}
+		if store.IsReservedUsername(body.Username) {
+			writeError(w, http.StatusBadRequest, "username is reserved")
 			return
 		}
 		// Check if username is already taken by someone else
@@ -135,6 +141,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		u.PwdHash = pwdHash
+		passwordChanged = true
 	}
 
 	if body.AvatarID != nil {
@@ -212,6 +219,10 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	if err := h.Store.UpdateUser(u); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to update profile")
 		return
+	}
+	if passwordChanged {
+		// A new password must lock out anyone holding the old one's sessions; the device making the change stays in.
+		h.disconnectSessions(h.Sessions.DeleteOthers(session.UserID, session.ID)...)
 	}
 
 	writeJSON(w, http.StatusOK, UserResponse{

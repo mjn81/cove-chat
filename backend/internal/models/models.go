@@ -27,9 +27,20 @@ type User struct {
 	// ServerRole is the account's role on the server itself (not in a channel):
 	// "" (member), "admin" or "owner". It is only ever set by the server and is
 	// never read from a client payload.
-	ServerRole string    `json:"server_role,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
+	ServerRole string `json:"server_role,omitempty"`
+	// IsSystem marks the built-in Cove account that posts login notices and owner announcements. It has no
+	// password and cannot be messaged, befriended or invited.
+	IsSystem  bool      `json:"is_system,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
+
+// The built-in Cove system account.
+const (
+	SystemUserID   = "system:cove"
+	SystemUsername = "cove"
+	// SystemAvatarID is a sentinel, not a file id: clients render the bundled brand icon for it.
+	SystemAvatarID = "system:cove"
+)
 
 // ---- Channel --------------------------------------------------------------- //
 
@@ -178,13 +189,23 @@ type WSMessage struct {
 
 // ---- Session --------------------------------------------------------------- //
 
-// Session represents an authenticated session record stored under s:{token}.
+// Session represents an authenticated session record stored under s:{token hash}.
+// Token holds the SHA-256 hash of the bearer token, never the token itself.
 type Session struct {
-	Token     string    `json:"token"`
-	UserID    string    `json:"user_id"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+	Token        string    `json:"token"`
+	ID           string    `json:"id"`
+	UserID       string    `json:"user_id"`
+	Username     string    `json:"username"`
+	CreatedAt    time.Time `json:"created_at"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	LastActiveAt time.Time `json:"last_active_at"`
+	IP           string    `json:"ip,omitempty"`
+	UserAgent    string    `json:"user_agent,omitempty"`
+	DeviceName   string    `json:"device_name,omitempty"`
+	AppName      string    `json:"app_name,omitempty"`
+	Platform     string    `json:"platform,omitempty"`
+	City         string    `json:"city,omitempty"`
+	Country      string    `json:"country,omitempty"`
 }
 
 // ---- Server administration ------------------------------------------------- //

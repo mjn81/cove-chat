@@ -653,3 +653,24 @@ func (d *DB) ResetKeepUser(u *models.User) error {
 
 // DropAll removes every key.
 func (d *DB) DropAll() error { return d.bdb.DropAll() }
+
+// ============================================================
+//  Known devices (login notice throttling)
+// ============================================================
+
+// GetKnownDevices returns the device fingerprints a user has signed in from, oldest first.
+func (d *DB) GetKnownDevices(userID string) ([]string, error) {
+	var out []string
+	if err := d.get(prefixKnownDevices+userID, &out); err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return out, nil
+}
+
+// SetKnownDevices replaces a user's device fingerprint list.
+func (d *DB) SetKnownDevices(userID string, devices []string) error {
+	return d.set(prefixKnownDevices+userID, devices)
+}

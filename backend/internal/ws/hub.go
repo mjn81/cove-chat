@@ -80,6 +80,8 @@ type Hub struct {
 type Client struct {
 	UserID     string
 	Username   string
+	// SessionID is the public id of the session that opened this socket, so terminating that session can close it.
+	SessionID  string
 	RemoteAddr string
 	conn       *websocket.Conn
 	send       chan *envelope
@@ -217,6 +219,32 @@ func (h *Hub) DisconnectAllExcept(keepUserID string) {
 	}
 }
 
+// DisconnectSession closes every WebSocket opened by the session with the given public id, used when the user
+// terminates a device or a password change revokes it.
+func (h *Hub) DisconnectSession(sessionID string) {
+	h.mu.Lock()
+	var drop []*Client
+	for uid, list := range h.clients {
+		kept := list[:0]
+		for _, c := range list {
+			if c.SessionID == sessionID {
+				drop = append(drop, c)
+			} else {
+				kept = append(kept, c)
+			}
+		}
+		if len(kept) == 0 {
+			delete(h.clients, uid)
+		} else {
+			h.clients[uid] = kept
+		}
+	}
+	h.mu.Unlock()
+	for _, c := range drop {
+		_ = c.conn.Close(websocket.StatusPolicyViolation, "session terminated")
+	}
+}
+
 // run is the Hub's main event loop — dispatches inbound envelopes to the
 // correct channel members, one at a time and in the order they were
 // submitted. This guarantees clients observe messages, edits, and deletes
@@ -299,6 +327,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	client := &Client{
 		UserID:     session.UserID,
 		Username:   session.Username,
+		SessionID:  session.ID,
 		RemoteAddr: r.RemoteAddr,
 		conn:       conn,
 		send:       make(chan *envelope, 256), // Increased buffer for high volume
@@ -505,6 +534,17 @@ func (h *Hub) BroadcastPresence(userID, status string) {
 		}
 	}
 	h.mu.RUnlock()
+}
+
+// BroadcastMessage fans out an already-persisted message (for example one authored by the Cove system account)
+// to every member of its channel, exactly like a message sent by a client.
+func (h *Hub) BroadcastMessage(msg *models.Message) {
+	payload, _ := json.Marshal(msg)
+	h.broadcast <- &envelope{
+		channelID: msg.ChannelID,
+		senderID:  msg.SenderID,
+		msg:       &models.WSMessage{Type: "message", Payload: payload},
+	}
 }
 
 // BroadcastMemberJoined notifies channel members that a new user has joined,

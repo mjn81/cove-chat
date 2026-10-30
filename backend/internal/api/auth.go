@@ -44,6 +44,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "auth.errors.invalid_length")
 		return
 	}
+	if store.IsReservedUsername(body.Username) {
+		writeError(w, http.StatusBadRequest, "auth.errors.username_reserved")
+		return
+	}
 
 	mode := h.registrationMode()
 	// A fresh server has no owner yet; its first account must always be able
@@ -149,7 +153,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "auth.errors.invalid_credentials")
 		return
 	}
-	token, err := h.Sessions.Create(u.ID, u.Username)
+	meta := h.sessionMetaFor(r)
+	token, _, err := h.Sessions.CreateWithMeta(u.ID, u.Username, meta)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
 		return
@@ -159,6 +164,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "auth.errors.session_failed")
 		return
 	}
+	h.recordLogin(u.ID, meta)
 	// Set cookies for the web client. The desktop (Wails) client ignores
 	// these and continues to use the `token` field below via the
 	// Authorization header — see auth.SetSessionCookies for why this

@@ -40,6 +40,7 @@ import (
 	"cove/backend/internal/config"
 	"cove/backend/internal/crypto"
 	"cove/backend/internal/db"
+	"cove/backend/internal/geoip"
 	"cove/backend/internal/logger"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
@@ -162,11 +163,23 @@ func main() {
 			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
 		}),
 		Demo:         cfg.Demo,
+		LoginNotifications: cfg.Sessions.LoginNotifications,
 		ConfigPath:   config.Path(),
 		DataDir:      cfg.Database.Path,
 		ServerDomain: cfg.Server.Domain,
 		StartedAt:    time.Now(),
 		Shutdown:     func() { quit <- syscall.SIGTERM },
+	}
+	if _, err := dataStore.EnsureSystemUser(); err != nil {
+		logger.Warnf("could not create the Cove system account: %v", err)
+	}
+	if cfg.Sessions.GeoIPDBPath != "" {
+		if geo, err := geoip.Open(cfg.Sessions.GeoIPDBPath); err != nil {
+			logger.Warnf("GeoIP disabled: %v", err)
+		} else {
+			defer func() { _ = geo.Close() }()
+			apiHandler.Geo = geo
+		}
 	}
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub

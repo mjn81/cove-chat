@@ -23,6 +23,7 @@ type Config struct {
 	Admin        AdminConfig        `toml:"admin"`
 	Demo         DemoConfig         `toml:"demo"`
 	Captcha      CaptchaConfig      `toml:"captcha"`
+	Sessions     SessionsConfig     `toml:"sessions"`
 }
 
 // Registration modes.
@@ -166,6 +167,7 @@ const configPath = "config.toml"
 func defaults() *Config {
 	return &Config{
 		Captcha: CaptchaConfig{Difficulty: "medium"},
+		Sessions: SessionsConfig{LoginNotifications: true},
 		Server: ServerConfig{
 			Domain:              "localhost",
 			HTTPPort:            4000,
@@ -335,6 +337,15 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+// SessionsConfig controls the active-devices list and the login notices sent from the Cove system account.
+type SessionsConfig struct {
+	// GeoIPDBPath is an optional MaxMind GeoLite2-City .mmdb file. When set, devices show a city and country;
+	// lookups are offline so user IPs never leave the server. Empty means IP only.
+	GeoIPDBPath string `toml:"geoip_db_path"`
+	// LoginNotifications sends a "new login" message from Cove to the user's chat on each new sign-in.
+	LoginNotifications bool `toml:"login_notifications"`
 }
 
 // CaptchaConfig is the self-hosted sign-up check: a proof-of-work challenge (ALTCHA) every client solves

@@ -100,6 +100,16 @@ func EncryptAES256GCM(key, plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
+// SealGCM encrypts plaintext with AES-256-GCM and returns the 12-byte nonce and the ciphertext+tag separately,
+// the shape clients use on the wire (nonce and ciphertext are separate message fields).
+func SealGCM(key, plaintext []byte) (nonce, ciphertext []byte, err error) {
+	out, err := EncryptAES256GCM(key, plaintext)
+	if err != nil {
+		return nil, nil, err
+	}
+	return out[:nonceLen], out[nonceLen:], nil
+}
+
 // DecryptAES256GCM decrypts data encrypted by EncryptAES256GCM.
 // Expects the format: [nonce(12) | ciphertext | tag(16)].
 func DecryptAES256GCM(key, data []byte) ([]byte, error) {

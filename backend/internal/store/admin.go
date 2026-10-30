@@ -23,7 +23,20 @@ var ErrInviteInvalid = errors.New("store: invite code is not valid")
 // ============================================================
 
 // ListAllUsers returns every account (including anonymized deleted ones).
-func (s *Store) ListAllUsers() ([]*models.User, error) { return s.db.ListUsers() }
+func (s *Store) ListAllUsers() ([]*models.User, error) {
+	users, err := s.db.ListUsers()
+	if err != nil {
+		return nil, err
+	}
+	// The Cove system account is infrastructure, not a member: it never counts toward totals or caps.
+	out := users[:0]
+	for _, u := range users {
+		if !u.IsSystem {
+			out = append(out, u)
+		}
+	}
+	return out, nil
+}
 
 // HasOwner reports whether the server already has an owner.
 func (s *Store) HasOwner() bool {

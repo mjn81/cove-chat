@@ -177,6 +177,7 @@ const (
 	prefixRelationshipInbox = "reli:"
 	prefixInvite            = "inv:"
 	prefixAudit             = "aud:"
+	prefixKnownDevices      = "kd:"
 	keyOwner                = "srv:owner"
 	keyDEK                  = "sys:dek"
 )

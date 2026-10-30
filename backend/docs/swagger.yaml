@@ -274,6 +274,12 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      member_system:
+        additionalProperties:
+          type: boolean
+        description: MemberSystem flags built-in system accounts (the server's Cove
+          account) among the members.
+        type: object
       members:
         items:
           type: string
@@ -398,6 +404,23 @@ definitions:
           $ref: '#/definitions/internal_api.InviteResponse'
         type: array
     type: object
+  internal_api.InvitePreviewResponse:
+    properties:
+      already_member:
+        type: boolean
+      avatar_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_private:
+        type: boolean
+      member_count:
+        type: integer
+      name:
+        type: string
+    type: object
   internal_api.InviteResponse:
     properties:
       code:
@@ -470,6 +493,19 @@ definitions:
         example: alice
         type: string
     type: object
+  internal_api.NoticeRequest:
+    properties:
+      text:
+        example: Scheduled maintenance tonight at 22:00 UTC.
+        type: string
+    type: object
+  internal_api.NoticeResponse:
+    properties:
+      failed:
+        type: integer
+      recipients:
+        type: integer
+    type: object
   internal_api.PasswordRequest:
     properties:
       password:
@@ -532,6 +568,35 @@ definitions:
       registration_mode:
         description: RegistrationMode is "open", "invite_only" or "closed".
         example: invite_only
+        type: string
+    type: object
+  internal_api.SessionResponse:
+    properties:
+      app_name:
+        example: Cove Desktop 0.9.0
+        type: string
+      city:
+        example: Tehran
+        type: string
+      country:
+        example: Iran
+        type: string
+      created_at:
+        type: string
+      current:
+        type: boolean
+      device_name:
+        example: Chrome on Windows
+        type: string
+      id:
+        type: string
+      ip:
+        example: 203.0.113.7
+        type: string
+      last_active_at:
+        type: string
+      platform:
+        example: Windows
         type: string
     type: object
   internal_api.StatusResponse:
@@ -1064,6 +1129,48 @@ paths:
       summary: Revoke an invitation code
       tags:
       - admin
+  /api/admin/notices:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Delivers a message from the server's Cove account to the Cove chat of every user.
+        **Access:** Server Owner.
+      parameters:
+      - description: Notice text (1-2000 characters)
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.NoticeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.NoticeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Send a server-wide notice
+      tags:
+      - admin
   /api/admin/overview:
     get:
       description: |-
@@ -1380,6 +1487,49 @@ paths:
       summary: Update channel settings
       tags:
       - channels
+  /api/channels/{id}/invite/regenerate:
+    post:
+      description: |-
+        Issues a new random invite link; the previous link stops working immediately.
+        **Access:** Channel Admin.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.ChannelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Replace a channel's invite link
+      tags:
+      - channels
   /api/channels/{id}/members:
     get:
       parameters:
@@ -1507,7 +1657,10 @@ paths:
       tags:
       - channels
   /api/join/{link}:
-    post:
+    get:
+      description: |-
+        Returns public-facing details so a client can show a join card before joining. Direct messages are never previewable.
+        **Access:** Authenticated.
       parameters:
       - description: Unique Channel Invite Link
         in: path
@@ -1520,7 +1673,65 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_api.StatusResponse'
+            $ref: '#/definitions/internal_api.InvitePreviewResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Preview the channel behind an invite link
+      tags:
+      - channels
+    post:
+      description: |-
+        Joins the channel and returns it. Members who were kicked cannot rejoin through a link; members who left can.
+        **Access:** Authenticated.
+      parameters:
+      - description: Unique Channel Invite Link
+        in: path
+        name: link
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.ChannelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Join a channel via a unique invite link
@@ -1646,6 +1857,95 @@ paths:
       summary: Public server information
       tags:
       - system
+  /api/sessions:
+    get:
+      description: |-
+        Returns every live session of the caller, most recently active first. The session making the
+        request is flagged as current. Bearer tokens are never returned.
+        **Access:** Authenticated.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_api.SessionResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List the signed-in devices of the current user
+      tags:
+      - sessions
+  /api/sessions/{id}:
+    delete:
+      description: |-
+        Ends the caller's own session with the given id and closes its live connections. Another user's
+        session id behaves exactly like an unknown one (404).
+        **Access:** Authenticated (own sessions only).
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Terminate one signed-in device
+      tags:
+      - sessions
+  /api/sessions/terminate-others:
+    post:
+      description: |-
+        Ends every session of the caller except the one making the request.
+        **Access:** Authenticated.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Terminate all other signed-in devices
+      tags:
+      - sessions
   /api/users:
     get:
       parameters:

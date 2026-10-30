@@ -58,6 +58,8 @@ type ChannelResponse struct {
 	MemberAvatars         map[string]string `json:"member_avatars,omitempty"`
 	MemberDomains         map[string]string `json:"member_domains,omitempty"`
 	MemberStatuses        map[string]string `json:"member_statuses,omitempty"`
+	// MemberSystem flags built-in system accounts (the server's Cove account) among the members.
+	MemberSystem          map[string]bool   `json:"member_system,omitempty"`
 	MemberRoles           map[string]int    `json:"member_roles,omitempty"`
 	CreatedAt             time.Time         `json:"created_at"`
 	UnreadCount           int               `json:"unread_count,omitempty"`
@@ -67,6 +69,18 @@ type ChannelResponse struct {
 	LastMessageType       string            `json:"last_message_type,omitempty"`
 	LastMessageSenderID   string            `json:"last_message_sender_id,omitempty"`
 	LastMessageID         string            `json:"last_message_id,omitempty"`
+}
+
+// InvitePreviewResponse is what an invite link resolves to before the caller decides to join.
+// It carries no invite link, member list or key material.
+type InvitePreviewResponse struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	AvatarID      string `json:"avatar_id"`
+	IsPrivate     bool   `json:"is_private"`
+	MemberCount   int    `json:"member_count"`
+	AlreadyMember bool   `json:"already_member"`
 }
 
 type UpdateChannelRequest struct {
@@ -123,6 +137,20 @@ type ErrorResponse struct {
 
 type StatusResponse struct {
 	Status string `json:"status" example:"success"`
+}
+
+// SessionResponse is one signed-in device in the active-devices list. It never carries the bearer token.
+type SessionResponse struct {
+	ID           string    `json:"id"`
+	DeviceName   string    `json:"device_name" example:"Chrome on Windows"`
+	AppName      string    `json:"app_name" example:"Cove Desktop 0.9.0"`
+	Platform     string    `json:"platform" example:"Windows"`
+	IP           string    `json:"ip" example:"203.0.113.7"`
+	City         string    `json:"city,omitempty" example:"Tehran"`
+	Country      string    `json:"country,omitempty" example:"Iran"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastActiveAt time.Time `json:"last_active_at"`
+	Current      bool      `json:"current"`
 }
 
 type CreateChannelRequest struct {

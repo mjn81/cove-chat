@@ -111,7 +111,7 @@ func (s *Store) SearchUsers(query string) ([]*models.User, error) {
 	var matched []*models.User
 	q := strings.ToLower(query)
 	for _, u := range users {
-		if u.Status != "deleted" && strings.Contains(strings.ToLower(u.Username), q) {
+		if u.Status != "deleted" && !u.IsSystem && strings.Contains(strings.ToLower(u.Username), q) {
 			safeUser := &models.User{
 				ID:        u.ID,
 				Username:  u.Username,
@@ -197,7 +197,7 @@ func (s *Store) CreateChannel(name, creatorID string, isPrivate bool, memberIDs 
 		ID:              uuid.New().String(),
 		Name:            name,
 		IsPrivate:       isPrivate,
-		InviteLink:      uuid.New().String()[:12] + uuid.New().String()[24:], // Unique shortish link
+		InviteLink:      newInviteLink(),
 		CreatorID:       creatorID,
 		AESKeyEncrypted: encKey,
 		CreatedAt:       time.Now().UTC(),
@@ -240,6 +240,18 @@ func (s *Store) GetUserChannel(userID, channelID string) (*models.UserChannel, e
 // GetChannel retrieves a channel by ID.
 func (s *Store) GetChannel(id string) (*models.Channel, error) {
 	return s.db.GetChannel(id)
+}
+
+// newInviteLink returns a fresh unguessable, shortish invite code.
+func newInviteLink() string {
+	return uuid.New().String()[:12] + uuid.New().String()[24:]
+}
+
+// RegenerateInviteLink replaces the channel's invite link with a new random one and persists it,
+// so the previous link stops resolving.
+func (s *Store) RegenerateInviteLink(ch *models.Channel) error {
+	ch.InviteLink = newInviteLink()
+	return s.db.SetChannel(ch)
 }
 
 // GetChannelByInviteLink searches for a channel by its unique invite link.
@@ -514,6 +526,9 @@ func (s *Store) SendFriendRequest(actorID, targetID string) error {
 	if err != nil {
 		return fmt.Errorf("target user not found")
 	}
+	if target.IsSystem {
+		return fmt.Errorf("this account does not accept friend requests")
+	}
 	if target.FriendRequestPermission == "nobody" {
 		return fmt.Errorf("user does not accept friend requests")
 	}
@@ -629,6 +644,9 @@ func (s *Store) CanAddToChannel(actorID, targetID string) (bool, string) {
 	if actorID == targetID {
 		return true, ""
 	}
+	if targetID == models.SystemUserID {
+		return false, "This account cannot be added to chats"
+	}
 	if s.IsBlocked(targetID, actorID) {
 		return false, "User has blocked you"
 	}
@@ -655,6 +673,9 @@ func (s *Store) CanAddToChannel(actorID, targetID string) (bool, string) {
 func (s *Store) CanSendDM(senderID, recipientID string) (bool, string) {
 	if senderID == recipientID {
 		return true, ""
+	}
+	if recipientID == models.SystemUserID {
+		return false, "This account does not accept replies"
 	}
 	if s.IsBlocked(recipientID, senderID) {
 		return false, "User has blocked you"

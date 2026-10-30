@@ -2,12 +2,15 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -24,12 +27,28 @@ const (
 	CSRFHeaderName    = "X-CSRF-Token"
 )
 
+// SessionMeta describes the device behind a session, shown to the user in the active-devices list.
+type SessionMeta struct {
+	IP         string
+	UserAgent  string
+	DeviceName string
+	AppName    string
+	Platform   string
+	City       string
+	Country    string
+}
+
 // Session represents an authenticated server-side session stored in memory.
+// Values handed out by the store are copies, so callers can read them without locking.
 type Session struct {
-	UserID    string
-	Username  string
-	CreatedAt time.Time
-	ExpiresAt time.Time
+	// ID is a public identifier safe to show to the user (unlike the bearer token), used to terminate a session.
+	ID           string
+	UserID       string
+	Username     string
+	CreatedAt    time.Time
+	ExpiresAt    time.Time
+	LastActiveAt time.Time
+	Meta         SessionMeta
 }
 
 // SessionPersister defines optional persistence for sessions across server restarts.
@@ -39,10 +58,68 @@ type SessionPersister interface {
 	ListSessions() ([]*models.Session, error)
 }
 
+const (
+	// lastActiveGranularity bounds how often a request refreshes LastActiveAt in memory.
+	lastActiveGranularity = time.Minute
+	// lastActivePersistEvery bounds how often that refresh is written to the database.
+	lastActivePersistEvery = 5 * time.Minute
+)
+
+// hashToken returns the storage key for a bearer token. Only this SHA-256 hash is kept in memory and in the
+// database, so a leaked database or backup cannot be replayed as live sessions.
+func hashToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+func newSessionID() (string, error) {
+	raw := make([]byte, 12)
+	if _, err := rand.Read(raw); err != nil {
+		return "", fmt.Errorf("auth: session id generation failed: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+func (s *Session) toModel(tokenHash string) *models.Session {
+	return &models.Session{
+		Token:        tokenHash,
+		ID:           s.ID,
+		UserID:       s.UserID,
+		Username:     s.Username,
+		CreatedAt:    s.CreatedAt,
+		ExpiresAt:    s.ExpiresAt,
+		LastActiveAt: s.LastActiveAt,
+		IP:           s.Meta.IP,
+		UserAgent:    s.Meta.UserAgent,
+		DeviceName:   s.Meta.DeviceName,
+		AppName:      s.Meta.AppName,
+		Platform:     s.Meta.Platform,
+		City:         s.Meta.City,
+		Country:      s.Meta.Country,
+	}
+}
+
+func sessionFromModel(m *models.Session) *Session {
+	return &Session{
+		ID:           m.ID,
+		UserID:       m.UserID,
+		Username:     m.Username,
+		CreatedAt:    m.CreatedAt,
+		ExpiresAt:    m.ExpiresAt,
+		LastActiveAt: m.LastActiveAt,
+		Meta: SessionMeta{
+			IP: m.IP, UserAgent: m.UserAgent, DeviceName: m.DeviceName, AppName: m.AppName,
+			Platform: m.Platform, City: m.City, Country: m.Country,
+		},
+	}
+}
+
 // SessionStore is an in-memory session registry with TTL-based expiry and optional persistence.
+// It is keyed by the SHA-256 hash of the bearer token.
 type SessionStore struct {
 	mu        sync.RWMutex
 	sessions  map[string]*Session
+	persistAt map[string]time.Time
 	ttl       time.Duration
 	persister SessionPersister
 }
@@ -51,24 +128,24 @@ type SessionStore struct {
 // and starts the background expiry sweeper.
 func NewSessionStore(ttl time.Duration, persister ...SessionPersister) *SessionStore {
 	ss := &SessionStore{
-		sessions: make(map[string]*Session),
-		ttl:      ttl,
+		sessions:  make(map[string]*Session),
+		persistAt: make(map[string]time.Time),
+		ttl:       ttl,
 	}
 	if len(persister) > 0 && persister[0] != nil {
 		ss.persister = persister[0]
 		if saved, err := ss.persister.ListSessions(); err == nil {
 			now := time.Now()
-			for _, s := range saved {
-				if s != nil && now.Before(s.ExpiresAt) {
-					ss.sessions[s.Token] = &Session{
-						UserID:    s.UserID,
-						Username:  s.Username,
-						CreatedAt: s.CreatedAt,
-						ExpiresAt: s.ExpiresAt,
-					}
-				} else if s != nil {
-					_ = ss.persister.DeleteSession(s.Token)
+			for _, m := range saved {
+				if m == nil {
+					continue
 				}
+				if !now.Before(m.ExpiresAt) || m.ID == "" {
+					// Expired, or a legacy row keyed by a raw token that can no longer be matched.
+					_ = ss.persister.DeleteSession(m.Token)
+					continue
+				}
+				ss.sessions[m.Token] = sessionFromModel(m)
 			}
 		}
 	}
@@ -76,80 +153,184 @@ func NewSessionStore(ttl time.Duration, persister ...SessionPersister) *SessionS
 	return ss
 }
 
-// Create generates a secure random token, stores the session, and returns
-// the token string.
+// Create generates a secure random token, stores the session, and returns the token string.
 func (ss *SessionStore) Create(userID, username string) (string, error) {
+	token, _, err := ss.CreateWithMeta(userID, username, SessionMeta{})
+	return token, err
+}
+
+// CreateWithMeta is Create plus the device metadata shown in the active-devices list. It also returns a copy
+// of the new session so callers can read its public ID.
+func (ss *SessionStore) CreateWithMeta(userID, username string, meta SessionMeta) (string, Session, error) {
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
-		return "", fmt.Errorf("auth: token generation failed: %w", err)
+		return "", Session{}, fmt.Errorf("auth: token generation failed: %w", err)
+	}
+	id, err := newSessionID()
+	if err != nil {
+		return "", Session{}, err
 	}
 	token := base64.URLEncoding.EncodeToString(raw)
 	now := time.Now()
 	s := &Session{
-		UserID:    userID,
-		Username:  username,
-		CreatedAt: now,
-		ExpiresAt: now.Add(ss.ttl),
+		ID:           id,
+		UserID:       userID,
+		Username:     username,
+		CreatedAt:    now,
+		ExpiresAt:    now.Add(ss.ttl),
+		LastActiveAt: now,
+		Meta:         meta,
 	}
+	key := hashToken(token)
 	ss.mu.Lock()
-	ss.sessions[token] = s
+	ss.sessions[key] = s
+	ss.persistAt[key] = now
 	ss.mu.Unlock()
 
 	if ss.persister != nil {
-		_ = ss.persister.SetSession(&models.Session{
-			Token:     token,
-			UserID:    s.UserID,
-			Username:  s.Username,
-			CreatedAt: s.CreatedAt,
-			ExpiresAt: s.ExpiresAt,
-		})
+		_ = ss.persister.SetSession(s.toModel(key))
 	}
-	return token, nil
+	return token, *s, nil
 }
 
-// Validate returns the session associated with token, or an error if it is
-// invalid or expired.
+// Validate returns a copy of the session associated with token, or an error if it is invalid or expired.
+// It also refreshes the session's last-active time.
 func (ss *SessionStore) Validate(token string) (*Session, error) {
+	key := hashToken(token)
 	ss.mu.RLock()
-	s, ok := ss.sessions[token]
+	s, ok := ss.sessions[key]
+	var snapshot Session
+	if ok {
+		snapshot = *s
+	}
 	ss.mu.RUnlock()
 	if !ok {
 		return nil, errors.New("auth: invalid session token")
 	}
-	if time.Now().After(s.ExpiresAt) {
-		ss.Delete(token)
+	now := time.Now()
+	if now.After(snapshot.ExpiresAt) {
+		ss.deleteKey(key)
 		return nil, errors.New("auth: session expired")
 	}
-	return s, nil
+	if now.Sub(snapshot.LastActiveAt) >= lastActiveGranularity {
+		ss.touch(key, now)
+		snapshot.LastActiveAt = now
+	}
+	return &snapshot, nil
+}
+
+// touch records activity, writing through to the database only every lastActivePersistEvery.
+func (ss *SessionStore) touch(key string, now time.Time) {
+	ss.mu.Lock()
+	s, ok := ss.sessions[key]
+	if !ok {
+		ss.mu.Unlock()
+		return
+	}
+	s.LastActiveAt = now
+	persist := ss.persister != nil && now.Sub(ss.persistAt[key]) >= lastActivePersistEvery
+	var rec *models.Session
+	if persist {
+		ss.persistAt[key] = now
+		rec = s.toModel(key)
+	}
+	ss.mu.Unlock()
+	if rec != nil {
+		_ = ss.persister.SetSession(rec)
+	}
+}
+
+func (ss *SessionStore) deleteKey(key string) {
+	ss.mu.Lock()
+	delete(ss.sessions, key)
+	delete(ss.persistAt, key)
+	ss.mu.Unlock()
+	if ss.persister != nil {
+		_ = ss.persister.DeleteSession(key)
+	}
 }
 
 // Delete removes a session (logout).
 func (ss *SessionStore) Delete(token string) {
-	ss.mu.Lock()
-	delete(ss.sessions, token)
-	ss.mu.Unlock()
+	ss.deleteKey(hashToken(token))
+}
 
-	if ss.persister != nil {
-		_ = ss.persister.DeleteSession(token)
+// ListByUser returns copies of the user's live sessions, most recently active first.
+func (ss *SessionStore) ListByUser(userID string) []Session {
+	now := time.Now()
+	ss.mu.RLock()
+	var out []Session
+	for _, s := range ss.sessions {
+		if s.UserID == userID && now.Before(s.ExpiresAt) {
+			out = append(out, *s)
+		}
 	}
+	ss.mu.RUnlock()
+	sort.Slice(out, func(i, j int) bool { return out[i].LastActiveAt.After(out[j].LastActiveAt) })
+	return out
+}
+
+// DeleteByID ends the session with the given public id, but only if it belongs to userID, so one user can never
+// terminate another's session. It reports whether a session was removed.
+func (ss *SessionStore) DeleteByID(userID, id string) bool {
+	ss.mu.Lock()
+	var key string
+	for k, s := range ss.sessions {
+		if s.ID == id && s.UserID == userID {
+			key = k
+			break
+		}
+	}
+	if key == "" {
+		ss.mu.Unlock()
+		return false
+	}
+	delete(ss.sessions, key)
+	delete(ss.persistAt, key)
+	ss.mu.Unlock()
+	if ss.persister != nil {
+		_ = ss.persister.DeleteSession(key)
+	}
+	return true
+}
+
+// DeleteOthers ends every session of userID except keepID and returns the ids it removed, so the caller can
+// also close their live WebSockets.
+func (ss *SessionStore) DeleteOthers(userID, keepID string) []string {
+	ss.mu.Lock()
+	var keys, ids []string
+	for k, s := range ss.sessions {
+		if s.UserID == userID && s.ID != keepID {
+			keys = append(keys, k)
+			ids = append(ids, s.ID)
+			delete(ss.sessions, k)
+			delete(ss.persistAt, k)
+		}
+	}
+	ss.mu.Unlock()
+	if ss.persister != nil {
+		for _, k := range keys {
+			_ = ss.persister.DeleteSession(k)
+		}
+	}
+	return ids
 }
 
 // UpdateUsername updates the cached username for active session.
 func (ss *SessionStore) UpdateUsername(token, newUsername string) {
+	key := hashToken(token)
 	ss.mu.Lock()
-	if s, ok := ss.sessions[token]; ok {
+	var rec *models.Session
+	if s, ok := ss.sessions[key]; ok {
 		s.Username = newUsername
 		if ss.persister != nil {
-			_ = ss.persister.SetSession(&models.Session{
-				Token:     token,
-				UserID:    s.UserID,
-				Username:  s.Username,
-				CreatedAt: s.CreatedAt,
-				ExpiresAt: s.ExpiresAt,
-			})
+			rec = s.toModel(key)
 		}
 	}
 	ss.mu.Unlock()
+	if rec != nil {
+		_ = ss.persister.SetSession(rec)
+	}
 }
 
 // sweepExpired runs every hour to purge expired sessions.
@@ -159,11 +340,12 @@ func (ss *SessionStore) sweepExpired() {
 	for range ticker.C {
 		now := time.Now()
 		ss.mu.Lock()
-		for token, s := range ss.sessions {
+		for key, s := range ss.sessions {
 			if now.After(s.ExpiresAt) {
-				delete(ss.sessions, token)
+				delete(ss.sessions, key)
+				delete(ss.persistAt, key)
 				if ss.persister != nil {
-					_ = ss.persister.DeleteSession(token)
+					_ = ss.persister.DeleteSession(key)
 				}
 			}
 		}
@@ -379,6 +561,7 @@ func (ss *SessionStore) DeleteExcept(userID string) {
 		if s.UserID != userID {
 			drop = append(drop, token)
 			delete(ss.sessions, token)
+			delete(ss.persistAt, token)
 		}
 	}
 	ss.mu.Unlock()

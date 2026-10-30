@@ -128,3 +128,10 @@ mode = "open"
 [captcha]
 # enabled = false
 # difficulty = "medium"   # low | medium | high (about 12k, 50k and 200k hashes on average)
+
+# --- Signed-in devices & login notices ---
+# Users can see and terminate their signed-in devices (Settings > Privacy). A city/country needs a MaxMind
+# GeoLite2-City database (free download from maxmind.com); lookups are offline, IPs never leave this server.
+[sessions]
+# geoip_db_path = "/etc/cove/GeoLite2-City.mmdb"
+# login_notifications = true    # send a "new login" message from the Cove account on each sign-in

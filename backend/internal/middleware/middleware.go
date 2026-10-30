@@ -165,30 +165,25 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 // apparent IP to any other client's, bypassing per-IP rate limiting.
 func realIP(r *http.Request) string {
 	if TrustProxyHeaders {
-		if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
+		if ip := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); ip != "" {
 			return ip
 		}
-		if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		if ip := strings.TrimSpace(r.Header.Get("X-Real-IP")); ip != "" {
 			return ip
 		}
-		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
-			// X-Forwarded-For can be comma-separated; take the first.
-			for i := 0; i < len(ip); i++ {
-				if ip[i] == ',' {
-					return ip[:i]
-				}
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			// X-Forwarded-For can be comma-separated; the first hop is the original client.
+			first, _, _ := strings.Cut(xff, ",")
+			if ip := strings.TrimSpace(first); ip != "" {
+				return ip
 			}
-			return ip
 		}
 	}
-	// Fall back to r.RemoteAddr (strips port).
-	host := r.RemoteAddr
-	for i := len(host) - 1; i >= 0; i-- {
-		if host[i] == ':' {
-			return host[:i]
-		}
+	// Fall back to r.RemoteAddr, which may be an IPv6 literal like "[2001:db8::1]:443".
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
 	}
-	return host
+	return r.RemoteAddr
 }
 
 // CORS returns a middleware that sets permissive CORS headers and handles preflight requests.

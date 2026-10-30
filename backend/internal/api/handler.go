@@ -7,6 +7,7 @@ import (
 
 	"cove/backend/internal/auth"
 	"cove/backend/internal/captcha"
+	"cove/backend/internal/geoip"
 	"cove/backend/internal/config"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
@@ -32,6 +33,10 @@ type Handler struct {
 	Store               *store.Store
 	Sessions            *auth.SessionStore
 	Hub                 ChannelBroadcaster
+	// Geo resolves login IPs to a city/country for the active-devices list. Optional: nil means IP only.
+	Geo                 geoip.Resolver
+	// LoginNotifications makes the Cove account message a user when they sign in from a new device.
+	LoginNotifications  bool
 	KEK                 []byte
 	Storage             storage.BlobStorage
 	TokenTTL            time.Duration
@@ -94,6 +99,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/admin/invites", protectAdmin(h.AdminCreateInvite))
 	mux.Handle("DELETE /api/admin/invites/{code}", protectAdmin(h.AdminRevokeInvite))
 	mux.Handle("GET /api/admin/audit", protectAdmin(h.AdminAudit))
+	mux.Handle("POST /api/admin/notices", protectOwner(h.AdminSendNotice))
 	mux.Handle("GET /api/admin/admins", protectAdmin(h.AdminListAdmins))
 	mux.Handle("PUT /api/admin/admins/{username}", protectOwner(h.AdminGrantAdmin))
 	mux.Handle("DELETE /api/admin/admins/{username}", protectOwner(h.AdminRevokeAdmin))
@@ -118,6 +124,9 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	// Protected
 	mux.Handle("POST /api/logout", protect(h.Logout))
 	mux.Handle("GET /api/me", protect(h.Me))
+	mux.Handle("GET /api/sessions", protect(h.ListSessions))
+	mux.Handle("POST /api/sessions/terminate-others", protect(h.TerminateOtherSessions))
+	mux.Handle("DELETE /api/sessions/{id}", protect(h.TerminateSession))
 	mux.Handle("DELETE /api/users/me", protect(h.DeleteAccount))
 	mux.Handle("PATCH /api/users/me", protect(h.UpdateProfile))
 	mux.Handle("GET /api/users", protect(h.SearchUsers))
@@ -136,7 +145,9 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("GET /api/channels/{id}", protectMember(h.GetChannel))
 	mux.Handle("PATCH /api/channels/{id}", protectMember(h.UpdateChannel))
 	mux.Handle("DELETE /api/channels/{id}", protectMember(h.DeleteChannel))
+	mux.Handle("GET /api/join/{link}", protect(h.PreviewInvite))
 	mux.Handle("POST /api/join/{link}", protect(h.JoinChannel))
+	mux.Handle("POST /api/channels/{id}/invite/regenerate", protectMember(h.RegenerateInvite))
 	mux.Handle("GET /api/channels/{id}/members", protectMember(h.GetChannelMembers))
 	mux.Handle("POST /api/channels/{id}/members", protectMember(h.AddMembers))
 	mux.Handle("PATCH /api/channels/{id}/members/{uid}", protectMember(h.UpdateMember))
