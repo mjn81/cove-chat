@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/gen2brain/beeep"
+
+	"cove/desktop/internal/tray"
 )
 
 // Config holds the application configuration.
@@ -71,6 +73,7 @@ func (a *App) DomReady(ctx context.Context) {
 
 // Shutdown is called when the Wails app is about to exit.
 func (a *App) Shutdown(ctx context.Context) {
+	tray.Stop()
 }
 
 // ── Exported Go→JS bindings ──────────────────────────────────────────────────
@@ -96,4 +99,3 @@ func (a *App) ShowNotification(title, message string) {
 	// beeep.Notify is cross-platform.
 	_ = beeep.Notify(title, message, "")
 }
-

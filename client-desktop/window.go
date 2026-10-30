@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"slices"
 	"sync/atomic"
+	"time"
 
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -80,6 +81,10 @@ func (a *App) startTray() {
 		Icon:      icon,
 		Tooltip:   "Cove",
 		ShowLabel: "Open Cove",
+		Toggles: []tray.Toggle{
+			{Label: "Keep running when closed", Checked: closeToTray(a.config), OnToggle: a.SetCloseToTray},
+			{Label: "Start with " + osName(), Checked: autostart.Enabled(), OnToggle: func(on bool) { _ = a.SetAutostart(on) }},
+		},
 		QuitLabel: "Quit Cove",
 		OnShow:    a.showWindow,
 		OnQuit:    a.QuitApp,
@@ -104,7 +109,24 @@ func (a *App) CloseWindow() {
 // QuitApp really exits, bypassing close-to-tray (tray menu "Quit Cove").
 func (a *App) QuitApp() {
 	a.win.quitting.Store(true)
+	// A wedged web view (a renderer crash) can leave the normal shutdown waiting forever, which is how a "crashed"
+	// Cove used to linger in the tray with no window. If the graceful quit has not finished shortly, exit anyway.
+	time.AfterFunc(4*time.Second, func() {
+		tray.Stop()
+		os.Exit(0)
+	})
 	wruntime.Quit(a.ctx)
+}
+
+// osName is the platform's word for "log in" in the tray's start-up toggle.
+func osName() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "login"
+	case "linux":
+		return "login"
+	}
+	return "Windows"
 }
 
 // GetCloseToTray returns whether closing the window keeps Cove running in the background.

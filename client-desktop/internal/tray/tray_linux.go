@@ -18,3 +18,9 @@ func platformAvailable() bool {
 	}
 	return has
 }
+
+// prepareMenuTheme: Linux panels draw the menu themselves.
+func prepareMenuTheme() {}
+
+// installMenu: Linux keeps the panel-drawn menu, which already follows the desktop theme.
+func installMenu(Options) {}
