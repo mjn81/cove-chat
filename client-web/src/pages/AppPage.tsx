@@ -6,6 +6,8 @@ import {
 	ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import LeftSidebar from '@/domains/channels/components/left-sidebar';
+import { MacDragStrip } from '@/domains/desktop/components/mac-drag-region';
+import { useAppShellChrome } from '@/domains/desktop/hooks/use-app-shell-chrome';
 import RightSidebar from '@/components/Layout/RightSidebar';
 import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
@@ -34,6 +36,9 @@ export default function AppPage() {
 
 	const { t } = useTranslation();
 	const isMobile = useMediaQuery('(max-width: 768px)');
+	// The desktop shell has no title bar here: the macOS traffic lights sit in the nav strip. The phone-width
+	// layout has no such column, so it keeps the bar.
+	useAppShellChrome(!isMobile);
 	const {
 		isRightSidebarOpen,
 		setLeftSidebarOpen,
@@ -136,6 +141,7 @@ export default function AppPage() {
 				<ChatArea channel={activeChannel} />
 			) : (
 				<>
+					<MacDragStrip />
 					<ChatBackgroundPattern />
 					<div className="flex flex-col flex-1" />
 				</>

@@ -267,6 +267,15 @@ input::-ms-clear {
   display: none;
 }
 
+/* Desktop shell: regions that drag the frameless window (Wails reads --wails-draggable). Controls inside such a
+   region stay clickable: the property inherits, so each interactive element has to opt out explicitly. */
+.desktop-drag {
+  --wails-draggable: drag;
+}
+.desktop-drag :is(button, a, input, textarea, select, label, summary, [role='button'], [role='tab'], [role='menuitem'], [contenteditable='true']) {
+  --wails-draggable: no-drag;
+}
+
 /* Fix for mobile height issues */
 .h-screen {
   height: calc(100vh - var(--titlebar-h, 0px)); /* Fallback */

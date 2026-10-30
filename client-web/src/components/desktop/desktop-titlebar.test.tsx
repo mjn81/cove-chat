@@ -15,12 +15,16 @@ vi.mock('@/wailsjs/runtime/runtime', () => ({
 }));
 vi.mock('@/wailsjs/go/main/App', () => ({ CloseWindow: vi.fn() }));
 
+import { useDesktopChromeStore } from '@/domains/desktop/store/chrome.store';
 import { DesktopTitleBar } from './desktop-titlebar';
 
 const bar = (container: HTMLElement) => container.firstElementChild as HTMLElement;
 
 describe('DesktopTitleBar', () => {
-	beforeEach(() => mocks.isMac.mockReset());
+	beforeEach(() => {
+		mocks.isMac.mockReset();
+		useDesktopChromeStore.setState({ inAppShell: false });
+	});
 	afterEach(() => document.documentElement.style.removeProperty('--titlebar-h'));
 
 	it('is a drag handle on macOS and leaves room for the traffic lights', () => {
@@ -30,7 +34,7 @@ describe('DesktopTitleBar', () => {
 		expect(bar(container).style.getPropertyValue('--wails-draggable')).toBe('drag');
 		// The native traffic lights are drawn over the top-left of the web view, so nothing may sit there.
 		const spacer = bar(container).firstElementChild as HTMLElement;
-		expect(spacer.style.paddingInlineStart).toBe('78px');
+		expect(spacer.style.paddingInlineStart).toBe('80px');
 		expect(screen.queryAllByRole('button')).toHaveLength(0);
 	});
 
@@ -60,5 +64,32 @@ describe('DesktopTitleBar', () => {
 
 		expect(bar(container).className).toContain('z-[110]');
 		expect(bar(container).className).toContain('relative');
+	});
+
+	it('is a quiet borderless strip in the page colour on macOS, not a framed bar', () => {
+		mocks.isMac.mockReturnValue(true);
+		const { container } = render(<DesktopTitleBar />);
+
+		expect(bar(container).className).toContain('bg-background');
+		expect(bar(container).className).not.toContain('border-b');
+		expect(bar(container).style.height).toBe('40px');
+	});
+
+	it('steps aside inside the chat shell on macOS, where the lights live in the left column', () => {
+		mocks.isMac.mockReturnValue(true);
+		useDesktopChromeStore.setState({ inAppShell: true });
+		const { container } = render(<DesktopTitleBar />);
+
+		expect(container).toBeEmptyDOMElement();
+		expect(document.documentElement.style.getPropertyValue('--titlebar-h')).toBe('0px');
+	});
+
+	it('keeps the framed bar with its buttons inside the chat shell on Windows', () => {
+		mocks.isMac.mockReturnValue(false);
+		useDesktopChromeStore.setState({ inAppShell: true });
+		const { container } = render(<DesktopTitleBar />);
+
+		expect(bar(container).className).toContain('border-b');
+		expect(screen.getAllByRole('button')).toHaveLength(3);
 	});
 });

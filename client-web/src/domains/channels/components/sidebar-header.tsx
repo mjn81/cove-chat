@@ -33,7 +33,7 @@ export const SidebarHeader = ({
 	return (
 		<div
 			className={cn(
-				'flex h-12 shrink-0 items-center border-b border-border bg-popover transition-colors',
+				'desktop-drag flex h-12 shrink-0 items-center border-b border-border bg-popover transition-colors',
 				isCollapsed ? 'w-full justify-center px-2' : 'px-4 hover:bg-accent/30',
 			)}
 		>

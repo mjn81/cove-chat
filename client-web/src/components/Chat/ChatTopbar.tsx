@@ -113,7 +113,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 	return (
 		<Profiler id="ChatTopbar" onRender={logProfiler}>
-			<div className="flex items-center justify-between gap-1 px-2 sm:px-4 h-12 border-b border-border shrink-0 relative z-10 bg-background">
+			<div className="desktop-drag flex items-center justify-between gap-1 px-2 sm:px-4 h-12 border-b border-border shrink-0 relative z-10 bg-background">
 				<div className="flex items-center gap-2 min-w-0 flex-1">
 					{isMobile && (
 						<button

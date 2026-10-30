@@ -1,5 +1,7 @@
 import React from 'react';
 import { LayoutList, MessageCircle, Hash } from 'lucide-react';
+import { MacLightsSpacer } from '@/domains/desktop/components/mac-drag-region';
+import { isMacDesktop } from '@/domains/desktop/utils/is-mac-desktop';
 import {
 	Tooltip,
 	TooltipContent,
@@ -30,9 +32,13 @@ export function NavStrip({ activeTab, onChange, orientation = 'vertical' }: NavS
 				className={
 					isHorizontal
 						? 'flex flex-row items-center justify-around w-full px-2 py-1.5 bg-secondary border-b border-border/50 shrink-0 select-none gap-2'
-						: 'flex flex-col items-center gap-1 w-12 py-3 bg-secondary border-e border-border/50 shrink-0 select-none'
+						: `flex flex-col items-center gap-1 py-3 bg-secondary border-e border-border/50 shrink-0 select-none ${
+							// On the macOS desktop app the traffic lights sit at the top of this column, so it is wide enough for them.
+							isMacDesktop() ? 'w-[72px]' : 'w-12'
+						}`
 				}
 			>
+				{!isHorizontal && <MacLightsSpacer />}
 				{TABS.map(({ id, icon: Icon, label }) => (
 					<Tooltip key={id}>
 						<TooltipTrigger asChild>
