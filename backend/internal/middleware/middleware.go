@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/desktop"
 	"cove/backend/internal/logger"
 
 	"golang.org/x/time/rate"
@@ -201,10 +202,11 @@ func CORS(next http.Handler, isDev bool, allowedOrigins string) http.Handler {
 		}
 	}
 
-	// Always allow Wails desktop app origins
-	origins["wails://wails.localhost"] = true // macOS/Linux
-	origins["http://wails.localhost"] = true  // Windows
-	origins["http://localhost:34115"] = true  // Wails dev mode default
+	// Always allow the desktop app (its origin differs per OS, see the desktop package) and Wails dev mode.
+	for _, o := range desktop.Origins {
+		origins[o] = true
+	}
+	origins["http://localhost:34115"] = true // Wails dev mode default
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")

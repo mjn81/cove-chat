@@ -89,7 +89,7 @@ func TestWS_ProductionAcceptsDesktopOriginsAndConfiguredWebOrigin(t *testing.T) 
 		"https://chat.example.test", // the configured web origin
 		"http://wails.localhost",    // desktop on Windows
 		"https://wails.localhost",   // desktop on newer WebView2 setups
-		"wails://wails.localhost",   // desktop on macOS and Linux
+		"wails://wails", // desktop on macOS and Linux (the real Wails origin)
 		"",                          // native clients (Android) send no Origin
 	} {
 		if err := dialWithOrigin(t, srv, token, origin); err != nil {
