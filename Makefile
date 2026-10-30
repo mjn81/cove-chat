@@ -114,35 +114,35 @@ wails/dev: build front/build ## Run Wails in dev mode (always embeds a fresh web
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && $(GOBIN)/wails dev -s
+	cd client-desktop && wails dev -s
 
 wails/build: build front/build ## Build production Wails desktop binary
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && $(GOBIN)/wails build -clean -s
+	cd client-desktop && wails build -clean -s
 
 wails/build/mac: build front/build ## Build macOS universal binary
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && $(GOBIN)/wails build -clean -platform darwin/universal -s
+	cd client-desktop && wails build -clean -platform darwin/universal -s
 
 wails/build/windows: build front/build ## Build Windows binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && $(GOBIN)/wails build -clean -platform windows/amd64 -s
+	cd client-desktop && wails build -clean -platform windows/amd64 -s
 
 wails/build/linux: build front/build ## Build Linux binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && $(GOBIN)/wails build -clean -platform linux/amd64 -s
+	cd client-desktop && wails build -clean -platform linux/amd64 -s
 
 backend/release: ## Build backend binaries for multiple platforms
 	mkdir -p release/backend

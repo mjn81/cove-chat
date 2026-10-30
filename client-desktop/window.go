@@ -14,9 +14,6 @@ import (
 	"cove/desktop/internal/tray"
 )
 
-//go:embed build/appicon.ico
-var trayIconICO []byte
-
 //go:embed build/appicon.png
 var trayIconPNG []byte
 
@@ -73,9 +70,11 @@ func (a *App) beforeClose(context.Context) (prevent bool) {
 
 // startTray adds the tray icon and records whether it works. Called once the Wails runtime is ready.
 func (a *App) startTray() {
-	icon := trayIconICO
-	if runtime.GOOS != "windows" {
-		icon = trayIconPNG
+	// Windows draws the tray on a light or dark bar, so it gets the glyph icon in the matching tone (and is switched
+	// again if the theme changes, see startTaskbarTheme); Linux panels take the PNG.
+	icon := trayIconPNG
+	if runtime.GOOS == "windows" {
+		icon = iconForTheme(systemUsesLightTheme())
 	}
 	ok := tray.Start(tray.Options{
 		Icon:      icon,

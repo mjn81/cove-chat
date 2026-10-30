@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "gen:og": "node scripts/gen-og.mjs",
+    "gen:icons": "node scripts/gen-desktop-icons.mjs",
     "gen": "node scripts/gen-config-reference.mjs && node scripts/gen-api-reference.mjs",
     "build": "pnpm gen && astro build",
     "preview": "astro preview",

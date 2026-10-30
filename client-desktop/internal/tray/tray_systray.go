@@ -45,3 +45,6 @@ func Start(o Options) bool {
 	start()
 	return true
 }
+
+// SetIcon replaces the tray icon, for example when Windows switches between its light and dark theme.
+func SetIcon(icon []byte) { systray.SetIcon(icon) }

@@ -62,6 +62,7 @@ func (a *App) saveConfig() {
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.startTray()
+	a.startTaskbarTheme()
 }
 
 // DomReady is called after the frontend DOM is fully loaded.

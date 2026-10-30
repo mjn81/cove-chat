@@ -15,3 +15,6 @@ type Options struct {
 
 // Start is a no-op where there is no tray.
 func Start(Options) bool { return false }
+
+// SetIcon is a no-op where there is no tray.
+func SetIcon([]byte) {}
