@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.7](https://github.com/mjn81/cove-chat/compare/v0.9.6...v0.9.7) (2026-10-30)
+
+
+### Features
+
+* **desktop:** themed tray menu with preference toggles, working tray clicks, forced quit ([a6fdf2e](https://github.com/mjn81/cove-chat/commit/a6fdf2e0798a2eaf3388b02b02bcdb3442fa0c20))
+
+
+### Bug Fixes
+
+* **web:** keep the demo banner below the desktop title bar and off signed-in screens ([d0484b9](https://github.com/mjn81/cove-chat/commit/d0484b9d09927631f9a737f0c4dbeb7cbca7b4a3))
+
 ## [0.9.6](https://github.com/mjn81/cove-chat/compare/v0.9.5...v0.9.6) (2026-10-30)
 
 
