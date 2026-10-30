@@ -226,3 +226,13 @@ Default: `false` (commented out in the example; optional)
 
 Default: `"medium"   # low \| medium \| high (about 12k, 50k and 200k hashes on average)` (commented out in the example; optional)
 
+## `[sessions]`
+
+### `sessions.geoip_db_path`
+
+Default: `"/etc/cove/GeoLite2-City.mmdb"` (commented out in the example; optional)
+
+### `sessions.login_notifications`
+
+Default: `true    # send a "new login" message from the Cove account on each sign-in` (commented out in the example; optional)
+

@@ -167,6 +167,140 @@
   }
 }
 
+/* Mobile menu: full-screen sheet that grows out of the menu button */
+.menu-ico {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+/* Both bars sit on the exact vertical centre (the animation spreads them apart / rotates them there), so they are
+   always the same thickness and the cross is centred. Whole-pixel height avoids one bar rendering thinner. */
+.menu-ico span {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  background: currentColor;
+  will-change: transform;
+}
+.nav.menu-open {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+.mnav {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(120% 60% at 100% 0%, var(--glow), transparent 60%),
+    radial-gradient(90% 50% at 0% 100%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 70%),
+    color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+}
+.mnav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 20%, transparent 75%);
+  pointer-events: none;
+}
+.mnav-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 104px 24px max(28px, env(safe-area-inset-bottom));
+}
+.mnav-links {
+  display: flex;
+  flex-direction: column;
+}
+.mnav-link {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  color: var(--fg);
+  transition: color 0.25s var(--ease), padding 0.35s var(--ease);
+}
+.mnav-link:first-child {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.mnav-idx {
+  min-width: 22px;
+  font: 500 12px var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+.mnav-label {
+  flex: 1;
+  font-size: clamp(30px, 9.5vw, 46px);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.mnav-arrow {
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  color: var(--muted-fg);
+  transition: transform 0.35s var(--ease), color 0.25s;
+}
+.mnav-link:active,
+.mnav-link:hover {
+  color: var(--primary);
+  padding-inline-start: 8px;
+}
+.mnav-link:active .mnav-arrow,
+.mnav-link:hover .mnav-arrow {
+  color: var(--primary);
+  transform: translate(3px, -3px);
+}
+[dir='rtl'] .mnav-link:active .mnav-arrow,
+[dir='rtl'] .mnav-link:hover .mnav-arrow {
+  transform: scaleX(-1) translate(3px, -3px);
+}
+.mnav-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mnav-foot .btn {
+  width: 100%;
+  justify-content: center;
+  height: 50px;
+  border-radius: 14px;
+  font-size: 15px;
+}
+.mnav-note {
+  margin-top: 6px;
+  text-align: center;
+  font: 500 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-fg);
+}
+@media (min-width: 761px) {
+  .mnav {
+    display: none;
+  }
+}
+
 /* RTL typography */
 :root:lang(fa),
 :root:lang(ar) {

@@ -24,6 +24,7 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/admin/invites` | List invitation codes | Server Admin. |
 | `POST` | `/api/admin/invites` | Create an invitation code | Server Admin. |
 | `DELETE` | `/api/admin/invites/{code}` | Revoke an invitation code | Server Admin. |
+| `POST` | `/api/admin/notices` | Send a server-wide notice | Server Owner. |
 | `GET` | `/api/admin/overview` | Server overview | Server Admin. |
 | `POST` | `/api/admin/owner/transfer` | Hand the owner role to another account | Server Owner. |
 | `POST` | `/api/admin/reset` | Reset server data | Server Owner, with their password and the phrase `RESET`. |
@@ -48,16 +49,26 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/channels/{id}` | Get a channel by ID | Authenticated |
 | `PATCH` | `/api/channels/{id}` | Update channel settings | Authenticated |
 | `DELETE` | `/api/channels/{id}` | Delete or clear a channel/direct message | Authenticated |
+| `POST` | `/api/channels/{id}/invite/regenerate` | Replace a channel's invite link | Channel Admin. |
 | `GET` | `/api/channels/{id}/members` | List members of a channel | Authenticated |
 | `POST` | `/api/channels/{id}/members` | Add multiple members to a channel by username | Authenticated |
 | `DELETE` | `/api/channels/{id}/members/{uid}` | Remove a member from a channel | Authenticated |
-| `POST` | `/api/join/{link}` | Join a channel via a unique invite link | Authenticated |
+| `GET` | `/api/join/{link}` | Preview the channel behind an invite link | Authenticated. |
+| `POST` | `/api/join/{link}` | Join a channel via a unique invite link | Authenticated. |
 
 ## messages
 
 | Method | Path | Summary | Access |
 | --- | --- | --- | --- |
 | `GET` | `/api/channels/{id}/messages` | List recent messages for a channel | Authenticated |
+
+## sessions
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/sessions` | List the signed-in devices of the current user | Authenticated. |
+| `POST` | `/api/sessions/terminate-others` | Terminate all other signed-in devices | Authenticated. |
+| `DELETE` | `/api/sessions/{id}` | Terminate one signed-in device | Authenticated (own sessions only). |
 
 ## system
 
