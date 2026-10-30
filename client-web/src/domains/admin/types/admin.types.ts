@@ -75,3 +75,9 @@ export interface AdminAccount {
 	username: string;
 	role: 'admin' | 'owner';
 }
+
+/** Result of sending a server-wide notice. */
+export interface NoticeResult {
+	recipients: number;
+	failed: number;
+}

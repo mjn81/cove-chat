@@ -16,6 +16,17 @@ export interface AuthUser {
 	token?: string;
 }
 
+/** What an invite link resolves to before joining (`GET /api/join/{link}`). */
+export interface InvitePreview {
+	id: string;
+	name: string;
+	description?: string;
+	avatar_id?: string;
+	is_private: boolean;
+	member_count: number;
+	already_member: boolean;
+}
+
 export interface Channel {
 	id: string;
 	name: string;
@@ -30,6 +41,8 @@ export interface Channel {
 	member_avatars?: Record<string, string>;
 	member_domains?: Record<string, string>;
 	member_statuses?: Record<string, string>;
+	/** Flags built-in system accounts (this server's Cove account) among the members. */
+	member_system?: Record<string, boolean>;
 	member_roles?: Record<string, number>;
 	created_at: string;
 	unread_count?: number;

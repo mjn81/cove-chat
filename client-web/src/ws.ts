@@ -2,6 +2,7 @@
 
 import type { Message } from '@/types/api';
 import { isWails } from '@/utils/wails';
+import { getDesktopToken } from './lib/desktop-session';
 import { createSocketManager } from '@/ws/socketManager';
 
 import { BASE_URL } from '@/api/client';
@@ -213,17 +214,7 @@ function getFullWsUrl(explicitToken?: string): { url: string; protocols?: string
 	// cookies, so it authenticates via a WebSocket subprotocol instead of a
 	// URL query parameter — a token in the URL would leak into server
 	// access logs, any intermediate proxy logs, and browser history.
-	let token = explicitToken || '';
-	if (!token) {
-		try {
-			token = localStorage.getItem('cove_token') || '';
-			if (token) {
-				console.info('[ws] extracted token from localStorage');
-			}
-		} catch (err) {
-			console.warn('[ws] failed to get token from localStorage', err);
-		}
-	}
+	const token = explicitToken || getDesktopToken() || '';
 
 	if (!token) return { url };
 
@@ -285,6 +276,8 @@ function handleWorkerMessage(data: any) {
 	if (type === 'WS_OPEN') {
 		emit('open', null);
 	} else if (type === 'WS_CLOSE') {
+		// 1008 = the server ended this session (terminated from another device, password change, reset).
+		if (code === 1008 && typeof window !== 'undefined') window.dispatchEvent(new Event('auth:unauthorized'));
 		emit('close', code);
 	} else if (type === 'WS_MESSAGE') {
 		handleInbound(payload as { type: string; payload: unknown });

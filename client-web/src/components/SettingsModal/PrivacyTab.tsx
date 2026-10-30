@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Shield, Users, MessageSquare, UserPlus, Check, Loader2, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
+import { DevicesSection } from '@/domains/users/components/devices-section';
+import { PasscodeSection } from '@/domains/security/components/passcode-section';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -243,6 +245,10 @@ export const PrivacyTab = () => {
 						</DropdownMenu>
 					</div>
 				</div>
+
+				<PasscodeSection />
+
+				<DevicesSection />
 			</div>
 		</div>
 	);

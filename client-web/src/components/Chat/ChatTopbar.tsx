@@ -28,7 +28,7 @@ import {
 } from '@/store/store';
 import { GroupSettingsModal } from './GroupSettingsModal';
 import { ChannelInfoModal } from './ChannelInfoModal';
-import { isDirectMessage } from '@/utils/channel';
+import { isDirectMessage, isSystemChannel } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isAdmin } from '@/utils/role';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
@@ -385,7 +385,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 					)}
 
 					{/* Call Status / Action Button (Clean unboxed icon with color) */}
-					{isActive ? (
+					{isSystemChannel(liveChannel) ? null : isActive ? (
 						<button
 							type="button"
 							onClick={() => stopVoice()}

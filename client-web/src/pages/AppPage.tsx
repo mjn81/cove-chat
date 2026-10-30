@@ -11,12 +11,14 @@ import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
 import { ChatBackgroundPattern } from '@/components/Chat/ChatBackgroundPattern';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 import { useAppStore, useChannelStore, initWhisperListeners } from '@/store/store';
 import { onWS } from '@/ws';
 import { ensureZstdReady } from '@/utils/file';
 import { requestNotificationPermission } from '@/utils/notifications';
-import { apiJoinChannel } from '@/api/client';
+import { JoinPreview } from '@/components/Chat/JoinPreview';
+import { ModalShell } from '@/components/modal-shell';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { VoiceChatController } from '@/components/Voice/VoiceChatController';
 import { IncomingCallModal } from '@/components/Voice/IncomingCallModal';
@@ -29,8 +31,8 @@ import { WhisperSafetyNumberModal } from '@/components/Chat/WhisperSafetyNumberM
 export default function AppPage() {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
 	const refreshChannels = useChannelStore((state) => state.refreshChannels);
-	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 
+	const { t } = useTranslation();
 	const isMobile = useMediaQuery('(max-width: 768px)');
 	const {
 		isRightSidebarOpen,
@@ -40,30 +42,16 @@ export default function AppPage() {
 		setSidebarTab,
 	} = useAppStore();
 
-	useEffect(() => {
-		const path = window.location.pathname;
-		if (path.startsWith('/join/')) {
-			const code = path.split('/join/')[1];
-			if (code) {
-				const autoJoin = async () => {
-					try {
-						const res = await apiJoinChannel(code);
-						await refreshChannels();
-						window.history.replaceState({}, '', '/');
-						const allChannels = useChannelStore.getState().channels;
-						const ch = allChannels.find((c) => c.id === res.id);
-						if (ch) setActiveChannel(ch);
-					} catch (err) {
-						console.error('Auto-join failed:', err);
-						window.history.replaceState({}, '', '/');
-					}
-				};
-				autoJoin();
-			}
-		}
-		// Runs once on mount to handle an invite link in the URL.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	// An invite link in the URL opens a preview card; joining is always an explicit click.
+	const [inviteCode, setInviteCode] = useState<string | null>(() => {
+		const match = window.location.pathname.match(/^\/join\/([^/]+)/);
+		return match ? match[1] : null;
+	});
+
+	const closeInvite = () => {
+		window.history.replaceState({}, '', '/');
+		setInviteCode(null);
+	};
 
 	useEffect(() => {
 		ensureZstdReady();
@@ -256,6 +244,14 @@ export default function AppPage() {
 			<WhisperIncomingToast />
 			<WhisperStartModal />
 			<WhisperSafetyNumberModal />
+			<ModalShell
+				size="sm"
+				open={!!inviteCode}
+				onOpenChange={(open) => !open && closeInvite()}
+				title={t('channel.invite.preview.title')}
+			>
+				{inviteCode && <JoinPreview inviteCode={inviteCode} onDone={closeInvite} />}
+			</ModalShell>
 		</div>
 	);
 }

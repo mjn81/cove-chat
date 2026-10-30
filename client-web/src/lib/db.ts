@@ -1,5 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Message } from '@/types/api';
+import { decryptBytes, decryptText, encryptBytes, encryptText, isEncryptedText } from './cacheCrypto';
+import { logger } from '@/utils/logger';
 
 export interface CachedMessage extends Message {
 	text?: string; // Decrypted content if available
@@ -7,7 +9,8 @@ export interface CachedMessage extends Message {
 
 export interface CachedFile {
 	id: string; // File ID
-	data: Uint8Array; // Decrypted file bytes
+	data: Uint8Array; // File bytes; AES-GCM encrypted at rest when `enc` is set (see lib/cacheCrypto.ts)
+	enc?: boolean;
 	mime: string;
 	size?: number; // Size in bytes
 	cached_at?: number; // Timestamp
@@ -60,7 +63,18 @@ export class CoveDB extends Dexie {
 
 	async cacheMessages(msgs: CachedMessage[]) {
 		if (msgs.length === 0) return;
-		return this.messages.bulkPut(msgs);
+		let sealed: CachedMessage[];
+		try {
+			// The decrypted text is the sensitive part; it is encrypted under a key the profile folder does not hold.
+			sealed = await Promise.all(
+				msgs.map(async (m) => (m.text === undefined ? m : { ...m, text: await encryptText(m.text) })),
+			);
+		} catch (err) {
+			// Key unavailable (app locked): skip caching rather than ever writing plaintext to disk.
+			logger.warn('cache: message cache skipped, key unavailable', { err });
+			return;
+		}
+		return this.messages.bulkPut(sealed);
 	}
 
 	async deleteMessage(id: string) {
@@ -71,13 +85,19 @@ export class CoveDB extends Dexie {
 		channelId: string,
 		limit: number = 50,
 	): Promise<CachedMessage[]> {
-		return this.messages
-			.where('channel_id')
-			.equals(channelId)
-			.reverse()
-			.limit(limit)
-			.toArray()
-			.then((msgs) => msgs.reverse());
+		const rows = await this.messages.where('channel_id').equals(channelId).reverse().limit(limit).toArray();
+		const opened = await Promise.all(
+			rows.map(async (m) => {
+				if (m.text === undefined || !isEncryptedText(m.text)) return m;
+				try {
+					return { ...m, text: await decryptText(m.text) };
+				} catch {
+					// Locked or unreadable: drop the text so the UI decrypts it from the live ciphertext instead.
+					return { ...m, text: undefined };
+				}
+			}),
+		);
+		return opened.reverse();
 	}
 
 	async clearChannelCache(channelId: string) {
@@ -91,9 +111,17 @@ export class CoveDB extends Dexie {
 		mime: string,
 		size?: number,
 	) {
+		let stored: Uint8Array;
+		try {
+			stored = await encryptBytes(data);
+		} catch (err) {
+			logger.warn('cache: file cache skipped, key unavailable', { err });
+			return;
+		}
 		return this.files.put({
 			id,
-			data,
+			data: stored,
+			enc: true,
 			mime,
 			size: size ?? data.byteLength,
 			cached_at: Date.now(),
@@ -101,7 +129,13 @@ export class CoveDB extends Dexie {
 	}
 
 	async getCachedFile(id: string): Promise<CachedFile | undefined> {
-		return this.files.get(id);
+		const row = await this.files.get(id);
+		if (!row || !row.enc) return row;
+		try {
+			return { ...row, data: await decryptBytes(row.data), enc: false };
+		} catch {
+			return undefined; // unreadable (locked / key changed): behave as a cache miss and re-download
+		}
 	}
 
 	async hasFile(id: string): Promise<boolean> {

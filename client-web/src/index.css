@@ -13,6 +13,7 @@
 @layer base {
   :root,
   .dark {
+    color-scheme: dark;
     --background: 20 6% 13%; /* #23201F */
     --foreground: 25 10% 90%; /* #E8E5E3 */
 
@@ -259,10 +260,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Our own show/hide button replaces the browser's built-in password reveal (Edge / WebView2), which is drawn
+   outside the app theme and shows up as a second, wrongly coloured eye. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 /* Fix for mobile height issues */
 .h-screen {
-  height: 100vh; /* Fallback */
-  height: 100dvh;
+  height: calc(100vh - var(--titlebar-h, 0px)); /* Fallback */
+  height: calc(100dvh - var(--titlebar-h, 0px));
 }
 
 /* Modern Animated Spinner */

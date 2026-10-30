@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/store';
 import { AdminsPanel } from './admins-panel';
 import { ConfigPanel } from './config-panel';
 import { DataPanel } from './data-panel';
+import { NoticePanel } from './notice-panel';
 import { OverviewPanel } from './overview-panel';
 import { RegistrationPanel } from './registration-panel';
 
@@ -27,6 +28,7 @@ export function AdminTab() {
 					<TabsTrigger value="registration">{t('admin.tabs.registration')}</TabsTrigger>
 					<TabsTrigger value="config">{t('admin.tabs.config')}</TabsTrigger>
 					<TabsTrigger value="admins">{t('admin.tabs.admins')}</TabsTrigger>
+					{role === 'owner' && <TabsTrigger value="notices">{t('admin.tabs.notices')}</TabsTrigger>}
 					{role === 'owner' && <TabsTrigger value="data">{t('admin.tabs.data')}</TabsTrigger>}
 				</TabsList>
 				<TabsContent value="overview" className="mt-6">
@@ -41,6 +43,11 @@ export function AdminTab() {
 				<TabsContent value="admins" className="mt-6">
 					<AdminsPanel />
 				</TabsContent>
+				{role === 'owner' && (
+					<TabsContent value="notices" className="mt-6">
+						<NoticePanel />
+					</TabsContent>
+				)}
 				{role === 'owner' && (
 					<TabsContent value="data" className="mt-6">
 						<DataPanel />

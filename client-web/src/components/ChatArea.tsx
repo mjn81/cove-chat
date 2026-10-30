@@ -15,7 +15,8 @@ import { onWS, decryptMessage, wsSendReadReceipt } from '@/ws';
 import { useAuthStore, useCryptoStore, useWhisperStore } from '@/store/store';
 import { db } from '@/lib/db';
 import { resolveOldestPending } from '@/utils/pendingMessages';
-import { isDirectMessage } from '@/utils/channel';
+import { isDirectMessage, isSystemChannel } from '@/utils/channel';
+import { useTranslation } from 'react-i18next';
 
 import { Lock } from 'lucide-react';
 import { ChatTopbar } from './Chat/ChatTopbar';
@@ -37,6 +38,7 @@ interface DecryptedMessage extends Message {
 }
 
 const ChatArea = memo(({ channel }: ChatAreaProps) => {
+	const { t } = useTranslation();
 	const user = useAuthStore((state) => state.user);
 	const queryClient = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState('');
@@ -269,13 +271,19 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 					isFetchingNextPage={isFetchingNextPage}
 				/>
 
-				<ChatInputArea
-					channel={channel}
-					channelKey={channelKey ?? new Uint8Array(32)} // Fallback in case key isn't loaded
-					replyTo={replyTo}
-					onCancelReply={() => setReplyTo(null)}
-					messages={messages}
-				/>
+				{isSystemChannel(channel) ? (
+					<div className="shrink-0 border-t border-border bg-card px-4 py-3 text-center text-xs text-muted-foreground">
+						{t('systemChat.readOnly')}
+					</div>
+				) : (
+					<ChatInputArea
+						channel={channel}
+						channelKey={channelKey ?? new Uint8Array(32)} // Fallback in case key isn't loaded
+						replyTo={replyTo}
+						onCancelReply={() => setReplyTo(null)}
+						messages={messages}
+					/>
+				)}
 
 				{forwardMessage && (
 					<ForwardModal 

@@ -45,6 +45,7 @@
 			"demo_signup_limit": "Too many accounts were created from your network today. Try again tomorrow.",
 			"invite_required": "This server is invite-only. Enter an invitation code.",
 			"invite_invalid": "That invitation code is not valid.",
+			"username_reserved": "That name is reserved.",
 			"captcha_required": "Please complete the human check first.",
 			"captcha_failed": "The human check failed. Please try again."
 		},
@@ -173,7 +174,20 @@
 			"sent": "Sent!",
 			"message": "Join my channel \"{{name}}\": {{link}}",
 			"default_channel": "channel",
-			"friend_fallback": "Friend"
+			"friend_fallback": "Friend",
+			"preview": {
+				"title": "Channel invitation",
+				"members": "{{count}} members",
+				"join": "Join",
+				"joining": "Joining...",
+				"open": "Open",
+				"already_member": "You're already a member",
+				"private": "Private",
+				"public": "Public",
+				"load_failed": "This invite link is invalid or no longer works.",
+				"join_failed": "Could not join the channel",
+				"close": "Close"
+			}
 		},
 		"info": {
 			"title": "Channel info - {{name}}",
@@ -230,6 +244,12 @@
 			"add_selected": "Add {{count}} selected",
 			"remove_selected": "Remove {{name}}",
 			"copy_link": "Copy link",
+			"regenerate_link": "Regenerate link",
+			"regenerate_title": "Regenerate invite link?",
+			"regenerate_message": "The current link will stop working immediately. Anyone who has it will need the new one to join.",
+			"regenerate_confirm": "Regenerate",
+			"regenerated": "Invite link regenerated",
+			"regenerate_failed": "Failed to regenerate the invite link",
 			"send_to_friends": "Send to friends",
 			"save": "Save settings",
 			"saving": "Saving...",
@@ -349,6 +369,10 @@
 		"maximize": "Maximize",
 		"restore": "Restore",
 		"close": "Close"
+	},
+	"downloads": {
+		"savedTo": "Saved to {{path}}",
+		"showInFolder": "Show in folder"
 	},
 	"call": {
 		"mute": "Mute",
@@ -613,7 +637,8 @@
 			"registration": "Registration",
 			"config": "Settings",
 			"admins": "Admins",
-			"data": "Data"
+			"data": "Data",
+			"notices": "Notices"
 		},
 		"roles": {
 			"owner": "Owner",
@@ -814,7 +839,84 @@
 			"invalid_upload": "The upload could not be read.",
 			"backup_unreadable": "Wrong passphrase, or this is not a valid backup file.",
 			"restore_failed": "The restore failed."
+		},
+		"notices": {
+			"title": "Server notices",
+			"description": "Send a message from this server's Cove account to every user's Cove chat. Use it for maintenance windows and important changes.",
+			"placeholder": "Write a notice…",
+			"send": "Send notice",
+			"confirmTitle": "Send to everyone?",
+			"confirmMessage": "This message will be delivered to every user on this server and can't be recalled.",
+			"sent": "Notice delivered to {{n}} users",
+			"failed": "{{n}} deliveries failed"
 		}
+	},
+	"devices": {
+		"title": "Devices",
+		"subtitle": "Every device signed in to your account. Terminate any session you don't recognize.",
+		"loading": "Loading devices…",
+		"error": "Couldn't load your devices.",
+		"thisDevice": "This device",
+		"activeSessions": "Active sessions",
+		"unknown": "Unknown device",
+		"noOthers": "No other devices",
+		"noOthersHint": "You're only signed in here.",
+		"terminate": "Terminate session",
+		"terminateConfirm": "Sign {{device}} out of your account?",
+		"terminateOthers": "Terminate all other sessions",
+		"terminateOthersAction": "Terminate all",
+		"terminateOthersConfirm": "Every device except this one will be signed out.",
+		"terminated": "Session terminated",
+		"terminatedAll": "Other sessions terminated",
+		"activeNow": "Online now",
+		"ago": {
+			"minute": "{{n}} min ago",
+			"hour": "{{n}} h ago",
+			"day": "{{n}} d ago"
+		}
+	},
+	"systemChat": {
+		"readOnly": "This is an automated account. Replies aren't delivered."
+	},
+	"lock": {
+		"title": "{{app}} is locked",
+		"subtitle": "Enter your passcode to continue.",
+		"placeholder": "Passcode",
+		"unlock": "Unlock",
+		"incorrect": "Incorrect passcode."
+	},
+	"passcode": {
+		"title": "Local passcode",
+		"description": "Protect your session and cached messages on this device. You'll enter the passcode when you open Cove or after it locks itself.",
+		"insecure": "This system has no secure credential store, so you'll need to sign in again after restarting Cove.",
+		"set": "Set passcode",
+		"change": "Change passcode",
+		"remove": "Turn off",
+		"save": "Save",
+		"lockNow": "Lock now",
+		"current": "Current passcode",
+		"new": "New passcode",
+		"repeat": "Repeat new passcode",
+		"tooShort": "Use at least 4 characters.",
+		"mismatch": "Passcodes don't match.",
+		"saved": "Passcode saved",
+		"removed": "Passcode turned off",
+		"autoLock": "Auto-lock",
+		"autoLockOptions": {
+			"m0": "Never",
+			"m1": "After 1 minute",
+			"m5": "After 5 minutes",
+			"m15": "After 15 minutes",
+			"m60": "After 1 hour"
+		}
+	},
+	"desktopSettings": {
+		"title": "Desktop app",
+		"closeToTray": "Keep running in the tray",
+		"closeToTrayHint": "Closing the window keeps Cove running in the background. Quit it from the tray icon.",
+		"autostart": "Start with your computer",
+		"autostartHint": "Open Cove minimized to the tray when you sign in to your computer.",
+		"error": "Couldn't change this setting."
 	},
 	"serverSelect": {
 		"title": "Select a Server",

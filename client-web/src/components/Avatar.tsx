@@ -5,6 +5,9 @@ import { Avatar as RadixAvatar, AvatarFallback, AvatarImage } from '@/components
 import { useCachedAvatar } from '@/lib/avatarCache';
 import { getFileUrl } from '@/api/client';
 
+/** Sentinel avatar id the server gives its built-in Cove account; rendered from the bundled icon. */
+export const SYSTEM_AVATAR_ID = 'system:cove';
+
 interface AvatarProps {
   userId: string;
   avatarId?: string;
@@ -13,7 +16,9 @@ interface AvatarProps {
 }
 
 export const Avatar = memo(({ userId, avatarId, size = 36, className }: AvatarProps) => {
-  const { url: displayUrl } = useCachedAvatar(avatarId);
+  const isSystem = avatarId === SYSTEM_AVATAR_ID;
+  // The system account's avatar is the bundled brand icon, not a stored file.
+  const { url: displayUrl } = useCachedAvatar(isSystem ? undefined : avatarId);
 
   const dataUrl = useMemo(() => {
     const svgString = minidenticon(userId, 80, 50);
@@ -25,12 +30,16 @@ export const Avatar = memo(({ userId, avatarId, size = 36, className }: AvatarPr
       className={`rounded-full overflow-hidden ${className || ''}`} 
       style={{ width: size, height: size }}
     >
-      {displayUrl && (
+      {isSystem ? (
+        <AvatarImage src="/cove-icon.svg" className="object-cover" draggable={false} />
+      ) : (
+        displayUrl && (
         <AvatarImage 
           src={displayUrl} 
           className="object-cover"
           draggable={false}
         />
+        )
       )}
       <AvatarFallback className="bg-transparent border-none">
         <img

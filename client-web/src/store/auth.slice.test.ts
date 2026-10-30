@@ -10,14 +10,27 @@ vi.mock('@/utils/wails', () => ({
 	isWails: () => mockIsWails(),
 }));
 
+const mockSaveDesktopSession = vi.fn();
+const mockClearDesktopSession = vi.fn();
+const mockLoadDesktopSession = vi.fn().mockResolvedValue(false);
+vi.mock('@/lib/desktop-session', () => ({
+	saveDesktopSession: (...args: unknown[]) => mockSaveDesktopSession(...args),
+	clearDesktopSession: (...args: unknown[]) => mockClearDesktopSession(...args),
+	loadDesktopSession: (...args: unknown[]) => mockLoadDesktopSession(...args),
+	getDesktopToken: () => null,
+}));
+const mockWipeLocalData = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/wipe', () => ({ wipeLocalData: () => mockWipeLocalData() }));
+
 const mockApiLogin = vi.fn();
 const mockApiRegister = vi.fn();
 const mockApiLogout = vi.fn();
+const mockApiMe = vi.fn();
 vi.mock('@/api/client', () => ({
 	apiLogin: (...args: unknown[]) => mockApiLogin(...args),
 	apiRegister: (...args: unknown[]) => mockApiRegister(...args),
 	apiLogout: (...args: unknown[]) => mockApiLogout(...args),
-	apiMe: vi.fn(),
+	apiMe: (...args: unknown[]) => mockApiMe(...args),
 	apiUpdateProfile: vi.fn(),
 	apiDeleteAccount: vi.fn(),
 	apiGetMyRelationships: vi.fn().mockResolvedValue([]),
@@ -114,7 +127,7 @@ describe('auth.slice login — web (non-Wails)', () => {
 });
 
 describe('auth.slice login — desktop (Wails)', () => {
-	it('persists the session token to localStorage for the Wails webview', async () => {
+	it('keeps the session token in the shell keystore, never in localStorage', async () => {
 		mockIsWails.mockReturnValue(true);
 		mockApiLogin.mockResolvedValue({
 			id: 'u1',
@@ -127,28 +140,30 @@ describe('auth.slice login — desktop (Wails)', () => {
 
 		await useAuthStore.getState().login('bob', 'password123');
 
-		expect(localStorage.getItem('cove_token')).toBe('desktop-token');
+		expect(mockSaveDesktopSession).toHaveBeenCalledWith('desktop-token');
+		expect(localStorage.getItem('cove_token')).toBeNull();
 	});
 });
 
 describe('auth.slice logout', () => {
-	it('clears the desktop token on logout when running under Wails', async () => {
+	it('clears the desktop session and wipes cached data on logout under Wails', async () => {
 		mockIsWails.mockReturnValue(true);
-		localStorage.setItem('cove_token', 'stale-token');
 		mockApiLogout.mockResolvedValue(undefined);
 
 		await useAuthStore.getState().logout();
 
-		expect(localStorage.getItem('cove_token')).toBeNull();
+		expect(mockClearDesktopSession).toHaveBeenCalled();
+		expect(mockWipeLocalData).toHaveBeenCalled();
 	});
 
-	it('is a no-op on the desktop token for the web build (nothing to clear)', async () => {
+	it('leaves the desktop session alone on the web build but still wipes cached data', async () => {
 		mockIsWails.mockReturnValue(false);
 		mockApiLogout.mockResolvedValue(undefined);
 
 		await useAuthStore.getState().logout();
 
-		expect(localStorage.getItem('cove_token')).toBeNull();
+		expect(mockClearDesktopSession).not.toHaveBeenCalled();
+		expect(mockWipeLocalData).toHaveBeenCalled();
 	});
 });
 
@@ -186,5 +201,38 @@ describe('auth.slice register', () => {
 		await useAuthStore.getState().register('dave', 'password123', undefined, 'solved-payload');
 
 		expect(mockApiRegister).toHaveBeenCalledWith('dave', 'password123', undefined, 'solved-payload');
+	});
+});
+
+describe('auth.slice initAuth — desktop session restore', () => {
+	beforeEach(() => {
+		resetLocalStorage();
+		useAuthStore.setState({ user: null, isAuthLoading: true });
+		mockIsWails.mockReturnValue(true);
+	});
+
+	afterEach(() => {
+		mockIsWails.mockReturnValue(false);
+		mockLoadDesktopSession.mockResolvedValue(false);
+		mockApiMe.mockReset();
+	});
+
+	it('signs the user back in from the shell-held token when web storage was wiped', async () => {
+		mockLoadDesktopSession.mockResolvedValue(true);
+		mockApiMe.mockResolvedValue({ id: 'u1', username: 'a', token: 'shell-token' });
+
+		await useAuthStore.getState().initAuth();
+
+		expect(useAuthStore.getState().user?.id).toBe('u1');
+	});
+
+	it('forgets the shell session when the server rejects it', async () => {
+		mockLoadDesktopSession.mockResolvedValue(true);
+		mockApiMe.mockRejectedValue({ status: 401 });
+
+		await useAuthStore.getState().initAuth();
+
+		expect(mockClearDesktopSession).toHaveBeenCalled();
+		expect(useAuthStore.getState().user).toBeNull();
 	});
 });

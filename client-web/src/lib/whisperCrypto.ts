@@ -5,6 +5,7 @@
  * AES-256-GCM authenticated encryption/decryption, and Signal-grade 60-digit Safety Numbers.
  * All private and session keys are marked `extractable: false` to prevent memory/script exfiltration.
  */
+import { encryptBytes } from './cacheCrypto';
 
 // --- Base64 Serialization Helpers ---
 
@@ -71,6 +72,12 @@ export async function importPublicKey(rawBytes: Uint8Array): Promise<CryptoKey> 
 
 export interface DerivedWhisperSecrets {
 	sessionKey: CryptoKey;
+	/**
+	 * The session key's raw bytes sealed under the at-rest cache key (see lib/cacheCrypto.ts), for persisting the
+	 * session without leaving key material in the profile. Undefined when no cache key is available (app locked),
+	 * in which case the session must not be persisted.
+	 */
+	wrappedSessionKey?: Uint8Array;
 	safetyNumber: string;
 	fingerprintHex: string;
 	fingerprintBytes: Uint8Array;
@@ -143,6 +150,24 @@ export async function deriveWhisperSecrets(
 		['encrypt', 'decrypt'],
 	);
 
+	// The same key as raw bits, sealed for storage. The runtime key above stays non-extractable.
+	let wrappedSessionKey: Uint8Array | undefined;
+	try {
+		const raw = await window.crypto.subtle.deriveBits(
+			{
+				name: 'HKDF',
+				hash: 'SHA-256',
+				salt,
+				info: new TextEncoder().encode('cove-whisper-v1-aes-' + sessionId),
+			},
+			hkdfKey,
+			256,
+		);
+		wrappedSessionKey = await encryptBytes(new Uint8Array(raw));
+	} catch {
+		wrappedSessionKey = undefined;
+	}
+
 	// 4. Derive Safety Number (Fingerprint) bound canonically to both user IDs
 	const sortedUsers = [userA, userB].sort().join(':');
 	const fingerprintBuffer = await window.crypto.subtle.deriveBits(
@@ -165,6 +190,7 @@ export async function deriveWhisperSecrets(
 
 	return {
 		sessionKey,
+		wrappedSessionKey,
 		safetyNumber,
 		fingerprintHex,
 		fingerprintBytes,

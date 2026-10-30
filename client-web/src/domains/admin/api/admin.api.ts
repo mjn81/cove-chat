@@ -7,6 +7,7 @@ import type {
 	ConfigValue,
 	CreateInviteInput,
 	Invite,
+	NoticeResult,
 	UpdateConfigResult,
 } from '../types/admin.types';
 
@@ -80,3 +81,7 @@ export const adminReset = (password: string, confirm: string) =>
 
 export const adminDeleteServer = (password: string, confirm: string) =>
 	request<{ status: string }>(apiClient.post('/api/admin/delete', { password, confirm }));
+
+/** Owner only: delivers `text` from the server's Cove account to every user. */
+export const adminSendNotice = (text: string) =>
+	request<NoticeResult>(apiClient.post('/api/admin/notices', { text }));

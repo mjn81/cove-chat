@@ -262,7 +262,7 @@ export const useWhisperStore = create<WhisperState>((set, get) => {
 						verified: false,
 						createdAt: Date.now(),
 						lastActivity: Date.now(),
-					});
+					}, secrets.wrappedSessionKey);
 				}
 
 				// Find and select the DM channel for this peer if not already active
@@ -789,7 +789,7 @@ export function initWhisperListeners() {
 					verified: false,
 					createdAt: Date.now(),
 					lastActivity: Date.now(),
-				});
+				}, secrets.wrappedSessionKey);
 			}
 
 			useWhisperStore.setState({

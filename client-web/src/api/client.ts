@@ -2,6 +2,8 @@
 
 import { logger } from '@/utils/logger';
 import { isWails } from '@/utils/wails';
+import { getDesktopToken } from '@/lib/desktop-session';
+import { AppVersion } from '../wailsjs/go/main/App';
 import axios, { AxiosError } from 'axios';
 import type { PublicServerInfo } from '@/domains/auth/types/auth.types';
 import type { AltchaChallenge } from '@/lib/altcha';
@@ -109,13 +111,9 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
 	if (isWails()) {
-		try {
-			const token = localStorage.getItem('cove_token');
-			if (token) {
-				config.headers.set('Authorization', `Bearer ${token}`);
-			}
-		} catch {
-			// Ignore access errors
+		const token = getDesktopToken();
+		if (token) {
+			config.headers.set('Authorization', `Bearer ${token}`);
 		}
 	} else {
 		// CSRF double-submit: echo the readable CSRF cookie back as a header
@@ -162,6 +160,7 @@ import type {
 	AuthUser,
 	Channel,
 	ExploreChannel,
+	InvitePreview,
 	Message,
 	Presence,
 	UploadedFile,
@@ -200,6 +199,22 @@ export async function apiRegister(username: string, password: string, inviteCode
 }
 
 /** Public sign-up policy, so the register page can adapt before the user types. */
+/** Device and app labels the desktop shell sends at login, e.g. "Cove Desktop on Windows" / "Cove Desktop 0.9.0". */
+async function desktopDeviceHeaders(): Promise<Record<string, string>> {
+	const ua = navigator.userAgent;
+	const os = /Windows/i.test(ua) ? 'Windows' : /Mac/i.test(ua) ? 'macOS' : 'Linux';
+	let version = '';
+	try {
+		version = await AppVersion();
+	} catch {
+		/* binding unavailable: report the app without a version */
+	}
+	return {
+		'X-Cove-Device': `Cove Desktop on ${os}`,
+		'X-Cove-App': version ? `Cove Desktop ${version}` : 'Cove Desktop',
+	};
+}
+
 export async function apiServerInfo() {
 	return request<PublicServerInfo>(apiClient.get('/api/server-info'));
 }
@@ -210,7 +225,9 @@ export async function apiCaptchaChallenge() {
 }
 
 export async function apiLogin(username: string, password: string) {
-	return request<AuthUser>(apiClient.post('/api/login', { username, password }));
+	// The server shows these in the user's Devices list; browsers are identified from their User-Agent instead.
+	const headers = isWails() ? await desktopDeviceHeaders() : undefined;
+	return request<AuthUser>(apiClient.post('/api/login', { username, password }, { headers }));
 }
 
 export async function apiLogout() {
@@ -306,6 +323,16 @@ export async function apiGetChannel(id: string) {
 
 export async function apiJoinChannel(link: string) {
 	return request<Channel>(apiClient.post(`/api/join/${link}`));
+}
+
+/** Resolves an invite link to a preview card without joining. */
+export async function apiPreviewInvite(link: string) {
+	return request<InvitePreview>(apiClient.get(`/api/join/${link}`));
+}
+
+/** Replaces a channel's invite link (admin+); the old link stops working. */
+export async function apiRegenerateInvite(channelId: string) {
+	return request<Channel>(apiClient.post(`/api/channels/${channelId}/invite/regenerate`));
 }
 
 export async function apiAddMember(channelId: string, userIds: string[]) {

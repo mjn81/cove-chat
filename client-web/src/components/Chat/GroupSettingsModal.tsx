@@ -13,6 +13,7 @@ import {
 	Loader2,
 	Camera,
 	Users,
+	RefreshCw,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ import {
 	getFileUrl,
 } from '@/api/client';
 import { useChannelStore } from '@/store/store';
+import { useRegenerateInvite } from '@/domains/channels/hooks/use-invite';
 import { useUserSearch } from '@/hooks/useUsers';
 import { useDebounce } from '@/hooks/use-debounce';
 import { isAdmin as checkAdmin, isOwner as checkOwner } from '@/utils/role';
@@ -70,6 +72,10 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 	const [copied, setCopied] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [showFriendPicker, setShowFriendPicker] = useState(false);
+	const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+	// Tracks the link locally so the field updates the moment it is rotated.
+	const [inviteLink, setInviteLink] = useState(channel.invite_link);
+	const regenerateInvite = useRegenerateInvite();
 	const [showCropModal, setShowCropModal] = useState(false);
 	const [cropFile, setCropFile] = useState<File | null>(null);
 	const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -200,10 +206,22 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 		}
 	};
 
-	const fullInviteLink = `${window.location.origin}/join/${channel.invite_link}`;
+	const fullInviteLink = `${window.location.origin}/join/${inviteLink}`;
+
+	const handleRegenerate = async () => {
+		try {
+			const updated = await regenerateInvite.mutateAsync(channel.id);
+			setInviteLink(updated.invite_link);
+			await refreshChannels();
+			toast.success(t('channel.settings.regenerated'));
+		} catch (err) {
+			logger.error('Failed to regenerate invite link', { error: String(err) });
+			toast.error(err instanceof Error ? err.message : t('channel.settings.regenerate_failed'));
+		}
+	};
 
 	const copyLink = () => {
-		if (channel.invite_link) {
+		if (inviteLink) {
 			navigator.clipboard.writeText(fullInviteLink);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
@@ -455,7 +473,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 					)}
 
 					{/* Invite link */}
-					{channel.invite_link && (
+					{inviteLink && (
 						<>
 							<Separator />
 							<div className="space-y-2">
@@ -487,6 +505,17 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 									>
 										<Users size={14} /> {t('channel.settings.send_to_friends')}
 									</Button>
+									{isAdmin && (
+										<Button
+											type="button"
+											variant="outline"
+											className="h-9 shrink-0 gap-1.5 text-xs"
+											disabled={regenerateInvite.isPending}
+											onClick={() => setShowRegenerateConfirm(true)}
+										>
+											<RefreshCw size={14} /> {t('channel.settings.regenerate_link')}
+										</Button>
+									)}
 								</div>
 							</div>
 						</>
@@ -504,13 +533,23 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 				variant="danger"
 			/>
 
+			<ConfirmModal
+				isOpen={showRegenerateConfirm}
+				onClose={() => setShowRegenerateConfirm(false)}
+				onConfirm={handleRegenerate}
+				title={t('channel.settings.regenerate_title')}
+				message={t('channel.settings.regenerate_message')}
+				confirmText={t('channel.settings.regenerate_confirm')}
+				variant="danger"
+			/>
+
 			{showFriendPicker && (
 				<FriendPickerModal
 					open={showFriendPicker}
 					onOpenChange={setShowFriendPicker}
 					channelId={channel.id}
 					channelName={channel.name}
-					inviteLink={channel.invite_link}
+					inviteLink={inviteLink}
 				/>
 			)}
 

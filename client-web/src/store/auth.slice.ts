@@ -8,27 +8,24 @@ import { isWails } from '@/utils/wails';
 
 import { connectWS, disconnectWS } from './ws.manager';
 import { useChannelStore } from './channels.slice';
+import { clearDesktopSession, loadDesktopSession, saveDesktopSession } from '@/lib/desktop-session';
+import { wipeLocalData } from '@/lib/wipe';
 import { evictStaleAvatars, prewarmAvatars } from '@/lib/avatarCache';
 
 // The web client authenticates via an httpOnly session cookie and never
 // touches the token itself. The desktop (Wails) client still needs it in
 // localStorage, since its webview doesn't reliably persist httpOnly cookies.
+//
+// The token is kept in memory and mirrored to the desktop shell's OS keystore (see lib/desktop-session.ts),
+// never to localStorage, so a copied profile folder cannot yield a bearer token.
 function persistDesktopToken(token: string | undefined) {
 	if (!isWails() || !token) return;
-	try {
-		localStorage.setItem('cove_token', token);
-	} catch {
-		// Ignore access errors
-	}
+	saveDesktopSession(token);
 }
 
 function clearDesktopToken() {
 	if (!isWails()) return;
-	try {
-		localStorage.removeItem('cove_token');
-	} catch {
-		// Ignore access errors
-	}
+	clearDesktopSession();
 }
 
 export interface AuthSlice {
@@ -71,7 +68,17 @@ export const useAuthStore = create<AuthSlice>()(
 
 			initAuth: async () => {
 				try {
-					const saved = get().user;
+					let saved = get().user;
+					const hasShellSession = await loadDesktopSession();
+					if (!saved && hasShellSession) {
+						// Web storage was wiped but the shell still holds a session: rebuild the user from it.
+						try {
+							saved = await apiMe();
+						} catch (err: any) {
+							if (err?.status === 401) clearDesktopToken();
+						}
+						if (saved) set({ user: saved });
+					}
 
 					if (saved) {
 						try {
@@ -144,6 +151,8 @@ export const useAuthStore = create<AuthSlice>()(
 				disconnectWS();
 				useChannelStore.getState().resetChannels();
 				clearDesktopToken();
+				// Nothing decrypted may outlive the session on this device.
+				await wipeLocalData();
 
 				set({ user: null, relationships: [], incomingRequests: [] });
 			},

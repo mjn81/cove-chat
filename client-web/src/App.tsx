@@ -8,6 +8,10 @@ import ServerSelectionPage from './pages/ServerSelectionPage';
 import { setApiBaseUrl } from './api/client';
 import { isWails } from './utils/wails';
 import LoadingScreen from './components/ui/LoadingScreen';
+import { DesktopTitleBar } from './components/desktop/desktop-titlebar';
+import { LockScreen } from './domains/security/components/lock-screen';
+import { useAutoLock } from './domains/security/hooks/use-auto-lock';
+import { useLockStore } from './domains/security/store/lock.store';
 
 /** Redirect to /login when unauthenticated */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -32,7 +36,9 @@ function RequireGuest({ children }: { children: React.ReactNode }) {
 
 import NotFoundPage from './pages/NotFoundPage';
 
-export default function App() {
+function AppContent() {
+  const lock = useLockStore(state => state.status);
+  useAutoLock();
   const theme = useAppStore(state => state.theme);
   const [isWailsReady, setIsWailsReady] = React.useState(false);
   const [shouldConnect, setShouldConnect] = React.useState(false);
@@ -53,6 +59,12 @@ export default function App() {
 
         const initPromise = (async () => {
           if (isWails()) {
+            // A passcode-locked shell cannot hand out the session yet: show the lock screen instead of signing in.
+            const lockStatus = await useLockStore.getState().refresh();
+            if (lockStatus.enabled && lockStatus.locked) {
+              useAuthStore.setState({ isAuthLoading: false });
+              return;
+            }
             try {
               const wails = (window as any).go?.main?.App;
               const savedUrl = await wails?.GetServerURL?.();
@@ -104,6 +116,7 @@ export default function App() {
   }, []);
 
   if (!isWailsReady) return <LoadingScreen />;
+  if (lock.enabled && lock.locked) return <LockScreen />;
 
   return (
     <BrowserRouter>
@@ -132,5 +145,15 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+/** Root component; the desktop shell adds its own title bar above the routed app. */
+export default function App() {
+  return (
+    <>
+      {isWails() && <DesktopTitleBar />}
+      <AppContent />
+    </>
   );
 }

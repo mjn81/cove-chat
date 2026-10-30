@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { SwitchRow } from '@/components/setting-row';
+import { DesktopSection } from '@/domains/desktop/components/desktop-section';
 import { useAppStore } from '@/store/store';
 import { requestNotificationPermission } from '@/utils/notifications';
 
@@ -45,6 +46,7 @@ export const NotificationsTab = () => {
 					/>
 				</div>
 			</div>
+			<DesktopSection />
 		</div>
 	);
 };

@@ -6,7 +6,9 @@ import { decryptAndDecompressFile, ensureZstdReady } from '@/utils/file';
 import { apiGetFile } from '@/api/client';
 import { db } from '@/lib/db';
 import { isWails } from '@/utils/wails';
-import { SaveFile } from '../../wailsjs/go/main/App';
+import { RevealFile, SaveFile } from '../../wailsjs/go/main/App';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { bytesToBase64 } from '@/ws';
 import { useAuthStore } from '@/store/store';
 
@@ -32,6 +34,7 @@ interface FileMetadata {
 }
 
 export const FileBubble = memo(({ msg }: FileBubbleProps) => {
+	const { t } = useTranslation();
 	const [meta, setMeta] = useState<FileMetadata | null>(null);
 	const [thumbUrl, setThumbUrl] = useState<string | null>(null);
 	const [isDecrypting, setIsDecrypting] = useState(false);
@@ -188,8 +191,12 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 			const filename = meta.name || `file-${meta.file_id.substring(0, 8)}.${meta.mime.split('/')[1] || 'bin'}`;
 
 			if (isWails()) {
-				// Pass as base64 string; Wails Go side will unmarshal it into []byte
-				await SaveFile(filename, bytesToBase64(decrypted as any));
+				// The shell saves straight into <Downloads>/Cove (no dialog, like Telegram) and returns the final path.
+				const savedPath = await SaveFile(filename, bytesToBase64(decrypted as any));
+				toast.success(t('downloads.savedTo', { path: 'Downloads/Cove' }), {
+					description: filename,
+					action: { label: t('downloads.showInFolder'), onClick: () => void RevealFile(savedPath) },
+				});
 			} else {
 				const downloadUrl = URL.createObjectURL(blob);
 				const a = document.createElement('a');

@@ -23,3 +23,11 @@ export function getChannelDisplayName(
 	}
 	return ch.name || `Group (${ch.members.length})`;
 }
+
+/**
+ * Whether the channel is a chat with a built-in system account (the server's Cove account). Such chats are
+ * read-only: nobody can reply, call or add members.
+ */
+export function isSystemChannel(channel: Channel): boolean {
+	return Object.values(channel.member_system ?? {}).some(Boolean);
+}

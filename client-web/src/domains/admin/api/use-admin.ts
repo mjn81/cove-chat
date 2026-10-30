@@ -10,6 +10,7 @@ import {
 	adminOverview,
 	adminRevokeAdmin,
 	adminRevokeInvite,
+	adminSendNotice,
 	adminTransferOwner,
 	adminUpdateConfig,
 } from './admin.api';
@@ -81,5 +82,14 @@ export function useTransferOwner() {
 		mutationFn: (v: { username: string; password: string; confirm: string }) =>
 			adminTransferOwner(v.username, v.password, v.confirm),
 		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.all }),
+	});
+}
+
+/** Sends a server-wide notice; the audit log gains an entry, so it is refreshed. */
+export function useSendNotice() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (text: string) => adminSendNotice(text),
+		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.audit() }),
 	});
 }
