@@ -16,3 +16,23 @@ stress_report_*.txt
 .env.local
 .env.*.local
 !.env.example
+
+# Build outputs and release artifacts
+*.exe
+/release/
+/client-desktop/build/bin/
+/client-desktop/desktop
+# Copied from client-web/dist by `make wails/*`; the placeholder keeps `//go:embed all:frontend/dist` compiling.
+/client-desktop/frontend/dist/*
+!/client-desktop/frontend/dist/.gitkeep
+
+# Go test / profiling output
+*.out
+*.test
+*.prof
+
+# OS and editor noise
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
