@@ -71,6 +71,9 @@ func main() {
 				HideTitle:                  true,
 				HideToolbarSeparator:       true,
 				FullSizeContent:            true,
+				// A toolbar makes macOS centre the traffic lights in a taller title area (about 52px) instead of
+				// pinning them to the top edge, so they line up with the 48px headers drawn by the web UI.
+				UseToolbar: true,
 			},
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
