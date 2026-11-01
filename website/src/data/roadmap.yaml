@@ -126,6 +126,10 @@ phases:
         area: clients
         title: "Whisper and call alerts"
         note: "Native notifications and their own sounds for Whisper requests and incoming calls."
+      - id: android-trust
+        area: clients
+        title: "Trusted Android builds"
+        note: "Signing fixes so installs verify cleanly."
 
   - id: now
     title: In progress
@@ -159,10 +163,6 @@ phases:
     subtitle: Polish, privacy and media
     status: planned
     items:
-      - id: android-trust
-        area: clients
-        title: "Trusted Android builds"
-        note: "Signing fixes so installs verify cleanly."
       - id: security-tab
         area: privacy
         title: "Security settings tab"
