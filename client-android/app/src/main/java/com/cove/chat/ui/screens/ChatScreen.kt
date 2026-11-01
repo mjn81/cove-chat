@@ -16,6 +16,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,9 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.HowToReg
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Search
@@ -97,6 +101,7 @@ import com.cove.chat.crypto.CryptoManager
 import com.cove.chat.data.model.Channel
 import com.cove.chat.data.model.Message
 import com.cove.chat.data.model.fileMeta
+import com.cove.chat.data.model.parseInviteCode
 import com.cove.chat.data.model.previewText
 import com.cove.chat.notify.ActiveChat
 import com.cove.chat.ui.components.InitialsAvatar
@@ -124,7 +129,7 @@ private fun Message.localDate(): LocalDate? = parseInstant(sentAt)?.atZone(ZoneI
 private fun Message.timeLabel(): String =
     parseInstant(sentAt)?.atZone(ZoneId.systemDefault())?.format(TimeFormat) ?: ""
 
-private fun dayLabel(d: LocalDate): String {
+internal fun dayLabel(d: LocalDate): String {
     val today = LocalDate.now()
     return when (d) {
         today -> "Today"
@@ -150,7 +155,9 @@ fun ChatScreen(
     onBack: () -> Unit,
     onStartCall: (withVideo: Boolean) -> Unit,
     onStartWhisper: (peerId: String, peerName: String) -> Unit = { _, _ -> },
-    onOpenChat: (channelId: String, name: String) -> Unit = { _, _ -> }
+    onOpenChat: (channelId: String, name: String) -> Unit = { _, _ -> },
+    /** Starts a call in another DM (from a profile card), unlike [onStartCall] which is for this chat. */
+    onCallIn: (channelId: String, name: String, withVideo: Boolean) -> Unit = { _, _, _ -> }
 ) {
     val app = CoveApp.instance
     val api = app.apiClient
@@ -170,7 +177,10 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     var replyTo by remember { mutableStateOf<Message?>(null) }
     var editing by remember { mutableStateOf<Message?>(null) }
-    var selectedId by remember { mutableStateOf<String?>(null) }
+    // Messages ticked in selection mode (long-press one to start); the top bar then offers the bulk actions.
+    var selectedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val selecting = selectedIds.isNotEmpty()
+    var confirmDelete by remember { mutableStateOf(false) }
     // Message briefly highlighted after a jump from a quote or the reply strip.
     var highlightId by remember { mutableStateOf<String?>(null) }
     // Invite code whose join card is open as a dialog (tapped from a link in a message).
@@ -181,7 +191,7 @@ fun ChatScreen(
     var search by remember { mutableStateOf("") }
     var showMembers by remember { mutableStateOf(false) }
     var showProfile by remember { mutableStateOf(false) }
-    var forwardMsg by remember { mutableStateOf<Message?>(null) }
+    var forwardMsgs by remember { mutableStateOf<List<Message>>(emptyList()) }
     var showSettings by remember { mutableStateOf(false) }
     var profileMention by remember { mutableStateOf<MentionMember?>(null) }
     val mentionMembers = remember(channel) {
@@ -250,6 +260,22 @@ fun ChatScreen(
     fun nameOf(id: String) = if (id == me) app.preferencesManager.username ?: "You" else names[id] ?: "Unknown"
     val isDm = channel?.isDirectMessage == true
     val title = channel?.displayName(me) ?: channelName
+    // Voice notes and audio files in this chat become the player's playlist (oldest first), so the bar can list them and
+    // the next one starts when one ends.
+    val playlist = remember(messages.size, keyVersion, names) {
+        messages.sortedBy { it.sentAt }.mapNotNull { m ->
+            val meta = m.fileMeta() ?: return@mapNotNull null
+            val isVoice = m.type == "voice"
+            if (!isVoice && !isInlineAudio(meta.mime)) return@mapNotNull null
+            VoiceTrack(m.channelId, meta, playlistLabel(isVoice, meta.name, nameOf(m.senderId)))
+        }
+    }
+    LaunchedEffect(playlist) { VoicePlayerController.setQueue(channelId, playlist) }
+
+    // The ticked messages in reading order; ids of messages that have since been deleted drop out.
+    val selectedMessages = remember(selectedIds, messages) { messages.filter { it.id in selectedIds }.sortedBy { it.sentAt } }
+    androidx.activity.compose.BackHandler(enabled = selecting) { selectedIds = emptySet() }
+
     val myRole = channel?.memberRoles?.get(me) ?: channel?.userRole ?: 0
 
     val shown = remember(messages, search, keyVersion) {
@@ -285,7 +311,8 @@ fun ChatScreen(
         }
     }
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { upload(it, true) }
-    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
+    // OpenDocument takes several MIME filters, so Ogg audio reported as application/ogg shows up too.
+    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { upload(it, false) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { upload(it, false) }
 
     val recorder = remember { VoiceRecorder(context) }
@@ -368,7 +395,20 @@ fun ChatScreen(
     ) {
         // Top bar: the card colour also fills the status-bar inset so it blends into the system bar.
         Column(Modifier.fillMaxWidth().background(c.chatCanvas).statusBarsPadding()) {
-            Row(
+            if (selecting) SelectionBar(
+                count = selectedIds.size, actions = selectionActions(selectedMessages.map { SelectedMessage(it.senderId, it.type) }, isAdmin = myRole >= 10), me = me,
+                onClose = { selectedIds = emptySet() },
+                onReply = { replyTo = selectedMessages.first(); editing = null; selectedIds = emptySet() },
+                onCopy = {
+                    (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                        .setPrimaryClip(android.content.ClipData.newPlainText("message", selectedMessages.joinToString("\n") { bodyOf(it) }))
+                    selectedIds = emptySet()
+                    toast("Copied")
+                },
+                onForward = { forwardMsgs = selectedMessages; selectedIds = emptySet() },
+                onEdit = { val target = selectedMessages.first(); editing = target; replyTo = null; input = bodyOf(target); selectedIds = emptySet() },
+                onDelete = { confirmDelete = true }
+            ) else Row(
                 Modifier.fillMaxWidth().height(56.dp).padding(end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -389,21 +429,8 @@ fun ChatScreen(
                 }
                 }
                 CoveIconButton(Icons.Outlined.Search, "Search", { searching = !searching; if (!searching) search = "" }, iconSize = 21.dp)
-                if (!isDm) {
-                    CoveIconButton(Icons.Outlined.Groups, "Show Members", { showMembers = true }, iconSize = 21.dp)
-                    // Only admins can change settings; everyone else gets the read-only channel info.
-                    CoveIconButton(
-                        if (myRole >= 10) Icons.Outlined.Tune else Icons.Outlined.Info,
-                        if (myRole >= 10) "Channel Settings" else "Channel info", { showSettings = true }, iconSize = 21.dp
-                    )
-                }
-                // The Cove system account cannot be whispered or called.
-                if (channel?.isSystemChat != true) {
-                    if (isDm) channel?.members?.firstOrNull { it != me }?.let { peer ->
-                        CoveIconButton(Icons.Outlined.Lock, "Start Whisper", { onStartWhisper(peer, title) }, iconSize = 21.dp)
-                    }
-                    CoveIconButton(Icons.Outlined.Phone, "Start Voice Call", { onStartCall(false) }, iconSize = 21.dp)
-                }
+                // Members, settings and calling live in the profile (tap the header), so the bar is just search and a
+                // stray tap cannot start a call.
             }
             SectionDivider()
         }
@@ -437,34 +464,21 @@ fun ChatScreen(
                         author = nameOf(m.senderId),
                         avatarId = channel?.memberAvatars?.get(m.senderId),
                         showHeader = !sameBlock,
-                        selected = selectedId == m.id,
+                        selected = m.id in selectedIds,
+                        selecting = selecting,
                         highlighted = highlightId == m.id,
                         quoted = m.replyToId?.let { rid -> messages.firstOrNull { it.id == rid } },
                         quotedAuthor = m.replyToId?.let { rid -> messages.firstOrNull { it.id == rid }?.let { nameOf(it.senderId) } },
-                        canEdit = m.senderId == me && m.type == "text",
-                        canDelete = m.senderId == me || myRole >= 10,
                         keyVersion = keyVersion,
                         onQuoteClick = { m.replyToId?.let { jumpTo(it) } },
                         onOpenChat = onOpenChat,
                         onInvite = { inviteDialog = it },
                         onMention = { u -> mentionMembers.firstOrNull { it.username.equals(u, ignoreCase = true) }?.let { profileMention = it } },
-                        onToggle = { selectedId = if (selectedId == m.id) null else m.id },
-                        onReply = { replyTo = m; editing = null; selectedId = null },
-                        onForward = {
-                            selectedId = null
-                            if (m.type == "text") forwardMsg = m else toast("Only text messages can be forwarded.")
-                        },
-                        onCopy = {
-                            selectedId = null
-                            (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
-                                .setPrimaryClip(android.content.ClipData.newPlainText("message", bodyOf(m)))
-                            toast("Copied")
-                        },
-                        onEdit = { editing = m; replyTo = null; input = bodyOf(m); selectedId = null },
-                        onDelete = {
-                            selectedId = null
-                            scope.launch { if (!ws.deleteMessage(channelId, m.id)) toast("Couldn't delete the message.") }
-                        }
+                        // A tap only matters once selecting; starting a selection is a long press, like Telegram.
+                        onTap = { if (selecting) selectedIds = toggleSelected(selectedIds, m.id) },
+                        onLongPress = { selectedIds = toggleSelected(selectedIds, m.id) },
+                        onReply = { replyTo = m; editing = null; selectedIds = emptySet() },
+                        onForward = { if (isForwardable(m.type)) forwardMsgs = listOf(m) else toast("This message cannot be forwarded.") }
                     )
                 }
             }
@@ -517,7 +531,7 @@ fun ChatScreen(
             elapsedSeconds = elapsed,
             onSend = { send() },
             onPickMedia = { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) },
-            onPickAudio = { pickAudio.launch("audio/*") },
+            onPickAudio = { pickAudio.launch(arrayOf("audio/*", "application/ogg")) },
             onPickFile = { pickFile.launch("*/*") },
             onStartRecording = {
                 if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -541,24 +555,56 @@ fun ChatScreen(
             MemberProfileDialog(
                 userId = peer, username = title, avatarId = channel?.memberAvatars?.get(peer),
                 onDismiss = { showProfile = false },
-                onOpenChat = { id, name -> showProfile = false; if (id != channelId) onOpenChat(id, name) }
+                onOpenChat = { id, name -> showProfile = false; if (id != channelId) onOpenChat(id, name) },
+                onCall = { id, name, video -> showProfile = false; onCallIn(id, name, video) },
+                onStartWhisper = { id, name -> showProfile = false; onStartWhisper(id, name) },
+                canContact = channel?.isSystemChat != true
             )
         } else channel?.let { ch ->
-            ChannelProfileDialog(ch, me, onDismiss = { showProfile = false }, onMembers = { showProfile = false; showMembers = true }, onSettings = { showProfile = false; showSettings = true })
+            ChannelProfileDialog(
+                ch, me, onDismiss = { showProfile = false },
+                onMembers = { showProfile = false; showMembers = true },
+                onSettings = { showProfile = false; showSettings = true },
+                onCall = if (ch.isSystemChat) null else ({ showProfile = false; onStartCall(false) })
+            )
         }
     }
-    forwardMsg?.let { fm ->
-        ForwardDialog(channelId, onDismiss = { forwardMsg = null }, onPick = { target ->
-            forwardMsg = null
-            scope.launch { if (ws.sendChatMessage(target, bodyOf(fm))) toast("Forwarded") else toast("Couldn't forward the message.") }
+    if (forwardMsgs.isNotEmpty()) {
+        ForwardDialog(channelId, onDismiss = { forwardMsgs = emptyList() }, onPick = { target ->
+            val batch = forwardMsgs
+            forwardMsgs = emptyList()
+            scope.launch {
+                // One by one in reading order, so the copies arrive in the same order they were written.
+                val ok = batch.all { forwardMessage(it, target) }
+                toast(if (ok) (if (batch.size == 1) "Forwarded" else "Forwarded ${batch.size} messages") else "Couldn't forward the messages.")
+            }
         })
+    }
+
+    if (confirmDelete) {
+        val count = selectedMessages.size
+        com.cove.chat.ui.components.CoveConfirmDialog(
+            title = if (count == 1) "Delete message?" else "Delete $count messages?",
+            message = "This removes ${if (count == 1) "it" else "them"} for everyone in the chat.",
+            confirmLabel = "Delete",
+            destructive = true,
+            onConfirm = {
+                confirmDelete = false
+                val ids = selectedMessages.map { it.id }
+                selectedIds = emptySet()
+                scope.launch { if (!ids.all { ws.deleteMessage(channelId, it) }) toast("Couldn't delete every message.") }
+            },
+            onDismiss = { confirmDelete = false }
+        )
     }
 
     profileMention?.let { m ->
         MemberProfileDialog(
             userId = m.id, username = m.username, avatarId = m.avatarId,
             onDismiss = { profileMention = null },
-            onOpenChat = { id, name -> profileMention = null; if (id != channelId) onOpenChat(id, name) }
+            onOpenChat = { id, name -> profileMention = null; if (id != channelId) onOpenChat(id, name) },
+            onCall = { id, name, video -> profileMention = null; onCallIn(id, name, video) },
+            onStartWhisper = { id, name -> profileMention = null; onStartWhisper(id, name) }
         )
     }
 
@@ -600,7 +646,7 @@ fun ChatScreen(
 
 /** "Today" pill between two hairlines. */
 @Composable
-private fun DaySeparator(label: String) {
+internal fun DaySeparator(label: String) {
     val c = CoveTheme.extendedColors
     // Web: a 1px border-border/50 rule with a bg-background pill (border-border/50) centred on it.
     val hairline = c.border.copy(alpha = 0.5f)
@@ -667,22 +713,19 @@ private fun MessageRow(
     avatarId: String?,
     showHeader: Boolean,
     selected: Boolean,
+    selecting: Boolean,
     highlighted: Boolean,
     quoted: Message?,
     quotedAuthor: String?,
-    canEdit: Boolean,
-    canDelete: Boolean,
     keyVersion: Int,
     onQuoteClick: () -> Unit,
     onOpenChat: (channelId: String, name: String) -> Unit,
     onInvite: (code: String) -> Unit,
     onMention: (username: String) -> Unit,
-    onToggle: () -> Unit,
+    onTap: () -> Unit,
+    onLongPress: () -> Unit,
     onReply: () -> Unit,
-    onForward: () -> Unit,
-    onCopy: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onForward: () -> Unit
 ) {
     val c = CoveTheme.extendedColors
     // keyVersion forces a re-decrypt once the channel key has arrived over the socket.
@@ -738,12 +781,13 @@ private fun MessageRow(
                 }
             }
             .background(if (selected) c.accent.copy(alpha = 0.35f) else flash)
-            // Long-press is reserved for copying the text (MessageText); tapping still toggles the action bar.
-            .clickable(onClick = onToggle)
+            .combinedClickable(onClick = onTap, onLongClick = onLongPress)
             .padding(horizontal = 16.dp, vertical = if (showHeader) 6.dp else 1.dp)
     ) {
         Row(Modifier.fillMaxWidth()) {
-            Box(Modifier.width(42.dp)) { if (showHeader) UserAvatar(m.senderId, size = 32.dp, avatarId = avatarId) }
+            Box(Modifier.width(42.dp)) {
+                if (selecting) SelectCheck(selected, Modifier.padding(top = 2.dp)) else if (showHeader) UserAvatar(m.senderId, size = 32.dp, avatarId = avatarId)
+            }
             Column(Modifier.weight(1f)) {
                 if (showHeader) {
                     Row(verticalAlignment = Alignment.Bottom) {
@@ -777,12 +821,22 @@ private fun MessageRow(
                     when (m.type) {
                         "voice" -> VoiceBubble(m.channelId, fileMeta, keyVersion, author)
                         "video" -> VideoBubble(m.channelId, fileMeta, keyVersion)
-                        else -> if (fileMeta.mime.startsWith("video/")) VideoBubble(m.channelId, fileMeta, keyVersion) else FileBubble(m.channelId, fileMeta, keyVersion)
+                        else -> when {
+                            fileMeta.mime.startsWith("video/") -> VideoBubble(m.channelId, fileMeta, keyVersion)
+                            // Music and other audio files play inline like voice notes; "send as file" keeps the card.
+                            isInlineAudio(fileMeta.mime) && fileMeta.asDocument != true -> VoiceBubble(m.channelId, fileMeta, keyVersion, fileMeta.name)
+                            else -> FileBubble(m.channelId, fileMeta, keyVersion)
+                        }
                     }
+                } else if (m.type == "invite") {
+                    // An invitation is a card with a Join button, never text or a link.
+                    val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
+                    if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
+                    else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
                         text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f, fill = false), onMention = onMention, onInvite = onInvite
+                        modifier = Modifier.weight(1f, fill = false), onMention = onMention, onInvite = onInvite, onLongPress = onLongPress
                     )
                     if (m.editedAt != null) {
                         Spacer(Modifier.width(6.dp))
@@ -793,23 +847,53 @@ private fun MessageRow(
                 if (fileMeta == null) InviteLinks.code(text)?.let { InviteCard(it, onOpenChat, Modifier.padding(top = 6.dp)) }
             }
         }
-        if (selected) {
-            Row(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(y = (-14).dp)
-                    .clip(CoveShapes.md)
-                    .border(1.dp, c.border, CoveShapes.md)
-                    .background(c.card)
-            ) {
-                CoveIconButton(Icons.AutoMirrored.Outlined.Reply, "Reply", onReply, size = 40.dp, iconSize = 18.dp)
-                CoveIconButton(Icons.AutoMirrored.Outlined.Forward, "Forward", onForward, size = 40.dp, iconSize = 18.dp)
-                if (m.type == "text") CoveIconButton(Icons.Outlined.ContentCopy, "Copy", onCopy, size = 40.dp, iconSize = 18.dp)
-                if (canEdit) CoveIconButton(Icons.Outlined.Edit, "Edit", onEdit, size = 40.dp, iconSize = 18.dp)
-                if (canDelete) CoveIconButton(Icons.Outlined.Delete, "Delete", onDelete, size = 40.dp, iconSize = 18.dp)
-            }
-        }
     }
     }
 }
 
+/** The round tick shown at the start of every row while selecting: filled with a check once the message is picked. */
+@Composable
+private fun SelectCheck(selected: Boolean, modifier: Modifier = Modifier) {
+    val primary = MaterialTheme.colorScheme.primary
+    val c = CoveTheme.extendedColors
+    Box(
+        modifier.size(24.dp).clip(CircleShape)
+            .background(if (selected) primary else Color.Transparent)
+            .border(2.dp, if (selected) primary else c.textMuted, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        if (selected) Icon(Icons.Outlined.Check, "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+    }
+}
+
+/**
+ * Replaces the chat header while messages are selected (Telegram style): close, the count, then only the actions
+ * that fit the selection (see [selectionActions]): reply and edit for one message, copy and forward for text, delete
+ * only when every selected message may be deleted.
+ */
+@Composable
+private fun SelectionBar(
+    count: Int,
+    actions: SelectionActions,
+    me: String,
+    onClose: () -> Unit,
+    onReply: () -> Unit,
+    onCopy: () -> Unit,
+    onForward: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val c = CoveTheme.extendedColors
+    Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        CoveIconButton(Icons.Outlined.Close, "Cancel selection", onClose, size = 48.dp, iconSize = 24.dp)
+        Text(
+            if (count == 1) "1 selected" else "$count selected", color = c.textPrimary, fontSize = CoveType.body.fontSize,
+            fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 4.dp)
+        )
+        if (actions.canReply) CoveIconButton(Icons.AutoMirrored.Outlined.Reply, "Reply", onReply, iconSize = 21.dp)
+        if (actions.canEdit(me)) CoveIconButton(Icons.Outlined.Edit, "Edit", onEdit, iconSize = 21.dp)
+        if (actions.canCopy) CoveIconButton(Icons.Outlined.ContentCopy, "Copy", onCopy, iconSize = 21.dp)
+        if (actions.canForward) CoveIconButton(Icons.AutoMirrored.Outlined.Forward, "Forward", onForward, iconSize = 21.dp)
+        if (actions.canDelete(me)) CoveIconButton(Icons.Outlined.Delete, "Delete", onDelete, iconSize = 21.dp, tint = MaterialTheme.colorScheme.error)
+    }
+}

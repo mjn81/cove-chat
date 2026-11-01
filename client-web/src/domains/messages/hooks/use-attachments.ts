@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { encryptAndUploadFile } from '@/domains/files/utils/upload-encrypted-file';
@@ -6,8 +6,12 @@ import { useAppStore } from '@/store/store';
 import { playNotificationSound } from '@/utils/notifications';
 import { logger } from '@/utils/logger';
 import { wsSendMessage } from '@/ws';
+import { useComposerDrafts } from '../store/composer-drafts.store';
 
 export type AttachmentStatus = 'idle' | 'encrypting' | 'uploading' | 'done' | 'failed';
+
+/** Stable empty queue, so the store selector does not return a new array on every render. */
+const NO_FILES: QueuedAttachment[] = [];
 
 /** A file waiting in the composer, with its upload progress. */
 export interface QueuedAttachment {
@@ -25,15 +29,25 @@ export interface QueuedAttachment {
  * The composer's attachment queue: add/remove files, send them one by one
  * (each fails independently so one bad upload does not swallow the batch),
  * and keep failed ones around for retry.
+ *
+ * The queue is kept per chat in `useComposerDrafts`, not in component state, so it survives the composer being
+ * remounted when the layout switches between phone and desktop.
+ *
+ * @param channelId - The chat the composer belongs to.
  */
-export function useAttachments() {
+export function useAttachments(channelId: string) {
 	const { t } = useTranslation();
-	const [files, setFiles] = useState<QueuedAttachment[]>([]);
+	const files = useComposerDrafts((s) => s.drafts[channelId]?.files ?? NO_FILES);
+	const setDraftFiles = useComposerDrafts((s) => s.setFiles);
+	const setFiles = useCallback(
+		(update: (prev: QueuedAttachment[]) => QueuedAttachment[]) => setDraftFiles(channelId, update),
+		[channelId, setDraftFiles],
+	);
 
 	const update = useCallback(
 		(id: string, status: AttachmentStatus, progress = 0, error?: string) =>
 			setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, status, progress, error } : f))),
-		[],
+		[setFiles],
 	);
 
 	const add = useCallback((newFiles: File[], asDocument = false) => {
@@ -47,9 +61,9 @@ export function useAttachments() {
 				asDocument,
 			})),
 		]);
-	}, []);
+	}, [setFiles]);
 
-	const remove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), []);
+	const remove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), [setFiles]);
 
 	/** Resets a failed file so the next send picks it up again. */
 	const reset = useCallback((id: string) => update(id, 'idle', 0, undefined), [update]);
@@ -90,7 +104,7 @@ export function useAttachments() {
 			// Drop successfully-sent files, keep failed ones visible for retry.
 			setFiles((prev) => prev.filter((f) => f.status === 'failed'));
 		},
-		[files, update, t],
+		[files, update, setFiles, t],
 	);
 
 	return { files, add, remove, reset, sendAll };

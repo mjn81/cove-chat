@@ -90,6 +90,46 @@ phases:
         area: security
         title: "Hardened sessions"
         note: "httpOnly cookies, CSRF tokens, Argon2id, rate limits."
+      - id: selection-mode
+        area: chat
+        title: "Multi-select message actions"
+        note: "Select several messages and act on them at once, Telegram-style."
+      - id: chat-backgrounds
+        area: chat
+        title: "More chat backgrounds"
+        note: "A wider set of SVG pattern wallpapers."
+      - id: audio-playback
+        area: files
+        title: "Inline audio player"
+        note: "Uploaded audio plays in the chat, the same way images show."
+      - id: notif-icon
+        area: clients
+        title: "Custom notification icon"
+        note: "Cove's own glyph in system notifications."
+      - id: invite-cards
+        area: chat
+        title: "Invite cards"
+        note: "Share a channel as a card with a Join button, no raw links."
+      - id: profile-photos
+        area: clients
+        title: "Profile photo gallery"
+        note: "Up to five photos, a Telegram-style cropper and a full-screen viewer."
+      - id: audio-playlist
+        area: files
+        title: "Audio playlist"
+        note: "Switch between a chat's voice notes and audio files; the next one plays by itself."
+      - id: forward-all
+        area: chat
+        title: "Forward any message"
+        note: "Voice notes, files, video messages and invites, several at a time."
+      - id: alerts
+        area: clients
+        title: "Whisper and call alerts"
+        note: "Native notifications and their own sounds for Whisper requests and incoming calls."
+      - id: android-trust
+        area: clients
+        title: "Trusted Android builds"
+        note: "Signing fixes so installs verify cleanly."
 
   - id: now
     title: In progress
@@ -120,7 +160,7 @@ phases:
 
   - id: next
     title: Next
-    subtitle: Privacy and media
+    subtitle: Polish, privacy and media
     status: planned
     items:
       - id: security-tab
@@ -165,17 +205,61 @@ phases:
         area: platform
         title: "S3-compatible storage"
         note: "AWS, MinIO or DigitalOcean for large files."
-      - id: update-checks
+      - id: api-contract
         area: platform
-        title: "Update checks and opt-in telemetry"
-        note: "Privacy-conscious version checks."
+        title: "Versioned API and compatibility checks"
+        note: "A standard API format and a clean way to handle client and server version mismatches."
+      - id: auto-update
+        area: platform
+        title: "Automatic updates"
+        note: "Desktop apps update themselves; server admins update with one button."
+      - id: themes
+        area: platform
+        title: "Themes and custom colors"
+        note: "Multiple palettes, custom themes, and a page to upload and download them."
+      - id: bot-api
+        area: platform
+        title: "Bot API"
+        note: "Build bots and integrations against a stable interface."
+      - id: emoji
+        area: chat
+        title: "Native and custom emoji"
+        note: "Native emoji, admin-curated sets and uploaded custom emoji."
+      - id: rich-markdown
+        area: chat
+        title: "Advanced markdown"
+        note: "Telegram-style formatting."
+      - id: udp-media
+        area: calls
+        title: "UDP video and screen sharing"
+        note: "A UDP router for video and screen share."
+      - id: secure-udp
+        area: calls
+        title: "Encrypted UDP for closed networks"
+        note: "Encryption for the air-gapped voice and media path."
+      - id: in-app-calls
+        area: calls
+        title: "In-app and server-wide calls"
+        note: "Start calls inside Cove instead of sharing group links."
+      - id: email-notif
+        area: ops
+        title: "Email notifications"
+        note: "Optional email alerts configured by the server admin."
 
   - id: future
     title: Future
-    subtitle: Federation
+    subtitle: Relays, federation and redesign
     status: planned
     items:
       - id: federation
         area: platform
         title: "Server-to-server federation"
         note: "Independent Cove servers that trust each other and route messages."
+      - id: relay-mode
+        area: platform
+        title: "Relay server mode"
+        note: "Lightweight relay servers that bridge networks."
+      - id: ui-redesign
+        area: chat
+        title: "UI redesign"
+        note: "A refreshed interface across all clients."

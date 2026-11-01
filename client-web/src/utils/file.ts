@@ -1,4 +1,5 @@
 import { init, compress, decompress } from '@bokuweb/zstd-wasm';
+import { resolveMime } from '@/domains/files/utils/audio-mime';
 
 let isZstdReady = false;
 
@@ -260,7 +261,8 @@ export async function encryptAndCompressFile(
 				reader.onerror = reject;
 				reader.readAsArrayBuffer(effectiveFile);
 			});
-	const isAudio = effectiveFile.type.startsWith('audio/');
+	const mimeType = resolveMime(effectiveFile.type, effectiveFile.name);
+	const isAudio = mimeType.startsWith('audio/');
 	
 	// Skip ZSTD compression for audio files as they are already compressed (Opus/WebM)
 	// and additional compression can sometimes cause issues with media headers.
@@ -286,7 +288,7 @@ export async function encryptAndCompressFile(
 	const result: any = {
 		ciphertext: new Uint8Array(ciphertextBuffer),
 		nonce: nonce,
-		mimeType: effectiveFile.type,
+		mimeType,
 		fileName: effectiveFile.name,
 		originalSize: effectiveFile.size,
 		rawBytes: new Uint8Array(arrayBuffer),

@@ -67,7 +67,7 @@ fun ForwardDialog(currentChannelId: String, onDismiss: () -> Unit, onPick: (chan
 
 /** Read-only group profile (what the web header opens): avatar, name, description, privacy and members. */
 @Composable
-fun ChannelProfileDialog(channel: Channel, me: String, onDismiss: () -> Unit, onMembers: () -> Unit, onSettings: () -> Unit) {
+fun ChannelProfileDialog(channel: Channel, me: String, onDismiss: () -> Unit, onMembers: () -> Unit, onSettings: () -> Unit, onCall: (() -> Unit)? = null) {
     val c = CoveTheme.extendedColors
     CoveDialog(onDismiss, title = "Group profile") {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -90,6 +90,7 @@ fun ChannelProfileDialog(channel: Channel, me: String, onDismiss: () -> Unit, on
                 CoveButton("Members", onMembers, Modifier.weight(1f), variant = ButtonVariant.Secondary, size = ButtonSize.Md)
                 CoveButton("Settings", onSettings, Modifier.weight(1f), variant = ButtonVariant.Outline, size = ButtonSize.Md)
             }
+            if (onCall != null) CoveButton("Voice call", onCall, Modifier.fillMaxWidth(), size = ButtonSize.Md)
         }
     }
 }

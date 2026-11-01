@@ -71,6 +71,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.cove.chat.CoveApp
 import com.cove.chat.data.model.Channel
+import com.cove.chat.data.model.CreateChannelRequest
+import com.cove.chat.data.model.UserSummary
 import com.cove.chat.data.model.ExploreChannel
 import com.cove.chat.ui.components.InitialsAvatar
 import com.cove.chat.ui.components.SectionDivider
@@ -80,12 +82,13 @@ import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private enum class SearchFilter { All, Dms, Channels, Explore }
+internal enum class SearchFilter { All, Dms, Channels, Explore }
 
 /**
  * Conversation search + public channel explorer, the mobile layout of client-web `ConversationSearchDialog`
  * (design-reference/21..23): search box, All / Direct Messages / Channels / Explore Public filters with counts, and
- * grouped results (Direct Messages, Channels, Public Channels with a Join button).
+ * grouped results (Direct Messages, People you can start a chat with, Channels, Public Channels with a Join button).
+ * Starting a direct message happens here; the "+" button only creates channels.
  */
 @Composable
 fun ConversationSearchDialog(
@@ -94,7 +97,7 @@ fun ConversationSearchDialog(
     onDismiss: () -> Unit,
     onOpenChannel: (Channel) -> Unit,
     onJoined: (channelId: String) -> Unit,
-    onCreateNew: (dmTab: Boolean) -> Unit
+    onCreateNew: () -> Unit
 ) {
     val c = CoveTheme.extendedColors
     val api = CoveApp.instance.apiClient
@@ -107,6 +110,9 @@ fun ConversationSearchDialog(
     var explore by remember { mutableStateOf<List<ExploreChannel>>(emptyList()) }
     var exploring by remember { mutableStateOf(false) }
     var joining by remember { mutableStateOf<String?>(null) }
+    var found by remember { mutableStateOf<List<UserSummary>>(emptyList()) }
+    var startingDm by remember { mutableStateOf<String?>(null) }
+    var dmError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { focus.requestFocus() }
     LaunchedEffect(query) { delay(300); debounced = query.trim() }
@@ -115,6 +121,11 @@ fun ConversationSearchDialog(
         exploring = true
         api.exploreChannels(debounced).onSuccess { explore = it }
         exploring = false
+    }
+    // People matching the query, for starting a new direct message.
+    LaunchedEffect(debounced) {
+        if (debounced.isBlank()) { found = emptyList(); return@LaunchedEffect }
+        api.searchUsers(debounced).onSuccess { found = it }
     }
 
     val q = query.trim().lowercase()
@@ -131,7 +142,23 @@ fun ConversationSearchDialog(
     val showExplore = (filter == SearchFilter.All && q.isNotEmpty() || filter == SearchFilter.Explore) && (publicExplore.isNotEmpty() || exploring)
     val showDms = (filter == SearchFilter.All || filter == SearchFilter.Dms) && dms.isNotEmpty()
     val showGroups = (filter == SearchFilter.All || filter == SearchFilter.Channels) && groups.isNotEmpty()
-    val empty = !showDms && !showGroups && publicExplore.let { !(showExplore && it.isNotEmpty()) }
+    val dmPeers = channels.filter { it.isDirectMessage }.flatMap { it.members }.toSet()
+    val people = if (showsPeople(filter, q)) peopleToStart(found, me.orEmpty(), dmPeers) else emptyList()
+    val showPeople = people.isNotEmpty()
+    val empty = !showDms && !showPeople && !showGroups && publicExplore.let { !(showExplore && it.isNotEmpty()) }
+
+    fun startDm(user: UserSummary) {
+        if (startingDm != null) return
+        startingDm = user.id
+        dmError = null
+        scope.launch {
+            // The backend returns the existing DM when there is one, so this also reopens a chat.
+            api.createChannel(CreateChannelRequest(name = "", members = listOf(me.orEmpty(), user.id), isPrivate = true)).fold(
+                onSuccess = { onOpenChannel(it) },
+                onFailure = { dmError = it.message; startingDm = null }
+            )
+        }
+    }
 
     fun join(ch: ExploreChannel) {
         if (joining != null) return
@@ -182,8 +209,7 @@ fun ConversationSearchDialog(
                 title = "No conversations found",
                 message = if (query.trim().isNotEmpty()) "No matches found for \"${query.trim()}\". Try another query or explore public channels." else "You have no conversations in this category yet.",
                 actions = {
-                    CoveButton("New DM", { onCreateNew(true) }, variant = ButtonVariant.Secondary, size = ButtonSize.Sm)
-                    CoveButton("New Channel", { onCreateNew(false) }, size = ButtonSize.Sm)
+                    CoveButton("New Channel", onCreateNew, size = ButtonSize.Sm)
                 }
             )
         } else {
@@ -206,6 +232,22 @@ fun ConversationSearchDialog(
                             trailing = if (ch.unreadCount > 0) ({ CoveBadge(ch.unreadCount) }) else null
                         )
                     }
+                }
+                if (showPeople) {
+                    item { SectionHeader("Start a conversation") }
+                    items(people, key = { "user-" + it.id }) { u ->
+                        CoveListRow(
+                            title = u.username, subtitle = u.status.replaceFirstChar { it.uppercase() },
+                            compact = true, onClick = { startDm(u) },
+                            contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
+                            leading = { UserAvatar(u.id, size = 36.dp, avatarId = u.avatarId) },
+                            trailing = {
+                                if (startingDm == u.id) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                                else Text("Message", color = c.textMuted, fontSize = CoveType.caption.fontSize)
+                            }
+                        )
+                    }
+                    dmError?.let { err -> item { Text(err, color = MaterialTheme.colorScheme.error, fontSize = CoveType.caption.fontSize, modifier = Modifier.padding(Spacing.md)) } }
                 }
                 if (showGroups) {
                     item { SectionHeader("Channels") }

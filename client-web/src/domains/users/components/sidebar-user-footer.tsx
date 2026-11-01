@@ -11,6 +11,8 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { BOTTOM_BAR_HEIGHT_CLASS } from '@/lib/layout';
+import { cn } from '@/lib/utils';
 import type { AuthUser } from '@/types/api';
 import { normalizeStatus } from '../utils/status';
 import { StatusDot } from './status-dot';
@@ -134,7 +136,7 @@ export const SidebarUserFooter = ({
 	}
 
 	return (
-		<div className="relative z-10 flex h-[52px] shrink-0 items-center gap-2 border-t border-border/50 bg-secondary px-2">
+		<div className={cn('relative z-10 flex shrink-0 items-center gap-2 border-t border-border/50 bg-secondary px-2', BOTTOM_BAR_HEIGHT_CLASS)}>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<div className="flex h-10 min-w-0 flex-1 cursor-pointer select-none items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent">

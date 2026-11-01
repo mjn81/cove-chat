@@ -21,8 +21,8 @@ import { KeyCap, SearchRow, SearchSectionTitle, UnreadBadge } from './search-row
 interface ConversationSearchDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	/** Offers "New DM" / "New channel" buttons when nothing matches. */
-	onCreateNew?: (tab: 'dm' | 'channel') => void;
+	/** Offers a "New channel" button when nothing matches (DMs are started from the results). */
+	onCreateNew?: () => void;
 }
 
 /**
@@ -64,23 +64,24 @@ const SearchPanel = ({
 	onCreateNew,
 }: {
 	onClose: () => void;
-	onCreateNew?: (tab: 'dm' | 'channel') => void;
+	onCreateNew?: () => void;
 }) => {
 	const { t } = useTranslation();
 	const user = useAuthStore((s) => s.user);
 	const relationships = useAuthStore((s) => s.relationships);
 	const s = useConversationSearch(onClose);
-	const { dms, groupChannels, publicChannels, items } = s.sections;
+	const { dms, groupChannels, publicChannels, people, items } = s.sections;
 
 	// Position of each row in the flattened list, so keyboard selection matches what is on screen.
 	const indexOf = (type: 'channel' | 'explore', id: string) =>
 		items.findIndex((it) => it.type === type && it.channel.id === id);
+	const indexOfUser = (id: string) => items.findIndex((it) => it.type === 'user' && it.user.id === id);
 
 	const counts: Record<SearchFilter, number | null> = { ...s.counts, explore: null };
 
-	const newEntry = (tab: 'dm' | 'channel') => {
+	const newEntry = () => {
 		onClose();
-		onCreateNew?.(tab);
+		onCreateNew?.();
 	};
 
 	const shortcut = isMac() ? '⌘K' : 'Ctrl+K';
@@ -140,11 +141,7 @@ const SearchPanel = ({
 						action={
 							onCreateNew && (
 								<div className="flex items-center gap-2">
-									<Button type="button" variant="secondary" size="sm" onClick={() => newEntry('dm')} className="gap-1.5">
-										<User className="h-3.5 w-3.5" />
-										{t('search.new_dm')}
-									</Button>
-									<Button type="button" size="sm" onClick={() => newEntry('channel')} className="gap-1.5">
+									<Button type="button" size="sm" onClick={newEntry} className="gap-1.5">
 										<Plus className="h-3.5 w-3.5" />
 										{t('search.new_channel')}
 									</Button>
@@ -188,6 +185,35 @@ const SearchPanel = ({
 											}
 											subtitle={t(`status.${normalizeStatus(status)}`)}
 											trailing={(ch.unread_count ?? 0) > 0 && <UnreadBadge count={ch.unread_count ?? 0} />}
+										/>
+									);
+								})}
+							</Section>
+						)}
+
+						{people.length > 0 && (
+							<Section
+								title={t('search.section_people')}
+								aside={s.isSearchingUsers && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+							>
+								{people.map((u) => {
+									const index = indexOfUser(u.id);
+									return (
+										<SearchRow
+											key={u.id}
+											selected={s.selectedIndex === index}
+											onClick={() => s.startDm(u)}
+											onHover={() => s.setSelectedIndex(index)}
+											leading={<Avatar userId={u.id} avatarId={u.avatar_id} size={36} />}
+											title={u.username}
+											subtitle={t(`status.${normalizeStatus(u.status)}`)}
+											trailing={
+												s.startingDmId === u.id ? (
+													<Loader2 className="h-4 w-4 animate-spin text-primary" />
+												) : (
+													<span className="text-xs text-muted-foreground">{t('search.message_user')}</span>
+												)
+											}
 										/>
 									);
 								})}

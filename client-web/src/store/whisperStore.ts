@@ -25,6 +25,8 @@ import {
 	wsSendWhisperClose,
 } from '@/ws';
 import { useAuthStore } from './auth.slice';
+import { playNotificationSound, showBrowserNotification } from '@/utils/notifications';
+import i18n from '@/i18n';
 import { useChannelStore } from './channels.slice';
 
 export interface WhisperMessageFile {
@@ -744,14 +746,22 @@ export function initWhisperListeners() {
 		const currentUser = useAuthStore.getState().user;
 		if (!currentUser || raw.initiator_id === currentUser.id) return;
 
+		const initiatorUsername = raw.initiator_username || 'Friend';
 		useWhisperStore.setState({
 			incomingInvite: {
 				sessionId: raw.session_id,
 				initiatorId: raw.initiator_id,
-				initiatorUsername: raw.initiator_username || 'Friend',
+				initiatorUsername,
 				pubKey: raw.pub_key,
 				expiryMode: raw.expiry_mode || 'persistent',
 			},
+		});
+
+		// Besides the on-screen card: a sound, and a native notification for when the app is in the background.
+		// The text names the sender only, never anything about the conversation (a Whisper keeps nothing).
+		playNotificationSound('whisper');
+		showBrowserNotification(i18n.t('chat.notify_whisper_title'), i18n.t('chat.notify_whisper_body', { name: initiatorUsername }), {
+			tag: `cove-whisper-${raw.session_id}`,
 		});
 	});
 

@@ -102,7 +102,7 @@ definitions:
       type:
         allOf:
         - $ref: '#/definitions/cove_backend_internal_models.MessageType'
-        description: '"text" | "file" | "voice" | "video"'
+        description: '"text" | "file" | "voice" | "video" | "invite"'
     type: object
   cove_backend_internal_models.MessageType:
     enum:
@@ -110,12 +110,14 @@ definitions:
     - file
     - voice
     - video
+    - invite
     type: string
     x-enum-varnames:
     - MessageTypeText
     - MessageTypeFile
     - MessageTypeVoice
     - MessageTypeVideo
+    - MessageTypeInvite
   cove_backend_internal_models.Presence:
     properties:
       current_status:

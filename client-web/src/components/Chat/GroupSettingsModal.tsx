@@ -30,6 +30,7 @@ import { Avatar, ChannelInitialsAvatar } from '../Avatar';
 import { ConfirmModal } from '../ConfirmModal';
 import { ImageEditor } from '../ImageEditor';
 import { FriendPickerModal } from '../FriendPickerModal';
+import { currentInviteUrl } from '@/domains/channels/utils/invite-link';
 import { type Channel, type User } from '@/types/api';
 import {
 	apiUpdateChannel,
@@ -206,8 +207,6 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 		}
 	};
 
-	const fullInviteLink = `${window.location.origin}/join/${inviteLink}`;
-
 	const handleRegenerate = async () => {
 		try {
 			const updated = await regenerateInvite.mutateAsync(channel.id);
@@ -222,7 +221,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 
 	const copyLink = () => {
 		if (inviteLink) {
-			navigator.clipboard.writeText(fullInviteLink);
+			navigator.clipboard.writeText(currentInviteUrl(inviteLink));
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		}
@@ -477,25 +476,16 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 						<>
 							<Separator />
 							<div className="space-y-2">
-								<Label>{t('channel.info.invite_link')}</Label>
-								<div className="flex gap-2">
-									<Input
-										readOnly
-										dir="ltr"
-										value={fullInviteLink}
-										aria-label={t('channel.info.invite_link')}
-										className="h-9 font-mono text-xs"
-									/>
+								<Label>{t('channel.info.invite_title')}</Label>
+								<div className="flex flex-wrap gap-2">
 									<Button
 										type="button"
-										size="icon"
 										variant="outline"
-										className="h-9 w-9 shrink-0"
+										className="h-9 shrink-0 gap-1.5 text-xs"
 										onClick={copyLink}
-										title={t('channel.settings.copy_link')}
-										aria-label={t('channel.settings.copy_link')}
 									>
-										{copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+										{copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+										{t('channel.info.copy_invite')}
 									</Button>
 									<Button
 										type="button"
@@ -549,6 +539,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 					onOpenChange={setShowFriendPicker}
 					channelId={channel.id}
 					channelName={channel.name}
+					channelAvatarId={channel.avatar_id}
 					inviteLink={inviteLink}
 				/>
 			)}

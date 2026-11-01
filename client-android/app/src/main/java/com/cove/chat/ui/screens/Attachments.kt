@@ -134,8 +134,8 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
         val resolver = context.contentResolver
         var bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Couldn't read the selected file.")
         if (bytes.size > MAX_ATTACHMENT_BYTES) error("File is too large for mobile (max 25 MB).")
-        var mime = resolver.getType(uri) ?: "application/octet-stream"
         var name = displayName(context, uri)
+        var mime = resolveMime(resolver.getType(uri), name)
         if (asPhoto && mime.startsWith("image/") && mime != "image/gif") {
             compressImage(bytes)?.let {
                 bytes = it
@@ -144,7 +144,7 @@ suspend fun sendAttachment(context: Context, uri: Uri, channelId: String, asPhot
             }
         }
         val preview = if (mime.startsWith("image/") && mime != "image/gif") thumbnailWebp(bytes) else null
-        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto, preview = preview, replyToId = replyToId)
+        sendPrepared(channelId, bytes, mime, name, "file", asDocument = !asPhoto && !isInlineAudio(mime), preview = preview, replyToId = replyToId)
     }
 }
 

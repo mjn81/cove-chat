@@ -30,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Ids shared with the web client's `chatBackground` setting (`app.slice.ts`). */
-val ChatBackgroundIds = listOf("none", "animals", "space", "games", "sweets")
+val ChatBackgroundIds = listOf("none", "animals", "space", "games", "sweets", "travel", "nature", "food", "music", "tech", "weather")
 
 /** The chosen chat background id (persisted in `PreferencesManager.chatBackground`). */
 object ChatBackgroundSettings {
@@ -45,13 +45,13 @@ object ChatBackgroundSettings {
 private object PatternTiles {
     private const val TILE_W_DP = 360f
     private const val TILE_H_DP = 740f
-    private const val STROKE = 3.5f // viewBox units; slightly bolder than the source's 3 so it survives the downscale
+    private const val STROKE = 4f // viewBox units; slightly bolder than the source's 3 so it survives the downscale
 
     private var cachedId: String? = null
     private var cachedScale = 0f
     private var cached: Bitmap? = null
 
-    /** Rasterises [id] at [scale] px per dp (capped at 2 to bound memory at ~4.3 MB). Call off the main thread. */
+    /** Rasterises [id] at [scale] px per dp (capped at 3 to bound memory at ~9.6 MB). Call off the main thread. */
     @Synchronized
     fun load(context: Context, id: String, scale: Float): Bitmap? {
         if (cachedId == id && cachedScale == scale) return cached
@@ -100,11 +100,11 @@ private object PatternTiles {
  * and costs one GPU draw per frame. Does nothing for `none`.
  */
 @Composable
-fun Modifier.chatBackgroundPattern(id: String = ChatBackgroundSettings.id, alpha: Float = 0.028f): Modifier {
+fun Modifier.chatBackgroundPattern(id: String = ChatBackgroundSettings.id, alpha: Float = 0.035f): Modifier {
     if (id == "none" || id !in ChatBackgroundIds) return this
     val context = LocalContext.current.applicationContext
     val density = LocalDensity.current.density
-    val scale = minOf(density, 2f)
+    val scale = minOf(density, 3f)
     val tile by produceState<Bitmap?>(null, id, scale) {
         value = withContext(Dispatchers.Default) { PatternTiles.load(context, id, scale) }
     }

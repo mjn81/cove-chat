@@ -1,8 +1,9 @@
 /**
  * Height of the zone macOS reserves for the traffic lights, in px. The native title bar is about 28 px, but
- * lights hugging the top edge of a 28 px strip look cramped, so Cove gives them a taller, quiet zone.
+ * lights hugging the top edge of a 28 px strip look cramped, so Cove gives them a taller, quiet zone. It matches the
+ * 48 px (`h-12`) sidebar and chat headers, so the lights share their centre line and the zone ends on the same border.
  */
-export const MAC_LIGHTS_ZONE = 40;
+export const MAC_LIGHTS_ZONE = 48;
 
 /** Room left clear of content at the start of the Mac zone, wide enough for the three lights plus a margin. */
 export const MAC_LIGHTS_INSET = 80;

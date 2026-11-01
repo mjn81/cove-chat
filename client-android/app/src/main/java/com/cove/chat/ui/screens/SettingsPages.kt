@@ -1,5 +1,9 @@
 package com.cove.chat.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import com.cove.chat.ui.theme.CoveShapes
 import androidx.compose.material3.MaterialTheme
 import com.cove.chat.ui.components.CoveChoiceList
@@ -116,6 +120,11 @@ fun AccountSettings(onLogout: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var avatarBusy by remember { mutableStateOf(false) }
     var avatarId by remember { mutableStateOf(prefs.avatarId) }
+    // Profile photos, main one first (up to 5, same as the web client).
+    var gallery by remember { mutableStateOf<List<String>>(emptyList()) }
+    var cropUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    var photoMenu by remember { mutableStateOf<String?>(null) }
 
     fun apply(u: AuthUser) {
         me = u
@@ -124,6 +133,7 @@ fun AccountSettings(onLogout: () -> Unit) {
         banner = u.bannerColor?.takeIf { it.isNotBlank() } ?: "#5865F2"
         status = u.statusPreference.ifBlank { "auto" }
         avatarId = u.avatarId?.takeIf { it.isNotBlank() }
+        gallery = galleryOf(u.avatarId, u.avatarIds)
         prefs.avatarId = avatarId
         prefs.username = u.username
     }
@@ -131,37 +141,79 @@ fun AccountSettings(onLogout: () -> Unit) {
 
     fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
 
-    val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    // Picking a photo opens the cropper; the cropped square is what gets uploaded.
+    val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) cropUri = uri }
+
+    /** Saves a new photo order (or a shorter list after a delete); the backend treats the first entry as the main photo. */
+    fun updateGallery(list: List<String>) {
+        avatarBusy = true
+        scope.launch {
+            api.updateProfile(UpdateProfileRequest(avatarIds = list)).fold(
+                onSuccess = { apply(it) },
+                onFailure = { toast(it.message ?: "Couldn't update your photos.") }
+            )
+            avatarBusy = false
+        }
+    }
+
+    fun uploadCropped(bytes: ByteArray) {
         avatarBusy = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val src = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Couldn't read the image.")
-                    val bytes = squareAvatarBytes(src) ?: error("That file isn't a supported image.")
                     val uploaded = api.uploadAvatar(bytes, "image/webp").getOrThrow()
-                    val gallery = listOf(uploaded.id) + (me?.avatarIds ?: listOfNotNull(avatarId)).filter { it != uploaded.id }
-                    api.updateProfile(UpdateProfileRequest(avatarId = uploaded.id, avatarIds = gallery.take(5))).getOrThrow()
+                    api.updateProfile(UpdateProfileRequest(avatarIds = galleryAfterUpload(gallery, uploaded.id))).getOrThrow()
                 }
             }
-            result.onSuccess { apply(it); avatarId?.let(AvatarCache::invalidate) }.onFailure { toast(it.message ?: "Couldn't update your photo.") }
+            result.onSuccess { apply(it) }.onFailure { toast(it.message ?: "Couldn't update your photo.") }
             avatarBusy = false
+        }
+    }
+
+    cropUri?.let { uri -> AvatarCropDialog(uri, onCancel = { cropUri = null }, onDone = { bytes -> cropUri = null; uploadCropped(bytes) }) }
+    viewerIndex?.let { i -> AvatarGalleryViewer(gallery, i) { viewerIndex = null } }
+    photoMenu?.let { id ->
+        val isMain = gallery.firstOrNull() == id
+        com.cove.chat.ui.components.CoveDialog(onDismiss = { photoMenu = null }, size = com.cove.chat.ui.components.DialogSize.Sm, title = "Profile photo") {
+            Column(Modifier.padding(vertical = 8.dp)) {
+                PhotoMenuRow("View photo", c.textPrimary) { viewerIndex = gallery.indexOf(id); photoMenu = null }
+                if (!isMain) PhotoMenuRow("Make main photo", c.textPrimary) { updateGallery(promoteInGallery(gallery, id)); photoMenu = null }
+                PhotoMenuRow("Delete photo", MaterialTheme.colorScheme.error) { updateGallery(galleryAfterRemove(gallery, id)); photoMenu = null }
+            }
         }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.clip(CircleShape).clickable(enabled = gallery.isNotEmpty()) { viewerIndex = 0 }, contentAlignment = Alignment.Center) {
                 UserAvatar(prefs.userId ?: "?", size = 72.dp, avatarId = avatarId)
             }
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(prefs.username ?: "", color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold)
                 Text(prefs.serverUrl, color = c.textMuted, fontSize = CoveType.label.fontSize)
-                Text(
-                    if (avatarBusy) "Uploading…" else "Change photo", color = MaterialTheme.colorScheme.primary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable(enabled = !avatarBusy) { pickAvatar.launch("image/*") }.padding(vertical = 6.dp)
-                )
+            }
+        }
+        FieldLabel("Profile photos")
+        Text("Tap a photo to view it, make it your main photo, or delete it. The first one is shown to everyone.", color = c.textMuted, fontSize = CoveType.caption.fontSize)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            gallery.forEachIndexed { i, photoId ->
+                Box(
+                    Modifier.size(72.dp).clip(CircleShape)
+                        .border(2.dp, if (i == 0) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape)
+                        .clickable(enabled = !avatarBusy) { photoMenu = photoId },
+                    contentAlignment = Alignment.Center
+                ) { UserAvatar(prefs.userId ?: "?", size = 68.dp, avatarId = photoId) }
+            }
+            if (gallery.size < MAX_AVATARS) {
+                Box(
+                    Modifier.size(72.dp).clip(CircleShape).border(1.dp, c.border, CircleShape)
+                        .clickable(enabled = !avatarBusy) { pickAvatar.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (avatarBusy) androidx.compose.material3.CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                    else androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Add, "Add photo", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                }
             }
         }
         // Banner colour preview, as on the web profile card
@@ -373,4 +425,10 @@ fun StorageSettings() {
             )
         }
     }
+}
+
+/** One row of the profile photo menu. */
+@Composable
+private fun PhotoMenuRow(text: String, color: Color, onClick: () -> Unit) {
+    Text(text, color = color, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Medium, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp))
 }

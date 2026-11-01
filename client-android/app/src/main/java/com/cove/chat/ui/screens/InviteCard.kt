@@ -133,11 +133,12 @@ fun InviteCard(code: String, onOpenChannel: (channelId: String, name: String) ->
 }
 
 /**
- * Lets the user pick friends and sends each of them a direct message with [message] (an invite link). A new DM's
- * channel key arrives over the socket a moment after the DM is created, so sending retries briefly.
+ * Lets the user pick friends and sends each of them an `invite` message with [inviteBody] (see `encodeInvite`), which
+ * the receiving client draws as a card with a Join button. A new DM's channel key arrives over the socket a moment
+ * after the DM is created, so sending retries briefly.
  */
 @Composable
-fun FriendPickerDialog(message: String, onDismiss: () -> Unit) {
+fun FriendPickerDialog(inviteBody: String, onDismiss: () -> Unit) {
     val c = CoveTheme.extendedColors
     val app = CoveApp.instance
     val api = app.apiClient
@@ -158,7 +159,7 @@ fun FriendPickerDialog(message: String, onDismiss: () -> Unit) {
     suspend fun sendTo(friendId: String): Boolean {
         val dm = api.createChannel(CreateChannelRequest(name = "", members = listOf(me, friendId), isPrivate = true)).getOrNull() ?: return false
         repeat(8) {
-            if (app.webSocketManager.sendChatMessage(dm.id, message)) return true
+            if (app.webSocketManager.sendChatMessage(dm.id, inviteBody, type = "invite")) return true
             delay(300)
         }
         return false

@@ -10,20 +10,24 @@ import {
 	VolumeX,
 	Repeat,
 	Repeat1,
+	ListMusic,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useVoicePlayer, useVoicePlayerActions } from '@/hooks/useVoicePlayer';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export const VoicePlayer: React.FC = () => {
-	const { track, isPlaying, isLoading, currentTime, duration, speed, volume, repeatMode } =
+	const { t } = useTranslation();
+	const { track, isPlaying, isLoading, currentTime, duration, speed, volume, repeatMode, queue } =
 		useVoicePlayer();
-	const { togglePlay, seek, setSpeed, setVolume, cycleRepeat, close } =
+	const { play, togglePlay, seek, setSpeed, setVolume, cycleRepeat, close } =
 		useVoicePlayerActions();
 	const [isScrubbing, setIsScrubbing] = useState(false);
 	const [scrubTime, setScrubTime] = useState(0);
 	const [showSpeedSlider, setShowSpeedSlider] = useState(false);
 	const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+	const [showPlaylist, setShowPlaylist] = useState(false);
 
 	const isDraggingSpeedRef = useRef(false);
 	const isDraggingVolumeRef = useRef(false);
@@ -66,30 +70,37 @@ export const VoicePlayer: React.FC = () => {
 	return (
 		<div
 			key={track.fileId}
-			className="absolute top-[48px] left-0 right-0 z-20 flex items-center gap-3 px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur-md animate-in slide-in-from-top-1 duration-200 select-none"
+			className="absolute top-[48px] left-0 right-0 z-20 flex items-center gap-2 px-3 py-2 border-b border-border bg-background/95 backdrop-blur-md animate-in slide-in-from-top-1 duration-200 select-none"
 		>
 			{/* Play / Pause */}
 			<button
 				onClick={togglePlay}
 				disabled={isLoading}
-				className="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded-full transition shrink-0"
+				className="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition shrink-0"
+				title={isPlaying ? 'Pause' : 'Play'}
 			>
 				{isLoading ? (
-					<Loader2 size={14} className="animate-spin" />
+					<Loader2 size={16} className="animate-spin" />
 				) : isPlaying ? (
-					<Pause size={14} fill="currentColor" />
+					<Pause size={16} fill="currentColor" />
 				) : (
-					<Play size={14} fill="currentColor" />
+					<Play size={16} fill="currentColor" />
 				)}
 			</button>
 
-			{/* Time display */}
-			<span className="text-[10px] tabular-nums text-muted-foreground min-w-[70px] shrink-0">
-				{formatTime(displayTime)} / {formatTime(duration)}
-			</span>
+			{/* Title and time, like Telegram's audio bar: who sent it, then where playback is */}
+			<div className="min-w-0 flex-1 leading-tight">
+				<div className="truncate text-sm font-semibold text-foreground">
+					{/* Recorded notes are all named voice-message.*, which says nothing; real music files keep their name. */}
+					{track.label && !/^voice-message/i.test(track.label) ? track.label : t('chat.voice_message')}
+				</div>
+				<div className="text-xs tabular-nums text-muted-foreground">
+					{formatTime(displayTime)} / {formatTime(duration)}
+				</div>
+			</div>
 
-			{/* Draggable Progress Slider */}
-			<div className="flex-1 flex items-center group relative py-1">
+			{/* Progress runs along the whole bottom edge of the bar, so it keeps its length however many controls sit above it */}
+			<div className="group absolute inset-x-0 -bottom-px flex h-3 items-end">
 				<Slider
 					value={[isScrubbing ? scrubTime : currentTime]}
 					min={0}
@@ -104,11 +115,11 @@ export const VoicePlayer: React.FC = () => {
 						seek(duration > 0 ? val / duration : 0);
 					}}
 					className="w-full cursor-pointer select-none"
-					trackClassName="h-1 bg-muted group-hover:h-1.5 transition-all"
-					rangeClassName="bg-primary/75 group-hover:bg-primary transition-colors"
+					trackClassName="h-0.5 rounded-none bg-muted group-hover:h-1 transition-all"
+					rangeClassName="bg-primary rounded-none"
 					thumbClassName={cn(
-						'h-2.5 w-2.5 bg-primary border-none shadow-sm rounded-full transition-opacity ring-0 focus-visible:ring-0 focus-visible:ring-offset-0',
-						isScrubbing ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'
+						'h-3 w-3 bg-primary border-none shadow-sm rounded-full transition-opacity ring-0 focus-visible:ring-0 focus-visible:ring-offset-0',
+						isScrubbing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
 					)}
 				/>
 			</div>
@@ -240,6 +251,45 @@ export const VoicePlayer: React.FC = () => {
 			>
 				{repeatMode === 'once' ? <Repeat1 size={15} /> : <Repeat size={15} />}
 			</button>
+
+			{/* Playlist: every voice note and audio file in this chat, current one highlighted */}
+			{queue.length > 1 && (
+				<button
+					type="button"
+					onClick={() => setShowPlaylist((v) => !v)}
+					className={`flex items-center justify-center w-7 h-7 rounded-md transition-colors cursor-pointer shrink-0 ${
+						showPlaylist ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+					}`}
+					title={t('chat.playlist')}
+					aria-label={t('chat.playlist')}
+				>
+					<ListMusic size={16} />
+				</button>
+			)}
+
+			{showPlaylist && queue.length > 1 && (
+				<div className="absolute right-2 top-full z-50 mt-1 max-h-64 w-72 max-w-[calc(100%-1rem)] overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md animate-in fade-in zoom-in-95 duration-150">
+					{queue.map((item) => {
+						const current = item.fileId === track.fileId;
+						return (
+							<button
+								key={item.fileId}
+								type="button"
+								onClick={() => (current ? togglePlay() : play(item))}
+								className={cn(
+									'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors hover:bg-accent',
+									current && 'bg-primary/10 text-primary',
+								)}
+							>
+								<span className="flex h-6 w-6 shrink-0 items-center justify-center">
+									{current && isPlaying ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
+								</span>
+								<span className="min-w-0 flex-1 truncate">{item.label || t('chat.voice_message')}</span>
+							</button>
+						);
+					})}
+				</div>
+			)}
 
 			{/* Close */}
 			<button

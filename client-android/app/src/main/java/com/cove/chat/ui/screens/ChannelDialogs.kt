@@ -26,6 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import android.content.Intent
 import android.content.ClipboardManager
+import com.cove.chat.data.model.encodeInvite
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -221,19 +222,16 @@ fun ChannelSettingsDialog(
             avatarBusy = false
         }
     }
-    val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        avatarBusy = true
-        scope.launch {
-            val uploaded = withContext(Dispatchers.IO) {
-                runCatching {
-                    val src = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Couldn't read the image.")
-                    if (src.size > MAX_GROUP_PHOTO_BYTES) error("Image must be smaller than 2 MB.")
-                    val bytes = squareAvatarBytes(src) ?: error("That file isn't a supported image.")
-                    api.uploadAvatar(bytes, "image/webp").getOrThrow()
-                }
+    var cropUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) cropUri = uri }
+    cropUri?.let { uri ->
+        AvatarCropDialog(uri, onCancel = { cropUri = null }) { bytes ->
+            cropUri = null
+            avatarBusy = true
+            scope.launch {
+                val uploaded = withContext(Dispatchers.IO) { runCatching { api.uploadAvatar(bytes, "image/webp").getOrThrow() } }
+                uploaded.onSuccess { setAvatar(it.id) }.onFailure { error = it.message; avatarBusy = false }
             }
-            uploaded.onSuccess { setAvatar(it.id) }.onFailure { error = it.message; avatarBusy = false }
         }
     }
 
@@ -297,20 +295,20 @@ fun ChannelSettingsDialog(
             }
 
             if (inviteUrl != null) {
-                FieldLabel("Invite link")
+                // The link itself is never shown: friends get an invite card, and the link is only for sharing outside Cove.
+                FieldLabel("Invite people")
                 Column(Modifier.fillMaxWidth().clip(CoveShapes.md).background(c.popover).padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    androidx.compose.material3.Text(inviteUrl, color = c.textPrimary, fontSize = CoveType.label.fontSize, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        CoveButton("Copy", variant = ButtonVariant.Secondary, size = ButtonSize.Sm, onClick = {
+                        CoveButton("Send to friends", size = ButtonSize.Sm, onClick = { showFriendPicker = true })
+                        CoveButton("Copy invite", variant = ButtonVariant.Secondary, size = ButtonSize.Sm, onClick = {
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            cm.setPrimaryClip(ClipData.newPlainText("Invite link", inviteUrl))
-                            toast("Invite link copied")
+                            cm.setPrimaryClip(ClipData.newPlainText("Invite", inviteUrl))
+                            toast("Invite copied")
                         })
                         CoveButton("Share", variant = ButtonVariant.Secondary, size = ButtonSize.Sm, onClick = {
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, InviteLinks.shareText(channel.name, inviteUrl))
                             context.startActivity(Intent.createChooser(send, null))
                         })
-                        CoveButton("Send to friends", variant = ButtonVariant.Secondary, size = ButtonSize.Sm, onClick = { showFriendPicker = true })
                     }
                     if (isAdmin) CoveButton("New link", variant = ButtonVariant.Ghost, size = ButtonSize.Sm, onClick = { confirmRegenerate = true })
                 }
@@ -367,7 +365,7 @@ fun ChannelSettingsDialog(
         }
     }
 
-    if (showFriendPicker && inviteUrl != null) FriendPickerDialog(InviteLinks.shareText(channel.name, inviteUrl)) { showFriendPicker = false }
+    if (showFriendPicker && inviteUrl != null) FriendPickerDialog(encodeInvite(channel.inviteLink.orEmpty(), channel.name, channel.avatarId)) { showFriendPicker = false }
     if (confirmRegenerate) {
         CoveConfirmDialog(
             title = "Create a new invite link",

@@ -66,7 +66,7 @@ internal val ExtraFa: Map<String, String> = mapOf(
     // Chat input and backgrounds
     "Photo or Video" to "عکس یا ویدیو", "Audio" to "صدا", "Document / File" to "سند / فایل", "Video message" to "پیام ویدیویی",
     "Slide left to cancel" to "برای لغو به چپ بکشید", "Slide right to cancel" to "برای لغو به راست بکشید", "Recording" to "در حال ضبط",
-    "CHAT BACKGROUND" to "پس‌زمینه گفتگو", "None" to "هیچ", "Animals" to "حیوانات", "Space" to "فضا", "Games" to "بازی‌ها", "Sweets" to "شیرینی‌ها",
+    "CHAT BACKGROUND" to "پس‌زمینه گفتگو", "None" to "هیچ", "Animals" to "حیوانات", "Space" to "فضا", "Games" to "بازی‌ها", "Sweets" to "شیرینی‌ها", "Travel" to "سفر", "Nature" to "طبیعت", "Food" to "غذا", "Music" to "موسیقی", "Tech" to "فناوری", "Weather" to "آب‌وهوا",
     // Calls
     "Poor network, video quality reduced" to "شبکه ضعیف است، کیفیت ویدیو کاهش یافت", "Couldn't start screen sharing." to "اشتراک صفحه شروع نشد.",
     "Screen share paused" to "اشتراک صفحه متوقف شد", "Audio output" to "خروجی صدا", "Earpiece" to "گوشی", "Speaker" to "بلندگو",
@@ -168,7 +168,7 @@ internal val ExtraAr: Map<String, String> = mapOf(
     // Chat input and backgrounds
     "Photo or Video" to "صورة أو فيديو", "Audio" to "صوت", "Document / File" to "مستند / ملف", "Video message" to "رسالة فيديو",
     "Slide left to cancel" to "اسحب لليسار للإلغاء", "Slide right to cancel" to "اسحب لليمين للإلغاء", "Recording" to "جارٍ التسجيل",
-    "CHAT BACKGROUND" to "خلفية المحادثة", "None" to "بلا", "Animals" to "حيوانات", "Space" to "الفضاء", "Games" to "ألعاب", "Sweets" to "حلويات",
+    "CHAT BACKGROUND" to "خلفية المحادثة", "None" to "بلا", "Animals" to "حيوانات", "Space" to "الفضاء", "Games" to "ألعاب", "Sweets" to "حلويات", "Travel" to "سفر", "Nature" to "الطبيعة", "Food" to "طعام", "Music" to "موسيقى", "Tech" to "التقنية", "Weather" to "الطقس",
     // Calls
     "Poor network, video quality reduced" to "الشبكة ضعيفة، تم تقليل جودة الفيديو", "Couldn't start screen sharing." to "تعذر بدء مشاركة الشاشة.",
     "Screen share paused" to "تم إيقاف مشاركة الشاشة", "Audio output" to "مخرج الصوت", "Earpiece" to "سماعة الأذن", "Speaker" to "مكبر الصوت",

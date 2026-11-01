@@ -1,5 +1,6 @@
 package com.cove.chat.notify
 
+import com.cove.chat.R
 import android.Manifest
 import android.app.Activity
 import android.app.Application
@@ -63,15 +64,29 @@ class NotificationHelper(private val app: Application) {
                     enableLights(true); lightColor = Color.rgb(0x58, 0x65, 0xF2)
                 }
             )
+            // A channel's sound cannot change once created, so the calls channel got a new id when Cove's own ring replaced
+            // the system ringtone; the old one is removed.
+            nm.deleteNotificationChannel(LEGACY_CHANNEL_CALLS)
             nm.createNotificationChannel(
                 NotificationChannel(CHANNEL_CALLS, t("Incoming calls"), NotificationManager.IMPORTANCE_HIGH).apply {
                     description = "Rings when a friend calls you"
                     setSound(
-                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
+                        rawSound(R.raw.call_ring),
                         AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
                     )
                     enableVibration(true); vibrationPattern = longArrayOf(0, 700, 500, 700, 500, 700)
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                }
+            )
+            nm.createNotificationChannel(
+                NotificationChannel(CHANNEL_WHISPERS, t("Whisper requests"), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "Tells you when someone wants to start a Whisper, and when one has a new message"
+                    setSound(
+                        rawSound(R.raw.whisper_request),
+                        AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+                    )
+                    enableVibration(true); vibrationPattern = longArrayOf(0, 120, 80, 120)
+                    lockscreenVisibility = Notification.VISIBILITY_PRIVATE
                 }
             )
             nm.createNotificationChannel(
@@ -93,6 +108,9 @@ class NotificationHelper(private val app: Application) {
             override fun onActivityDestroyed(a: Activity) {}
         })
     }
+
+    /** A sound bundled in `res/raw`, as a URI a notification channel can use. */
+    private fun rawSound(resId: Int): android.net.Uri = android.net.Uri.parse("android.resource://${app.packageName}/$resId")
 
     private fun canNotify(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -153,7 +171,7 @@ class NotificationHelper(private val app: Application) {
         ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).setShowsUserInterface(false).build()
 
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
-            .setSmallIcon(android.R.drawable.sym_action_chat)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setStyle(style)
             .setContentTitle(convo.title)
@@ -181,7 +199,7 @@ class NotificationHelper(private val app: Application) {
         val inbox = NotificationCompat.InboxStyle().setBigContentTitle("Cove")
         conversations.values.forEach { inbox.addLine("${it.title}: ${it.lines.lastOrNull()?.text.orEmpty()}") }
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
-            .setSmallIcon(android.R.drawable.sym_action_chat)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setStyle(inbox)
             .setContentTitle("Cove")
@@ -221,7 +239,7 @@ class NotificationHelper(private val app: Application) {
         val answerPi = PendingIntent.getActivity(app, ("answer" + channelId).hashCode(), answer, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val person = Person.Builder().setName(callerName).setImportant(true).build()
         val builder = NotificationCompat.Builder(app, CHANNEL_CALLS)
-            .setSmallIcon(android.R.drawable.sym_call_incoming)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setContentTitle(t("Incoming call"))
             .setContentText("$callerName ${t("is calling you…")}")
@@ -257,8 +275,8 @@ class NotificationHelper(private val app: Application) {
         val acceptPi = PendingIntent.getActivity(app, ("wa" + inv.sessionId).hashCode(), accept, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val decline = Intent(app, NotificationActionReceiver::class.java).setAction(ACTION_DECLINE_WHISPER).putExtra(EXTRA_WHISPER_ID, inv.sessionId)
         val declinePi = PendingIntent.getBroadcast(app, ("wd" + inv.sessionId).hashCode(), decline, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+        val n = NotificationCompat.Builder(app, CHANNEL_WHISPERS)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setContentTitle(t("Whisper request"))
             .setContentText("${inv.initiatorName} ${t("wants to start an end-to-end encrypted Whisper.")}")
@@ -284,8 +302,8 @@ class NotificationHelper(private val app: Application) {
             putExtra(EXTRA_WHISPER_ID, sessionId)
         }
         val pi = PendingIntent.getActivity(app, ("wo" + sessionId).hashCode(), open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+        val n = NotificationCompat.Builder(app, CHANNEL_WHISPERS)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setContentTitle(peerName)
             .setContentText(t("New Whisper message"))
@@ -300,7 +318,9 @@ class NotificationHelper(private val app: Application) {
 
     companion object {
         const val CHANNEL_MESSAGES = "messages"
-        const val CHANNEL_CALLS = "calls"
+        const val CHANNEL_CALLS = "calls_v2"
+        private const val LEGACY_CHANNEL_CALLS = "calls"
+        const val CHANNEL_WHISPERS = "whispers"
         const val CHANNEL_SERVICE = "background_connection"
         const val GROUP_MESSAGES = "cove_messages"
         const val SUMMARY_ID = 1

@@ -63,7 +63,10 @@ func (a *App) showWindow() {
 // true cancels the close; the window is hidden instead when the app should keep running in the background.
 func (a *App) beforeClose(context.Context) (prevent bool) {
 	if a.keepRunning() {
-		a.hideWindow()
+		// This callback runs on the main thread, inside AppKit's close handling. The runtime's Hide and WindowHide
+		// dispatch to the main thread and wait for it, so calling them here deadlocks: on macOS the red button froze
+		// the app until it was force-quit. Hiding from another goroutine lets the close handler return first.
+		go a.hideWindow()
 		return true
 	}
 	return false

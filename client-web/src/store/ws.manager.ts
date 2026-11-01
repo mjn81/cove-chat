@@ -1,7 +1,9 @@
 // ws.manager.ts
 import { wsConnect, wsDisconnect, onWS, wsSendReadReceipt, decryptMessage } from '@/ws';
 import { useChannelStore, useAuthStore, getChannelDisplayName } from './store';
-import { playNotificationSound, showBrowserNotification } from '@/utils/notifications';
+import { CALL_RING_PATH, playNotificationSound, showBrowserNotification } from '@/utils/notifications';
+import { callRinger } from '@/lib/ringtone';
+import i18n from '@/i18n';
 import type { Message } from '@/types/api';
 import { useAppStore } from './app.slice';
 import { useVoiceStore } from './voiceStore';
@@ -277,6 +279,11 @@ export function initWebSocket() {
 	});
 }
 
+// The ring ends as soon as there is no incoming call any more: answered, declined, missed or cancelled.
+useVoiceStore.subscribe((state) => {
+	if (!state.incomingCall) callRinger.stop();
+});
+
 export function checkIncomingCall(channelId: string, users: string[]) {
 	if (users.length === 0) return;
 	const store = useVoiceStore.getState();
@@ -301,7 +308,12 @@ export function checkIncomingCall(channelId: string, users: string[]) {
 				callerAvatarId: callerAvatar,
 				timestamp: Date.now(),
 			});
-			showBrowserNotification('Incoming Call', `${callerName} is calling you...`);
+			// Native notification (stays until acted on) plus a looping ring; both stop with the on-screen call card.
+			showBrowserNotification(i18n.t('chat.notify_call_title'), i18n.t('chat.notify_call_body', { name: callerName }), {
+				tag: 'cove-call',
+				requireInteraction: true,
+			});
+			if (useAppStore.getState().enableNotificationSounds) callRinger.start(CALL_RING_PATH);
 		}
 	}
 }

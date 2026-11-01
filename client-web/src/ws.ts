@@ -470,7 +470,7 @@ export function wsSendReadReceipt(channelId: string) {
 export async function wsSendMessage(
 	channelId: string,
 	text: string,
-	type: 'text' | 'file' | 'voice' | 'video' = 'text',
+	type: 'text' | 'file' | 'voice' | 'video' | 'invite' = 'text',
 	compression: string = 'none',
 	replyToId?: string,
 ): Promise<boolean> {
