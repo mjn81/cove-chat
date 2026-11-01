@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.8](https://github.com/mjn81/cove-chat/compare/v0.9.7...v0.9.8) (2026-11-01)
+
+
+### Features
+
+* **android:** invites, multi-select, playlist, profile photos with cropper, Whisper on the chat UI, alerts, patterns ([22acaf2](https://github.com/mjn81/cove-chat/commit/22acaf23e6b50ed86b357ddb1f6d2108cb01ccd1))
+* **backend:** invite message type, reject unknown message types, block editing invites ([6092eb3](https://github.com/mjn81/cove-chat/commit/6092eb3406beacdfb65e0a668b89f8048bf37383))
+* invites, multi-select, playlist, profile photos, Whisper UI, alerts and patterns ([a175695](https://github.com/mjn81/cove-chat/commit/a1756950170438987c7543102de58bd339d22208))
+* **web:** invite cards, multi-select, playlist, forward all types, whisper and call alerts, new chat patterns ([68d3ff0](https://github.com/mjn81/cove-chat/commit/68d3ff0458ee722df1cd1e00c1ab3de75ab26bd4))
+
+
+### Bug Fixes
+
+* **desktop:** hide from a goroutine on macOS close and use the toolbar title bar ([efa9656](https://github.com/mjn81/cove-chat/commit/efa9656d6c32c16674ad81fafb9fd08da7d32769))
+
 ## [0.9.7](https://github.com/mjn81/cove-chat/compare/v0.9.6...v0.9.7) (2026-10-30)
 
 
