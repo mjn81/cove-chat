@@ -2183,7 +2183,7 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "description": "\"text\" | \"file\" | \"voice\" | \"video\"",
+                    "description": "\"text\" | \"file\" | \"voice\" | \"video\" | \"invite\"",
                     "allOf": [
                         {
                             "$ref": "#/definitions/cove_backend_internal_models.MessageType"
@@ -2198,13 +2198,15 @@ const docTemplate = `{
                 "text",
                 "file",
                 "voice",
-                "video"
+                "video",
+                "invite"
             ],
             "x-enum-varnames": [
                 "MessageTypeText",
                 "MessageTypeFile",
                 "MessageTypeVoice",
-                "MessageTypeVideo"
+                "MessageTypeVideo",
+                "MessageTypeInvite"
             ]
         },
         "cove_backend_internal_models.Presence": {

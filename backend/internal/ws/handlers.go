@@ -28,6 +28,9 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 	if body.Type == "" {
 		body.Type = models.MessageTypeText
 	}
+	if !body.Type.Valid() {
+		return fmt.Errorf("unknown message type: %q", body.Type)
+	}
 	if body.Compression == "" {
 		body.Compression = "none"
 	}
@@ -109,6 +112,9 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 
 	if msg.SenderID != c.UserID {
 		return fmt.Errorf("permission denied: cannot edit someone else's message")
+	}
+	if msg.Type == models.MessageTypeInvite {
+		return fmt.Errorf("invite messages cannot be edited")
 	}
 
 	now := time.Now().UTC()

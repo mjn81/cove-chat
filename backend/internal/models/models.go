@@ -109,7 +109,19 @@ const (
 	MessageTypeFile  MessageType = "file"
 	MessageTypeVoice MessageType = "voice"
 	MessageTypeVideo MessageType = "video"
+	// MessageTypeInvite carries a channel invitation (an encrypted JSON body with the invite code). It renders as a
+	// card with a Join button and cannot be edited, so a shared invite always shows what the sender sent.
+	MessageTypeInvite MessageType = "invite"
 )
+
+// Valid reports whether t is one of the message types clients may send.
+func (t MessageType) Valid() bool {
+	switch t {
+	case MessageTypeText, MessageTypeFile, MessageTypeVoice, MessageTypeVideo, MessageTypeInvite:
+		return true
+	}
+	return false
+}
 
 // Message is stored under m:{chan_id}:{time_nano}. The server only sees
 // opaque ciphertext — it never decrypts message bodies.
@@ -117,8 +129,8 @@ type Message struct {
 	ID          string      `json:"id"`
 	ChannelID   string      `json:"channel_id"`
 	SenderID    string      `json:"sender_id"`
-	Type        MessageType `json:"type"`        // "text" | "file" | "voice" | "video"
-	Ciphertext  []byte      `json:"ciphertext"`  // AES-256-GCM encrypted payload
+	Type        MessageType `json:"type"`        // "text" | "file" | "voice" | "video" | "invite"
+	Ciphertext  []byte     `json:"ciphertext"`  // AES-256-GCM encrypted payload
 	Nonce       []byte      `json:"nonce"`       // GCM nonce (also prepended in ciphertext)
 	Compression string      `json:"compression"` // "none", "zstd", etc.
 	Sig         []byte      `json:"sig"`         // Reserved: future sender signature
