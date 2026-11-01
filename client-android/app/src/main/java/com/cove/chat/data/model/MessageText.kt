@@ -18,5 +18,6 @@ fun Message.previewText(): String = when (type) {
     "file" -> fileMeta()?.let { if (it.mime.startsWith("image/")) "Sent a photo" else "Sent a file: ${it.name}" } ?: "Sent a file"
     "voice" -> "Sent a voice message"
     "video" -> "Sent a video message"
+    "invite" -> "Sent an invitation"
     else -> "Sent a $type"
 }

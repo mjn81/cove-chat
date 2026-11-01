@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -70,7 +71,7 @@ private fun previewFor(ch: Channel, me: String?): String {
     val cipher = ch.lastMessageCiphertext ?: return ""
     val nonce = ch.lastMessageNonce ?: return ""
     val type = ch.lastMessageType ?: "text"
-    val body = if (type == "text") CryptoManager.decryptMessage(ch.id, cipher, nonce) else "Sent a $type"
+    val body = when (type) { "text" -> CryptoManager.decryptMessage(ch.id, cipher, nonce); "invite" -> "Sent an invitation"; else -> "Sent a $type" }
     val sender = ch.lastMessageSenderId
     val prefix = when {
         sender == null -> ""
@@ -101,8 +102,8 @@ fun ChannelListScreen(
     var loaded by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf(ListTab.All) }
     var showSearch by remember { mutableStateOf(false) }
-    var newDmTab by remember { mutableStateOf(false) }
     var showNew by remember { mutableStateOf(false) }
+    var showMyProfile by remember { mutableStateOf(false) }
     var version by remember { mutableStateOf("") }
     val connected by ws.connectionState.collectAsState(initial = false)
     val keyVersion by CryptoManager.keyVersion.collectAsState()
@@ -191,7 +192,7 @@ fun ChannelListScreen(
                 Text("Search...", color = c.textMuted, fontSize = CoveType.body.fontSize)
             }
             Box(
-                Modifier.size(40.dp).clickable { newDmTab = false; showNew = true },
+                Modifier.size(40.dp).clickable { showNew = true },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Outlined.Add, contentDescription = "New conversation", tint = c.textMuted)
@@ -238,19 +239,31 @@ fun ChannelListScreen(
             Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box {
-                UserAvatar(me ?: "?", size = 32.dp, avatarId = prefs.avatarId)
-                Box(Modifier.align(Alignment.BottomEnd)) { StatusDot(online = connected, size = 8.dp, ring = c.card) }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(prefs.username ?: "", color = c.textPrimary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text(if (connected) "Online" else "Offline", color = c.textMuted, fontSize = CoveType.caption.fontSize)
+            // Avatar and name open your own profile, like tapping anyone else's.
+            Row(Modifier.weight(1f).fillMaxHeight().clickable(enabled = me != null) { showMyProfile = true }, verticalAlignment = Alignment.CenterVertically) {
+                Box {
+                    UserAvatar(me ?: "?", size = 32.dp, avatarId = prefs.avatarId)
+                    Box(Modifier.align(Alignment.BottomEnd)) { StatusDot(online = connected, size = 8.dp, ring = c.card) }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(prefs.username ?: "", color = c.textPrimary, fontSize = CoveType.label.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(if (connected) "Online" else "Offline", color = c.textMuted, fontSize = CoveType.caption.fontSize)
+                }
             }
             Box(Modifier.size(40.dp).clickable(onClick = onOpenSettings), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.Settings, contentDescription = "Settings", tint = c.textMuted)
             }
         }
+    }
+
+    if (showMyProfile && me != null) {
+        MemberProfileDialog(
+            userId = me, username = prefs.username.orEmpty(), avatarId = prefs.avatarId,
+            onDismiss = { showMyProfile = false },
+            onOpenChat = { _, _ -> },
+            onEditProfile = { showMyProfile = false; onOpenSettings() }
+        )
     }
 
     if (showSearch) {
@@ -260,14 +273,13 @@ fun ChannelListScreen(
             onDismiss = { showSearch = false },
             onOpenChannel = { ch -> showSearch = false; onChannelSelected(ch.id, ch.displayName(me)) },
             onJoined = { id -> showSearch = false; refreshTick++; onChannelSelected(id, channels.firstOrNull { it.id == id }?.displayName(me) ?: "") },
-            onCreateNew = { dm -> showSearch = false; newDmTab = dm; showNew = true }
+            onCreateNew = { showSearch = false; showNew = true }
         )
     }
 
     if (showNew) {
         NewConversationDialog(
             onDismiss = { showNew = false },
-            initialDm = newDmTab,
             onCreated = { ch ->
                 showNew = false
                 refreshTick++

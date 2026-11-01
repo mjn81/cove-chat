@@ -195,6 +195,10 @@ fun NavGraph() {
                 onStartCall = { withVideo ->
                     val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
                     navController.navigate("call/$channelId/$encodedName/$withVideo")
+                },
+                onCallIn = { id, name, withVideo ->
+                    val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+                    navController.navigate("call/$id/$encodedName/$withVideo")
                 }
             )
         }

@@ -1,5 +1,12 @@
 package com.cove.chat.ui.screens
 
+import com.cove.chat.ui.components.MessageText
+import com.cove.chat.ui.components.chatBackgroundPattern
+import com.cove.chat.ui.components.SectionDivider
+import com.cove.chat.ui.components.CoveIconButton
+import com.cove.chat.ui.theme.CoveTheme
+import com.cove.chat.ui.theme.WhisperTheme
+import androidx.compose.ui.unit.em
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -197,7 +204,13 @@ private fun WhisperPrimaryButton(text: String, onClick: () -> Unit) {
  */
 @Composable
 fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
+    WhisperTheme { WhisperScreenContent(sessionId, onBack) }
+}
+
+@Composable
+private fun WhisperScreenContent(sessionId: String, onBack: () -> Unit) {
     val context = LocalContext.current
+    val c = CoveTheme.extendedColors
     val scope = rememberCoroutineScope()
     val manager = CoveApp.instance.whisperManager
     val me = CoveApp.instance.preferencesManager.userId.orEmpty()
@@ -282,45 +295,41 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
     val ended = session.status == WhisperStatus.Closed || session.status == WhisperStatus.Burned
 
     Column(Modifier.fillMaxSize().background(CoveWhisperBg).navigationBarsPadding().imePadding()) {
-        Column(Modifier.fillMaxWidth().background(CoveWhisperCard).statusBarsPadding()) {
+        // Same top bar as the main chat (back, avatar, name and a status line on the left, actions on the right).
+        Column(Modifier.fillMaxWidth().background(c.chatCanvas).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(56.dp).padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(48.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = CoveWhisperPrimary, modifier = Modifier.size(28.dp).mirrorInRtl())
+                Box(Modifier.size(40.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.ChevronLeft, "Back", tint = c.textPrimary, modifier = Modifier.size(26.dp).mirrorInRtl())
                 }
                 Box {
-                    UserAvatar(session.peerId, size = 36.dp)
-                    Box(Modifier.align(Alignment.BottomEnd).size(15.dp).clip(CircleShape).background(CoveWhisperBg), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.Lock, null, tint = CoveWhisperPrimary, modifier = Modifier.size(9.dp))
+                    UserAvatar(session.peerId, size = 38.dp)
+                    Box(Modifier.align(Alignment.BottomEnd).size(16.dp).clip(CircleShape).background(c.chatCanvas), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Lock, null, tint = c.textPrimary, modifier = Modifier.size(10.dp))
                     }
                 }
                 Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(session.peerName, color = CoveWhisperPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Lock, null, tint = CoveWhisperTextMuted, modifier = Modifier.size(12.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            if (session.persists) "End-to-end encrypted · ${expiryLabel(session.expiryMode)}" else "End-to-end encrypted · not stored",
-                            color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, maxLines = 1
-                        )
-                    }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                    Text(session.peerName, color = c.textPrimary, fontSize = CoveType.body.fontSize, lineHeight = 1.2.em, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(
+                        if (session.persists) "End-to-end encrypted · ${expiryLabel(session.expiryMode)}" else "End-to-end encrypted · not stored",
+                        color = c.textMuted, fontSize = CoveType.caption.fontSize, lineHeight = 1.2.em, maxLines = 1
+                    )
                 }
                 if (session.safetyNumber != null) {
-                    Box(Modifier.size(48.dp).clickable { showSafety = true }, contentAlignment = Alignment.Center) {
-                        Icon(if (session.verified) Icons.Outlined.VerifiedUser else Icons.Outlined.Shield, "Safety number", tint = if (session.verified) MaterialTheme.colorScheme.primary else CoveWhisperTextMuted, modifier = Modifier.size(24.dp))
-                    }
+                    CoveIconButton(
+                        if (session.verified) Icons.Outlined.VerifiedUser else Icons.Outlined.Shield, "Safety number", { showSafety = true },
+                        iconSize = 21.dp, tint = if (session.verified) MaterialTheme.colorScheme.primary else c.textMuted
+                    )
                 }
                 Box {
-                    Box(Modifier.size(48.dp).clickable { menuOpen = true }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Outlined.MoreVert, "More", tint = CoveWhisperPrimary, modifier = Modifier.size(24.dp))
-                    }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = CoveWhisperPopover) {
-                        if (live || session.status == WhisperStatus.Pending) CoveListRow("End session", compact = true, onClick = { menuOpen = false; confirmEnd = true }, titleColor = CoveWhisperPrimary, contentPadding = PaddingValues(Spacing.md))
+                    CoveIconButton(Icons.Outlined.MoreVert, "More", { menuOpen = true }, iconSize = 21.dp)
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = c.popover) {
+                        if (live || session.status == WhisperStatus.Pending) CoveListRow("End session", compact = true, onClick = { menuOpen = false; confirmEnd = true }, titleColor = c.textPrimary, contentPadding = PaddingValues(Spacing.md))
                         CoveListRow("Burn chat", compact = true, onClick = { menuOpen = false; confirmBurn = true }, titleColor = MaterialTheme.colorScheme.error, contentPadding = PaddingValues(Spacing.md))
                     }
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(CoveWhisperAccent))
+            SectionDivider()
         }
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -336,26 +345,21 @@ fun WhisperScreen(sessionId: String, onBack: () -> Unit) {
                     WhisperPrimaryButton("Close") { manager.forget(sessionId); onBack() }
                 }
             } else {
-                LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    item {
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(CoveShapes.lg).background(CoveWhisperCard).padding(Spacing.md),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Outlined.Lock, null, tint = CoveWhisperPrimary, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(Spacing.md))
-                            Text(
-                                if (session.persists) "Messages are encrypted on both devices and kept only on them. Compare the safety number to verify who you're talking to."
-                                else "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to.",
-                                color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize
-                            )
-                        }
-                    }
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize().chatBackgroundPattern(), contentPadding = PaddingValues(bottom = 8.dp)) {
+                    item { WhisperNotice(session.peerName, session.persists) }
                     val msgs = session.messages.toList()
                     itemsIndexed(msgs, key = { _, m -> m.id }) { i, m ->
                         val prev = msgs.getOrNull(i - 1)
-                        if (prev == null || whisperDay(prev.sentAt) != whisperDay(m.sentAt)) WhisperDaySeparator(m.sentAt)
-                        WhisperBubble(m, mine = m.senderId == me, now = now, expiryMode = session.expiryMode)
+                        val newDay = prev == null || whisperDay(prev.sentAt) != whisperDay(m.sentAt)
+                        // Same grouping rule as the main chat: one header per sender within five minutes.
+                        val sameBlock = prev != null && !newDay && prev.senderId == m.senderId && (m.sentAt - prev.sentAt) < 5 * 60_000L
+                        if (newDay) DaySeparator(dayLabel(whisperDay(m.sentAt)))
+                        val mine = m.senderId == me
+                        WhisperRow(
+                            m, mine = mine, author = if (mine) CoveApp.instance.preferencesManager.username.orEmpty() else session.peerName,
+                            avatarId = if (mine) CoveApp.instance.preferencesManager.avatarId else null,
+                            showHeader = !sameBlock, now = now, expiryMode = session.expiryMode
+                        )
                     }
                     if (ended) item {
                         Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -457,61 +461,64 @@ private fun whisperTime(ms: Long): String =
     java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
         .format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
 
-/** Centered pill with "Today", "Yesterday" or the date, like the main chat's day separators. */
+/**
+ * One message laid out exactly like a row of the main chat: avatar column, then name and time, then the content. Text goes
+ * through [MessageText] (links, long-press copy) and is never run through the UI translator, since it is the user's own
+ * words. Timed sessions add a live countdown and a bar that drains as the message nears its disappearance.
+ */
 @Composable
-private fun WhisperDaySeparator(ms: Long) {
-    val day = whisperDay(ms)
-    val today = java.time.LocalDate.now()
-    val label = when (day) {
-        today -> "Today"
-        today.minusDays(1) -> "Yesterday"
-        else -> day.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM))
-    }
-    Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-        Text(label, color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize, modifier = Modifier.clip(CircleShape).background(CoveWhisperCard).padding(horizontal = 12.dp, vertical = 4.dp))
+private fun WhisperRow(m: WhisperMessage, mine: Boolean, author: String, avatarId: String?, showHeader: Boolean, now: Long, expiryMode: String) {
+    val c = CoveTheme.extendedColors
+    val total = expiryTotalMs(expiryMode)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = if (showHeader) 6.dp else 1.dp)) {
+        Box(Modifier.width(42.dp)) { if (showHeader) UserAvatar(m.senderId, size = 32.dp, avatarId = avatarId) }
+        Column(Modifier.weight(1f)) {
+            if (showHeader) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    androidx.compose.material3.Text(author, color = c.textPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    androidx.compose.material3.Text(whisperTime(m.sentAt), color = c.textMuted, fontSize = CoveType.caption.fontSize)
+                }
+            }
+            if (m.file != null) WhisperFileBubble(m, mine)
+            if (!m.text.isNullOrEmpty()) {
+                MessageText(m.text, color = c.textPrimary, fontSize = CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary)
+            }
+            val exp = m.expiresAt
+            if (exp != null) {
+                Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Schedule, null, tint = c.textMuted, modifier = Modifier.size(11.dp))
+                    Spacer(Modifier.width(3.dp))
+                    Text(formatRemaining(exp - now), color = c.textMuted, fontSize = CoveType.caption.fontSize)
+                }
+                if (total != null) {
+                    Box(Modifier.padding(top = 3.dp).widthIn(max = 160.dp).fillMaxWidth().height(2.dp).clip(CircleShape).background(c.textMuted.copy(alpha = 0.18f))) {
+                        Box(Modifier.fillMaxWidth(((exp - now).toFloat() / total).coerceIn(0f, 1f)).height(2.dp).background(c.textMuted))
+                    }
+                }
+            }
+        }
     }
 }
 
-/**
- * One message as a rounded bubble with its send time. In timed sessions the bubble also shows the live countdown and a
- * thin bar that drains as the message approaches its disappearance.
- */
+/** The start-of-conversation banner, in the same place and style as the main chat's welcome header. */
 @Composable
-private fun WhisperBubble(m: WhisperMessage, mine: Boolean, now: Long, expiryMode: String) {
-    val fg = if (mine) Color.Black else CoveWhisperPrimary
-    val bg = if (mine) CoveWhisperPrimary else CoveWhisperAccent
-    val shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (mine) 18.dp else 4.dp, bottomEnd = if (mine) 4.dp else 18.dp)
-    val total = expiryTotalMs(expiryMode)
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-        if (m.file != null) WhisperFileBubble(m, mine)
-        if (!m.text.isNullOrEmpty()) {
-            Column(Modifier.widthIn(max = 300.dp).clip(shape).background(bg).padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 5.dp)) {
-                Text(m.text, color = fg, fontSize = 16.sp)
-                Row(Modifier.align(Alignment.End).padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    m.expiresAt?.let { exp ->
-                        Icon(Icons.Outlined.Schedule, null, tint = fg.copy(alpha = 0.55f), modifier = Modifier.size(11.dp))
-                        Spacer(Modifier.width(3.dp))
-                        Text(formatRemaining(exp - now), color = fg.copy(alpha = 0.55f), fontSize = 11.sp)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(whisperTime(m.sentAt), color = fg.copy(alpha = 0.55f), fontSize = 11.sp)
-                }
-                val exp = m.expiresAt
-                if (exp != null && total != null) {
-                    Box(Modifier.padding(top = 4.dp).fillMaxWidth().height(2.dp).clip(CircleShape).background(fg.copy(alpha = 0.12f))) {
-                        Box(Modifier.fillMaxWidth(((exp - now).toFloat() / total).coerceIn(0f, 1f)).height(2.dp).background(fg.copy(alpha = 0.5f)))
-                    }
-                }
-            }
+private fun WhisperNotice(peerName: String, persists: Boolean) {
+    val c = CoveTheme.extendedColors
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 32.dp, bottom = 16.dp)) {
+        Box(Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
         }
-        // An attachment without text keeps its countdown below it.
-        if (m.text.isNullOrEmpty()) m.expiresAt?.let { exp ->
-            Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Schedule, null, tint = CoveWhisperTextMuted, modifier = Modifier.size(11.dp))
-                Spacer(Modifier.width(3.dp))
-                Text(formatRemaining(exp - now), color = CoveWhisperTextMuted, fontSize = CoveType.caption.fontSize)
-            }
-        }
+        Spacer(Modifier.height(12.dp))
+        androidx.compose.material3.Text(peerName, color = c.textPrimary, fontSize = 28.sp, fontWeight = FontWeight.Bold, lineHeight = 34.sp)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (persists) "Messages are encrypted on both devices and kept only on them. Compare the safety number to verify who you're talking to."
+            else "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to.",
+            color = c.textMuted, fontSize = CoveType.body.fontSize
+        )
+        Spacer(Modifier.height(24.dp))
+        SectionDivider()
     }
 }
 
@@ -541,15 +548,9 @@ private fun WhisperStateScreen(icon: androidx.compose.ui.graphics.vector.ImageVe
     }
 }
 
-/** The Whisper composer's colours: darker card and its own accent, on the shared [ChatInputBar]. */
-private fun whisperComposerPalette() = ComposerPalette(
-    card = CoveWhisperCard, border = CoveWhisperAccent, focusBorder = CoveWhisperPrimary.copy(alpha = 0.7f),
-    text = CoveWhisperPrimary, muted = CoveWhisperTextMuted, accent = CoveWhisperPrimary, onAccent = Color.Black, popover = CoveWhisperCard
-)
-
 /**
- * Whisper composer. Same component as the main chat (pill, emoji, mic/send swap, hold-to-talk with slide gestures)
- * in the Whisper palette; attachments open the Whisper screen's own sheet and nothing is uploaded to the server.
+ * Whisper composer. The very same component as the main chat (pill, emoji, mic/send swap, hold-to-talk with slide gestures),
+ * recoloured by [WhisperTheme]; attachments open the Whisper screen's own sheet and nothing is uploaded to the server.
  */
 @Composable
 private fun WhisperInputBar(
@@ -584,7 +585,6 @@ private fun WhisperInputBar(
         liveLevels = recorder.liveLevels,
         pendingVoice = pending,
         onSendPendingVoice = { r -> pending = null; onVoice(r) },
-        onDiscardPendingVoice = { pending?.file?.delete(); pending = null },
-        palette = whisperComposerPalette()
+        onDiscardPendingVoice = { pending?.file?.delete(); pending = null }
     )
 }

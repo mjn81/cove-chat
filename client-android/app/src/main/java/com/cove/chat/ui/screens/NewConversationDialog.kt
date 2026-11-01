@@ -75,36 +75,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * "New Conversation" dialog with Direct Message / Channel tabs
- * (reference: design-reference/05..07). DMs reuse the web rule: an unnamed private channel
- * whose members are [me, target]; the backend de-duplicates existing DMs.
+ * "New Channel" dialog: name, optional description and private/public. Direct messages are started from the search
+ * dialog instead (an unnamed private channel whose members are [me, target]; the backend de-duplicates existing DMs).
  */
 @Composable
-fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, initialDm: Boolean = false) {
+fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit) {
     val c = CoveTheme.extendedColors
     val app = CoveApp.instance
     val api = app.apiClient
     val me = app.preferencesManager.userId.orEmpty()
     val scope = rememberCoroutineScope()
 
-    var mode by remember { mutableStateOf(if (initialDm) 0 else 1) } // 0 = DM, 1 = channel
-    val dmTab = mode == 0
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isPrivate by remember { mutableStateOf(true) }
-    var userQuery by remember { mutableStateOf("") }
-    var users by remember { mutableStateOf<List<UserSummary>>(emptyList()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(userQuery, dmTab) {
-        if (!dmTab || userQuery.isBlank()) {
-            users = emptyList()
-            return@LaunchedEffect
-        }
-        delay(300)
-        api.searchUsers(userQuery.trim()).onSuccess { res -> users = res.filter { it.id != me } }
-    }
 
     fun create(request: CreateChannelRequest) {
         if (busy) return
@@ -119,41 +105,20 @@ fun NewConversationDialog(onDismiss: () -> Unit, onCreated: (Channel) -> Unit, i
     }
 
     CoveDialog(
-        onDismiss = onDismiss, title = "New Conversation",
+        onDismiss = onDismiss, title = "New Channel",
         footer = {
             CoveButton("Cancel", onDismiss, variant = ButtonVariant.Ghost)
-            if (mode == 1) {
-                CoveButton(
-                    "Create",
-                    onClick = { create(CreateChannelRequest(name = name.trim(), description = description.trim(), members = listOf(me), isPrivate = isPrivate)) },
-                    enabled = name.isNotBlank() && !busy
-                )
-            }
+            CoveButton(
+                "Create",
+                onClick = { create(CreateChannelRequest(name = name.trim(), description = description.trim(), members = listOf(me), isPrivate = isPrivate)) },
+                enabled = name.isNotBlank() && !busy
+            )
         }
     ) {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            CoveSegmented(
-                listOf(Segment("Direct Message", Icons.Outlined.ChatBubbleOutline), Segment("Channel", Icons.Outlined.Tag)),
-                selectedIndex = mode, onSelect = { mode = it }
-            )
-
             error?.let { ErrorBanner(it) }
 
-            if (dmTab) {
-                FormField("Find a user") {
-                    CoveTextField(userQuery, { userQuery = it }, placeholder = "Search by username")
-                    LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                        items(users, key = { it.id }) { u ->
-                            CoveListRow(
-                                title = u.username,
-                                contentPadding = PaddingValues(vertical = Spacing.sm),
-                                onClick = { create(CreateChannelRequest(name = "", members = listOf(me, u.id), isPrivate = true)) },
-                                leading = { UserAvatar(u.id, size = 32.dp, avatarId = u.avatarId) }
-                            )
-                        }
-                    }
-                }
-            } else {
+            run {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     InitialsAvatar(id = name.ifBlank { "new" }, name = name, size = 64.dp)
                     Spacer(Modifier.width(Spacing.lg))

@@ -71,7 +71,8 @@ fun MessageText(
     modifier: Modifier = Modifier,
     lineHeight: TextUnit = 22.sp,
     onMention: (username: String) -> Unit = {},
-    onInvite: ((code: String) -> Unit)? = null
+    onInvite: ((code: String) -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null
 ) {
     val c = CoveTheme.extendedColors
     val onMentionState = rememberUpdatedState(onMention)
@@ -100,7 +101,7 @@ fun MessageText(
     Box(
         modifier
             .drawBehind { drawRoundRect(linkColor.copy(alpha = 0.28f * flash.value), cornerRadius = CornerRadius(4.dp.toPx())) }
-            .pointerInput(body, timeout) {
+            .pointerInput(body, timeout, onLongPress != null) {
                 // Observed in the Initial pass (parent first) so the release after a long press can be consumed before the
                 // text's own link handler turns it into a click; nothing is consumed unless a long press actually fires.
                 awaitEachGesture {
@@ -120,9 +121,14 @@ fun MessageText(
                     if (longPressed) {
                         val offset = layout?.getOffsetForPosition(down.position) ?: -1
                         val link = if (offset >= 0) body.linkAt(offset) else null
-                        clipboard.setText(AnnotatedString(link ?: text))
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        copiedTick++
+                        if (onLongPress != null && link == null) {
+                            // Holding the text starts message selection (copy lives in the selection bar); links still copy.
+                            onLongPress()
+                        } else {
+                            clipboard.setText(AnnotatedString(link ?: text))
+                            copiedTick++
+                        }
                         while (true) {
                             val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
                             change.consume()

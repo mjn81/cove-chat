@@ -87,7 +87,12 @@ internal suspend fun readWhisperUri(context: Context, uri: Uri): Triple<ByteArra
 }
 
 @Composable
-private fun bubbleColors(mine: Boolean) = if (mine) Color.Black to CoveWhisperPrimary else CoveWhisperPrimary to CoveWhisperAccent
+@Suppress("UNUSED_PARAMETER")
+private fun bubbleColors(mine: Boolean): Pair<Color, Color> {
+    // Attachments are plain cards on the page, like in the main chat (the colours come from the Whisper theme).
+    val c = com.cove.chat.ui.theme.CoveTheme.extendedColors
+    return c.textPrimary to c.card
+}
 
 /** An image, video, voice note or document inside a Whisper bubble. */
 @Composable

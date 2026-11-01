@@ -92,6 +92,30 @@ private val LightExtendedColors = CoveExtendedColors(
 
 val LocalCoveExtendedColors = staticCompositionLocalOf { DarkExtendedColors }
 
+/** Whisper's pitch-black palette (web `.whisper-mode`): the same roles, so the normal chat components just recolour. */
+private val WhisperExtendedColors = DarkExtendedColors.copy(
+    chatCanvas = CoveWhisperBg,
+    card = CoveWhisperCard,
+    popover = CoveWhisperPopover,
+    accent = CoveWhisperAccent,
+    textPrimary = Color(0xFFEDEDED),
+    textMuted = CoveWhisperTextMuted,
+    border = Color(0xFF333333)
+)
+
+private val WhisperColorScheme = darkColorScheme(
+    primary = CoveWhisperPrimary,
+    onPrimary = Color(0xFF141414),
+    background = CoveWhisperBg,
+    onBackground = Color(0xFFEDEDED),
+    surface = CoveWhisperCard,
+    onSurface = Color(0xFFEDEDED),
+    surfaceVariant = CoveWhisperPopover,
+    onSurfaceVariant = CoveWhisperTextMuted,
+    outline = Color(0xFF333333),
+    error = CoveDestructive
+)
+
 private val DarkColorScheme = darkColorScheme(
     primary = CovePrimary,
     onPrimary = CovePrimaryForeground,
@@ -117,6 +141,31 @@ private val LightColorScheme = lightColorScheme(
     outline = CoveBorderLight,
     error = CoveDestructiveLight
 )
+
+/**
+ * Recolours everything inside it with the Whisper palette, like the web client's `.whisper-mode` class. The Whisper
+ * screen is the normal chat UI (header, message rows, composer, day separators) under this theme, not a separate design.
+ * Always dark, whatever the app theme is, so it also forces light status-bar icons while it is on screen.
+ */
+@Composable
+fun WhisperTheme(content: @Composable () -> Unit) {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        androidx.compose.runtime.DisposableEffect(Unit) {
+            val window = (view.context as Activity).window
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = false
+            controller.isAppearanceLightNavigationBars = false
+            onDispose {
+                controller.isAppearanceLightStatusBars = !ThemeSettings.dark
+                controller.isAppearanceLightNavigationBars = !ThemeSettings.dark
+            }
+        }
+    }
+    CompositionLocalProvider(LocalCoveExtendedColors provides WhisperExtendedColors) {
+        MaterialTheme(colorScheme = WhisperColorScheme, typography = coveTypography(), content = content)
+    }
+}
 
 object CoveTheme {
     val extendedColors: CoveExtendedColors

@@ -56,6 +56,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.PaddingValues
@@ -72,6 +73,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -291,6 +293,8 @@ fun ChatInputBar(
                                 value = field,
                                 onValueChange = { field = it; if (it.text != input) onInputChange(it.text) },
                                 textStyle = TextStyle(
+                                    // The app's face (Vazirmatn) covers Persian, Arabic and Latin; other scripts fall back to the system.
+                                    fontFamily = com.cove.chat.ui.theme.CoveFontFamily,
                                     color = palette.text, fontSize = 16.sp, lineHeight = 24.sp, textDirection = TextDirection.Content,
                                     lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
                                 ),
@@ -322,6 +326,7 @@ fun ChatInputBar(
                 Box(Modifier.graphicsLayer { alpha = 1f - sendT; scaleX = 1f - 0.5f * sendT; scaleY = 1f - 0.5f * sendT }) {
                     MicButton(
                         enabled = !uploading && !showSend, recording = recording, rtl = rtl, palette = palette,
+                        level = (liveLevels.lastOrNull() ?: 0) / 100f,
                         onStart = { emojiOpen = false; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); onStartRecording() },
                         onCancel = ::cancelAnimated, onFinish = onFinishRecording,
                         onLock = { locked = true; haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
@@ -341,7 +346,12 @@ fun ChatInputBar(
                         Icon(Icons.AutoMirrored.Outlined.Send, if (recording) "Send voice message" else "Send message", tint = palette.onAccent, modifier = Modifier.size(24.dp).mirrorInRtl())
                     }
                 }
-                if (recording && !locked) LockCapsule(lockHint, palette, Modifier.align(Alignment.TopCenter).offset(y = (-116).dp))
+                // The capsule floats above the mic. As a plain child it is taller than the mic's 48dp slot, which made the
+                // slot (and with it the whole input row) grow while recording and pushed the chat up. A fixed 48dp holder
+                // with an unbounded child keeps the layout size constant.
+                if (recording && !locked) Box(Modifier.align(Alignment.TopCenter).size(48.dp)) {
+                    LockCapsule(lockHint, palette, Modifier.wrapContentSize(Alignment.TopCenter, unbounded = true).offset(y = (-116).dp))
+                }
             }
         }
 
@@ -359,7 +369,7 @@ fun ChatInputBar(
  */
 @Composable
 private fun MicButton(
-    enabled: Boolean, recording: Boolean, rtl: Boolean, palette: ComposerPalette,
+    enabled: Boolean, recording: Boolean, rtl: Boolean, palette: ComposerPalette, level: Float,
     onStart: () -> Unit, onCancel: () -> Unit, onFinish: () -> Unit, onLock: () -> Unit, onDrag: (Float) -> Unit, onLockHint: (Float) -> Unit
 ) {
     val density = LocalDensity.current
@@ -373,7 +383,13 @@ private fun MicButton(
     val drag by rememberUpdatedState(onDrag)
     val lockHint by rememberUpdatedState(onLockHint)
     var offset by remember { mutableStateOf(Offset.Zero) }
-    val scale by animateFloatAsState(if (recording) 1.25f else 1f, tween(150), label = "micScale")
+    // Spring overshoot on press, like Telegram's mic growing under the finger.
+    val scale by animateFloatAsState(
+        if (recording) 1.3f else 1f, spring(dampingRatio = 0.5f, stiffness = 500f), label = "micScale"
+    )
+    // The halo follows the voice: a short tween smooths the level samples (about 10 per second) into a steady swell.
+    val halo by animateFloatAsState(if (recording) level.coerceIn(0f, 1f) else 0f, tween(110), label = "micHalo")
+    val haloColor = MaterialTheme.colorScheme.error
     // The touch target stays put and only the visual follows the finger; moving the target itself would shift the
     // coordinates the gesture is measured in.
     Box(
@@ -413,6 +429,14 @@ private fun MicButton(
             },
         contentAlignment = Alignment.Center
     ) {
+        if (recording) {
+            // Two translucent rings behind the mic whose radius tracks the input level; they move with the finger.
+            Canvas(Modifier.size(48.dp).graphicsLayer { translationX = offset.x; translationY = offset.y }) {
+                val base = size.minDimension / 2f * 1.3f
+                drawCircle(haloColor.copy(alpha = 0.12f), radius = base + 34.dp.toPx() * halo)
+                drawCircle(haloColor.copy(alpha = 0.18f), radius = base + 16.dp.toPx() * halo)
+            }
+        }
         Box(
             Modifier.size(48.dp)
                 .graphicsLayer { translationX = offset.x; translationY = offset.y; scaleX = scale; scaleY = scale }

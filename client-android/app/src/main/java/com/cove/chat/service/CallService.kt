@@ -134,7 +134,7 @@ class CallService : Service() {
         }
         val person = Person.Builder().setName(channelName).setImportant(true).build()
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_phone_call)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setContentTitle(channelName)
             .setContentText(detail)
             .setCategory(NotificationCompat.CATEGORY_CALL)

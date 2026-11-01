@@ -39,6 +39,7 @@ data class UserSummary(
     val domain: String = "localhost",
     val status: String = "offline",
     @SerialName("avatar_id") val avatarId: String? = null,
+    @SerialName("avatar_ids") val avatarIds: List<String>? = null,
     @SerialName("custom_msg") val customMsg: String? = null,
     @SerialName("banner_color") val bannerColor: String? = null
 )

@@ -28,7 +28,7 @@ class ConnectionService : Service() {
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification: Notification = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_SERVICE)
-            .setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
+            .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setContentTitle("Cove")
             .setContentText("Connected — you'll get messages and calls")
             .setPriority(NotificationCompat.PRIORITY_MIN)

@@ -30,7 +30,7 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("dark_theme", true)
         set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
 
-    /** Chat background pattern id (`none`, `animals`, `space`, `games`, `sweets`), same ids as the web setting. */
+    /** Chat background pattern id (`none`, `animals`, `space`, `games`, `sweets`, `travel`, `nature`, `food`, `music`, `tech`, `weather`), same ids as the web setting. */
     var chatBackground: String
         get() = prefs.getString("chat_background", "none") ?: "none"
         set(value) = prefs.edit().putString("chat_background", value).apply()
