@@ -13,6 +13,7 @@ import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import type { Channel, Message } from '@/types/api';
 import { useAttachments } from '../hooks/use-attachments';
+import { useComposerDrafts } from '../store/composer-drafts.store';
 import { useFileDrop } from '../hooks/use-file-drop';
 import { useMentions } from '../hooks/use-mentions';
 import { useSendMedia } from '../hooks/use-send-media';
@@ -52,7 +53,17 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const isSmall = useMediaQuery('(max-width: 400px)');
 	const isTiny = useMediaQuery('(max-width: 340px)');
 
-	const [inputText, setInputText] = useState('');
+	// Unsent text lives in a per-chat store so it survives the layout switching between phone and desktop widths,
+	// which remounts this component.
+	const inputText = useComposerDrafts((s) => s.drafts[channel.id]?.text ?? '');
+	const setDraftText = useComposerDrafts((s) => s.setText);
+	const setInputText = useCallback(
+		(next: string | ((prev: string) => string)) => {
+			const current = useComposerDrafts.getState().drafts[channel.id]?.text ?? '';
+			setDraftText(channel.id, typeof next === 'function' ? next(current) : next);
+		},
+		[channel.id, setDraftText],
+	);
 	const [sending, setSending] = useState(false);
 	const [showEmoji, setShowEmoji] = useState(false);
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
@@ -60,7 +71,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
-	const attachments = useAttachments();
+	const attachments = useAttachments(channel.id);
 	const filePicker = useFilePicker(attachments.add);
 	const mentions = useMentions(channel.id, inputRef);
 	const sendText = useSendText(channel.id);
@@ -100,7 +111,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 			setSending(false);
 			inputRef.current?.focus();
 		}
-	}, [inputText, attachments, sending, channel.id, channelKey, replyTo, onCancelReply, sendText, t]);
+	}, [inputText, attachments, sending, channel.id, channelKey, replyTo, onCancelReply, sendText, setInputText, t]);
 
 	const retryFile = useCallback(
 		(id: string) => {
@@ -170,6 +181,14 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, [replyTo, channel.id]);
+
+	// A restored draft arrives with the text already set, so the textarea has to grow to fit it (typing does this itself).
+	useEffect(() => {
+		const el = inputRef.current;
+		if (!el) return;
+		el.style.height = 'auto';
+		el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
+	}, [inputText]);
 
 	const hasContent = inputText.trim() !== '' || attachments.files.length > 0;
 	const iconButtonClass =

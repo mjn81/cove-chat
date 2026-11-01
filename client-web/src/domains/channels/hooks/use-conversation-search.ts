@@ -2,12 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { apiJoinChannel } from '@/api/client';
 import { useExploreChannels } from '@/hooks/useChannels';
+import { useUserSearch } from '@/hooks/useUsers';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuthStore, useChannelStore, getChannelDisplayName } from '@/store/store';
 import { isDirectMessage } from '@/utils/channel';
 import { wrapIndex } from '@/utils/collection';
 import { logger } from '@/utils/logger';
-import type { Channel, ExploreChannel } from '@/types/api';
+import type { Channel, ExploreChannel, User } from '@/types/api';
 import { buildSearchItems, type SearchFilter } from '../utils/conversation-search';
 
 /**
@@ -19,6 +20,7 @@ import { buildSearchItems, type SearchFilter } from '../utils/conversation-searc
  */
 export function useConversationSearch(onDone: () => void) {
 	const userId = useAuthStore((s) => s.user?.id ?? '');
+	const username = useAuthStore((s) => s.user?.username);
 	const channels = useChannelStore((s) => s.channels);
 	const setActiveChannel = useChannelStore((s) => s.setActiveChannel);
 
@@ -26,20 +28,24 @@ export function useConversationSearch(onDone: () => void) {
 	const [filter, setFilterState] = useState<SearchFilter>('all');
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [joiningId, setJoiningId] = useState<string | null>(null);
+	const [startingDmId, setStartingDmId] = useState<string | null>(null);
 
 	const debounced = useDebounce(search.trim(), 300);
 	const { data: exploreChannels = [], isFetching: isExploring } = useExploreChannels(debounced);
+	const { data: users = [], isFetching: isSearchingUsers } = useUserSearch(debounced, username);
 
 	const sections = useMemo(
 		() =>
 			buildSearchItems({
 				channels,
 				exploreChannels,
+				users,
+				currentUserId: userId,
 				filter,
 				query: search,
 				displayName: (ch) => getChannelDisplayName(ch, userId),
 			}),
-		[channels, exploreChannels, filter, search, userId],
+		[channels, exploreChannels, users, filter, search, userId],
 	);
 
 	/** Totals shown on the tabs (independent of the query). */
@@ -64,6 +70,24 @@ export function useConversationSearch(onDone: () => void) {
 			onDone();
 		},
 		[setActiveChannel, onDone],
+	);
+
+	/** Starts (or reopens) the DM with someone found by name; the backend returns the existing DM when there is one. */
+	const startDm = useCallback(
+		async (target: User) => {
+			if (startingDmId) return;
+			try {
+				setStartingDmId(target.id);
+				const ch = await useChannelStore.getState().createChannel('', [userId, target.id], true);
+				setActiveChannel(ch);
+				onDone();
+			} catch (err) {
+				logger.error('Failed to start DM', { error: String(err) });
+			} finally {
+				setStartingDmId(null);
+			}
+		},
+		[startingDmId, userId, setActiveChannel, onDone],
 	);
 
 	const joinChannel = useCallback(
@@ -100,10 +124,11 @@ export function useConversationSearch(onDone: () => void) {
 				const current = sections.items[selectedIndex];
 				if (!current) return;
 				if (current.type === 'channel') openChannel(current.channel);
+				else if (current.type === 'user') startDm(current.user);
 				else joinChannel(current.channel);
 			}
 		},
-		[sections.items, selectedIndex, openChannel, joinChannel],
+		[sections.items, selectedIndex, openChannel, joinChannel, startDm],
 	);
 
 	return {
@@ -116,9 +141,12 @@ export function useConversationSearch(onDone: () => void) {
 		sections,
 		counts,
 		isExploring,
+		isSearchingUsers,
 		joiningId,
+		startingDmId,
 		openChannel,
 		joinChannel,
+		startDm,
 		handleKeyDown,
 	};
 }

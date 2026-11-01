@@ -24,6 +24,8 @@ import { useAuthStore } from '@/store/auth.slice';
 import { useChannelStore } from '@/store/channels.slice';
 import { isAdmin } from '@/utils/role';
 import { cn } from '@/lib/utils';
+import { currentInviteUrl } from '@/domains/channels/utils/invite-link';
+import { FriendPickerModal } from '../FriendPickerModal';
 
 interface ChannelInfoModalProps {
 	channel: Channel;
@@ -73,13 +75,13 @@ export const ChannelInfoModal: React.FC<ChannelInfoModalProps> = ({
 		: undefined;
 
 	const [copied, setCopied] = useState(false);
+	const [showFriendPicker, setShowFriendPicker] = useState(false);
 
 	const canManage = isAdmin(liveChannel.user_role);
 
 	const handleCopyInvite = () => {
 		if (!liveChannel.invite_link) return;
-		const fullUrl = `${window.location.origin}/join/${liveChannel.invite_link}`;
-		navigator.clipboard.writeText(fullUrl);
+		navigator.clipboard.writeText(currentInviteUrl(liveChannel.invite_link));
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	};
@@ -188,46 +190,50 @@ export const ChannelInfoModal: React.FC<ChannelInfoModalProps> = ({
 						</>
 					)}
 
-					{liveChannel.invite_link && (
-						<>
-							<Separator />
-							<div className="flex w-full min-w-0 flex-col gap-2 pt-0.5">
-								<div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-									<span className="flex items-center gap-1.5">
-										<Share2 size={13} className="text-primary" />
-										<span>{t('channel.info.invite_link')}</span>
-									</span>
-									<span className="text-[11px]">{t('channel.info.share_hint')}</span>
+						{liveChannel.invite_link && (
+							<>
+								<Separator />
+								<div className="flex w-full min-w-0 flex-col gap-2 pt-0.5">
+									<div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+										<span className="flex items-center gap-1.5">
+											<Share2 size={13} className="text-primary" />
+											<span>{t('channel.info.invite_title')}</span>
+										</span>
+										<span className="text-[11px]">{t('channel.info.share_hint')}</span>
+									</div>
+									<div className="flex w-full min-w-0 items-center gap-2">
+										<Button
+											type="button"
+											size="sm"
+											onClick={() => setShowFriendPicker(true)}
+											className="h-8 flex-1 gap-1.5 text-xs"
+										>
+											<Share2 size={13} />
+											<span>{t('channel.info.share')}</span>
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											variant="secondary"
+											onClick={handleCopyInvite}
+											className="h-8 flex-1 gap-1.5 text-xs"
+										>
+											{copied ? (
+												<>
+													<Check size={13} />
+													<span>{t('channel.info.copied')}</span>
+												</>
+											) : (
+												<>
+													<Copy size={13} />
+													<span>{t('channel.info.copy_invite')}</span>
+												</>
+											)}
+										</Button>
+									</div>
 								</div>
-								<div className="flex w-full min-w-0 items-center gap-2 rounded-md border border-border bg-background px-3 py-2">
-									<span
-										dir="ltr"
-										className="min-w-0 flex-1 select-all truncate font-mono text-xs text-muted-foreground"
-									>
-										{window.location.origin}/join/{liveChannel.invite_link}
-									</span>
-									<Button
-										type="button"
-										size="sm"
-										onClick={handleCopyInvite}
-										className="h-7 shrink-0 gap-1.5 px-3 text-xs"
-									>
-										{copied ? (
-											<>
-												<Check size={13} />
-												<span>{t('channel.info.copied')}</span>
-											</>
-										) : (
-											<>
-												<Copy size={13} />
-												<span>{t('channel.info.copy')}</span>
-											</>
-										)}
-									</Button>
-								</div>
-							</div>
-						</>
-					)}
+							</>
+						)}
 				</div>
 
 				{/* Admin actions */}
@@ -246,6 +252,15 @@ export const ChannelInfoModal: React.FC<ChannelInfoModalProps> = ({
 					</Button>
 				)}
 			</div>
+			{showFriendPicker && (
+				<FriendPickerModal
+					open
+					onOpenChange={setShowFriendPicker}
+					channelName={liveChannel.name}
+					channelAvatarId={liveChannel.avatar_id}
+					inviteLink={liveChannel.invite_link}
+				/>
+			)}
 		</ModalShell>
 	);
 };

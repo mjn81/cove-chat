@@ -15,18 +15,17 @@ import { logger } from '@/utils/logger';
 import { getChannelDisplayName } from '@/store/store';
 import { isDirectMessage } from '@/utils/channel';
 import { apiGetFile } from '@/api/client';
-import { encryptAndCompressFile } from '@/utils/file';
-import { bytesToBase64, base64ToBytes } from '@/ws';
-import { apiUploadFile } from '@/api/client';
+import { base64ToBytes } from '@/ws';
 import { decryptAndDecompressFile } from '@/utils/file';
-import { db } from '@/lib/db';
+import { encryptAndUploadFile } from '@/domains/files/utils/upload-encrypted-file';
 
 interface ForwardModalProps {
-	message: Message & { text?: string };
+	/** Messages to forward, oldest first. */
+	messages: (Message & { text?: string })[];
 	onClose: () => void;
 }
 
-export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) => {
+export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose }) => {
 	const { t } = useTranslation();
 	const { channels } = useChannelStore();
 	const { user } = useAuthStore();
@@ -53,11 +52,8 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 		);
 	};
 
-	const handleForward = async () => {
-		if (selectedIds.length === 0 || sending) return;
-		setSending(true);
-
-		try {
+	/** Re-sends one message to every picked chat (files and voice notes are re-encrypted for each). */
+	const forwardOne = async (message: Message & { text?: string }) => {
 			const sourceKey = getChannelKey(message.channel_id);
 			if (!sourceKey) throw new Error('Source channel key not found');
 
@@ -72,70 +68,61 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ message, onClose }) 
 			}
 
 			// 2. Handle different message types
-			if (message.type === 'text') {
+			if (message.type === 'text' || message.type === 'invite') {
 				// Text is easy: just re-send encrypted for each channel
 				for (const targetId of selectedIds) {
-					await wsSendMessage(targetId, contentText, 'text');
+					await wsSendMessage(targetId, contentText, message.type);
 				}
-			} else if (message.type === 'file' || message.type === 'voice') {
-				// Files/Voice need re-encryption of the actual binary data
-				const meta = JSON.parse(contentText);
-				
-				// Download and decrypt source file
+			} else if (message.type === 'file' || message.type === 'voice' || message.type === 'video') {
+				// Files, voice notes and video messages: the bytes are decrypted once with the source key, then encrypted
+				// and uploaded again for every target chat (each chat has its own key).
+				const meta = JSON.parse(contentText) as {
+					file_id: string;
+					name?: string;
+					mime: string;
+					nonce: string;
+					duration?: number;
+					as_document?: boolean;
+				};
+				// Audio is stored uncompressed (voice notes and audio files alike); everything else is zstd-compressed.
+				const isAudio = meta.mime.startsWith('audio/') || message.type === 'voice';
+
 				const encryptedBuffer = await apiGetFile(meta.file_id, undefined);
-				const decryptedData = await decryptAndDecompressFile(
+				const plain = await decryptAndDecompressFile(
 					new Uint8Array(encryptedBuffer),
 					base64ToBytes(meta.nonce),
 					sourceKey,
-					message.type === 'voice'
+					isAudio,
 				);
+				const copy = new File([plain as BlobPart], meta.name || 'file', { type: meta.mime });
 
-				// For each target channel, re-encrypt and re-upload
 				for (const targetId of selectedIds) {
 					const targetKey = getChannelKey(targetId);
-					if (!targetKey) continue;
+					if (!targetKey) throw new Error(`No key for channel ${targetId}`);
 
-					// Re-encrypt
-					// We'll mock a File object for the encryption helper
-					const dummyFile = new File([decryptedData as any], meta.name || 'file', { type: meta.mime });
-					const processed = await encryptAndCompressFile(dummyFile, targetKey);
-
-					// Upload
-					const res = await apiUploadFile(
-						new Blob([processed.ciphertext as any], { type: processed.mimeType }),
-						processed.mimeType,
-						processed.thumbnailCipher ? bytesToBase64(processed.thumbnailCipher) : undefined,
-						processed.thumbnailNonce ? bytesToBase64(processed.thumbnailNonce) : undefined,
-						undefined,
-						targetId,
-					);
-
-					const newFileId = (res as any).id;
-					try {
-						await db.cacheFile(
-							newFileId,
-							processed.rawBytes,
-							processed.mimeType,
-							processed.originalSize,
-						);
-					} catch (cacheErr) {
-						logger.warn('Failed to pre-cache forwarded file', { error: String(cacheErr) });
-					}
-
-					const newMeta = JSON.stringify({
-						file_id: newFileId,
-						name: meta.name,
-						mime: meta.mime,
-						size: meta.size,
-						nonce: bytesToBase64(processed.nonce),
-						thumb_ciphertext: processed.thumbnailCipher ? bytesToBase64(processed.thumbnailCipher) : undefined,
-						thumb_nonce: processed.thumbnailNonce ? bytesToBase64(processed.thumbnailNonce) : undefined,
+					// The same path normal sends take, so thumbnails, waveforms and the local cache come out the same.
+					const uploaded = await encryptAndUploadFile({
+						file: copy,
+						channelKey: targetKey,
+						channelId: targetId,
+						asDocument: meta.as_document,
+						isVideoMessage: message.type === 'video' ? true : undefined,
 					});
-
-					await wsSendMessage(targetId, newMeta, message.type, message.type === 'voice' ? 'none' : 'zstd');
+					const payload = uploaded.metadata({
+						duration: meta.duration,
+						processingStatus: message.type === 'video' ? 'processing' : undefined,
+					});
+					await wsSendMessage(targetId, payload, message.type, isAudio ? 'none' : 'zstd');
 				}
 			}
+	};
 
+	const handleForward = async () => {
+		if (selectedIds.length === 0 || sending) return;
+		setSending(true);
+		try {
+			// In reading order, so the copies arrive in the order they were written.
+			for (const message of messages) await forwardOne(message);
 			onClose();
 		} catch (err) {
 			logger.error('Forwarding failed', { error: String(err) });

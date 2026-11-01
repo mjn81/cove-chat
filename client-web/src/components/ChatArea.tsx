@@ -7,11 +7,23 @@ import {
 	memo,
 } from 'react';
 import { logProfiler } from '@/utils/profiler';
+import { useAudioPlaylist } from '@/domains/messages/hooks/use-audio-playlist';
+import { BOTTOM_BAR_HEIGHT_CLASS } from '@/lib/layout';
+import { cn } from '@/lib/utils';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useMessages } from '@/hooks/useMessages';
 import type { Message, Channel } from '@/types/api';
-import { onWS, decryptMessage, wsSendReadReceipt } from '@/ws';
+import { onWS, decryptMessage, wsDeleteMessage, wsSendReadReceipt } from '@/ws';
+import { toast } from 'sonner';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { isAdmin } from '@/utils/role';
+import { useSelectionStore } from '@/domains/messages/store/selection.store';
+import { selectionActions } from '@/domains/messages/utils/message-selection';
+import { SelectionBar } from '@/domains/messages/components/selection-bar';
+
+/** Stable empty selection, so the store selector does not return a new array on every render. */
+const NO_IDS: string[] = [];
 import { useAuthStore, useCryptoStore, useWhisperStore } from '@/store/store';
 import { db } from '@/lib/db';
 import { resolveOldestPending } from '@/utils/pendingMessages';
@@ -68,6 +80,9 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 		return data.pages.flat();
 	}, [data]);
 
+	// Voice notes and audio files in this chat become the player's playlist.
+	useAudioPlaylist(channel, messages);
+
 	// Send read receipt when opening channel
 	useEffect(() => {
 		wsSendReadReceipt(channel.id);
@@ -107,7 +122,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 	const addMessage = useCallback(
 		async (msg: Message) => {
 			// Avoid duplicates if we just fetched from REST
-			const text = msg.type === 'text' ? await decryptMessage(msg) : undefined;
+			const text = msg.type === 'text' || msg.type === 'invite' ? await decryptMessage(msg) : undefined;
 			const fullMsg = { ...msg, text };
 
 			// Save to IndexedDB
@@ -145,7 +160,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 			const msg = payload as Message;
 			if (msg.channel_id === channel.id) {
 				const text =
-					msg.type === 'text' ? await decryptMessage(msg) : undefined;
+					msg.type === 'text' || msg.type === 'invite' ? await decryptMessage(msg) : undefined;
 				const fullMsg = { ...msg, text };
 
 				await db.cacheMessages([fullMsg]);
@@ -200,14 +215,46 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 		state.channelKeys.get(channel.id),
 	);
 	const [replyTo, setReplyTo] = useState<DecryptedMessage | null>(null);
-	const [forwardMessage, setForwardMessage] = useState<DecryptedMessage | null>(null);
+	const [forwardMessages, setForwardMessages] = useState<DecryptedMessage[]>([]);
+	const [confirmDelete, setConfirmDelete] = useState(false);
+
+	// Multi-select: the ticked messages in reading order, and what the bar below may offer for them.
+	const selectedIds = useSelectionStore((s) => (s.channelId === channel.id ? s.ids : NO_IDS));
+	const clearSelection = useSelectionStore((s) => s.clear);
+	const selectedMessages = useMemo(
+		() =>
+			messages
+				.filter((m) => selectedIds.includes(m.id))
+				.sort((a, b) => a.sent_at.localeCompare(b.sent_at)),
+		[messages, selectedIds],
+	);
+	const actions = selectionActions(selectedMessages, user?.id ?? '', isAdmin(channel.user_role));
+
+	// Escape leaves selection mode, and a selection never follows the user into another chat.
+	useEffect(() => {
+		if (selectedIds.length === 0) return;
+		const onKey = (e: KeyboardEvent) => e.key === 'Escape' && clearSelection();
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [selectedIds.length, clearSelection]);
+	useEffect(() => clearSelection, [channel.id, clearSelection]);
+
+	const copySelected = useCallback(async () => {
+		try {
+			await navigator.clipboard.writeText(selectedMessages.map((m) => m.text ?? '').join('\n'));
+			toast.success(t('chat.copied'));
+			clearSelection();
+		} catch {
+			// Clipboard can be unavailable (insecure context / denied permission); the selection stays so the user can retry.
+		}
+	}, [selectedMessages, clearSelection, t]);
 
 	const handleReply = useCallback((msg: DecryptedMessage) => {
 		setReplyTo(msg);
 	}, []);
 
 	const handleForward = useCallback((msg: DecryptedMessage) => {
-		setForwardMessage(msg);
+		setForwardMessages([msg]);
 	}, []);
 
 	if (isWhisperActive) {
@@ -271,8 +318,24 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 					isFetchingNextPage={isFetchingNextPage}
 				/>
 
-				{isSystemChannel(channel) ? (
-					<div className="shrink-0 border-t border-border bg-card px-4 py-3 text-center text-xs text-muted-foreground">
+				{selectedMessages.length > 0 ? (
+					<SelectionBar
+						count={selectedMessages.length}
+						actions={actions}
+						onClear={clearSelection}
+						onReply={() => {
+							setReplyTo(selectedMessages[0]);
+							clearSelection();
+						}}
+						onCopy={copySelected}
+						onForward={() => {
+							setForwardMessages(selectedMessages);
+							clearSelection();
+						}}
+						onDelete={() => setConfirmDelete(true)}
+					/>
+				) : isSystemChannel(channel) ? (
+					<div className={cn('flex shrink-0 items-center justify-center border-t border-border/50 bg-secondary px-4 text-center text-xs text-muted-foreground', BOTTOM_BAR_HEIGHT_CLASS)}>
 						{t('systemChat.readOnly')}
 					</div>
 				) : (
@@ -285,12 +348,22 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 					/>
 				)}
 
-				{forwardMessage && (
-					<ForwardModal 
-						message={forwardMessage} 
-						onClose={() => setForwardMessage(null)} 
-					/>
-				)}
+				{forwardMessages.length > 0 && (
+				<ForwardModal messages={forwardMessages} onClose={() => setForwardMessages([])} />
+			)}
+			<ConfirmModal
+				isOpen={confirmDelete}
+				onClose={() => setConfirmDelete(false)}
+				onConfirm={() => {
+					selectedMessages.forEach((m) => wsDeleteMessage(channel.id, m.id));
+					setConfirmDelete(false);
+					clearSelection();
+				}}
+				title={t('chat.selection.delete_title', { count: selectedMessages.length })}
+				message={t('chat.selection.delete_message')}
+				confirmText={t('chat.selection.delete')}
+				variant="danger"
+			/>
 			</div>
 		</Profiler>
 	);

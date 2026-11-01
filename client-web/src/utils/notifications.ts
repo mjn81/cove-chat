@@ -5,12 +5,16 @@ import { isWails } from './wails';
  * Notification Sound Utility
  */
 
-export type SoundType = 'new-group' | 'message' | 'file-upload';
+export type SoundType = 'new-group' | 'message' | 'file-upload' | 'whisper';
+
+/** Looping ringtone for incoming calls (see `lib/ringtone.ts`). */
+export const CALL_RING_PATH = '/call-ring.wav';
 
 const SOUND_PATHS: Record<SoundType, string> = {
   'new-group': '/new-group-notif.mp3',
   'message': '/message-notif.mp3',
   'file-upload': '/file-message-notif.mp3',
+  whisper: '/whisper-request.wav',
 };
 
 /** Plays a notification sound. Safely handles browser restrictions. */
@@ -39,8 +43,16 @@ export async function requestNotificationPermission() {
   return await Notification.requestPermission();
 }
 
-/** Shows a browser desktop notification. */
-export function showBrowserNotification(title: string, body: string, icon?: string) {
+interface BrowserNotificationOptions {
+  icon?: string;
+  /** Notifications with the same tag replace each other; messages, calls and whispers use different ones. */
+  tag?: string;
+  /** Keeps the notification on screen until the user acts (incoming calls). */
+  requireInteraction?: boolean;
+}
+
+/** Shows a browser desktop notification (or the native one in the desktop app). */
+export function showBrowserNotification(title: string, body: string, options: BrowserNotificationOptions = {}) {
   const { enableDesktopNotifications } = useAppStore.getState();
   if (!enableDesktopNotifications) return;
 
@@ -60,8 +72,9 @@ export function showBrowserNotification(title: string, body: string, icon?: stri
 
   const notif = new Notification(title, {
     body,
-    icon: icon || '/logo192.png', // Fallback to app logo
-    tag: 'cove-msg', // Consolidate multiple notifications
+    icon: options.icon || '/logo192.png', // Fallback to app logo
+    tag: options.tag ?? 'cove-msg', // Consolidate multiple notifications
+    requireInteraction: options.requireInteraction,
     silent: true, // We play our own custom sounds
   });
 

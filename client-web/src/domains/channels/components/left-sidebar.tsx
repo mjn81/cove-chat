@@ -67,7 +67,6 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 	const [showSearchDialog, setShowSearchDialog] = useState(false);
 	const [deleteDmTarget, setDeleteDmTarget] = useState<Channel | null>(null);
 	const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
-	const [modalTab, setModalTab] = useState<'dm' | 'channel'>('dm');
 
 	const activeVoiceChannel = channels.find((c) => c.id === activeVoiceChannelId);
 	const activeVoiceChannelName = activeVoiceChannel
@@ -77,10 +76,7 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 	const handleSelectChannel = useCallback((ch: Channel) => setActiveChannel(ch), [setActiveChannel]);
 	const handleDeleteDM = useCallback((ch: Channel) => setDeleteDmTarget(ch), []);
 	const handleViewProfile = useCallback((userId: string) => setSelectedProfileUserId(userId), []);
-	const openNewConversation = useCallback((tab: 'dm' | 'channel') => {
-		setModalTab(tab);
-		setShowNewChannel(true);
-	}, []);
+	const openNewChannel = useCallback(() => setShowNewChannel(true), []);
 
 	useEffect(() => {
 		fetchVersion();
@@ -115,7 +111,7 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 			<SidebarActions
 				isCollapsed={isCollapsed}
 				onOpenSearch={() => setShowSearchDialog(true)}
-				onNewConversation={() => openNewConversation('channel')}
+				onNewConversation={openNewChannel}
 			/>
 
 			<ScrollArea className="min-h-0 w-full flex-1">
@@ -196,7 +192,7 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 			/>
 
 			{showNewChannel && (
-				<NewChannelModal initialTab={modalTab} onClose={() => setShowNewChannel(false)} />
+				<NewChannelModal onClose={() => setShowNewChannel(false)} />
 			)}
 			{showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 			{deleteDmTarget && (
@@ -216,7 +212,7 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 			<ConversationSearchDialog
 				open={showSearchDialog}
 				onOpenChange={setShowSearchDialog}
-				onCreateNew={openNewConversation}
+				onCreateNew={openNewChannel}
 			/>
 		</div>
 	);

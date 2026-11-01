@@ -1,18 +1,23 @@
-import type { Channel, ExploreChannel } from '@/types/api';
+import type { Channel, ExploreChannel, User } from '@/types/api';
 import { isDirectMessage } from '@/utils/channel';
 
 /** Tabs of the global conversation search (Ctrl/Cmd+K). */
 export type SearchFilter = 'all' | 'dms' | 'channels' | 'explore';
 
-/** A selectable row: one of the user's conversations, or a public channel they could join. */
+/** A selectable row: one of the user's conversations, a public channel they could join, or a person to start a DM with. */
 export type SearchItem =
 	| { type: 'channel'; channel: Channel }
-	| { type: 'explore'; channel: ExploreChannel };
+	| { type: 'explore'; channel: ExploreChannel }
+	| { type: 'user'; user: User };
 
 interface BuildArgs {
 	channels: Channel[];
 	/** Public channels returned by the server for the current query. */
 	exploreChannels: ExploreChannel[];
+	/** Users returned by the server for the current query. */
+	users: User[];
+	/** The signed-in user, so they are not offered as someone to message. */
+	currentUserId: string;
 	filter: SearchFilter;
 	/** Raw search text. */
 	query: string;
@@ -26,6 +31,8 @@ export interface SearchSections {
 	groupChannels: Channel[];
 	/** Public channels the user has not joined yet. */
 	publicChannels: ExploreChannel[];
+	/** People without a DM yet; picking one creates it. Only on "All" and "Direct messages" and only once something is typed. */
+	people: User[];
 	/** All rows in the order they are displayed, for arrow-key navigation. */
 	items: SearchItem[];
 }
@@ -41,6 +48,8 @@ export interface SearchSections {
 export function buildSearchItems({
 	channels,
 	exploreChannels,
+	users,
+	currentUserId,
 	filter,
 	query,
 	displayName,
@@ -66,11 +75,25 @@ export function buildSearchItems({
 	const asChannels = (list: Channel[]): SearchItem[] => list.map((channel) => ({ type: 'channel', channel }));
 	const asExplore = (list: ExploreChannel[]): SearchItem[] => list.map((channel) => ({ type: 'explore', channel }));
 
+	// Everyone the user already has a DM with is in `dms`; the rest are people to message for the first time.
+	const dmPeers = new Set(channels.filter(isDirectMessage).flatMap((c) => c.members));
+	const people =
+		q && (filter === 'all' || filter === 'dms')
+			? users.filter((u) => u.id !== currentUserId && !dmPeers.has(u.id))
+			: [];
+	const asUsers = (list: User[]): SearchItem[] => list.map((user) => ({ type: 'user', user }));
+
 	let items: SearchItem[];
 	if (filter === 'explore') items = asExplore(publicChannels);
-	else if (filter === 'dms') items = asChannels(dms);
+	else if (filter === 'dms') items = [...asChannels(dms), ...asUsers(people)];
 	else if (filter === 'channels') items = asChannels(groupChannels);
-	else items = [...asChannels(dms), ...asChannels(groupChannels), ...(q ? asExplore(publicChannels) : [])];
+	else
+		items = [
+			...asChannels(dms),
+			...asUsers(people),
+			...asChannels(groupChannels),
+			...(q ? asExplore(publicChannels) : []),
+		];
 
-	return { dms, groupChannels, publicChannels, items };
+	return { dms, groupChannels, publicChannels, people, items };
 }

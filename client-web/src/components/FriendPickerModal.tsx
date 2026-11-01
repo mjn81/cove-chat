@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/store';
 import { useChannelStore } from '@/store/channels.slice';
 import { wsSendMessage } from '@/ws';
+import { encodeInvite } from '@/domains/channels/utils/invite-message';
 import { logger } from '@/utils/logger';
 
 interface FriendPickerModalProps {
@@ -20,19 +21,22 @@ interface FriendPickerModalProps {
 	onOpenChange: (open: boolean) => void;
 	channelId?: string;
 	channelName?: string;
+	channelAvatarId?: string;
 	inviteLink?: string;
 }
 
 /**
- * Lets the user pick friends and DM each of them a channel invite link.
+ * Lets the user pick friends and DM each of them an invite message (a card with a Join button).
  *
  * @param inviteLink - Channel invite code; the picker does nothing without it.
- * @param channelName - Shown in the invite text sent to each friend.
+ * @param channelName - Channel name carried in the invite.
+ * @param channelAvatarId - Channel avatar carried in the invite.
  */
 export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 	open,
 	onOpenChange,
 	channelName,
+	channelAvatarId,
 	inviteLink,
 }) => {
 	const { t } = useTranslation();
@@ -61,17 +65,18 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 
 		setIsSending(true);
 		try {
-			const linkUrl = `${window.location.origin}/join/${inviteLink}`;
-			const inviteText = t('channel.invite.message', {
+			// An invite message carries the code, never a link: the receiving client draws a card with a Join button.
+			const inviteText = encodeInvite({
+				code: inviteLink,
 				name: channelName || t('channel.invite.default_channel'),
-				link: linkUrl,
+				avatar_id: channelAvatarId,
 			});
 
 			for (const friendId of selectedUserIds) {
 				const dmChannel =
 					findDirectChannel(channels, friendId) ?? (await createChannel('', [friendId], true));
 				if (dmChannel) {
-					await wsSendMessage(dmChannel.id, inviteText, 'text');
+					await wsSendMessage(dmChannel.id, inviteText, 'invite');
 				}
 			}
 

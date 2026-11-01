@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Channel, ExploreChannel } from '@/types/api';
-import { buildSearchItems } from './conversation-search';
+import type { Channel, ExploreChannel, User } from '@/types/api';
+import { buildSearchItems, type SearchItem } from './conversation-search';
 
 const ch = (over: Partial<Channel>): Channel =>
 	({ id: 'x', name: 'x', members: ['a', 'b', 'c'], ...over }) as Channel;
@@ -16,13 +16,40 @@ const displayName = (c: Channel) => names[c.id];
 const channels = [dm, design, random];
 const explore = [ex('g1', 'design'), ex('p1', 'public-news')];
 
-const run = (filter: Parameters<typeof buildSearchItems>[0]['filter'], query = '') =>
-	buildSearchItems({ channels, exploreChannels: explore, filter, query, displayName });
+const user = (id: string, username: string): User => ({ id, username }) as User;
+const people = [user('sara', 'sara'), user('omar', 'omar'), user('me', 'me')];
+
+const run = (filter: Parameters<typeof buildSearchItems>[0]['filter'], query = '', users: User[] = []) =>
+	buildSearchItems({ channels, exploreChannels: explore, users, currentUserId: 'me', filter, query, displayName });
+
+const idOf = (i: SearchItem) => (i.type === 'user' ? i.user.id : i.channel.id);
 
 describe('buildSearchItems', () => {
 	it('lists DMs first, then channels, with no public results until the user types', () => {
 		const { items } = run('all');
-		expect(items.map((i) => `${i.type}:${i.channel.id}`)).toEqual(['channel:dm', 'channel:g1', 'channel:g2']);
+		expect(items.map((i) => `${i.type}:${idOf(i)}`)).toEqual(['channel:dm', 'channel:g1', 'channel:g2']);
+	});
+
+	it('offers people who have no DM yet, after the DMs, once a query is typed', () => {
+		const { items, people: found } = run('all', 'a', people);
+		expect(found.map((u) => u.id)).toEqual(['omar']);
+		// "Sara" (a DM) first, then the new person, then the joined channels.
+		expect(items.map((i) => `${i.type}:${idOf(i)}`).slice(0, 3)).toEqual(['channel:dm', 'user:omar', 'channel:g1']);
+	});
+
+	it('never lists people someone already has a DM with, or yourself', () => {
+		// The server already filtered by the query, so only the DM peer ("sara") and self are dropped here.
+		expect(run('all', 's', people).people.map((u) => u.id)).toEqual(['omar']);
+	});
+
+	it('shows people on the DMs tab but not on channels or explore', () => {
+		expect(run('dms', 'o', people).people.map((u) => u.id)).toEqual(['omar']);
+		expect(run('channels', 'o', people).people).toEqual([]);
+		expect(run('explore', 'o', people).people).toEqual([]);
+	});
+
+	it('shows no people before anything is typed', () => {
+		expect(run('all', '', people).people).toEqual([]);
 	});
 
 	it('adds public channels (minus joined ones) once a query is typed', () => {
@@ -37,14 +64,14 @@ describe('buildSearchItems', () => {
 	});
 
 	it('respects the tab filters', () => {
-		expect(run('dms').items.map((i) => i.channel.id)).toEqual(['dm']);
-		expect(run('channels').items.map((i) => i.channel.id)).toEqual(['g1', 'g2']);
+		expect(run('dms').items.map(idOf)).toEqual(['dm']);
+		expect(run('channels').items.map(idOf)).toEqual(['g1', 'g2']);
 		expect(run('dms').publicChannels).toEqual([]);
 	});
 
 	it('shows only public channels on the explore tab', () => {
 		const { items } = run('explore');
 		expect(items.every((i) => i.type === 'explore')).toBe(true);
-		expect(items.map((i) => i.channel.id)).toEqual(['p1']);
+		expect(items.map(idOf)).toEqual(['p1']);
 	});
 });

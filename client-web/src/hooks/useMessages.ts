@@ -13,7 +13,7 @@ export function useMessages(channelId: string) {
 			const decrypted: CachedMessage[] = await Promise.all(
 				msgs.map(async (m) => ({
 					...m,
-					text: m.type === 'text' ? await decryptMessage(m) : undefined,
+					text: m.type === 'text' || m.type === 'invite' ? await decryptMessage(m) : undefined,
 				})),
 			);
 			

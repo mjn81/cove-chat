@@ -142,7 +142,7 @@ export default function AppPage() {
 			) : (
 				<>
 					<MacDragStrip />
-					<ChatBackgroundPattern />
+					<ChatBackgroundPattern variant="plain" />
 					<div className="flex flex-col flex-1" />
 				</>
 			)}

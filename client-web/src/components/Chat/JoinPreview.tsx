@@ -47,7 +47,7 @@ export const JoinPreview: React.FC<JoinPreviewProps> = ({ inviteCode, onDone }) 
 
 	if (preview.isLoading) {
 		return (
-			<Card className="mt-2 flex max-w-sm items-center justify-center bg-secondary/30 p-4">
+			<Card className="mt-2 flex max-w-sm items-center justify-center bg-background p-4">
 				<Loader2 size={18} className="animate-spin text-muted-foreground" />
 			</Card>
 		);
@@ -55,7 +55,7 @@ export const JoinPreview: React.FC<JoinPreviewProps> = ({ inviteCode, onDone }) 
 
 	if (preview.isError || !preview.data) {
 		return (
-			<Card className="mt-2 max-w-sm border-destructive/40 bg-secondary/30 p-4">
+			<Card className="mt-2 max-w-sm border-destructive/40 bg-background p-4">
 				<span className="text-xs font-medium text-destructive">
 					{preview.error?.message || t('channel.invite.preview.load_failed')}
 				</span>
@@ -65,7 +65,7 @@ export const JoinPreview: React.FC<JoinPreviewProps> = ({ inviteCode, onDone }) 
 
 	const data = preview.data;
 	return (
-		<Card className="mt-2 flex max-w-sm flex-col gap-3 border-primary/20 bg-secondary/30 p-4">
+		<Card className="mt-2 flex max-w-sm flex-col gap-3 border-primary/20 bg-background p-4">
 			<div className="flex items-start gap-3">
 				<ChannelAvatar id={data.id} name={data.name} avatarId={data.avatar_id} size={40} />
 				<div className="flex min-w-0 flex-col">

@@ -7,6 +7,12 @@ import animalsSvg from '@/assets/patterns/animals.svg?url';
 import spaceSvg from '@/assets/patterns/space.svg?url';
 import gamesSvg from '@/assets/patterns/games.svg?url';
 import sweetsSvg from '@/assets/patterns/sweets.svg?url';
+import travelSvg from '@/assets/patterns/travel.svg?url';
+import natureSvg from '@/assets/patterns/nature.svg?url';
+import foodSvg from '@/assets/patterns/food.svg?url';
+import musicSvg from '@/assets/patterns/music.svg?url';
+import techSvg from '@/assets/patterns/tech.svg?url';
+import weatherSvg from '@/assets/patterns/weather.svg?url';
 
 const CHAT_BACKGROUND_OPTIONS = [
 	{ id: 'none', label: 'None' },
@@ -14,6 +20,12 @@ const CHAT_BACKGROUND_OPTIONS = [
 	{ id: 'space', label: 'Space', src: spaceSvg },
 	{ id: 'games', label: 'Games', src: gamesSvg },
 	{ id: 'sweets', label: 'Sweets', src: sweetsSvg },
+	{ id: 'travel', label: 'Travel', src: travelSvg },
+	{ id: 'nature', label: 'Nature', src: natureSvg },
+	{ id: 'food', label: 'Food', src: foodSvg },
+	{ id: 'music', label: 'Music', src: musicSvg },
+	{ id: 'tech', label: 'Tech', src: techSvg },
+	{ id: 'weather', label: 'Weather', src: weatherSvg },
 ] as const;
 
 export const AppearanceTab = () => {
@@ -145,7 +157,7 @@ export const AppearanceTab = () => {
 									<span
 										className={`text-xs font-medium text-center truncate w-full ${isSelected ? 'text-foreground font-bold' : 'text-muted-foreground'}`}
 									>
-										{opt.label}
+										{t(`settings.chat_bg_${opt.id}`)}
 									</span>
 								</button>
 							);

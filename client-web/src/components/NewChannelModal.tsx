@@ -1,44 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Hash, Search, Lock, Globe, Camera, X, Loader2 } from 'lucide-react';
+import { Lock, Globe, Camera, X, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FormField } from '@/components/form-field';
-import { ListRow } from '@/components/list-row';
 import { ModalShell } from '@/components/modal-shell';
 import { SettingRow } from '@/components/setting-row';
-import { Avatar as MinidenticonAvatar, ChannelInitialsAvatar } from '@/components/Avatar';
+import { ChannelInitialsAvatar } from '@/components/Avatar';
 import { ImageEditor } from './ImageEditor';
-import { useUserSearch } from '@/hooks/useUsers';
-import { useDebounce } from '@/hooks/use-debounce';
 import { useAuthStore, useChannelStore } from '@/store/store';
 import { apiUploadFile } from '@/api/client';
 import { logger } from '@/utils/logger';
 
 interface NewChannelModalProps {
-	initialTab?: 'dm' | 'channel';
 	onClose: () => void;
 }
 
 /**
- * "New conversation" dialog: find a user to start a DM, or create a channel
- * (name, optional description and avatar, private/public).
+ * "New channel" dialog: name, optional description and avatar, private/public.
+ * Direct messages are started from the search dialog (Ctrl/Cmd+K) instead.
  */
-export default function NewChannelModal({
-	initialTab = 'dm',
-	onClose,
-}: NewChannelModalProps) {
+export default function NewChannelModal({ onClose }: NewChannelModalProps) {
 	const { t } = useTranslation();
 	const user = useAuthStore((state) => state.user);
 	const createChannel = useChannelStore((state) => state.createChannel);
 	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 
-	const [mode, setMode] = useState<'dm' | 'channel'>(
-		initialTab === 'channel' ? 'channel' : 'dm',
-	);
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [isPrivate, setIsPrivate] = useState(true);
@@ -91,14 +80,6 @@ export default function NewChannelModal({
 		}
 	};
 
-	// DM search
-	const [searchQuery, setSearchQuery] = useState('');
-	const debouncedQuery = useDebounce(searchQuery.trim(), 300);
-	const { data: searchResults = [], isFetching: isSearching } = useUserSearch(
-		debouncedQuery,
-		user?.username,
-	);
-
 	const handleCreateChannel = async () => {
 		setError('');
 		if (!name.trim()) {
@@ -124,112 +105,29 @@ export default function NewChannelModal({
 		}
 	};
 
-	const handleCreateDM = async (targetId: string) => {
-		setError('');
-		setLoading(true);
-		try {
-			const ch = await createChannel('', [user!.id, targetId], true);
-			setActiveChannel(ch);
-			onClose();
-		} catch (e: unknown) {
-			setError((e as Error).message ?? t('channel.new.dm_failed'));
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	return (
 		<>
 			<ModalShell
 				open
 				onOpenChange={(open) => !open && onClose()}
-				title={t('channel.new_conversation')}
+				title={t('search.new_channel')}
 				footer={
-					mode === 'channel' ? (
-						<>
-							<Button type="button" variant="ghost" onClick={onClose}>
-								{t('common.cancel')}
-							</Button>
-							<Button
-								type="button"
-								disabled={loading || !name.trim()}
-								onClick={handleCreateChannel}
-							>
-								{loading ? <Loader2 size={16} className="animate-spin" /> : t('channel.create')}
-							</Button>
-						</>
-					) : undefined
+					<>
+						<Button type="button" variant="ghost" onClick={onClose}>
+							{t('common.cancel')}
+						</Button>
+						<Button
+							type="button"
+							disabled={loading || !name.trim()}
+							onClick={handleCreateChannel}
+						>
+							{loading ? <Loader2 size={16} className="animate-spin" /> : t('channel.create')}
+						</Button>
+					</>
 				}
 			>
 				<div className="space-y-4">
-					<Tabs value={mode} onValueChange={(v) => setMode(v as 'dm' | 'channel')}>
-						<TabsList className="grid w-full grid-cols-2">
-							<TabsTrigger value="dm" className="gap-2">
-								<MessageSquare size={16} />
-								{t('channel.direct_message')}
-							</TabsTrigger>
-							<TabsTrigger value="channel" className="gap-2">
-								<Hash size={16} />
-								{t('channel.group')}
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
-
-					{mode === 'dm' && (
-						<div className="space-y-3">
-							<div className="relative">
-								<Search className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-								<Input
-									className="h-11 ps-10"
-									placeholder={t('channel.new.search_placeholder')}
-									aria-label={t('channel.new.search_placeholder')}
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									autoFocus
-									autoComplete="off"
-									autoCapitalize="off"
-									autoCorrect="off"
-									spellCheck={false}
-								/>
-							</div>
-
-							<div className="max-h-[220px] min-h-[50px] overflow-y-auto rounded-md border border-border bg-muted">
-								{isSearching ? (
-									<p className="p-4 text-center text-sm text-muted-foreground">
-										{t('channel.new.searching')}
-									</p>
-								) : searchResults.length > 0 ? (
-									<div className="space-y-0.5 p-1">
-										{searchResults.map((u) => (
-											<ListRow
-												key={u.id}
-												onClick={() => handleCreateDM(u.id)}
-												leading={
-													<MinidenticonAvatar
-														userId={u.id}
-														avatarId={u.avatar_id}
-														size={32}
-													/>
-												}
-												title={u.username}
-											/>
-										))}
-									</div>
-								) : searchQuery.trim() !== '' ? (
-									<p className="p-4 text-center text-sm text-muted-foreground">
-										{t('channel.new.no_users')}
-									</p>
-								) : (
-									<p className="p-4 text-center text-sm text-muted-foreground">
-										{t('channel.new.start_typing')}
-									</p>
-								)}
-							</div>
-						</div>
-					)}
-
-					{mode === 'channel' && (
-						<div className="space-y-4">
+					<div className="space-y-4">
 							{/* Avatar & name */}
 							<div className="flex items-center gap-4 py-1">
 								<div className="group relative shrink-0">
@@ -341,7 +239,6 @@ export default function NewChannelModal({
 								</p>
 							</div>
 						</div>
-					)}
 
 					{error && (
 						<div

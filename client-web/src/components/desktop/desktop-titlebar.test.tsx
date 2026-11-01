@@ -16,6 +16,7 @@ vi.mock('@/wailsjs/runtime/runtime', () => ({
 vi.mock('@/wailsjs/go/main/App', () => ({ CloseWindow: vi.fn() }));
 
 import { useDesktopChromeStore } from '@/domains/desktop/store/chrome.store';
+import { MAC_LIGHTS_ZONE } from '@/domains/desktop/utils/titlebar-layout';
 import { DesktopTitleBar } from './desktop-titlebar';
 
 const bar = (container: HTMLElement) => container.firstElementChild as HTMLElement;
@@ -72,7 +73,7 @@ describe('DesktopTitleBar', () => {
 
 		expect(bar(container).className).toContain('bg-background');
 		expect(bar(container).className).not.toContain('border-b');
-		expect(bar(container).style.height).toBe('40px');
+		expect(bar(container).style.height).toBe(`${MAC_LIGHTS_ZONE}px`);
 	});
 
 	it('steps aside inside the chat shell on macOS, where the lights live in the left column', () => {

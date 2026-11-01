@@ -16,7 +16,7 @@ import {
 	Check,
 	Clock,
 	Loader2,
-	Lock,
+	Drama,
 } from 'lucide-react';
 import { type Channel } from '@/types/api';
 import {
@@ -350,7 +350,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									: 'Start Secure Whisper (E2EE)'
 							}
 						>
-							<Lock size={19} className={isWhisperActiveHere || hasIncomingInviteForPeer ? 'text-current' : 'opacity-80 hover:opacity-100'} />
+							<Drama size={19} className={isWhisperActiveHere || hasIncomingInviteForPeer ? 'text-current' : 'opacity-80 hover:opacity-100'} />
 							{hasIncomingInviteForPeer && (
 								<span className="absolute top-1 end-1 w-2 h-2 rounded-full bg-primary ring-2 ring-background" />
 							)}

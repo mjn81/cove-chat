@@ -52,7 +52,7 @@ export interface Channel {
 	// last_message_preview (see channels.slice.ts) for the sidebar row.
 	last_message_ciphertext?: string;
 	last_message_nonce?: string;
-	last_message_type?: 'text' | 'file' | 'voice' | 'video';
+	last_message_type?: 'text' | 'file' | 'voice' | 'video' | 'invite';
 	last_message_sender_id?: string;
 	last_message_id?: string;
 	// Client-only: decrypted, formatted preview text for the sidebar row
@@ -75,7 +75,7 @@ export interface Message {
 	id: string;
 	channel_id: string;
 	sender_id: string;
-	type: 'text' | 'file' | 'voice' | 'video';
+	type: 'text' | 'file' | 'voice' | 'video' | 'invite';
 	ciphertext: string;
 	nonce: string;
 	compression: string;

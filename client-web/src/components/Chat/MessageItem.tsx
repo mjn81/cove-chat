@@ -5,11 +5,13 @@ import { Avatar } from '../Avatar';
 import { type Message, type Channel } from '@/types/api';
 import { FileBubble } from './FileBubble';
 import { VideoMessageBubble } from './VideoMessageBubble';
-import { Reply, Pencil, Trash2, CornerUpLeft, Loader2, AlertCircle, Check } from 'lucide-react';
+import { Reply, Pencil, Trash2, CornerUpLeft, Loader2, AlertCircle, Check, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { wsEditMessage, wsDeleteMessage } from '@/ws';
 import { JoinPreview } from './JoinPreview';
+import { InviteMessage } from './InviteMessage';
 import { ConfirmModal } from '../ConfirmModal';
+import { useSelectionStore } from '@/domains/messages/store/selection.store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { tokenizeMessage } from '@/utils/linkify';
 import { useLongPress } from '@/hooks/use-long-press';
@@ -36,6 +38,10 @@ export const MessageItem = memo(
 		replyTarget,
 	}: MessageItemProps) => {
 		const user = useAuthStore((state) => state.user);
+		// Multi-select mode (Telegram style): once anything is selected, clicking a row ticks it instead of opening menus.
+		const selected = useSelectionStore((s) => s.channelId === channel.id && s.ids.includes(msg.id));
+		const selecting = useSelectionStore((s) => s.channelId === channel.id && s.ids.length > 0);
+		const toggleSelect = useSelectionStore((s) => s.toggle);
 		const [isEditing, setIsEditing] = useState(false);
 		const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 		const [editValue, setEditValue] = useState(msg.text || '');
@@ -228,7 +234,10 @@ export const MessageItem = memo(
 				onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
 				onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
 				onTouchEnd={handleDragEnd}
-				onClick={() => isMobile && setShowMobileMenu(!showMobileMenu)}
+				onClick={() => {
+					if (selecting) toggleSelect(channel.id, msg.id);
+					else if (isMobile) setShowMobileMenu(!showMobileMenu);
+				}}
 				className={`group flex mb-0.5 -mx-4 px-4 py-0.5 transition-colors relative select-none cursor-default ${
 					!grouped ? (isMobile ? 'mt-2' : 'mt-4') : ''
 				} ${
@@ -271,12 +280,22 @@ export const MessageItem = memo(
 					</div>
 				</div>
 
+				{selecting && (
+					<span
+						aria-hidden="true"
+						className={`relative z-10 me-3 mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+							selected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/60'
+						}`}
+					>
+						{selected && <Check size={12} />}
+					</span>
+				)}
 				<div 
-					className="flex flex-1 min-w-0 transition-transform duration-75 ease-out relative z-10"
+					className={`flex flex-1 min-w-0 transition-transform duration-75 ease-out relative z-10 ${selected ? 'bg-primary/10' : ''}`}
 					style={{ transform: `translateX(${dragX}px)` }}
 				>
 					{/* Action Menu */}
-					{!isEditing && !msg.pending && (
+					{!isEditing && !msg.pending && !selecting && (
 						<div
 							className={`absolute end-4 -top-3 items-center gap-0.5 bg-background border border-border rounded-md shadow-lg overflow-hidden z-20 ${
 								showMobileMenu && isMobile
@@ -295,6 +314,17 @@ export const MessageItem = memo(
 							title="Reply"
 						>
 							<Reply size={14} />
+						</button>
+						<button
+							onClick={(e) => {
+								e.stopPropagation();
+								toggleSelect(channel.id, msg.id);
+								if (isMobile) setShowMobileMenu(false);
+							}}
+							className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors border-s border-border"
+							title="Select"
+						>
+							<CheckCircle2 size={14} />
 						</button>
 						{isOwn && msg.type === 'text' && (
 							<button
@@ -458,7 +488,7 @@ export const MessageItem = memo(
 									{copied && (
 										<span
 											role="status"
-											className="animate-copy-pop pointer-events-none absolute -top-7 end-0 z-10 flex items-center gap-1 rounded-md border border-border bg-popover px-2 py-1 text-xs font-medium text-foreground"
+											className="animate-copy-pop pointer-events-none absolute -top-7 start-0 z-30 flex items-center gap-1 rounded-md border border-border bg-popover px-2 py-1 text-xs font-medium text-foreground"
 										>
 											<Check size={12} className="text-success" />
 											{t('chat.copied')}
@@ -494,6 +524,7 @@ export const MessageItem = memo(
 							{joinCode && !isEditing && <JoinPreview inviteCode={joinCode} />}
 						</>
 					)}
+					{msg.type === 'invite' && <InviteMessage text={msg.text} />}
 					{(msg.type === 'file' || msg.type === 'voice') && (
 						<FileBubble msg={msg} />
 					)}

@@ -8,7 +8,7 @@ export interface AppSlice {
 	appVersion: string;
 	wsState: 'connecting' | 'connected' | 'disconnected';
 	theme: 'dark' | 'light';
-	chatBackground: 'none' | 'animals' | 'space' | 'games' | 'sweets';
+	chatBackground: 'none' | 'animals' | 'space' | 'games' | 'sweets' | 'travel' | 'nature' | 'food' | 'music' | 'tech' | 'weather';
 
 	isLeftSidebarOpen: boolean;
 	isRightSidebarOpen: boolean;
@@ -78,7 +78,7 @@ export const useAppStore = create<AppSlice>()(
 				preferredMicId: s.preferredMicId,
 			}),
 			onRehydrateStorage: () => (state) => {
-				const validPatterns = ['none', 'animals', 'space', 'games', 'sweets'];
+				const validPatterns = ['none', 'animals', 'space', 'games', 'sweets', 'travel', 'nature', 'food', 'music', 'tech', 'weather'];
 				if (state && (!state.chatBackground || !validPatterns.includes(state.chatBackground))) {
 					state.chatBackground = 'none';
 				}

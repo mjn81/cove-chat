@@ -31,5 +31,7 @@ export function useVoicePlayerActions() {
 		cycleRepeat:   useCallback(() => voicePlayer.cycleRepeat(), []),
 		setRepeatMode: useCallback((m: Parameters<typeof voicePlayer.setRepeatMode>[0]) => voicePlayer.setRepeatMode(m), []),
 		close:         useCallback(() => voicePlayer.close(),       []),
+		next:          useCallback(() => voicePlayer.next(),        []),
+		previous:      useCallback(() => voicePlayer.previous(),    []),
 	};
 }

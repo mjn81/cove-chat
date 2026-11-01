@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { apiGetFile } from '@/api/client';
 import { decryptAndDecompressFile } from '@/utils/file';
 import { base64ToBytes, getChannelKey } from '@/ws';
+import { neighbour } from '@/lib/playlist';
 
 export interface VoiceTrack {
 	fileId: string;
@@ -28,6 +29,8 @@ export interface VoicePlayerState {
 	speed: number;
 	volume: number;
 	repeatMode: RepeatMode;
+	/** Playable audio of the chat being listened to, oldest first; the playlist and auto-advance use it. */
+	queue: VoiceTrack[];
 }
 
 type Listener = (state: VoicePlayerState) => void;
@@ -121,7 +124,7 @@ class VoicePlayerStore {
 	state: VoicePlayerState = {
 		track: null, isPlaying: false, isLoading: false,
 		currentTime: 0, duration: 0, speed: 1, volume: 1,
-		repeatMode: 'none',
+		repeatMode: 'none', queue: [],
 	};
 
 	// ─── Store plumbing ─────────────────────────────────────────────────────
@@ -153,6 +156,8 @@ class VoicePlayerStore {
 			} else {
 				this.stopRaf();
 				this.patch({ isPlaying: false, currentTime: 0 });
+				// Like Telegram, the next audio in the chat starts by itself.
+				this.next();
 			}
 		};
 		this.audio.onratechange = () => {
@@ -221,7 +226,10 @@ class VoicePlayerStore {
 
 	// ─── Public API ──────────────────────────────────────────────────────────
 
-	async play(track: VoiceTrack) {
+	async play(requested: VoiceTrack) {
+		// A bubble only knows the file name; the queue carries the proper title (who sent it).
+		const queued = this.state.queue.find((t) => t.fileId === requested.fileId);
+		const track = queued ? { ...requested, label: queued.label ?? requested.label } : requested;
 		// Resume same track
 		if (this.state.track?.fileId === track.fileId && this.audio.src) {
 			this.audio.playbackRate = this.state.speed;
@@ -270,6 +278,30 @@ class VoicePlayerStore {
 
 	pause() {
 		this.audio.pause();
+	}
+
+	/**
+	 * Sets the playlist. A queue for another chat is ignored while something from a different chat is playing,
+	 * so browsing never rewrites the list under the track that is playing.
+	 */
+	setQueue(channelId: string, queue: VoiceTrack[]) {
+		const current = this.state.track;
+		if (current && current.channelId !== channelId) return;
+		this.patch({ queue });
+	}
+
+	/** Plays the next audio in the queue; does nothing at the end. */
+	next() {
+		const current = this.state.track;
+		const target = current && neighbour(this.state.queue, current.fileId, 1);
+		if (target) void this.play(target);
+	}
+
+	/** Plays the previous audio in the queue; does nothing at the start. */
+	previous() {
+		const current = this.state.track;
+		const target = current && neighbour(this.state.queue, current.fileId, -1);
+		if (target) void this.play(target);
 	}
 
 	togglePlay() {

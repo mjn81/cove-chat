@@ -265,7 +265,8 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 	}
 
 	const isDocument = Boolean(meta.as_document);
-	const isAudio = !isDocument && (meta.mime.startsWith('audio/') || msg.type === 'voice');
+	// Audio always gets the player, even when it was attached as a file: a song as a download card is never wanted.
+	const isAudio = meta.mime.startsWith('audio/') || msg.type === 'voice';
 	const isImage = !isDocument && (meta.mime.startsWith('image/') && !meta.mime.includes('heic'));
 	const isVideo = !isDocument && meta.mime.startsWith('video/');
 

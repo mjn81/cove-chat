@@ -67,7 +67,7 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 			className="flex flex-col select-none"
 			onClick={(e) => e.stopPropagation()}
 		>
-			<div className="mt-2 flex items-center gap-3 bg-secondary/80 border border-border p-3 rounded-2xl w-full max-w-[320px] shadow-sm hover:bg-secondary transition-colors cursor-default">
+			<div className="mt-2 flex items-center gap-3 bg-secondary border border-border p-3 rounded-2xl w-full max-w-[320px] shadow-sm hover:bg-secondary transition-colors cursor-default">
 				{/* Play / Pause button */}
 				<button
 					onClick={handleClick}
