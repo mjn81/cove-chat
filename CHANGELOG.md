@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.9](https://github.com/mjn81/cove-chat/compare/v0.9.8...v0.9.9) (2026-11-02)
+
+
+### Bug Fixes
+
+* **desktop:** Cmd+Q quits for real on macOS and the nav rail icons sit closer to the traffic lights ([ec4357d](https://github.com/mjn81/cove-chat/commit/ec4357dbaf12d2c6d26dede7463bc7ef97e03d78))
+* **desktop:** Cmd+Q quits on macOS, nav rail icons closer to the traffic lights ([6e3493e](https://github.com/mjn81/cove-chat/commit/6e3493ee110929bb2ca6867cccc872c0140c0a9b))
+
 ## [0.9.8](https://github.com/mjn81/cove-chat/compare/v0.9.7...v0.9.8) (2026-11-01)
 
 
