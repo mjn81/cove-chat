@@ -81,3 +81,40 @@ export interface NoticeResult {
 	recipients: number;
 	failed: number;
 }
+
+/** Where the server runs, which decides whether it may replace its own binary. */
+export type InstallMode = 'binary' | 'docker' | 'unknown';
+
+/** Progress of a server update job (`GET /api/admin/update`). */
+export type ServerUpdateState = 'idle' | 'downloading' | 'installing' | 'restarting' | 'failed';
+
+export interface ServerUpdateInfo {
+	current_version: string;
+	/** Empty when no release could be determined. */
+	latest_version: string;
+	update_available: boolean;
+	/** GitHub release body (Markdown source, shown as plain text). */
+	release_notes: string;
+	release_url?: string;
+	prerelease: boolean;
+	published_at?: string;
+	checked_at?: string;
+	/** i18n key set when GitHub could not be reached. */
+	check_error?: string;
+	mode: InstallMode;
+	can_update: boolean;
+	/** Why `can_update` is false: docker, unsupported, up_to_date or busy. */
+	reason?: 'docker' | 'unsupported' | 'up_to_date' | 'busy';
+	/** Manual command, set in docker mode. */
+	instructions?: string;
+	state: ServerUpdateState;
+	progress_percent: number;
+	/** i18n key describing why the last attempt failed. */
+	error?: string;
+}
+
+export interface ServerUpdateStarted {
+	status: string;
+	version: string;
+	state: ServerUpdateState;
+}

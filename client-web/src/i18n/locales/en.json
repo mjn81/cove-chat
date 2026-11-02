@@ -708,7 +708,13 @@
 				},
 				"server": {
 					"reset": "reset the server",
-					"restore": "restored a backup"
+					"restore": "restored a backup",
+					"update": {
+						"start": "started a server update to",
+						"installed": "installed the server update",
+						"failed": "server update failed",
+						"check": "checked for server updates"
+					}
 				}
 			}
 		},
@@ -871,7 +877,16 @@
 			"owner_cannot_delete": "The owner cannot delete their account. Transfer ownership first.",
 			"invalid_upload": "The upload could not be read.",
 			"backup_unreadable": "Wrong passphrase, or this is not a valid backup file.",
-			"restore_failed": "The restore failed."
+			"restore_failed": "The restore failed.",
+			"update_docker": "Docker installs cannot update themselves. Run docker compose pull && docker compose up -d.",
+			"update_unsupported": "This install cannot update itself.",
+			"update_in_progress": "An update is already running.",
+			"update_check_failed": "Could not reach GitHub to check for updates.",
+			"update_up_to_date": "The server is already up to date.",
+			"update_checksum_failed": "The download did not match its checksum, so nothing was installed.",
+			"update_no_checksums": "The release has no checksum file, so nothing was installed.",
+			"update_download_failed": "The update could not be downloaded.",
+			"update_failed": "The update could not be installed."
 		},
 		"notices": {
 			"title": "Server notices",
@@ -882,6 +897,33 @@
 			"confirmMessage": "This message will be delivered to every user on this server and can't be recalled.",
 			"sent": "Notice delivered to {{n}} users",
 			"failed": "{{n}} deliveries failed"
+		},
+		"update": {
+			"title": "Server update",
+			"current": "Installed version",
+			"latest": "Latest release",
+			"prerelease": "Pre-release",
+			"check_now": "Check now",
+			"up_to_date": "This server is up to date.",
+			"button": "Update server",
+			"notes": "What's new in {{version}}",
+			"view_release": "View on GitHub",
+			"owner_only": "Only the server owner can install updates.",
+			"confirm_title": "Update to {{version}}?",
+			"confirm_body": "The server downloads the release, checks its SHA-256 checksum, replaces its program file and restarts.",
+			"confirm_detail": "Everyone is disconnected for a few seconds while it restarts. The previous version is kept next to it as a .old file so you can roll back.",
+			"confirm_action": "Update and restart",
+			"stage_downloading": "Downloading and verifying the update…",
+			"stage_installing": "Installing the update…",
+			"stage_restarting": "Restarting the server…",
+			"stage_reconnecting": "Restarting, reconnecting…",
+			"done": "Server updated to {{version}}.",
+			"failed": "The update failed: {{reason}}",
+			"reason_docker": "Docker installs cannot update themselves. Use the commands above.",
+			"reason_unsupported": "This install cannot update itself (read-only folder, development build or unsupported platform). Update it manually.",
+			"docker_title": "Running in Docker",
+			"docker_body": "Update the container by pulling the new image and recreating it:",
+			"docker_watchtower": "Or let Watchtower pull the image and restart the container automatically."
 		}
 	},
 	"devices": {

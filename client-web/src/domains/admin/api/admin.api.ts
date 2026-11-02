@@ -8,6 +8,8 @@ import type {
 	CreateInviteInput,
 	Invite,
 	NoticeResult,
+	ServerUpdateInfo,
+	ServerUpdateStarted,
 	UpdateConfigResult,
 } from '../types/admin.types';
 
@@ -19,6 +21,7 @@ export const adminKeys = {
 	invites: () => ['admin', 'invites'] as const,
 	admins: () => ['admin', 'admins'] as const,
 	audit: () => ['admin', 'audit'] as const,
+	update: () => ['admin', 'update'] as const,
 };
 
 export const adminOverview = () => request<AdminOverview>(apiClient.get('/api/admin/overview'));
@@ -85,3 +88,11 @@ export const adminDeleteServer = (password: string, confirm: string) =>
 /** Owner only: delivers `text` from the server's Cove account to every user. */
 export const adminSendNotice = (text: string) =>
 	request<NoticeResult>(apiClient.post('/api/admin/notices', { text }));
+
+/** Current vs latest release and update capability; `refresh` bypasses the server's 10-minute release cache. */
+export const adminUpdateInfo = (refresh = false) =>
+	request<ServerUpdateInfo>(apiClient.get('/api/admin/update', { params: refresh ? { refresh: 1 } : undefined }));
+
+/** Owner only: downloads, verifies and installs the newest release, then the server restarts. */
+export const adminStartUpdate = () =>
+	request<ServerUpdateStarted>(apiClient.post('/api/admin/update'));
