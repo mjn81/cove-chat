@@ -9,7 +9,9 @@ ARG VERSION=0.9.0
 WORKDIR /app
 
 
-# Copy go.mod and go.sum first for better caching
+# Copy go.mod and go.sum first for better caching. cove/update is a local module (replace => ./pkg/update),
+# so its go.mod must be present before `go mod download`.
+COPY pkg/update/go.mod ./pkg/update/go.mod
 COPY go.mod go.sum ./
 RUN go mod download
 

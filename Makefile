@@ -37,9 +37,11 @@ run: dev-back ## Run standalone backend (alias for dev-back)
 
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
+	cd backend/pkg/update && $(GO) vet ./...
 
 lint: ## Run golangci-lint (via go run, no install needed)
 	cd backend && $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
+	cd backend/pkg/update && $(GO) vet ./...
 
 swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
 	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
