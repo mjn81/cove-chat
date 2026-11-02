@@ -18,7 +18,8 @@ for (const raw of readFileSync(src, 'utf8').split(/\r?\n/)) {
   const line = raw.trimEnd();
   const header = line.match(/^\[([\w.]+)\]$/);
   if (header) {
-    current = { name: header[1], keys: [] };
+    // Comments directly above a header describe the whole section.
+    current = { name: header[1], keys: [], intro: buf.slice() };
     sections.push(current);
     buf = [];
     inCommentedTable = false;
@@ -34,8 +35,10 @@ for (const raw of readFileSync(src, 'utf8').split(/\r?\n/)) {
     continue;
   }
   const kv = line.match(/^(#\s*)?([a-z_][\w]*)\s*=\s*(.+)$/);
-  if (kv && current && !(kv[1] && inCommentedTable)) {
-    current.keys.push({ key: kv[2], value: kv[3].trim(), doc: buf, optional: Boolean(kv[1]) });
+  // A commented-out line only counts as a key when its value is a TOML literal; prose such as "# github_fallback = false there." stays documentation.
+  const lit = kv && kv[3].match(/^("[^"]*"|-?\d+(?:\.\d+)?|true|false|\[.*\]|\{.*\})\s*(?:#\s*(.*))?$/);
+  if (kv && lit && current && !(kv[1] && inCommentedTable)) {
+    current.keys.push({ key: kv[2], value: lit[1], doc: lit[2] ? [...buf, lit[2]] : buf, optional: Boolean(kv[1]) });
     buf = [];
     continue;
   }
@@ -56,10 +59,13 @@ description: Every key in config.toml, with defaults and explanations. Generated
 
 Copy \`backend/config.toml.example\` to \`config.toml\` next to the server binary (or mount it into the container). Keys not listed there use built-in defaults. Restart the server after editing the file unless the admin panel says the key applies live.
 
+Two more \`[server]\` keys are supported but not in the example file: \`min_client_version\` (a semver string such as \`"0.9.0"\`; empty by default, which disables the check) and \`enforce_min_client\` (\`false\` by default). See [Minimum client version](/docs/api/standard/#minimum-client-version).
+
 `;
 
 for (const s of sections) {
   md += `## \`[${s.name}]\`\n\n`;
+  if (s.intro.length) md += `${s.intro.join('\n')}\n\n`;
   for (const k of s.keys) {
     md += `### \`${s.name}.${k.key}\`\n\n`;
     md += `Default: \`${esc(k.value)}\`${k.optional ? ' (commented out in the example; optional)' : ''}\n\n`;

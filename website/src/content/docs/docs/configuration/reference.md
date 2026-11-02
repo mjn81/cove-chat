@@ -7,6 +7,8 @@ description: Every key in config.toml, with defaults and explanations. Generated
 
 Copy `backend/config.toml.example` to `config.toml` next to the server binary (or mount it into the container). Keys not listed there use built-in defaults. Restart the server after editing the file unless the admin panel says the key applies live.
 
+Two more `[server]` keys are supported but not in the example file: `min_client_version` (a semver string such as `"0.9.0"`; empty by default, which disables the check) and `enforce_min_client` (`false` by default). See [Minimum client version](/docs/api/standard/#minimum-client-version).
+
 ## `[server]`
 
 ### `server.domain`
@@ -185,6 +187,10 @@ master_password above.
 
 ## `[registration]`
 
+Who may create an account. Editable live from the admin panel; whatever you
+set here is the starting value. The very first account on a fresh server is
+always allowed - it becomes the server owner.
+
 ### `registration.mode`
 
 Default: `"open"`
@@ -204,19 +210,30 @@ to make that account the owner (the previous owner becomes an admin).
 
 ## `[demo]`
 
+Off by default. Turn on for a public demo instance: clients show a "data resets, not private" notice
+and sign-ups are capped. The first account on a fresh server is exempt from the per-IP limit.
+
 ### `demo.enabled`
 
 Default: `false` (commented out in the example; optional)
 
 ### `demo.max_users`
 
-Default: `200               # total accounts allowed; 0 = no cap` (commented out in the example; optional)
+Default: `200` (commented out in the example; optional)
+
+total accounts allowed; 0 = no cap
 
 ### `demo.signups_per_ip_per_day`
 
-Default: `3    # new accounts per client IP per rolling 24h; 0 = no cap` (commented out in the example; optional)
+Default: `3` (commented out in the example; optional)
+
+new accounts per client IP per rolling 24h; 0 = no cap
 
 ## `[captcha]`
+
+A self-hosted proof-of-work check (ALTCHA): every Cove client solves a small puzzle automatically when
+someone registers, so bulk sign-ups cost the attacker CPU time. No third-party service, no tracking.
+Both keys can also be changed live from the admin panel. The very first account is always exempt.
 
 ### `captcha.enabled`
 
@@ -224,9 +241,14 @@ Default: `false` (commented out in the example; optional)
 
 ### `captcha.difficulty`
 
-Default: `"medium"   # low \| medium \| high (about 12k, 50k and 200k hashes on average)` (commented out in the example; optional)
+Default: `"medium"` (commented out in the example; optional)
+
+low | medium | high (about 12k, 50k and 200k hashes on average)
 
 ## `[sessions]`
+
+Users can see and terminate their signed-in devices (Settings > Privacy). A city/country needs a MaxMind
+GeoLite2-City database (free download from maxmind.com); lookups are offline, IPs never leave this server.
 
 ### `sessions.geoip_db_path`
 
@@ -234,16 +256,15 @@ Default: `"/etc/cove/GeoLite2-City.mmdb"` (commented out in the example; optiona
 
 ### `sessions.login_notifications`
 
-Default: `true    # send a "new login" message from the Cove account on each sign-in` (commented out in the example; optional)
+Default: `true` (commented out in the example; optional)
 
-### `sessions.github_fallback`
+send a "new login" message from the Cove account on each sign-in
 
-Default: `false there. See docs/auto-update.md for the manifest format.` (commented out in the example; optional)
+## `[update]`
 
 Where the server looks for new releases (admin panel > Overview > Server update). The manifest is published next to
 every release; GitHub is the fallback. Point manifest_url at your own mirror for air-gapped installs and set
-
-## `[update]`
+github_fallback = false there. See docs/auto-update.md for the manifest format.
 
 ### `update.manifest_url`
 
@@ -255,5 +276,7 @@ Default: `true` (commented out in the example; optional)
 
 ### `update.notify_admins`
 
-Default: `true          # tell the owner and admins (once per version) when a new release is out` (commented out in the example; optional)
+Default: `true` (commented out in the example; optional)
+
+tell the owner and admins (once per version) when a new release is out
 
