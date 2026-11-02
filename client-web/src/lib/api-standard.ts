@@ -4,7 +4,7 @@
  */
 
 /** Integer contract version this build was written against. Bump only together with the backend (`apistd.APIVersion`). */
-export const API_VERSION = 1;
+export const API_VERSION = 2;
 
 /** Request header every client sends; the server uses it for the minimum-client check. */
 export const CLIENT_HEADER = 'X-Cove-Client';
@@ -42,7 +42,7 @@ export interface ClientOutdatedDetail {
 }
 
 /**
- * Builds the `X-Cove-Client` header value, e.g. `web/0.9.9 (api 1)`.
+ * Builds the `X-Cove-Client` header value, e.g. `web/0.10.0 (api 2)`.
  *
  * @param platform - `web`, `desktop` or `android`.
  * @param version - Semver of this build.

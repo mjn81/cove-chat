@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 import { useAdminAudit, useAdminOverview } from '../api/use-admin';
 import { formatBytes, formatUptime } from '../utils/admin-format';
@@ -41,9 +42,10 @@ export function OverviewPanel() {
 				<h3 className="mb-2 text-sm font-semibold text-foreground">
 					{t('admin.audit.title')}
 				</h3>
-				{audit.data?.entries.length ? (
+				{audit.data?.length ? (
+					<>
 					<ul className="divide-y divide-border rounded-lg border border-border bg-card text-sm">
-						{audit.data.entries.slice(0, 50).map((e) => (
+						{audit.data.map((e) => (
 							<li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
 								<span className="font-medium text-foreground">{e.actor_name}</span>
 								<span className="text-muted-foreground">
@@ -59,6 +61,19 @@ export function OverviewPanel() {
 							</li>
 						))}
 					</ul>
+					{audit.hasNextPage && (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="mt-2"
+							disabled={audit.isFetchingNextPage}
+							onClick={() => void audit.fetchNextPage()}
+						>
+							{audit.isFetchingNextPage && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+							{t('common.load_more')}
+						</Button>
+					)}
+					</>
 				) : (
 					<p className="text-sm text-muted-foreground">{t('admin.audit.empty')}</p>
 				)}

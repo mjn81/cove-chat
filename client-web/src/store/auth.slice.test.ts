@@ -26,13 +26,14 @@ const mockApiLogin = vi.fn();
 const mockApiRegister = vi.fn();
 const mockApiLogout = vi.fn();
 const mockApiMe = vi.fn();
+const mockApiDeleteAccount = vi.fn();
 vi.mock('@/api/client', () => ({
 	apiLogin: (...args: unknown[]) => mockApiLogin(...args),
 	apiRegister: (...args: unknown[]) => mockApiRegister(...args),
 	apiLogout: (...args: unknown[]) => mockApiLogout(...args),
 	apiMe: (...args: unknown[]) => mockApiMe(...args),
 	apiUpdateProfile: vi.fn(),
-	apiDeleteAccount: vi.fn(),
+	apiDeleteAccount: (...args: unknown[]) => mockApiDeleteAccount(...args),
 	apiGetMyRelationships: vi.fn().mockResolvedValue([]),
 	apiGetIncomingRequests: vi.fn().mockResolvedValue([]),
 }));
@@ -234,5 +235,28 @@ describe('auth.slice initAuth — desktop session restore', () => {
 
 		expect(mockClearDesktopSession).toHaveBeenCalled();
 		expect(useAuthStore.getState().user).toBeNull();
+	});
+});
+
+describe('auth.slice deleteAccount', () => {
+	it('forwards the password to the API and signs out locally on success', async () => {
+		mockApiDeleteAccount.mockResolvedValue(undefined);
+		useAuthStore.setState({ user: { id: 'u1', username: 'alice' } as never });
+
+		await useAuthStore.getState().deleteAccount('hunter2-hunter2');
+
+		expect(mockApiDeleteAccount).toHaveBeenCalledWith('hunter2-hunter2');
+		expect(useAuthStore.getState().user).toBeNull();
+		expect(mockDisconnectWS).toHaveBeenCalled();
+	});
+
+	it('keeps the session when the server rejects the password', async () => {
+		mockApiDeleteAccount.mockRejectedValue(new Error('admin.errors.password_invalid'));
+		useAuthStore.setState({ user: { id: 'u1', username: 'alice' } as never });
+
+		await expect(useAuthStore.getState().deleteAccount('wrong')).rejects.toThrow('password_invalid');
+
+		expect(useAuthStore.getState().user).not.toBeNull();
+		expect(mockDisconnectWS).not.toHaveBeenCalled();
 	});
 });

@@ -285,6 +285,7 @@
     "notification_denied": "دسترسی اعلان‌ها رد شد"
   },
   "common": {
+    "load_more": "بارگذاری بیشتر",
     "close": "بستن",
     "save": "ذخیره",
     "cancel": "لغو",

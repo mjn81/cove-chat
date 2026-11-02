@@ -285,6 +285,7 @@
     "notification_denied": "تم رفض إذن الإشعارات"
   },
   "common": {
+    "load_more": "تحميل المزيد",
     "close": "إغلاق",
     "save": "حفظ",
     "cancel": "إلغاء",

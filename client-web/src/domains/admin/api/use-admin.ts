@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	adminAudit,
 	adminCreateInvite,
@@ -37,8 +37,15 @@ export function useUpdateAdminConfig() {
 	});
 }
 
+/** Invitation codes, flattened across pages; `fetchNextPage` loads older ones. */
 export const useAdminInvites = () =>
-	useQuery({ queryKey: adminKeys.invites(), queryFn: adminListInvites });
+	useInfiniteQuery({
+		queryKey: adminKeys.invites(),
+		queryFn: ({ pageParam }) => adminListInvites(pageParam),
+		initialPageParam: undefined as string | undefined,
+		getNextPageParam: (last) => last.next_cursor || undefined,
+		select: (data) => data.pages.flatMap((p) => p.items ?? []),
+	});
 
 export function useCreateInvite() {
 	const qc = useQueryClient();
@@ -56,7 +63,15 @@ export function useRevokeInvite() {
 	});
 }
 
-export const useAdminAudit = () => useQuery({ queryKey: adminKeys.audit(), queryFn: adminAudit });
+/** The audit trail, flattened across pages; `fetchNextPage` loads older entries. */
+export const useAdminAudit = () =>
+	useInfiniteQuery({
+		queryKey: adminKeys.audit(),
+		queryFn: ({ pageParam }) => adminAudit(pageParam),
+		initialPageParam: undefined as string | undefined,
+		getNextPageParam: (last) => last.next_cursor || undefined,
+		select: (data) => data.pages.flatMap((p) => p.items ?? []),
+	});
 
 export const useAdminAccounts = () =>
 	useQuery({ queryKey: adminKeys.admins(), queryFn: adminListAdmins });

@@ -10,7 +10,7 @@ import {
 
 describe('clientHeaderValue', () => {
 	it('formats platform, version and api version', () => {
-		expect(clientHeaderValue('web', '0.9.9')).toBe('web/0.9.9 (api 1)');
+		expect(clientHeaderValue('web', '0.9.9')).toBe('web/0.9.9 (api 2)');
 	});
 });
 

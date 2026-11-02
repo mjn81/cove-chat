@@ -55,7 +55,8 @@ export interface AuthSlice {
 		friend_request_permission?: string;
 	}) => Promise<void>;
 	updateStatus: (status: string) => void;
-	deleteAccount: () => Promise<void>;
+	/** Deletes the account after the server re-checks `password` (step-up). Rejects when it is wrong. */
+	deleteAccount: (password: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthSlice>()(
@@ -215,8 +216,8 @@ export const useAuthStore = create<AuthSlice>()(
 				});
 			},
 
-			deleteAccount: async () => {
-				await apiDeleteAccount();
+			deleteAccount: async (password) => {
+				await apiDeleteAccount(password);
 				disconnectWS();
 				useChannelStore.getState().resetChannels();
 				set({ user: null, relationships: [], incomingRequests: [] });

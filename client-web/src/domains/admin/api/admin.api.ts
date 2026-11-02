@@ -1,4 +1,5 @@
-import { apiClient, request } from '@/api/client';
+import { apiClient, apiGetPage, request } from '@/api/client';
+import { MAX_PAGE_LIMIT } from '@/lib/paging';
 import type {
 	AdminAccount,
 	AdminOverview,
@@ -34,8 +35,9 @@ export const adminGetConfig = () =>
 export const adminUpdateConfig = (changes: Record<string, ConfigValue>, password?: string) =>
 	request<UpdateConfigResult>(apiClient.patch('/api/admin/config', { changes, password }));
 
-export const adminListInvites = () =>
-	request<{ invites: Invite[] }>(apiClient.get('/api/admin/invites'));
+/** One page of invitation codes, newest first. */
+export const adminListInvites = (cursor?: string) =>
+	apiGetPage<Invite>('/api/admin/invites', cursor, {}, MAX_PAGE_LIMIT);
 
 export const adminCreateInvite = (input: CreateInviteInput) =>
 	request<Invite>(apiClient.post('/api/admin/invites', input));
@@ -43,8 +45,9 @@ export const adminCreateInvite = (input: CreateInviteInput) =>
 export const adminRevokeInvite = (code: string) =>
 	request<{ status: string }>(apiClient.delete(`/api/admin/invites/${encodeURIComponent(code)}`));
 
-export const adminAudit = () =>
-	request<{ entries: AuditEntry[] }>(apiClient.get('/api/admin/audit'));
+/** One page of the audit trail, newest first; follow `next_cursor` for older entries. */
+export const adminAudit = (cursor?: string) =>
+	apiGetPage<AuditEntry>('/api/admin/audit', cursor, {}, MAX_PAGE_LIMIT);
 
 export const adminListAdmins = () =>
 	request<{ admins: AdminAccount[] }>(apiClient.get('/api/admin/admins'));
