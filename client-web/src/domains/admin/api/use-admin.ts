@@ -15,6 +15,7 @@ import {
 	adminTransferOwner,
 	adminUpdateConfig,
 	adminUpdateInfo,
+	adminUploadUpdate,
 } from './admin.api';
 import type { ConfigValue, CreateInviteInput } from '../types/admin.types';
 
@@ -132,7 +133,16 @@ export function useCheckServerUpdate() {
 export function useStartServerUpdate() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: adminStartUpdate,
+		mutationFn: (source: 'release' | 'upload' = 'release') => adminStartUpdate(source),
+		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
+	});
+}
+
+/** Owner only: uploads a release file for an offline update; the update status then shows it as staged. */
+export function useUploadServerUpdate() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: adminUploadUpdate,
 		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
 	});
 }

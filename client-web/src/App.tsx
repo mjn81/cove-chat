@@ -9,7 +9,7 @@ import { setApiBaseUrl } from './api/client';
 import { isWails } from './utils/wails';
 import LoadingScreen from './components/ui/LoadingScreen';
 import { DesktopTitleBar } from './components/desktop/desktop-titlebar';
-import { UpdateBanner } from './domains/desktop/components/update-banner';
+import { UpdateSync } from './domains/desktop/components/update-sync';
 import { LockScreen } from './domains/security/components/lock-screen';
 import { useAutoLock } from './domains/security/hooks/use-auto-lock';
 import { useLockStore } from './domains/security/store/lock.store';
@@ -155,7 +155,7 @@ export default function App() {
     <>
       {isWails() && <DesktopTitleBar />}
       <AppContent />
-      {isWails() && <UpdateBanner />}
+      {isWails() && <UpdateSync />}
     </>
   );
 }

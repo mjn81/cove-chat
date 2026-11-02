@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { DesktopUpdateState } from '../types/update.types';
 import {
-	bannerKind,
+	DEFAULT_MANIFEST_URL,
+	entryKind,
 	isUpdateBusy,
 	parseUpdateSettings,
 	parseUpdateState,
@@ -46,26 +47,39 @@ describe('parseUpdateSettings', () => {
 		expect(parseUpdateSettings('{"enabled":true,"include_prerelease":false}')).toEqual({
 			enabled: true,
 			include_prerelease: false,
+			auto_download: false,
+			manifest_url: DEFAULT_MANIFEST_URL,
+		});
+		expect(parseUpdateSettings('{"enabled":true,"include_prerelease":true,"auto_download":true,"manifest_url":"https://m.test/x"}')).toEqual({
+			enabled: true,
+			include_prerelease: true,
+			auto_download: true,
+			manifest_url: 'https://m.test/x',
 		});
 		expect(parseUpdateSettings('{"enabled":true}')).toBeNull();
 		expect(parseUpdateSettings(undefined)).toBeNull();
 	});
 });
 
-describe('bannerKind', () => {
-	it('shows only for a staged update', () => {
-		expect(bannerKind(null, null)).toBeNull();
-		expect(bannerKind({ ...ready, phase: 'downloading' }, null)).toBeNull();
-		expect(bannerKind(ready, null)).toBe('restart');
+describe('entryKind', () => {
+	it('shows nothing until an update is known', () => {
+		expect(entryKind(null)).toBeNull();
+		expect(entryKind({ ...ready, phase: 'idle', latest_version: '' })).toBeNull();
+		expect(entryKind({ ...ready, phase: 'checking' })).toBeNull();
 	});
 
-	it('offers a download when the install cannot update itself', () => {
-		expect(bannerKind({ ...ready, can_install: false }, null)).toBe('download');
+	it('offers Download for a found update and never downloads by itself', () => {
+		expect(entryKind({ ...ready, phase: 'available' })).toBe('download');
 	});
 
-	it('stays hidden for a dismissed version but returns for a newer one', () => {
-		expect(bannerKind(ready, '1.0.0')).toBeNull();
-		expect(bannerKind({ ...ready, latest_version: '1.0.1' }, '1.0.0')).toBe('restart');
+	it('follows the download and offers Restart once it is staged', () => {
+		expect(entryKind({ ...ready, phase: 'downloading' })).toBe('downloading');
+		expect(entryKind(ready)).toBe('restart');
+	});
+
+	it('falls back to a manual download when the install cannot update itself', () => {
+		expect(entryKind({ ...ready, can_install: false })).toBe('manual');
+		expect(entryKind({ ...ready, phase: 'available', can_install: false })).toBe('manual');
 	});
 });
 

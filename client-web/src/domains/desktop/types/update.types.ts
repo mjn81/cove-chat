@@ -3,6 +3,7 @@
 export type DesktopUpdatePhase =
 	| 'idle'
 	| 'checking'
+	| 'available'
 	| 'downloading'
 	| 'ready'
 	| 'installing'
@@ -36,4 +37,8 @@ export interface DesktopUpdateState {
 export interface DesktopUpdateSettings {
 	enabled: boolean;
 	include_prerelease: boolean;
+	/** Download in the background after a check. Off by default; installing always needs a click. */
+	auto_download: boolean;
+	/** Release manifest URL (update source). */
+	manifest_url: string;
 }

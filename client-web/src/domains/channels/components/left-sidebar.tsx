@@ -11,6 +11,9 @@ import { DeleteChatModal } from '@/components/Chat/DeleteChatModal';
 import { UserProfileModal } from '@/components/UserProfileModal';
 import { SidebarUserFooter } from '@/domains/users/components/sidebar-user-footer';
 import { CollapsedVoiceButton, VoiceConnectedBar } from '@/domains/voice/components/voice-connected';
+import { UpdateEntry } from '@/domains/desktop/components/update-entry';
+import { clearSettingsDeepLink, readSettingsDeepLink } from '@/lib/settings-deep-link';
+import type { SettingsTab } from '@/components/SettingsModal/types';
 import { useAppStore, useAuthStore, useChannelStore, getChannelDisplayName } from '@/store/store';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -63,7 +66,11 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 	} = useSidebarChannels(activeTab);
 
 	const [showNewChannel, setShowNewChannel] = useState(false);
-	const [showSettings, setShowSettings] = useState(false);
+	// A link such as /?settings=admin (sent by the server's update notice) opens that Settings tab on load.
+	const [deepLinkTab] = useState(() => readSettingsDeepLink());
+	const [showSettings, setShowSettings] = useState(deepLinkTab !== null);
+	const [settingsTab, setSettingsTab] = useState<SettingsTab>(deepLinkTab ?? 'account');
+	useEffect(() => clearSettingsDeepLink(), []);
 	const [showSearchDialog, setShowSearchDialog] = useState(false);
 	const [deleteDmTarget, setDeleteDmTarget] = useState<Channel | null>(null);
 	const [selectedProfileUserId, setSelectedProfileUserId] = useState<string | null>(null);
@@ -178,11 +185,17 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 				<VoiceConnectedBar ping={ping} channelName={activeVoiceChannelName} />
 			)}
 
+			{/* Own row between the call bar and the profile card, so both can show at once without overlapping. */}
+			<UpdateEntry collapsed={isCollapsed} />
+
 			<SidebarUserFooter
 				user={user}
 				isCollapsed={isCollapsed}
 				onViewProfile={handleViewProfile}
-				onOpenSettings={() => setShowSettings(true)}
+				onOpenSettings={() => {
+					setSettingsTab('account');
+					setShowSettings(true);
+				}}
 				onLogout={logout}
 				collapsedExtra={
 					isVoiceActive ? (
@@ -194,7 +207,7 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 			{showNewChannel && (
 				<NewChannelModal onClose={() => setShowNewChannel(false)} />
 			)}
-			{showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+			{showSettings && <SettingsModal initialTab={settingsTab} onClose={() => setShowSettings(false)} />}
 			{deleteDmTarget && (
 				<DeleteChatModal
 					channel={deleteDmTarget}

@@ -10,6 +10,7 @@ import type {
 	NoticeResult,
 	ServerUpdateInfo,
 	ServerUpdateStarted,
+	ServerUploadInfo,
 	UpdateConfigResult,
 } from '../types/admin.types';
 
@@ -94,5 +95,16 @@ export const adminUpdateInfo = (refresh = false) =>
 	request<ServerUpdateInfo>(apiClient.get('/api/admin/update', { params: refresh ? { refresh: 1 } : undefined }));
 
 /** Owner only: downloads, verifies and installs the newest release, then the server restarts. */
-export const adminStartUpdate = () =>
-	request<ServerUpdateStarted>(apiClient.post('/api/admin/update'));
+export const adminStartUpdate = (source: 'release' | 'upload' = 'release') =>
+	request<ServerUpdateStarted>(apiClient.post('/api/admin/update', { source }));
+
+/** Owner only, non-Docker installs: stages a release zip or binary for an offline update. Nothing is applied yet. */
+export const adminUploadUpdate = (input: { file: File; version: string; sha256?: string; sums?: string }) => {
+	const form = new FormData();
+	form.append('version', input.version);
+	if (input.sha256) form.append('sha256', input.sha256);
+	if (input.sums) form.append('sums', input.sums);
+	// The file goes last so the server can validate the small fields without waiting for the whole upload.
+	form.append('file', input.file);
+	return request<{ status: string; upload: ServerUploadInfo }>(apiClient.post('/api/admin/update/upload', form));
+};

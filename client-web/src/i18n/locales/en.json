@@ -713,7 +713,8 @@
 						"start": "started a server update to",
 						"installed": "installed the server update",
 						"failed": "server update failed",
-						"check": "checked for server updates"
+						"check": "checked for server updates",
+							"upload": "uploaded a server update"
 					}
 				}
 			}
@@ -767,7 +768,8 @@
 				"limits": "Limits",
 				"calls": "Calls",
 				"network": "Network",
-				"security": "Security"
+				"security": "Security",
+					"updates": "Updates"
 			},
 			"keys": {
 				"server": {
@@ -796,7 +798,12 @@
 				"captcha": {
 					"enabled": "Sign-up check (proof of work)",
 					"difficulty": "Sign-up check difficulty"
-				}
+				},
+					"update": {
+						"manifest_url": "Update manifest URL",
+						"github_fallback": "Fall back to GitHub",
+						"notify_admins": "Tell admins about new versions"
+					}
 			}
 		},
 		"admins": {
@@ -886,7 +893,13 @@
 			"update_checksum_failed": "The download did not match its checksum, so nothing was installed.",
 			"update_no_checksums": "The release has no checksum file, so nothing was installed.",
 			"update_download_failed": "The update could not be downloaded.",
-			"update_failed": "The update could not be installed."
+			"update_failed": "The update could not be installed.",
+				"update_upload_too_large": "The file is larger than the allowed size.",
+				"update_upload_invalid": "This is not a valid Cove server release file.",
+				"update_upload_wrong_platform": "This file is built for a different system or architecture.",
+				"update_upload_version": "Enter the version of this release, for example 0.10.0.",
+				"update_no_upload": "Upload a release file first.",
+				"update_too_old": "This release cannot be installed directly from your version. Install an intermediate release first."
 		},
 		"notices": {
 			"title": "Server notices",
@@ -923,7 +936,23 @@
 			"reason_unsupported": "This install cannot update itself (read-only folder, development build or unsupported platform). Update it manually.",
 			"docker_title": "Running in Docker",
 			"docker_body": "Update the container by pulling the new image and recreating it:",
-			"docker_watchtower": "Or let Watchtower pull the image and restart the container automatically."
+			"docker_watchtower": "Or let Watchtower pull the image and restart the container automatically.",
+				"source_label": "Checked via",
+				"source_manifest": "Cove release manifest",
+				"source_github": "GitHub releases",
+				"upload_title": "Manual update (no internet)",
+				"upload_body": "For installs that cannot reach GitHub or covechat.dev. On another computer download the server zip for this machine from the release page, then upload it here. This is for non-Docker installs: with Docker, pull the new image instead.",
+				"upload_file": "Release file (.zip or server binary)",
+				"upload_version": "Version of this release",
+				"upload_sha": "SHA-256 or SHA256SUMS (optional)",
+				"upload_sha_hint": "Paste the checksum, or the whole SHA256SUMS file, to verify the upload. Without it the file is trusted as it is.",
+				"upload_button": "Upload",
+				"uploading": "Uploading…",
+				"uploaded": "Version {{version}} is staged ({{checked}}).",
+				"checked_yes": "checksum verified",
+				"checked_no": "not verified",
+				"apply": "Install uploaded version",
+				"upload_done": "Upload staged. Press Install to apply it."
 		}
 	},
 	"devices": {
@@ -1034,14 +1063,12 @@
 				"ready": "Version {{version}} is downloaded and ready to install.",
 				"manual": "Version {{version}} is available, but this install location is read-only. Download it manually.",
 				"upToDate": "Cove is up to date. Last checked {{time}}.",
-				"notChecked": "Not checked yet."
+				"notChecked": "Not checked yet.",
+					"available": "Version {{version}} is available. Nothing has been downloaded."
 			},
 			"banner": {
-				"ready": "Update ready: Cove {{version}}",
-				"available": "Cove {{version}} is available",
 				"restart": "Restart",
-				"download": "Download",
-				"later": "Later"
+				"download": "Download"
 			},
 			"confirm": {
 				"title": "Restart to update?",
@@ -1057,6 +1084,15 @@
 				"install_failed": "The update could not be installed. Your current version was kept.",
 				"unsupported": "Automatic updates are not available for this platform.",
 				"nothing_staged": "There is no downloaded update to install."
-			}
+			},
+				"autoDownload": "Download updates automatically",
+				"autoDownloadHint": "Off by default. Cove only checks for updates; turn this on to also download them in the background. Installing always needs your click.",
+				"source": "Update source",
+				"sourceHint": "Address of the release manifest. Keep the default unless you run a mirror, for example on a network without internet.",
+				"entry": {
+					"available": "Update available: Cove {{version}}",
+					"ready": "Update ready: Cove {{version}}",
+					"notes": "What's new"
+				}
 		}
 }

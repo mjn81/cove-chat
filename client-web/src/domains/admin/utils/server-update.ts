@@ -50,6 +50,19 @@ export function isUpdateBusy(stage: ServerUpdateStage): boolean {
 }
 
 /**
+ * Splits what the owner pasted into the checksum box: a lone 64-character hex digest is the file's SHA-256; anything
+ * longer (a whole SHA256SUMS file) is sent as `sums` and matched by file name on the server.
+ *
+ * @param text - The pasted text.
+ * @returns The field to send, or an empty object when nothing was pasted.
+ */
+export function classifyChecksumInput(text: string): { sha256?: string; sums?: string } {
+	const trimmed = text.trim();
+	if (trimmed === '') return {};
+	return /^[0-9a-fA-F]{64}$/.test(trimmed) ? { sha256: trimmed.toLowerCase() } : { sums: trimmed };
+}
+
+/**
  * Returns the release notes shortened for the collapsed preview.
  *
  * @param notes - Raw release body.

@@ -5,7 +5,7 @@ import type {
 	DesktopUpdateState,
 } from '../types/update.types';
 
-const PHASES: readonly string[] = ['idle', 'checking', 'downloading', 'ready', 'installing', 'error'];
+const PHASES: readonly string[] = ['idle', 'checking', 'available', 'downloading', 'ready', 'installing', 'error'];
 const ERRORS: readonly string[] = [
 	'check_failed',
 	'download_failed',
@@ -14,6 +14,9 @@ const ERRORS: readonly string[] = [
 	'unsupported',
 	'nothing_staged',
 ];
+
+/** Cove's own update source; the desktop app uses it when no mirror is configured. */
+export const DEFAULT_MANIFEST_URL = 'https://covechat.dev/releases/manifest.json';
 
 function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null;
@@ -64,24 +67,38 @@ export function parseUpdateSettings(raw: unknown): DesktopUpdateSettings | null 
 	if (!isRecord(value) || typeof value.enabled !== 'boolean' || typeof value.include_prerelease !== 'boolean') {
 		return null;
 	}
-	return { enabled: value.enabled, include_prerelease: value.include_prerelease };
+	return {
+		enabled: value.enabled,
+		include_prerelease: value.include_prerelease,
+		auto_download: value.auto_download === true,
+		manifest_url: typeof value.manifest_url === 'string' ? value.manifest_url : DEFAULT_MANIFEST_URL,
+	};
 }
 
-/** What the "Update ready" banner should offer for a state, or null to hide it. */
-export type BannerKind = 'restart' | 'download';
+/** What the sidebar update icon offers; null hides the icon. */
+export type EntryKind = 'download' | 'downloading' | 'restart' | 'manual';
 
 /**
- * Decides whether the app-shell banner shows. It appears only once a verified update is staged, and not again for a
- * version the user dismissed with "Later" (the next, newer version shows it again).
+ * Decides whether the small update icon above the profile shows, and what its popover offers. Nothing downloads or
+ * installs without a click, so an update that was only found shows `download`; a staged one shows `restart`.
  *
  * @param state - Current updater state, or null before the first one arrives.
- * @param dismissedVersion - Version the user dismissed, if any.
- * @returns `restart` when the app can install it, `download` when it cannot (read-only install), else null.
+ * @returns `download` (found, not fetched), `downloading`, `restart` (ready and installable), `manual` (found but the
+ * install location is read-only: link to the release page), or null.
  */
-export function bannerKind(state: DesktopUpdateState | null, dismissedVersion: string | null): BannerKind | null {
-	if (!state || state.phase !== 'ready' || !state.latest_version) return null;
-	if (state.latest_version === dismissedVersion) return null;
-	return state.can_install ? 'restart' : 'download';
+export function entryKind(state: DesktopUpdateState | null): EntryKind | null {
+	if (!state || !state.latest_version) return null;
+	switch (state.phase) {
+		case 'available':
+			return state.can_install ? 'download' : 'manual';
+		case 'downloading':
+			return 'downloading';
+		case 'ready':
+		case 'installing':
+			return state.can_install ? 'restart' : 'manual';
+		default:
+			return null;
+	}
 }
 
 /** Reasons to ask before restarting. */

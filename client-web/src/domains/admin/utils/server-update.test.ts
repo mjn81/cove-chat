@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ServerUpdateInfo } from '../types/admin.types';
-import { isUpdateBusy, previewReleaseNotes, serverUpdateStage } from './server-update';
+import { classifyChecksumInput, isUpdateBusy, previewReleaseNotes, serverUpdateStage } from './server-update';
 
 const info = (over: Partial<ServerUpdateInfo> = {}): ServerUpdateInfo => ({
 	current_version: '0.9.9',
@@ -77,5 +77,16 @@ describe('previewReleaseNotes', () => {
 	it('keeps short notes and truncates long ones', () => {
 		expect(previewReleaseNotes('  fixes  ')).toBe('fixes');
 		expect(previewReleaseNotes('a'.repeat(300), 10)).toBe(`${'a'.repeat(10)}…`);
+	});
+});
+
+describe('classifyChecksumInput', () => {
+	it('treats a lone digest as sha256 and anything else as a SHA256SUMS file', () => {
+		const hex = 'A'.repeat(64);
+		expect(classifyChecksumInput(`  ${hex}\n`)).toEqual({ sha256: 'a'.repeat(64) });
+		expect(classifyChecksumInput(`${hex}  cove-server-linux-amd64.zip`)).toEqual({
+			sums: `${hex}  cove-server-linux-amd64.zip`,
+		});
+		expect(classifyChecksumInput('   ')).toEqual({});
 	});
 });

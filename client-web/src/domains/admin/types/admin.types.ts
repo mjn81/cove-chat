@@ -88,6 +88,16 @@ export type InstallMode = 'binary' | 'docker' | 'unknown';
 /** Progress of a server update job (`GET /api/admin/update`). */
 export type ServerUpdateState = 'idle' | 'downloading' | 'installing' | 'restarting' | 'failed';
 
+/** A release file the owner uploaded for an air-gapped install. */
+export interface ServerUploadInfo {
+	version: string;
+	/** True when a checksum was supplied and matched. */
+	verified: boolean;
+	sha256: string;
+	kind: 'zip' | 'binary';
+	size_bytes: number;
+}
+
 export interface ServerUpdateInfo {
 	current_version: string;
 	/** Empty when no release could be determined. */
@@ -107,6 +117,9 @@ export interface ServerUpdateInfo {
 	reason?: 'docker' | 'unsupported' | 'up_to_date' | 'busy';
 	/** Manual command, set in docker mode. */
 	instructions?: string;
+	/** Where the release list came from: the Cove manifest or GitHub. */
+	source?: 'manifest' | 'github';
+	uploaded?: ServerUploadInfo;
 	state: ServerUpdateState;
 	progress_percent: number;
 	/** i18n key describing why the last attempt failed. */

@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/store';
 import { adminKeys } from '../api/admin.api';
 import { useCheckServerUpdate, useServerUpdate, useStartServerUpdate } from '../api/use-admin';
 import { adminErrorMessage } from '../utils/admin-errors';
+import { ServerUpdateUpload } from './server-update-upload';
 import { isUpdateBusy, previewReleaseNotes, serverUpdateStage } from '../utils/server-update';
 
 /** Docker installs are replaced by pulling a new image, never in place; shows the exact commands. */
@@ -41,6 +42,7 @@ export function ServerUpdatePanel() {
 	const isOwner = useAuthStore((s) => s.user?.server_role) === 'owner';
 	const [target, setTarget] = useState<string | null>(null);
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [confirmSource, setConfirmSource] = useState<'release' | 'upload'>('release');
 
 	const query = useServerUpdate(target);
 	const check = useCheckServerUpdate();
@@ -63,7 +65,7 @@ export function ServerUpdatePanel() {
 	const confirm = async () => {
 		setConfirmOpen(false);
 		try {
-			const started = await start.mutateAsync();
+			const started = await start.mutateAsync(confirmSource);
 			setTarget(started.version);
 		} catch (err) {
 			toast.error(adminErrorMessage(t, err));
@@ -115,7 +117,25 @@ export function ServerUpdatePanel() {
 				</SettingRow>
 			</div>
 
+			{info.source && (
+				<p className="text-xs text-muted-foreground">
+					{t('admin.update.source_label')}{' '}
+					{info.source === 'manifest' ? t('admin.update.source_manifest') : t('admin.update.source_github')}
+				</p>
+			)}
+
 			{info.mode === 'docker' && <DockerInstructions command={info.instructions ?? ''} />}
+
+			{isOwner && info.mode !== 'docker' && !busy && (
+				<ServerUpdateUpload
+					uploaded={info.uploaded}
+					disabled={info.mode !== 'binary'}
+					onInstall={() => {
+						setConfirmSource('upload');
+						setConfirmOpen(true);
+					}}
+				/>
+			)}
 
 			{info.update_available && info.release_notes && (
 				<details className="rounded-lg border border-border p-3 text-sm">
@@ -159,7 +179,10 @@ export function ServerUpdatePanel() {
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<p className="text-xs text-muted-foreground">{disabledReason}</p>
 					<Button
-						onClick={() => setConfirmOpen(true)}
+						onClick={() => {
+						setConfirmSource('release');
+						setConfirmOpen(true);
+					}}
 						disabled={!info.can_update || start.isPending}
 					>
 						<Download />
@@ -174,7 +197,9 @@ export function ServerUpdatePanel() {
 			<ModalShell
 				open={confirmOpen}
 				onOpenChange={setConfirmOpen}
-				title={t('admin.update.confirm_title', { version: info.latest_version })}
+				title={t('admin.update.confirm_title', {
+					version: confirmSource === 'upload' ? (info.uploaded?.version ?? '') : info.latest_version,
+				})}
 				description={t('admin.update.confirm_body')}
 				size="sm"
 				footer={
