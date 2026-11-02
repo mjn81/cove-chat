@@ -723,6 +723,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -866,7 +878,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Replaces ALL current data with the contents of a backup made by the panel. Everyone is signed out, including the caller. Cannot be undone; take a backup first.\n**Access:** Server Owner, with their password, the archive passphrase and the phrase ` + "`" + `RESTORE` + "`" + `.",
+                "description": "Replaces ALL current data with the contents of a backup made by the panel. Everyone is signed out, including the caller. Cannot be undone; take a backup first.\nThe form is read as a stream so the password is checked before the (up to 1 GiB) archive is read:\nsend ` + "`" + `password` + "`" + ` and ` + "`" + `confirm` + "`" + ` BEFORE ` + "`" + `file` + "`" + `.\n**Access:** Server Owner, with their password, the archive passphrase and the phrase ` + "`" + `RESTORE` + "`" + `.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -879,9 +891,16 @@ const docTemplate = `{
                 "summary": "Restore a backup",
                 "parameters": [
                     {
-                        "type": "file",
-                        "description": "The .cove-backup file",
-                        "name": "file",
+                        "type": "string",
+                        "description": "Owner password (must precede file)",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Must be RESTORE (must precede file)",
+                        "name": "confirm",
                         "in": "formData",
                         "required": true
                     },
@@ -893,16 +912,9 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Owner password",
-                        "name": "password",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Must be RESTORE",
-                        "name": "confirm",
+                        "type": "file",
+                        "description": "The .cove-backup file (last)",
+                        "name": "file",
                         "in": "formData",
                         "required": true
                     }
@@ -1003,7 +1015,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as ` + "`" + `.old` + "`" + `) and restarts the process. Returns 202 immediately; poll ` + "`" + `GET /api/admin/update` + "`" + ` for progress. Refused with 409 in docker mode (use ` + "`" + `docker compose pull \u0026\u0026 docker compose up -d` + "`" + `), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.\n**Access:** Server Owner.",
+                "description": "Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as ` + "`" + `.old` + "`" + `) and restarts the process. Returns 202 immediately; poll ` + "`" + `GET /api/admin/update` + "`" + ` for progress. Refused with 409 in docker mode (use ` + "`" + `docker compose pull \u0026\u0026 docker compose up -d` + "`" + `), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.\n**Access:** Server Owner, with their password.",
                 "produces": [
                     "application/json"
                 ],
@@ -1013,9 +1025,10 @@ const docTemplate = `{
                 "summary": "Update the server",
                 "parameters": [
                     {
-                        "description": "Optional. source=upload installs the release uploaded with POST /api/admin/update/upload instead of downloading",
+                        "description": "Owner password, and optionally source=upload to install the release uploaded with POST /api/admin/update/upload instead of downloading",
                         "name": "body",
                         "in": "body",
+                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/internal_api.UpdateStartRequest"
                         }
@@ -1052,6 +1065,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
                     "501": {
                         "description": "Not Implemented",
                         "schema": {
@@ -1074,7 +1099,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "For non-Docker installs without internet access (air-gapped): upload the ` + "`" + `cove-server-\u003cos\u003e-\u003carch\u003e.zip` + "`" + ` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with ` + "`" + `POST /api/admin/update` + "`" + ` and ` + "`" + `{\"source\":\"upload\"}` + "`" + `. Docker installs are refused: pull the new image instead.\n**Access:** Server Owner.",
+                "description": "For non-Docker installs without internet access (air-gapped): upload the ` + "`" + `cove-server-\u003cos\u003e-\u003carch\u003e.zip` + "`" + ` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with ` + "`" + `POST /api/admin/update` + "`" + ` and ` + "`" + `{\"source\":\"upload\"}` + "`" + `. Docker installs are refused: pull the new image instead.\n**Access:** Server Owner, with their password (sent before the file).",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1087,9 +1112,9 @@ const docTemplate = `{
                 "summary": "Upload a server release manually",
                 "parameters": [
                     {
-                        "type": "file",
-                        "description": "Release zip or plain server binary",
-                        "name": "file",
+                        "type": "string",
+                        "description": "Owner password (must precede file)",
+                        "name": "password",
                         "in": "formData",
                         "required": true
                     },
@@ -1097,6 +1122,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Version of the uploaded release, e.g. 0.10.0",
                         "name": "version",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Release zip or plain server binary",
+                        "name": "file",
                         "in": "formData",
                         "required": true
                     },
@@ -1146,6 +1178,12 @@ const docTemplate = `{
                     },
                     "413": {
                         "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -1204,6 +1242,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Bounded list of the caller's channels and direct messages, returned as a bare JSON array.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1217,8 +1256,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/cove_backend_internal_models.Channel"
+                                "$ref": "#/definitions/internal_api.ChannelResponse"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1229,6 +1286,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Creates a group channel (name required) or, with exactly one other member and no name, a direct message.\nAsking for a DM that already exists returns that conversation with **200** instead of **201**.\nMembers who block the caller or whose privacy settings forbid it are silently left out.\n**Access:** Authenticated.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1251,10 +1309,52 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "an existing direct message with that user",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ChannelResponse"
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
+                            "$ref": "#/definitions/internal_api.ChannelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1267,6 +1367,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Lists public (non-private) group channels whose name contains ` + "`" + `q` + "`" + `. The result carries no invite link:\na public channel is joined with ` + "`" + `POST /api/join/{link}` + "`" + ` using its **id**.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1291,6 +1392,24 @@ const docTemplate = `{
                                 "$ref": "#/definitions/internal_api.ExploreChannelResponse"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -1302,6 +1421,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "**Access:** Channel Member.",
                 "produces": [
                     "application/json"
                 ],
@@ -1322,7 +1442,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/cove_backend_internal_models.Channel"
+                            "$ref": "#/definitions/internal_api.ChannelResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1333,6 +1471,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "In a group channel only the owner may delete, always for everyone. In a direct message either side may\nclear it for themselves, or delete it for both with ` + "`" + `for_both=true` + "`" + `.\n**Access:** Channel Member (group channels: Channel Owner).",
                 "produces": [
                     "application/json"
                 ],
@@ -1361,6 +1500,36 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.StatusResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             },
@@ -1370,6 +1539,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "**Access:** Channel Admin.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1403,6 +1573,48 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ChannelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1479,6 +1691,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Bounded list returned as a bare JSON array.\n**Access:** Channel Member.",
                 "produces": [
                     "application/json"
                 ],
@@ -1504,6 +1717,30 @@ const docTemplate = `{
                                 "$ref": "#/definitions/internal_api.UserResponse"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             },
@@ -1513,6 +1750,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Adds up to 200 users. Users who block the caller or whose privacy settings forbid it are reported in ` + "`" + `skipped` + "`" + `.\n**Access:** Channel Admin.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1522,7 +1760,7 @@ const docTemplate = `{
                 "tags": [
                     "channels"
                 ],
-                "summary": "Add multiple members to a channel by username",
+                "summary": "Add multiple members to a channel by user id",
                 "parameters": [
                     {
                         "type": "string",
@@ -1532,7 +1770,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Members to add (by username)",
+                        "description": "Members to add (by user id)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1545,7 +1783,43 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_api.StatusResponse"
+                            "$ref": "#/definitions/internal_api.AddMembersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1558,6 +1832,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Any member can remove themselves (leave). Removing someone else needs an admin or owner with a strictly higher role than the target.\n**Access:** Channel Member (self) or Channel Admin (others).",
                 "produces": [
                     "application/json"
                 ],
@@ -1587,6 +1862,129 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.StatusResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Promotes a member to admin (10) or demotes an admin to member (0). Ownership cannot be granted here and\nthe owner's own role cannot be changed; any other role value is rejected with ` + "`" + `validation_failed` + "`" + `.\n**Access:** Channel Owner.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Update a channel member's role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Channel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target user ID",
+                        "name": "uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New role",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -1598,7 +1996,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns messages newest-first. Supports cursor pagination.",
+                "description": "Returns messages newest-first as a bare JSON array. Supports cursor pagination with ` + "`" + `before` + "`" + `; an invalid ` + "`" + `limit` + "`" + ` is rejected with 400.\n**Access:** Channel Member.",
                 "produces": [
                     "application/json"
                 ],
@@ -1616,7 +2014,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Max messages to return (default 250, max 500)",
+                        "description": "Max messages to return (1-500, default 250)",
                         "name": "limit",
                         "in": "query"
                     },
@@ -1635,6 +2033,197 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/cove_backend_internal_models.Message"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Multipart form: ` + "`" + `file` + "`" + ` (required), ` + "`" + `channel_id` + "`" + ` (optional; the caller must be an active member), ` + "`" + `is_video` + "`" + `\n(` + "`" + `true` + "`" + ` for video messages, which are probed and transcoded in the background), ` + "`" + `thumb_ciphertext` + "`" + ` and\n` + "`" + `thumb_nonce` + "`" + ` (base64, optional). The stored content type is sniffed from the bytes, never taken from\nthe client. The response never contains the server-side storage path.\n**Access:** Authenticated (channel uploads: Channel Member).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload an encrypted file or video message",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "The (already encrypted) file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel the file belongs to",
+                        "name": "channel_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Treat the upload as a video message",
+                        "name": "is_video",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Base64 encrypted thumbnail",
+                        "name": "thumb_ciphertext",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Base64 thumbnail nonce",
+                        "name": "thumb_nonce",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UploadFileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the raw (still encrypted) bytes with the stored content type, always as an attachment. Files that\nbelong to a private channel are only served to its members; files without a channel (avatars) to any\nsigned-in user.\n**Access:** Authenticated (files of private channels: Channel Member).",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Download a stored file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1658,7 +2247,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Unique Channel Invite Link",
+                        "description": "Unique Channel Invite Link, or a public channel ID",
                         "name": "link",
                         "in": "path",
                         "required": true
@@ -1703,18 +2292,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Joins the channel and returns it. Members who were kicked cannot rejoin through a link; members who left can.\n**Access:** Authenticated.",
+                "description": "Joins the channel and returns it. ` + "`" + `link` + "`" + ` is the channel's invite link, or the id of a public (non-private)\ngroup channel as listed by explore. Members who were kicked cannot rejoin through a link; members who left can.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "channels"
                 ],
-                "summary": "Join a channel via a unique invite link",
+                "summary": "Join a channel via a unique invite link or a public channel's id",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Unique Channel Invite Link",
+                        "description": "Unique Channel Invite Link, or a public channel ID",
                         "name": "link",
                         "in": "path",
                         "required": true
@@ -1762,6 +2351,7 @@ const docTemplate = `{
         },
         "/api/login": {
             "post": {
+                "description": "Sets the httpOnly ` + "`" + `cove_session` + "`" + ` and ` + "`" + `cove_csrf` + "`" + ` cookies for browsers and also returns the token for Bearer clients.\n**Access:** Public.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1801,6 +2391,24 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -1812,6 +2420,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1825,6 +2434,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.StatusResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -1836,6 +2457,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1848,6 +2470,30 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -1902,14 +2548,112 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
-                    "429": {
-                        "description": "too many sign-ups from this IP (demo mode)",
+                    "413": {
+                        "description": "Request Entity Too Large",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
-                    "503": {
-                        "description": "bot-check service unreachable",
+                    "429": {
+                        "description": "too many requests, or too many sign-ups from this IP (demo mode)",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/relationships": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Friends, outgoing friend requests and blocked users, as a bare JSON array.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "relationships"
+                ],
+                "summary": "List the caller's relationships",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_api.RelationshipResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/relationships/incoming": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Bare JSON array; each item embeds the requester's profile.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "relationships"
+                ],
+                "summary": "List pending incoming friend requests",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_api.RelationshipResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -2073,6 +2817,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Case-insensitive substring match. The query must be at least 2 characters (shorter ones return an empty\narray) and at most 50 users are returned, as a bare JSON array.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2083,7 +2828,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search query to filter by username",
+                        "description": "Search query to filter by username (min 2 characters)",
                         "name": "q",
                         "in": "query"
                     }
@@ -2097,6 +2842,24 @@ const docTemplate = `{
                                 "$ref": "#/definitions/internal_api.UserResponse"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -2108,6 +2871,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Deletes the caller's account. The server owner must transfer ownership first.\n**Access:** Authenticated (self only).",
                 "produces": [
                     "application/json"
                 ],
@@ -2121,6 +2885,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.StatusResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             },
@@ -2130,6 +2918,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Partial update: only the fields present are changed. Changing the password needs ` + "`" + `old_password` + "`" + ` and signs\nout every other device. Enumerated fields reject unknown values with ` + "`" + `validation_failed` + "`" + `:\n` + "`" + `status_preference` + "`" + ` auto|online|away|dnd|offline, ` + "`" + `allow_channel_adds` + "`" + ` and ` + "`" + `dm_permission` + "`" + `\neveryone|friends|nobody, ` + "`" + `friend_request_permission` + "`" + ` everyone|nobody.\n**Access:** Authenticated (self only).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2157,6 +2946,48 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.UserResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -2168,6 +2999,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Public profile of any user. Privacy settings are only included for the caller's own account.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2190,6 +3022,30 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_api.UserResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -2201,6 +3057,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2221,7 +3078,169 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/cove_backend_internal_models.Presence"
+                            "$ref": "#/definitions/internal_api.PresenceResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{id}/relationship": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns type ` + "`" + `none` + "`" + ` when there is no relationship.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "relationships"
+                ],
+                "summary": "Get the relationship with another user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.RelationshipResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "` + "`" + `action` + "`" + ` is one of request, accept, decline, cancel, remove, block, unblock. Rule violations (already\nfriends, blocked, no pending request, ...) answer 400 with a user-facing message; the target must exist.\n**Access:** Authenticated.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "relationships"
+                ],
+                "summary": "Change the relationship with another user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Action",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.RelationshipActionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.RelationshipResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     }
                 }
@@ -2271,74 +3290,6 @@ const docTemplate = `{
                 "target": {
                     "description": "e.g. a username or invite code (never a secret)",
                     "type": "string"
-                }
-            }
-        },
-        "cove_backend_internal_models.Channel": {
-            "type": "object",
-            "properties": {
-                "aes_key_enc": {
-                    "description": "Channel AES-256 key encrypted with server KEK",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "avatar_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "creator_id": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "invite_link": {
-                    "description": "Unique public/private join link",
-                    "type": "string"
-                },
-                "is_private": {
-                    "description": "If true, hidden from public search",
-                    "type": "boolean"
-                },
-                "last_message_at": {
-                    "description": "Ephemeral: Populated in ListUserChannels",
-                    "type": "string"
-                },
-                "last_message_ciphertext": {
-                    "description": "Ephemeral, populated in ListUserChannels: the channel's most recent\nmessage, still encrypted — lets the client render a sidebar preview\nwithout a second round-trip. The server never sees the plaintext.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "last_message_id": {
-                    "type": "string"
-                },
-                "last_message_nonce": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "last_message_sender_id": {
-                    "type": "string"
-                },
-                "last_message_type": {
-                    "$ref": "#/definitions/cove_backend_internal_models.MessageType"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "unread_count": {
-                    "description": "Ephemeral: Populated per-user in handlers",
-                    "type": "integer"
                 }
             }
         },
@@ -2415,18 +3366,6 @@ const docTemplate = `{
                 "MessageTypeInvite"
             ]
         },
-        "cove_backend_internal_models.Presence": {
-            "type": "object",
-            "properties": {
-                "current_status": {
-                    "description": "\"online\" | \"away\" | \"offline\"",
-                    "type": "string"
-                },
-                "last_seen": {
-                    "type": "string"
-                }
-            }
-        },
         "internal_api.AddMembersRequest": {
             "type": "object",
             "properties": {
@@ -2439,6 +3378,23 @@ const docTemplate = `{
                         "[\"user-1\"",
                         "\"user-2\"]"
                     ]
+                }
+            }
+        },
+        "internal_api.AddMembersResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "skipped": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.SkippedMember"
+                    }
                 }
             }
         },
@@ -2816,9 +3772,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "invite_link": {
-                    "type": "string"
-                },
                 "member_count": {
                     "type": "integer"
                 },
@@ -2997,6 +3950,24 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.PresenceResponse": {
+            "type": "object",
+            "properties": {
+                "current_status": {
+                    "type": "string",
+                    "enum": [
+                        "online",
+                        "away",
+                        "dnd",
+                        "offline"
+                    ],
+                    "example": "online"
+                },
+                "last_seen": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.RegisterRequest": {
             "type": "object",
             "properties": {
@@ -3030,6 +4001,39 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "alice"
+                }
+            }
+        },
+        "internal_api.RelationshipActionRequest": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "\"request\" | \"accept\" | \"decline\" | \"cancel\" | \"remove\" | \"block\" | \"unblock\"",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.RelationshipResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "from_user_id": {
+                    "type": "string"
+                },
+                "to_user_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"none\" | \"requested\" | \"friend\" | \"blocked\"",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/internal_api.UserResponse"
                 }
             }
         },
@@ -3108,6 +4112,17 @@ const docTemplate = `{
                 "platform": {
                     "type": "string",
                     "example": "Windows"
+                }
+            }
+        },
+        "internal_api.SkippedMember": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3281,9 +4296,27 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.UpdateMemberRequest": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "description": "Role is 0 (member) or 10 (admin). Ownership cannot be granted through this endpoint.",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        10
+                    ],
+                    "example": 10
+                }
+            }
+        },
         "internal_api.UpdateStartRequest": {
             "type": "object",
             "properties": {
+                "password": {
+                    "description": "Password is the owner's current password (step-up for replacing the server binary).",
+                    "type": "string"
+                },
                 "source": {
                     "description": "Source is \"release\" (default: download the latest) or \"upload\" (install the staged manual upload).",
                     "type": "string",
@@ -3391,6 +4424,53 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.UploadFileResponse": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "string"
+                },
+                "duration_sec": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mime": {
+                    "type": "string",
+                    "example": "application/octet-stream"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "processing_status": {
+                    "type": "string",
+                    "enum": [
+                        "ready",
+                        "processing",
+                        "failed"
+                    ]
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "thumb_ciphertext": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "thumb_nonce": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "uploaded_at": {
                     "type": "string"
                 }
             }
