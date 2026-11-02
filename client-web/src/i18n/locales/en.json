@@ -970,6 +970,17 @@
 		"banner": "Public demo · resets every night · do not share anything private",
 		"dismiss": "Dismiss"
 	},
+	"apiVersion": {
+		"unknown_message": "This message needs a newer version of {{app}}",
+		"outdated_title": "Update {{app}} to continue",
+		"outdated_body": "This server needs a newer version of {{app}}. Your version is too old to talk to it safely.",
+		"outdated_min": "Minimum supported version: {{version}}",
+		"reload": "Reload",
+		"desktop_hint": "Please update the {{app}} desktop app to the latest release, then reopen it.",
+		"soft_banner": "Your {{app}} is out of date, some features are unavailable.",
+		"dismiss": "Dismiss",
+		"invites_unsupported": "This server does not support sharing invites in chat yet."
+	},
 	"captcha": {
 		"verifying": "Checking that you are human…",
 		"verified": "You are verified",
