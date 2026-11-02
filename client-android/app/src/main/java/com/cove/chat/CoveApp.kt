@@ -34,6 +34,8 @@ class CoveApp : Application() {
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
+    lateinit var updateManager: com.cove.chat.data.update.UpdateManager
+        private set
     lateinit var whisperManager: com.cove.chat.whisper.WhisperManager
         private set
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -75,6 +77,12 @@ class CoveApp : Application() {
         rawUdpVoiceManager = RawUdpVoiceManager()
 
         notificationHelper = NotificationHelper(this)
+        updateManager = com.cove.chat.data.update.UpdateManager(this, preferencesManager)
+        // A quiet, rate-limited look for a newer APK shortly after start; it never downloads unless the user opted in.
+        appScope.launch {
+            kotlinx.coroutines.delay(20_000)
+            updateManager.check()
+        }
         whisperManager = com.cove.chat.whisper.WhisperManager(this, webSocketManager, { preferencesManager.userId }, { preferencesManager.username })
         whisperManager.notifier = object : com.cove.chat.whisper.WhisperNotifier {
             override fun request(invite: com.cove.chat.whisper.WhisperInvite) {

@@ -50,6 +50,30 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("keep_connected", true)
         set(value) = prefs.edit().putBoolean("keep_connected", value).apply()
 
+    /** Self-update (sideloaded builds): download new versions automatically on unmetered Wi-Fi. Off by default; installing always needs a tap. */
+    var updateAutoDownload: Boolean
+        get() = prefs.getBoolean("update_auto_download", false)
+        set(value) = prefs.edit().putBoolean("update_auto_download", value).apply()
+
+    /** Also offer pre-releases (every 0.x build is one, so the check treats 0.x as opted in). */
+    var updateIncludePrerelease: Boolean
+        get() = prefs.getBoolean("update_include_prerelease", false)
+        set(value) = prefs.edit().putBoolean("update_include_prerelease", value).apply()
+
+    /** Update source override (mirrors); blank means Cove's own domain with GitHub as the fallback. */
+    var updateManifestUrl: String
+        get() = prefs.getString("update_manifest_url", "") ?: ""
+        set(value) = prefs.edit().putString("update_manifest_url", value.trim()).apply()
+
+    var updateLastCheckMs: Long
+        get() = prefs.getLong("update_last_check", 0L)
+        set(value) = prefs.edit().putLong("update_last_check", value).apply()
+
+    /** Version whose chat-list card the user dismissed. */
+    var updateDismissedVersion: String
+        get() = prefs.getString("update_dismissed_version", "") ?: ""
+        set(value) = prefs.edit().putString("update_dismissed_version", value).apply()
+
     var notificationSound: Boolean
         get() = prefs.getBoolean("notification_sound", true)
         set(value) = prefs.edit().putBoolean("notification_sound", value).apply()
