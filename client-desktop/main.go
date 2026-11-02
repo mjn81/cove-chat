@@ -46,6 +46,7 @@ func main() {
 			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.showWindow() },
 		},
 		OnDomReady: app.DomReady,
+		Menu:       app.appMenu(),
 
 		// Expose App struct methods to the frontend via window.go.*
 		Bind: []any{app},

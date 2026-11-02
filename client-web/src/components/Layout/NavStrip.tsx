@@ -9,6 +9,9 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/** Space above the first rail button on macOS: just clears the traffic lights (they end about 30px down). */
+const MAC_RAIL_TOP = 38;
+
 export type SidebarTab = 'all' | 'dms' | 'channels';
 
 interface NavStripProps {
@@ -32,13 +35,13 @@ export function NavStrip({ activeTab, onChange, orientation = 'vertical' }: NavS
 				className={
 					isHorizontal
 						? 'flex flex-row items-center justify-around w-full px-2 py-1.5 bg-secondary border-b border-border/50 shrink-0 select-none gap-2'
-						: `flex flex-col items-center gap-1 py-3 bg-secondary border-e border-border/50 shrink-0 select-none ${
+						: `flex flex-col items-center gap-1 pb-3 ${isMacDesktop() ? 'pt-0' : 'pt-3'} bg-secondary border-e border-border/50 shrink-0 select-none ${
 							// On the macOS desktop app the traffic lights sit at the top of this column, so it is wide enough for them.
 							isMacDesktop() ? 'w-[72px]' : 'w-12'
 						}`
 				}
 			>
-				{!isHorizontal && <MacLightsSpacer />}
+				{!isHorizontal && <MacLightsSpacer height={MAC_RAIL_TOP} />}
 				{TABS.map(({ id, icon: Icon, label }) => (
 					<Tooltip key={id}>
 						<TooltipTrigger asChild>
