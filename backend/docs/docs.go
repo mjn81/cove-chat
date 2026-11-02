@@ -953,6 +953,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/admin/update": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reports the running version, the newest GitHub release with its notes, how this install was deployed (` + "`" + `binary` + "`" + `, ` + "`" + `docker` + "`" + ` or ` + "`" + `unknown` + "`" + `) and whether it can update itself. In docker mode the manual command is returned instead. ` + "`" + `?refresh=1` + "`" + ` bypasses the 10-minute release cache and is audited. Also reports the progress of a running update.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Server update status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pass 1 to re-check GitHub now",
+                        "name": "refresh",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as ` + "`" + `.old` + "`" + `) and restarts the process. Returns 202 immediately; poll ` + "`" + `GET /api/admin/update` + "`" + ` for progress. Refused with 409 in docker mode (use ` + "`" + `docker compose pull \u0026\u0026 docker compose up -d` + "`" + `), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.\n**Access:** Server Owner.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update the server",
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateStartResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/captcha/challenge": {
             "get": {
                 "description": "Returns an ALTCHA v1 challenge. The client searches for the number n in [0, maxnumber] with\nSHA-256(salt + n) equal to ` + "`" + `challenge` + "`" + `, then sends the base64 JSON\n{algorithm, challenge, number, salt, signature} as ` + "`" + `captcha` + "`" + ` when registering.\nEach solution works once and expires after a few minutes. Returns 404 when the check is off.\n**Access:** Public.",
@@ -2960,6 +3058,111 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "internal_api.UpdateInfoResponse": {
+            "type": "object",
+            "properties": {
+                "can_update": {
+                    "description": "CanUpdate is true only when the button may be used right now: binary mode, a newer release and no job running.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "check_error": {
+                    "description": "CheckError is an i18n key set when GitHub could not be reached; everything else is still filled in.",
+                    "type": "string",
+                    "example": "admin.errors.update_check_failed"
+                },
+                "checked_at": {
+                    "description": "RFC3339; when the release list was last fetched",
+                    "type": "string"
+                },
+                "current_version": {
+                    "type": "string",
+                    "example": "0.9.9"
+                },
+                "error": {
+                    "description": "Error is an i18n key describing why the last update attempt failed.",
+                    "type": "string",
+                    "example": "admin.errors.update_checksum_failed"
+                },
+                "instructions": {
+                    "description": "Instructions is the manual command, set in docker mode.",
+                    "type": "string",
+                    "example": "docker compose pull \u0026\u0026 docker compose up -d"
+                },
+                "latest_version": {
+                    "description": "empty when no release could be determined",
+                    "type": "string",
+                    "example": "0.10.0"
+                },
+                "mode": {
+                    "description": "Mode is \"binary\" (plain executable), \"docker\" (container, never self-replaced) or \"unknown\".",
+                    "type": "string",
+                    "enum": [
+                        "binary",
+                        "docker",
+                        "unknown"
+                    ],
+                    "example": "binary"
+                },
+                "prerelease": {
+                    "type": "boolean"
+                },
+                "progress_percent": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "published_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "Reason explains a false CanUpdate with an i18n key suffix: docker, unsupported, up_to_date, busy.",
+                    "type": "string",
+                    "example": "docker"
+                },
+                "release_notes": {
+                    "description": "GitHub release body (Markdown), truncated to 16 KiB",
+                    "type": "string"
+                },
+                "release_url": {
+                    "type": "string"
+                },
+                "state": {
+                    "description": "State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.",
+                    "type": "string",
+                    "enum": [
+                        "idle",
+                        "downloading",
+                        "installing",
+                        "restarting",
+                        "failed"
+                    ],
+                    "example": "idle"
+                },
+                "update_available": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_api.UpdateStartResponse": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "example": "downloading"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "version": {
+                    "description": "the release being installed",
+                    "type": "string",
+                    "example": "0.10.0"
                 }
             }
         },

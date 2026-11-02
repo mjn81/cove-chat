@@ -648,6 +648,91 @@ definitions:
           type: string
         type: array
     type: object
+  internal_api.UpdateInfoResponse:
+    properties:
+      can_update:
+        description: 'CanUpdate is true only when the button may be used right now:
+          binary mode, a newer release and no job running.'
+        example: true
+        type: boolean
+      check_error:
+        description: CheckError is an i18n key set when GitHub could not be reached;
+          everything else is still filled in.
+        example: admin.errors.update_check_failed
+        type: string
+      checked_at:
+        description: RFC3339; when the release list was last fetched
+        type: string
+      current_version:
+        example: 0.9.9
+        type: string
+      error:
+        description: Error is an i18n key describing why the last update attempt failed.
+        example: admin.errors.update_checksum_failed
+        type: string
+      instructions:
+        description: Instructions is the manual command, set in docker mode.
+        example: docker compose pull && docker compose up -d
+        type: string
+      latest_version:
+        description: empty when no release could be determined
+        example: 0.10.0
+        type: string
+      mode:
+        description: Mode is "binary" (plain executable), "docker" (container, never
+          self-replaced) or "unknown".
+        enum:
+        - binary
+        - docker
+        - unknown
+        example: binary
+        type: string
+      prerelease:
+        type: boolean
+      progress_percent:
+        example: 42
+        type: integer
+      published_at:
+        description: RFC3339
+        type: string
+      reason:
+        description: 'Reason explains a false CanUpdate with an i18n key suffix: docker,
+          unsupported, up_to_date, busy.'
+        example: docker
+        type: string
+      release_notes:
+        description: GitHub release body (Markdown), truncated to 16 KiB
+        type: string
+      release_url:
+        type: string
+      state:
+        description: 'State is the progress of an update started with POST: idle,
+          downloading, installing, restarting or failed.'
+        enum:
+        - idle
+        - downloading
+        - installing
+        - restarting
+        - failed
+        example: idle
+        type: string
+      update_available:
+        example: true
+        type: boolean
+    type: object
+  internal_api.UpdateStartResponse:
+    properties:
+      state:
+        example: downloading
+        type: string
+      status:
+        example: success
+        type: string
+      version:
+        description: the release being installed
+        example: 0.10.0
+        type: string
+    type: object
   internal_api.UpdateUserRequest:
     properties:
       allow_channel_adds:
@@ -1348,6 +1433,72 @@ paths:
       security:
       - BearerAuth: []
       summary: Restore a backup
+      tags:
+      - admin
+  /api/admin/update:
+    get:
+      description: |-
+        Reports the running version, the newest GitHub release with its notes, how this install was deployed (`binary`, `docker` or `unknown`) and whether it can update itself. In docker mode the manual command is returned instead. `?refresh=1` bypasses the 10-minute release cache and is audited. Also reports the progress of a running update.
+        **Access:** Server Admin.
+      parameters:
+      - description: Pass 1 to re-check GitHub now
+        in: query
+        name: refresh
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Server update status
+      tags:
+      - admin
+    post:
+      description: |-
+        Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as `.old`) and restarts the process. Returns 202 immediately; poll `GET /api/admin/update` for progress. Refused with 409 in docker mode (use `docker compose pull && docker compose up -d`), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.
+        **Access:** Server Owner.
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/internal_api.UpdateStartResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update the server
       tags:
       - admin
   /api/captcha/challenge:

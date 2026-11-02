@@ -112,7 +112,7 @@ func (c *Client) get(ctx context.Context, rawURL, accept string) (*http.Response
 
 // ListReleases fetches the most recent releases (drafts are dropped).
 //
-// @throws an error for transport failures, non-200 answers (including GitHub rate limiting) or invalid JSON.
+// Fails with an error for transport failures, non-200 answers (including GitHub rate limiting) or invalid JSON.
 func (c *Client) ListReleases(ctx context.Context) ([]Release, error) {
 	base := strings.TrimRight(c.APIBase, "/")
 	if base == "" {
@@ -171,7 +171,7 @@ func AllowPrerelease(current string, optIn bool) bool {
 // Select returns the highest-semver release that is newer than opts.Current. The releases list is used rather
 // than /releases/latest because that endpoint ignores pre-releases and every current Cove build is one.
 //
-// @returns ErrNoRelease if nothing newer qualifies; an unparseable current version is an error.
+// Returns ErrNoRelease if nothing newer qualifies; an unparseable current version is an error.
 func Select(releases []Release, opts SelectOptions) (Release, error) {
 	cur, err := ParseVersion(opts.Current)
 	if err != nil {

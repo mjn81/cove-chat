@@ -13,7 +13,7 @@ import (
 // ExtractFile writes the single regular file named entry from the zip to dest (mode 0755 when the archive marks
 // it executable, else 0644). The match is exact on the archive path, so a release cannot smuggle in a look-alike.
 //
-// @throws an error if the entry is missing, is not a regular file, or inflates beyond maxBytes.
+// Fails with an error if the entry is missing, is not a regular file, or inflates beyond maxBytes.
 func ExtractFile(zipPath, entry, dest string, maxBytes int64) error {
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -36,8 +36,8 @@ func ExtractFile(zipPath, entry, dest string, maxBytes int64) error {
 // which receives it under the same name. It preserves file modes and relative symlinks that stay inside the tree
 // (macOS bundles use them), and rejects absolute paths, ".." traversal ("zip slip") and oversized archives.
 //
-// @param maxBytes total inflated size limit
-// @throws an error if the tree is absent or the archive is hostile.
+// Parameter maxBytes: total inflated size limit
+// Fails with an error if the tree is absent or the archive is hostile.
 func ExtractTree(zipPath, prefix, destDir string, maxBytes int64) error {
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {

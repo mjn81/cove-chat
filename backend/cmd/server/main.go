@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -141,6 +142,14 @@ func main() {
 	// Buffered: the admin "delete server" action sends SIGTERM here too.
 	quit := make(chan os.Signal, 2)
 
+	// The admin panel's "Update server" button replaces the binary, then asks for this restart: the normal
+	// graceful shutdown runs first (database closed, ports freed) and the process re-executes afterwards.
+	var restartForUpdate atomic.Bool
+	updater := api.NewUpdater(version.Version, func() {
+		restartForUpdate.Store(true)
+		quit <- syscall.SIGTERM
+	})
+
 	apiHandler := &api.Handler{
 		Store:               dataStore,
 		Sessions:            sessions,
@@ -169,6 +178,7 @@ func main() {
 		ServerDomain: cfg.Server.Domain,
 		StartedAt:    time.Now(),
 		Shutdown:     func() { quit <- syscall.SIGTERM },
+		Updater:      updater,
 	}
 	if _, err := dataStore.EnsureSystemUser(); err != nil {
 		logger.Warnf("could not create the Cove system account: %v", err)
@@ -326,6 +336,13 @@ func main() {
 	}
 
 	logger.Info("Cove stopped.")
+
+	if restartForUpdate.Load() {
+		// Only returns on Windows (child started) or on failure; Unix replaces the process image.
+		if err := restartSelf(updater.ExePath); err != nil {
+			logger.Fatalf("Could not restart after the update: %v", err)
+		}
+	}
 }
 
 // startUDPRouter opens a raw UDP socket for desktop voice routing.

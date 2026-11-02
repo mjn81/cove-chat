@@ -25,7 +25,7 @@ const (
 // copy is kept so Rollback can undo a bad update. Works for files and, with a same-filesystem staged path, for
 // directories such as a macOS .app bundle.
 //
-// @returns the path of the kept old copy.
+// Returns the path of the kept old copy.
 func ReplacePath(target, staged string) (string, error) {
 	info, err := os.Stat(staged)
 	if err != nil {
@@ -78,7 +78,7 @@ func ReplacePath(target, staged string) (string, error) {
 // Rollback undoes ReplacePath: the current target is moved to target+".failed" (then removed if possible) and
 // target+".old" takes its place.
 //
-// @throws an error when there is no ".old" copy to go back to.
+// Fails with an error when there is no ".old" copy to go back to.
 func Rollback(target string) error {
 	oldPath := target + OldSuffix
 	if _, err := os.Lstat(oldPath); err != nil {

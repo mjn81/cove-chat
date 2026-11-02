@@ -14,7 +14,7 @@ type Version struct {
 
 // ParseVersion parses "1.2.3", "v1.2.3" and "1.2.3-rc.1+build5".
 //
-// @returns an error for anything that is not MAJOR.MINOR.PATCH with an optional pre-release.
+// Returns an error for anything that is not MAJOR.MINOR.PATCH with an optional pre-release.
 func ParseVersion(s string) (Version, error) {
 	raw := strings.TrimSpace(s)
 	s = strings.TrimPrefix(raw, "v")

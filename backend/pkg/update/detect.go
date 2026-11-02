@@ -51,7 +51,7 @@ func OSProbe() Probe {
 // DetectInstallMode classifies the running install. Container detection looks for /.dockerenv, container
 // markers in /proc/1/cgroup, and COVE_IN_DOCKER=1 for runtimes that expose neither (an explicit override).
 //
-// @param exe absolute path of the running executable
+// Parameter exe: absolute path of the running executable
 func DetectInstallMode(p Probe, exe string) InstallMode {
 	if p.Exists("/.dockerenv") || p.Getenv("COVE_IN_DOCKER") == "1" {
 		return ModeDocker

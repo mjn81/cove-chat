@@ -5,7 +5,7 @@ import "fmt"
 // ServerAsset names the server zip and the single binary inside it for a platform, mirroring
 // .github/workflows/release.yml (linux/windows/darwin x amd64/arm64, minus windows/arm64).
 //
-// @returns ok=false when the release pipeline builds nothing for that platform.
+// Returns ok=false when the release pipeline builds nothing for that platform.
 func ServerAsset(goos, goarch string) (zip, entry string, ok bool) {
 	switch goos {
 	case "linux", "darwin":
@@ -29,7 +29,7 @@ func ServerAsset(goos, goarch string) (zip, entry string, ok bool) {
 // DesktopAsset names the desktop zip and what it contains for a platform. On macOS the entry is the Cove.app
 // bundle (a directory); elsewhere it is the single executable.
 //
-// @returns ok=false for platforms without a desktop build (anything but windows/amd64, linux/amd64, macOS).
+// Returns ok=false for platforms without a desktop build (anything but windows/amd64, linux/amd64, macOS).
 func DesktopAsset(goos, goarch string) (zip, entry string, ok bool) {
 	switch {
 	case goos == "windows" && goarch == "amd64":

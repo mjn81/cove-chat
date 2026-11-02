@@ -204,7 +204,7 @@ func TestListReleasesDropsDraftsAndReportsHTTPErrors(t *testing.T) {
 		t.Fatalf("got %+v, %v", got, err)
 	}
 
-	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Error(w, "rate limited", 403) }))
+	bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Error(w, "rate limited", http.StatusForbidden) }))
 	defer bad.Close()
 	if _, err := (&update.Client{APIBase: bad.URL, AllowInsecure: true}).ListReleases(context.Background()); err == nil {
 		t.Error("a 403 from GitHub must surface as an error")

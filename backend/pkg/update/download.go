@@ -46,7 +46,7 @@ type FetchOptions struct {
 // SHA256SUMS, without an entry for the asset, or with a different digest is refused and nothing is left on
 // disk: an unverified artifact must never reach the replacement step.
 //
-// @throws ErrNotNewer, ErrAssetNotFound, ErrNoChecksums, ErrChecksumMismatch, ErrTooLarge, ErrInsecureURL or a transport error.
+// Fails with ErrNotNewer, ErrAssetNotFound, ErrNoChecksums, ErrChecksumMismatch, ErrTooLarge, ErrInsecureURL or a transport error.
 func (c *Client) Fetch(ctx context.Context, rel Release, assetName string, opts FetchOptions) (*Staged, error) {
 	if opts.Current != "" {
 		rv, err := rel.Version()
@@ -100,8 +100,8 @@ func digestEqual(a, b string) bool {
 
 // Download streams rawURL into dir/name through a ".part" file that is renamed on success, hashing as it goes.
 //
-// @returns the final path and the hex SHA-256 of what was written.
-// @throws ErrTooLarge when the body (or Content-Length) exceeds maxBytes.
+// Returns the final path and the hex SHA-256 of what was written.
+// Fails with ErrTooLarge when the body (or Content-Length) exceeds maxBytes.
 func (c *Client) Download(ctx context.Context, rawURL, dir, name string, maxBytes int64, progress Progress) (string, string, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", "", fmt.Errorf("update: create download dir: %w", err)
@@ -168,7 +168,7 @@ func (c *Client) Download(ctx context.Context, rawURL, dir, name string, maxByte
 
 // Checksums downloads and parses the release's SHA256SUMS.
 //
-// @throws ErrNoChecksums when the release has no SHA256SUMS asset.
+// Fails with ErrNoChecksums when the release has no SHA256SUMS asset.
 func (c *Client) Checksums(ctx context.Context, rel Release) (map[string]string, error) {
 	a, ok := rel.Asset(ChecksumsAsset)
 	if !ok {
@@ -187,7 +187,7 @@ func (c *Client) Checksums(ctx context.Context, rel Release) (map[string]string,
 
 // ParseChecksums reads `sha256sum` output ("<hex>  <name>" or "<hex> *<name>"). Malformed lines are ignored.
 //
-// @returns name -> lower-case hex digest.
+// Returns name -> lower-case hex digest.
 func ParseChecksums(r io.Reader) (map[string]string, error) {
 	out := map[string]string{}
 	sc := bufio.NewScanner(r)
