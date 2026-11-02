@@ -129,7 +129,12 @@ func (c *Client) handleMessage(ctx context.Context, msg *models.WSMessage) error
 		case c.send <- &envelope{msg: pongMsg}:
 		default:
 		}
-		return c.hub.store.SetPresence(c.UserID, "online")
+		// A heartbeat must not undo the user's explicit status (dnd/away/offline): keep the effective one.
+		status := "online"
+		if u, err := c.hub.store.GetUser(c.UserID); err == nil {
+			status, _ = effectiveStatus(u)
+		}
+		return c.hub.store.SetPresence(c.UserID, status)
 	default:
 		// Forward compatibility (docs/api-standard.md section 5): a newer client may send events this server
 		// does not know. Ignore them quietly; erroring here would be logged as a fault and tempt callers to drop

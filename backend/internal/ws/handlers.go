@@ -85,12 +85,19 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 	// enter the broadcast channel in the order they were sent — a goroutine
 	// per send would let scheduling reorder them ahead of an edit/delete
 	// for the same channel.
-	c.hub.broadcast <- &envelope{
+	c.hub.enqueue(&envelope{
 		channelID: body.ChannelID,
 		senderID:  c.UserID,
 		msg:       outMsg,
-	}
+	})
 	return nil
+}
+
+// isActiveMember reports whether this connection's user is an active member of the channel. WebSocket events apply
+// the same membership rule as their REST equivalents.
+func (c *Client) isActiveMember(channelID string) bool {
+	uc, err := c.hub.store.GetUserChannel(c.UserID, channelID)
+	return err == nil && uc.Status == models.StatusActive
 }
 
 // handleEditMessage updates an existing message's ciphertext.
@@ -105,8 +112,16 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 		return fmt.Errorf("invalid message_edit payload: %w", err)
 	}
 
+	if body.ChannelID == "" || body.MessageID == "" {
+		return fmt.Errorf("missing channel_id or message_id")
+	}
+	// A sender who was kicked, banned or left must not keep editing (and broadcasting into) the channel.
+	if !c.isActiveMember(body.ChannelID) {
+		return fmt.Errorf("not an active member of channel: %s", body.ChannelID)
+	}
+
 	msg, err := c.hub.store.GetMessage(body.ChannelID, body.MessageID)
-	if err != nil {
+	if err != nil || msg.ChannelID != body.ChannelID {
 		return fmt.Errorf("message not found")
 	}
 
@@ -129,11 +144,11 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 	outPayload, _ := json.Marshal(msg)
 	outMsg := &models.WSMessage{Type: "message_update", Payload: outPayload}
 
-	c.hub.broadcast <- &envelope{
+	c.hub.enqueue(&envelope{
 		channelID: body.ChannelID,
 		senderID:  c.UserID,
 		msg:       outMsg,
-	}
+	})
 	return nil
 }
 
@@ -147,8 +162,15 @@ func (c *Client) handleDeleteMessage(raw *models.WSMessage) error {
 		return fmt.Errorf("invalid message_delete payload: %w", err)
 	}
 
+	if body.ChannelID == "" || body.MessageID == "" {
+		return fmt.Errorf("missing channel_id or message_id")
+	}
+	if !c.isActiveMember(body.ChannelID) {
+		return fmt.Errorf("not an active member of channel: %s", body.ChannelID)
+	}
+
 	msg, err := c.hub.store.GetMessage(body.ChannelID, body.MessageID)
-	if err != nil {
+	if err != nil || msg.ChannelID != body.ChannelID {
 		return fmt.Errorf("message not found")
 	}
 
@@ -166,11 +188,11 @@ func (c *Client) handleDeleteMessage(raw *models.WSMessage) error {
 	})
 	outMsg := &models.WSMessage{Type: "message_delete", Payload: outPayload}
 
-	c.hub.broadcast <- &envelope{
+	c.hub.enqueue(&envelope{
 		channelID: body.ChannelID,
 		senderID:  c.UserID,
 		msg:       outMsg,
-	}
+	})
 	return nil
 }
 
@@ -185,6 +207,7 @@ func (c *Client) handleReadReceipt(raw *models.WSMessage) error {
 	if body.ChannelID == "" {
 		return fmt.Errorf("missing channel_id")
 	}
+	// Requires an existing active membership; the read path must never create one.
 	return c.hub.store.UpdateChannelRead(c.UserID, body.ChannelID)
 }
 
@@ -245,7 +268,11 @@ func (c *Client) handleWhisperInit(raw *models.WSMessage) error {
 		CreatedAt:         time.Now().UTC(),
 		Pending:           true,
 	}
-	c.hub.RegisterWhisperSession(sess)
+	if err := c.hub.RegisterWhisperSession(sess); err != nil {
+		// Same wording for both causes: the id is client-chosen and must not reveal other users' session ids.
+		c.sendWhisperError(body.SessionID, "Whisper session could not be created")
+		return nil
+	}
 
 	// 3. Relay whisper_init to target user if online (server NEVER derives keys).
 	// If the target is offline, the pending invite is held in Hub RAM and automatically
@@ -286,8 +313,11 @@ func (c *Client) handleWhisperAccept(raw *models.WSMessage) error {
 		c.sendWhisperError(body.SessionID, "Unauthorized accept attempt")
 		return nil
 	}
-
-	sess.Pending = false
+	// Flip Pending under the hub lock (the session map is shared with cleanup/replay on other goroutines).
+	if _, ok := c.hub.AcceptWhisperSession(body.SessionID, c.UserID); !ok {
+		c.sendWhisperError(body.SessionID, "Whisper session expired or not found")
+		return nil
+	}
 
 	relayedPayload, _ := json.Marshal(map[string]any{
 		"session_id":      sess.ID,
@@ -318,7 +348,7 @@ func (c *Client) handleWhisperReject(raw *models.WSMessage) error {
 		return fmt.Errorf("invalid whisper_reject payload: %w", err)
 	}
 
-	sess := c.hub.RemoveWhisperSession(body.SessionID)
+	sess := c.hub.RemoveWhisperSessionBy(body.SessionID, c.UserID)
 	if sess == nil {
 		return nil
 	}
@@ -401,7 +431,7 @@ func (c *Client) handleWhisperClose(raw *models.WSMessage) error {
 		return fmt.Errorf("invalid whisper_close payload: %w", err)
 	}
 
-	sess := c.hub.RemoveWhisperSession(body.SessionID)
+	sess := c.hub.RemoveWhisperSessionBy(body.SessionID, c.UserID)
 	if sess == nil {
 		return nil
 	}

@@ -23,6 +23,12 @@ import (
 )
 
 func setupWhisperTestServer(t *testing.T) (*httptest.Server, *store.Store, func()) {
+	srv, st, _, cleanup := setupWhisperTestServerHub(t)
+	return srv, st, cleanup
+}
+
+// setupWhisperTestServerHub is setupWhisperTestServer that also exposes the Hub, for tests that inspect RAM state.
+func setupWhisperTestServerHub(t *testing.T) (*httptest.Server, *store.Store, *ws.Hub, func()) {
 	dir := t.TempDir()
 	kek := crypto.DeriveKEK("whisper-test-kek")
 	dek, err := db.BootstrapDEK(dir+"/meta", kek)
@@ -61,7 +67,7 @@ func setupWhisperTestServer(t *testing.T) (*httptest.Server, *store.Store, func(
 		database.Close()
 		os.RemoveAll(dir)
 	}
-	return srv, dataStore, cleanup
+	return srv, dataStore, hub, cleanup
 }
 
 func getUser(t *testing.T, srv *httptest.Server, token string) models.User {

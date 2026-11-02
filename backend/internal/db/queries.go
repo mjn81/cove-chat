@@ -131,17 +131,16 @@ func (d *DB) DeleteUserChannel(userID, channelID string) error {
 	})
 }
 
-// UpdateUserChannelReadTime updates the last read timestamp for a user in a channel.
+// UpdateUserChannelReadTime updates the last read timestamp for a user in a channel. It only ever touches an
+// existing ACTIVE membership: creating one here would let any authenticated user join any channel just by
+// sending a read receipt, so a missing or inactive membership is ErrNotFound.
 func (d *DB) UpdateUserChannelReadTime(userID, channelID string, t time.Time) error {
 	uc, err := d.GetUserChannel(userID, channelID)
 	if err != nil {
-		uc = &models.UserChannel{
-			UserID:    userID,
-			ChannelID: channelID,
-			JoinedAt:  time.Now().UTC(),
-			Status:    models.StatusActive,
-			Role:      models.RoleMember,
-		}
+		return err
+	}
+	if uc.Status != models.StatusActive {
+		return ErrNotFound
 	}
 	uc.LastReadAt = t
 	return d.SetUserChannel(uc)

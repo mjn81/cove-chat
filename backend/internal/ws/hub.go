@@ -3,6 +3,7 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -92,6 +93,8 @@ type Client struct {
 	conn       *websocket.Conn
 	send       chan *envelope
 	hub        *Hub
+	// limiter throttles client-originated events so one connection cannot flood the hub.
+	limiter *tokenBucket
 }
 
 // envelope wraps a wire message with routing metadata.
@@ -348,28 +351,25 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		conn:       conn,
 		send:       make(chan *envelope, 256), // Increased buffer for high volume
 		hub:        h,
+		limiter:    newTokenBucket(clientEventsPerSecond, clientEventBurst),
 	}
 	h.register(client)
 	// Queued before the pumps start (the buffer is empty), so hello is always the first frame the client sees.
 	client.send <- &envelope{msg: h.helloMessage()}
 
 	// Fetch user to check their status preference
-	effectiveStatus := "online"
-	isAuto := true
+	status, isAuto := "online", true
 	if u, err := h.store.GetUser(session.UserID); err == nil {
-		if u.StatusPreference != "" && u.StatusPreference != "auto" {
-			effectiveStatus = u.StatusPreference
-			isAuto = false
-		}
+		status, isAuto = effectiveStatus(u)
 	}
 
-	_ = h.store.SetPresence(session.UserID, effectiveStatus)
+	_ = h.store.SetPresence(session.UserID, status)
 	if isAuto {
-		_ = h.store.UpdateUserStatus(session.UserID, effectiveStatus)
+		_ = h.store.UpdateUserStatus(session.UserID, status)
 	}
 
-	if effectiveStatus != "offline" {
-		h.BroadcastPresence(session.UserID, effectiveStatus)
+	if status != "offline" {
+		h.BroadcastPresence(session.UserID, status)
 	}
 
 	// Replay any pending incoming whisper invitations for this user
@@ -461,6 +461,11 @@ func (c *Client) readPump(ctx context.Context) {
 		var raw models.WSMessage
 		if err := wsjson.Read(ctx, c.conn, &raw); err != nil {
 			break
+		}
+		if c.limiter != nil && !c.limiter.allow() {
+			// Dropped, not disconnected: a burst from a legitimate client (reconnect replay) recovers on its own.
+			logger.Debugf("ws: rate limit exceeded for %s, dropping %q", c.UserID, raw.Type)
+			continue
 		}
 		if err := c.handleMessage(ctx, &raw); err != nil {
 			logger.Warnf("ws: handle error for %s: %v", c.UserID, err)
@@ -558,10 +563,34 @@ func (h *Hub) BroadcastPresence(userID, status string) {
 // to every member of its channel, exactly like a message sent by a client.
 func (h *Hub) BroadcastMessage(msg *models.Message) {
 	payload, _ := json.Marshal(msg)
-	h.broadcast <- &envelope{
+	h.enqueue(&envelope{
 		channelID: msg.ChannelID,
 		senderID:  msg.SenderID,
 		msg:       &models.WSMessage{Type: "message", Payload: payload},
+	})
+}
+
+// broadcastEnqueueTimeout bounds how long a producer waits for room in the broadcast queue. The queue is drained
+// by one dispatcher goroutine that hits the store per envelope, so under a flood it can fill up; an unbounded
+// send would then stall every handler (and REST request) that tries to broadcast.
+const broadcastEnqueueTimeout = 2 * time.Second
+
+// enqueue hands an envelope to the dispatcher in order, waiting at most broadcastEnqueueTimeout. It reports false
+// (and logs) when the envelope was dropped because the queue stayed full or the hub is closed.
+func (h *Hub) enqueue(e *envelope) bool {
+	select {
+	case h.broadcast <- e:
+		return true
+	default:
+	}
+	timer := time.NewTimer(broadcastEnqueueTimeout)
+	defer timer.Stop()
+	select {
+	case h.broadcast <- e:
+		return true
+	case <-timer.C:
+		logger.Warnf("ws: broadcast queue full, dropping %q envelope for channel %s", e.msg.Type, e.channelID)
+		return false
 	}
 }
 
@@ -574,7 +603,7 @@ func (h *Hub) BroadcastMemberJoined(channelID string, userID string) {
 		"type":       "member_joined",
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
-	h.broadcast <- &envelope{channelID: channelID, msg: msg}
+	h.enqueue(&envelope{channelID: channelID, msg: msg})
 
 	// Also send the AES key to the joining user immediately.
 	h.SendChannelKey(channelID, userID)
@@ -589,7 +618,7 @@ func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
 	// Broadcast to remaining members
-	h.broadcast <- &envelope{channelID: channelID, msg: msg}
+	h.enqueue(&envelope{channelID: channelID, msg: msg})
 
 	// Also send targeted notification to the user who left/was kicked
 	// so their UI can react (e.g. remove channel from sidebar)
@@ -621,7 +650,7 @@ func (h *Hub) BroadcastMemberRoleUpdated(channelID string, userID string, role i
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
 	// Broadcast to everyone in the channel
-	h.broadcast <- &envelope{channelID: channelID, msg: msg}
+	h.enqueue(&envelope{channelID: channelID, msg: msg})
 
 	// Also send targeted notification to the user who was updated
 	h.mu.RLock()
@@ -647,7 +676,7 @@ func (h *Hub) BroadcastChannelUpdated(ch *models.Channel) {
 		"type":        "settings_updated",
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
-	h.broadcast <- &envelope{channelID: ch.ID, msg: msg}
+	h.enqueue(&envelope{channelID: ch.ID, msg: msg})
 }
 
 // BroadcastChannelDeleted notifies specified users (or channel members) that a channel has been deleted or cleared.
@@ -699,7 +728,7 @@ func (h *Hub) BroadcastVideoReady(fileID string, channelID string) {
 	})
 	msg := &models.WSMessage{Type: "video_ready", Payload: payload}
 	if channelID != "" {
-		h.broadcast <- &envelope{channelID: channelID, msg: msg}
+		h.enqueue(&envelope{channelID: channelID, msg: msg})
 	} else {
 		// Broadcast to all clients if not channel-specific
 		env := &envelope{msg: msg}
@@ -726,7 +755,7 @@ func (h *Hub) BroadcastVoiceState(channelID string, activeUsers []string) {
 		"users":      activeUsers,
 	})
 	msg := &models.WSMessage{Type: "voice_update", Payload: payload}
-	h.broadcast <- &envelope{channelID: channelID, msg: msg}
+	h.enqueue(&envelope{channelID: channelID, msg: msg})
 }
 
 // SendVoiceState notifies a specific user of who is currently in the voice session.
@@ -753,22 +782,74 @@ func (h *Hub) SendVoiceState(userID string, channelID string, activeUsers []stri
 	}
 }
 
-// RegisterWhisperSession stores an active in-memory whisper session.
-func (h *Hub) RegisterWhisperSession(sess *WhisperSession) {
+// maxPendingWhisperPerUser caps how many not-yet-accepted whisper invitations one user may have outstanding. Pending
+// invites live in RAM only (whisper plaintext/keys are never persisted), so without a cap a single connection could
+// grow the map without bound.
+const maxPendingWhisperPerUser = 20
+
+// pendingWhisperTTL is how long an unanswered invitation is held; it matches the cleanup in ReplayPendingWhisperInvites.
+const pendingWhisperTTL = 30 * time.Minute
+
+// Errors returned by RegisterWhisperSession.
+var (
+	// ErrWhisperSessionExists means the session id is already taken by another (or the same) session.
+	ErrWhisperSessionExists = errors.New("whisper session id already in use")
+	// ErrWhisperTooManyPending means the initiator has too many unanswered invitations.
+	ErrWhisperTooManyPending = errors.New("too many pending whisper invitations")
+)
+
+// RegisterWhisperSession stores an active in-memory whisper session. It never replaces an existing session: ids are
+// chosen by clients, so overwriting would let anyone hijack another pair's session by guessing or reusing its id.
+func (h *Hub) RegisterWhisperSession(sess *WhisperSession) error {
 	h.whisperMu.Lock()
 	defer h.whisperMu.Unlock()
+	if _, exists := h.whisperSessions[sess.ID]; exists {
+		return ErrWhisperSessionExists
+	}
+	pending := 0
+	now := time.Now().UTC()
+	for _, s := range h.whisperSessions {
+		if s.InitiatorID == sess.InitiatorID && s.Pending && now.Sub(s.CreatedAt) <= pendingWhisperTTL {
+			pending++
+		}
+	}
+	if pending >= maxPendingWhisperPerUser {
+		return ErrWhisperTooManyPending
+	}
 	h.whisperSessions[sess.ID] = sess
+	return nil
 }
 
-// GetWhisperSession retrieves an active whisper session by ID.
+// GetWhisperSession returns a snapshot of an active whisper session. It is a copy so callers never read fields the
+// hub mutates under whisperMu.
 func (h *Hub) GetWhisperSession(id string) (*WhisperSession, bool) {
 	h.whisperMu.RLock()
 	defer h.whisperMu.RUnlock()
 	sess, ok := h.whisperSessions[id]
-	return sess, ok
+	if !ok {
+		return nil, false
+	}
+	cp := *sess
+	return &cp, true
 }
 
-// RemoveWhisperSession deletes a whisper session from RAM.
+// AcceptWhisperSession marks a pending session as established when userID is its target and returns a snapshot. The
+// Pending flag is written under whisperMu because CleanupUserWhisperSessions and ReplayPendingWhisperInvites read it
+// concurrently.
+func (h *Hub) AcceptWhisperSession(id, userID string) (*WhisperSession, bool) {
+	h.whisperMu.Lock()
+	defer h.whisperMu.Unlock()
+	sess, ok := h.whisperSessions[id]
+	if !ok || sess.TargetID != userID {
+		return nil, false
+	}
+	sess.Pending = false
+	cp := *sess
+	return &cp, true
+}
+
+// RemoveWhisperSession deletes a whisper session from RAM regardless of who asks; use RemoveWhisperSessionBy for
+// requests that originate from a client.
 func (h *Hub) RemoveWhisperSession(id string) *WhisperSession {
 	h.whisperMu.Lock()
 	defer h.whisperMu.Unlock()
@@ -776,6 +857,19 @@ func (h *Hub) RemoveWhisperSession(id string) *WhisperSession {
 	if ok {
 		delete(h.whisperSessions, id)
 	}
+	return sess
+}
+
+// RemoveWhisperSessionBy deletes the session only when userID is its initiator or target, and returns nil otherwise
+// (also when it does not exist), so a caller cannot tell the two cases apart.
+func (h *Hub) RemoveWhisperSessionBy(id, userID string) *WhisperSession {
+	h.whisperMu.Lock()
+	defer h.whisperMu.Unlock()
+	sess, ok := h.whisperSessions[id]
+	if !ok || (sess.InitiatorID != userID && sess.TargetID != userID) {
+		return nil
+	}
+	delete(h.whisperSessions, id)
 	return sess
 }
 
