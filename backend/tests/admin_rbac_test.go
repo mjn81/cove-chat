@@ -179,10 +179,10 @@ func TestOwnerCannotDeleteTheirAccountButMembersCan(t *testing.T) {
 	e := newAdminEnv(t, "open")
 	owner, _, member := e.seedRoles(t)
 
-	if got := e.do(t, "DELETE", "/api/users/me", owner, nil); got.StatusCode != http.StatusForbidden {
+	if got := e.do(t, "DELETE", "/api/users/me", owner, map[string]string{"password": testPassword}); got.StatusCode != http.StatusForbidden {
 		t.Errorf("owner delete = %d, want 403 (transfer ownership first)", got.StatusCode)
 	}
-	if got := e.do(t, "DELETE", "/api/users/me", member, nil); got.StatusCode != http.StatusOK {
+	if got := e.do(t, "DELETE", "/api/users/me", member, map[string]string{"password": testPassword}); got.StatusCode != http.StatusOK {
 		t.Errorf("member delete = %d, want 200", got.StatusCode)
 	}
 }
