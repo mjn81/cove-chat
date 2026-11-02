@@ -70,7 +70,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 /** A non-2xx API answer. [message] is the backend's `{"error": "..."}` text, safe to show to users. */
-class ApiException(message: String, val status: Int) : Exception(message)
+class ApiException(message: String, val status: Int, val code: String? = null) : Exception(message)
 
 class ApiClient(private val prefs: PreferencesManager) {
     private val json = Json {
@@ -86,11 +86,12 @@ class ApiClient(private val prefs: PreferencesManager) {
         "$maker $model (Android ${android.os.Build.VERSION.RELEASE})"
     }
 
-    private val appLabel: String by lazy {
+    private val appVersion: String? by lazy {
         val app = com.cove.chat.CoveApp.instance
-        val version = runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }.getOrNull()
-        if (version.isNullOrBlank()) "Cove Android" else "Cove Android $version"
+        runCatching { app.packageManager.getPackageInfo(app.packageName, 0).versionName }.getOrNull()?.takeIf { it.isNotBlank() }
     }
+
+    private val appLabel: String by lazy { appVersion?.let { "Cove Android $it" } ?: "Cove Android" }
 
     private val client = HttpClient(OkHttp) {
         install(ContentNegotiation) { json(json) }
@@ -98,6 +99,8 @@ class ApiClient(private val prefs: PreferencesManager) {
         install(DefaultRequest) {
             header("X-Cove-Device", deviceLabel)
             header("X-Cove-App", appLabel)
+            // Lets the server warn or refuse outdated clients (docs/api-standard.md).
+            header(ApiStandard.CLIENT_HEADER, ApiStandard.clientHeader(appVersion ?: "0.0.0"))
         }
         install(HttpTimeout) {
             connectTimeoutMillis = 8_000
@@ -115,9 +118,12 @@ class ApiClient(private val prefs: PreferencesManager) {
     private suspend fun HttpResponse.ok(): HttpResponse {
         if (status.isSuccess()) return this
         val text = runCatching { bodyAsText() }.getOrDefault("")
-        val msg = runCatching { json.decodeFromString<ErrorBody>(text).error }.getOrNull()
-            ?.takeIf { it.isNotBlank() } ?: "Request failed (${status.value})"
-        throw ApiException(msg, status.value)
+        val body = runCatching { json.decodeFromString<ErrorBody>(text) }.getOrNull()
+        val msg = body?.error?.takeIf { it.isNotBlank() } ?: "Request failed (${status.value})"
+        val code = body?.code?.takeIf { it.isNotBlank() }
+        // 426 / client_outdated: tell the root UI to explain it instead of leaving every screen with a vague failure.
+        if (ApiStandard.isClientOutdated(status.value, code)) ClientOutdatedState.report(ApiStandard.minClientVersion(body?.details))
+        throw ApiException(msg, status.value, code)
     }
 
     suspend fun getVersion(): Result<ServerVersion> = runCatching {

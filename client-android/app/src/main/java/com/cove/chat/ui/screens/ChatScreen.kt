@@ -833,6 +833,9 @@ private fun MessageRow(
                     val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
                     else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (!com.cove.chat.data.remote.ApiStandard.isKnownMessageType(m.type)) {
+                    // A type from a newer Cove: keep it in the timeline as a placeholder instead of showing raw data.
+                    Text("This message needs a newer version of Cove", color = c.textMuted, fontSize = CoveType.label.fontSize)
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
                         text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
