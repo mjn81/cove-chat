@@ -9,14 +9,14 @@ The goal: an old client never crashes or loses all access when the server gains 
 
 ## Versions
 
-- `api_version` is one **integer** that describes the wire contract. It is raised **only on a breaking change** (removing or re-typing a field, changing what a value means, removing an endpoint or event). Additive changes never raise it. The current value is `1`.
+- `api_version` is one **integer** that describes the wire contract. It is raised **only on a breaking change** (removing or re-typing a field, changing what a value means, removing an endpoint or event). Additive changes never raise it. The current value is `2` (see [Version history](#version-history)).
 - The app version is separate semver (for example `0.9.9`). It identifies a build. Do not use it to decide whether a feature exists; use [capabilities](#capabilities).
 
 ## Headers
 
 | Header | Direction | Value |
 |---|---|---|
-| `X-Cove-Client` | client to server, every request | `<platform>/<semver> (api <n>)`, for example `web/0.9.9 (api 1)`. Platforms: `web`, `desktop`, `android` |
+| `X-Cove-Client` | client to server, every request | `<platform>/<semver> (api <n>)`, for example `web/0.10.0 (api 2)`. Platforms: `web`, `desktop`, `android` |
 | `X-Cove-API-Version` | server to client, every response (errors and 404 included) | integer |
 | `X-Cove-Server-Version` | server to client, every response | server semver |
 | `X-Cove-Client-Outdated` | server to client | `1` when the caller is below `min_client_version` and the server only warns |
@@ -32,8 +32,8 @@ The goal: an old client never crashes or loses all access when the server gains 
 {
   "version": "0.9.9",
   "udp_port": 9090,
-  "api_version": 1,
-  "min_client_version": "0.9.0",
+  "api_version": 2,
+  "min_client_version": "0.10.0",
   "capabilities": ["invite_messages", "whisper", "webrtc_sfu"]
 }
 ```
@@ -112,24 +112,42 @@ An empty `min_client_version` disables the check.
 The first frame on every WebSocket connection is a `hello` event:
 
 ```json
-{ "type": "hello", "payload": { "version": "0.9.9", "api_version": 1, "min_client_version": "0.9.0", "capabilities": ["invite_messages", "whisper", "webrtc_sfu"] } }
+{ "type": "hello", "payload": { "version": "0.9.9", "api_version": 2, "min_client_version": "0.10.0", "capabilities": ["invite_messages", "whisper", "webrtc_sfu"] } }
 ```
 
 It carries the same block as `/api/version`, so a client can skip the extra request. Clients that predate it ignore it, as the rules above require.
 
 ## Pagination
 
-Small, bounded lists return a plain JSON array. Unbounded lists return an envelope:
+Every list that can grow without bound returns an envelope:
 
 ```json
 { "items": [], "next_cursor": "<opaque>" }
 ```
 
-`next_cursor` is absent or empty on the last page. Treat the cursor as opaque.
+`next_cursor` is absent or empty on the last page.
+
+- Query parameters: `limit` (default 50, maximum 100) and `cursor` (the previous page's `next_cursor`). A `limit` outside 1 to 100, or a `cursor` the server did not issue (garbage, tampered with, or taken from another endpoint), gets `400` with code `validation_failed`.
+- Treat the cursor as opaque: never build or parse one, and stop when `next_cursor` is empty.
+- Ordering is part of each endpoint's contract. Messages are **newest first**: the first page holds the latest messages and the cursor leads to older ones.
+- Paged endpoints: messages, your channels, channel explore, channel members, user search (at most 50 results in total), relationships, incoming friend requests, admin invites and the admin audit trail.
+- Bounded by design and still plain arrays: your own devices (`GET /api/sessions`) and the server admin list.
 
 ## Deprecation policy
 
 A field, endpoint, event or code is first marked **deprecated** (in Swagger, in the release notes and in the standard) and keeps working for **at least 3 minor releases** before removal. Removal is a breaking change: `api_version` goes up and, if old clients would break, `min_client_version` is raised in the same release notes.
+
+## Version history
+
+### api_version 2 (app 0.10.0)
+
+A breaking release; the app is in beta and no compatibility shims were kept.
+
+- Every unbounded list uses the [paged envelope](#pagination): messages, your channels, explore, members, user search, relationships, incoming requests, admin invites (formerly `{ "invites": [] }`) and the admin audit trail (formerly `{ "entries": [] }`, cut at 200 entries, now fully pageable).
+- Messages: `limit` is 1 to 100 (default 50) and the `before` parameter is replaced by the opaque `cursor`.
+- `DELETE /api/users/me` needs the current password in the body (`400` without it, `403` when wrong, `429` after repeated failures).
+
+Migration: read `items`, follow `next_cursor`, send the password when deleting an account, and send `(api 2)` in `X-Cove-Client`. When you release this version, set `min_client_version = "0.10.0"` in `config.toml` so older clients are told to update.
 
 ## Checklist for contributors
 
@@ -143,5 +161,6 @@ When you add an endpoint, event or message type:
 6. Do not rely on a new WebSocket event for correctness; old clients ignore it.
 7. Add a backend test in `backend/tests/` and client tests for any parsing logic.
 8. Raise `api_version` only for a breaking change, and update the standard.
+9. A new list endpoint must use the paged envelope above (named response type, `limit` and `cursor` parameters, `400 validation_failed` on bad input) unless it is bounded by construction.
 
 The normative text lives in `docs/api-standard.md` in the repository; the reference code is `backend/internal/apistd` and `backend/internal/middleware/clientversion.go`.

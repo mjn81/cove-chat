@@ -7,7 +7,7 @@ description: Every key in config.toml, with defaults and explanations. Generated
 
 Copy `backend/config.toml.example` to `config.toml` next to the server binary (or mount it into the container). Keys not listed there use built-in defaults. Restart the server after editing the file unless the admin panel says the key applies live.
 
-Two more `[server]` keys are supported but not in the example file: `min_client_version` (a semver string such as `"0.9.0"`; empty by default, which disables the check) and `enforce_min_client` (`false` by default). See [Minimum client version](/docs/api/standard/#minimum-client-version).
+The `[server]` keys `min_client_version` and `enforce_min_client` control the minimum client check; see [Minimum client version](/docs/api/standard/#minimum-client-version). At the release that ships API version 2, set `min_client_version = "0.10.0"`.
 
 ## `[server]`
 
@@ -66,6 +66,23 @@ Path to ffmpeg binary (for video transcoding).
 Default: `false`
 
 Enable development mode (extra logging, Swagger UI at /api/docs/).
+
+### `server.min_client_version`
+
+Default: `""`
+
+Oldest client app version (MAJOR.MINOR.PATCH) this server supports. Empty = no minimum.
+Clients below it get an "out of date" banner (soft mode, see enforce_min_client).
+API v2 changed every list endpoint to a paged {items, next_cursor} envelope, so at the release that ships it
+set this to "0.10.0" so clients that predate it are told to update instead of misreading the lists.
+
+### `server.enforce_min_client`
+
+Default: `false`
+
+false (default): warn only, old clients keep working as far as they can.
+true: requests from clients below min_client_version (or sending no X-Cove-Client header) get HTTP 426 and the
+client shows a blocking "update required" screen. /api/version, /api/server-info and /ws stay reachable.
 
 ## `[security]`
 

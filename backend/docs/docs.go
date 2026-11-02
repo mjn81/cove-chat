@@ -205,19 +205,39 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "**Access:** Server Admin.",
+                "description": "Paged (` + "`" + `{items, next_cursor}` + "`" + `), newest first. Every entry is reachable by following the cursor.\n**Access:** Server Admin.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "admin"
                 ],
-                "summary": "Recent admin actions",
+                "summary": "Admin audit trail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api.AuditListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -478,7 +498,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "**Access:** Server Admin.",
+                "description": "Paged (` + "`" + `{items, next_cursor}` + "`" + `), newest first.\n**Access:** Server Admin.",
                 "produces": [
                     "application/json"
                 ],
@@ -486,11 +506,31 @@ const docTemplate = `{
                     "admin"
                 ],
                 "summary": "List invitation codes",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api.InviteListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1242,7 +1282,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Bounded list of the caller's channels and direct messages, returned as a bare JSON array.\n**Access:** Authenticated.",
+                "description": "The caller's channels and direct messages, paged (` + "`" + `{items, next_cursor}` + "`" + `) in a stable order by\nchannel id. Clients sort by activity themselves and fetch every page for the sidebar.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1250,14 +1290,31 @@ const docTemplate = `{
                     "channels"
                 ],
                 "summary": "List channels for the current user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.ChannelResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.ChannelPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1367,7 +1424,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Lists public (non-private) group channels whose name contains ` + "`" + `q` + "`" + `. The result carries no invite link:\na public channel is joined with ` + "`" + `POST /api/join/{link}` + "`" + ` using its **id**.\n**Access:** Authenticated.",
+                "description": "Lists public (non-private) group channels whose name contains ` + "`" + `q` + "`" + `, paged (` + "`" + `{items, next_cursor}` + "`" + `),\nordered by name. The result carries no invite link: a public channel is joined with\n` + "`" + `POST /api/join/{link}` + "`" + ` using its **id**.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -1381,16 +1438,31 @@ const docTemplate = `{
                         "description": "Search query",
                         "name": "q",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.ExploreChannelResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.ExploreChannelPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1691,7 +1763,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Bounded list returned as a bare JSON array.\n**Access:** Channel Member.",
+                "description": "Paged (` + "`" + `{items, next_cursor}` + "`" + `). Profiles are loaded only for the page that is served.\n**Access:** Channel Member.",
                 "produces": [
                     "application/json"
                 ],
@@ -1706,16 +1778,31 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.UserResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.UserPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1996,14 +2083,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns messages newest-first as a bare JSON array. Supports cursor pagination with ` + "`" + `before` + "`" + `; an invalid ` + "`" + `limit` + "`" + ` is rejected with 400.\n**Access:** Channel Member.",
+                "description": "Paged (` + "`" + `{items, next_cursor}` + "`" + `), **newest first**: the first page is the latest messages and\n` + "`" + `next_cursor` + "`" + ` points at the next older page (it encodes the position of the oldest message returned).\n` + "`" + `next_cursor` + "`" + ` is empty when the start of the conversation was reached. A malformed ` + "`" + `cursor` + "`" + ` or an\nout-of-range ` + "`" + `limit` + "`" + ` is rejected with 400 ` + "`" + `validation_failed` + "`" + `.\n**Access:** Channel Member.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "messages"
                 ],
-                "summary": "List recent messages for a channel",
+                "summary": "List messages of a channel",
                 "parameters": [
                     {
                         "type": "string",
@@ -2014,14 +2101,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Max messages to return (1-500, default 250)",
+                        "description": "Page size (1-100, default 50)",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "KSUID string cursor for pagination",
-                        "name": "before",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
                         "in": "query"
                     }
                 ],
@@ -2029,10 +2116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cove_backend_internal_models.Message"
-                            }
+                            "$ref": "#/definitions/internal_api.MessagePageResponse"
                         }
                     },
                     "400": {
@@ -2576,7 +2660,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Friends, outgoing friend requests and blocked users, as a bare JSON array.\n**Access:** Authenticated.",
+                "description": "Friends, outgoing friend requests and blocked users. Paged (` + "`" + `{items, next_cursor}` + "`" + `).\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2584,14 +2668,31 @@ const docTemplate = `{
                     "relationships"
                 ],
                 "summary": "List the caller's relationships",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.RelationshipResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.RelationshipPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -2622,7 +2723,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Bare JSON array; each item embeds the requester's profile.\n**Access:** Authenticated.",
+                "description": "Paged (` + "`" + `{items, next_cursor}` + "`" + `); each item embeds the requester's profile.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2630,14 +2731,31 @@ const docTemplate = `{
                     "relationships"
                 ],
                 "summary": "List pending incoming friend requests",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.RelationshipResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.RelationshipPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -2817,7 +2935,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Case-insensitive substring match. The query must be at least 2 characters (shorter ones return an empty\narray) and at most 50 users are returned, as a bare JSON array.\n**Access:** Authenticated.",
+                "description": "Case-insensitive substring match, paged (` + "`" + `{items, next_cursor}` + "`" + `). The query must be at least 2\ncharacters (shorter ones return an empty page). At most 50 users are returned in total across all\npages, so the endpoint cannot be used to enumerate the user base.\n**Access:** Authenticated.",
                 "produces": [
                     "application/json"
                 ],
@@ -2831,16 +2949,31 @@ const docTemplate = `{
                         "description": "Search query to filter by username (min 2 characters)",
                         "name": "q",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (1-100, default 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Opaque cursor from the previous page's next_cursor",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_api.UserResponse"
-                            }
+                            "$ref": "#/definitions/internal_api.UserPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -2871,7 +3004,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes the caller's account. The server owner must transfer ownership first.\n**Access:** Authenticated (self only).",
+                "description": "Deletes the caller's account after a step-up check: the body must carry the caller's current\npassword, and repeated wrong passwords lock the check out for a while (429), like the dangerous\nadmin actions. The server owner must transfer ownership first.\n**Access:** Authenticated (self only).",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2879,11 +3015,28 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Delete current user account",
+                "parameters": [
+                    {
+                        "description": "Current password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.DeleteAccountRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -2894,6 +3047,12 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -3474,11 +3633,14 @@ const docTemplate = `{
         "internal_api.AuditListResponse": {
             "type": "object",
             "properties": {
-                "entries": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/cove_backend_internal_models.AuditEntry"
                     }
+                },
+                "next_cursor": {
+                    "type": "string"
                 }
             }
         },
@@ -3519,6 +3681,20 @@ const docTemplate = `{
                     "description": "Signature is hex(HMAC-SHA256(server key, challenge)); the server checks it when the solution comes back.",
                     "type": "string",
                     "example": "c0ffee..."
+                }
+            }
+        },
+        "internal_api.ChannelPageResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.ChannelResponse"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
                 }
             }
         },
@@ -3723,6 +3899,15 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.DeleteAccountRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "s3cur3P@ss!"
+                }
+            }
+        },
         "internal_api.DeleteServerRequest": {
             "type": "object",
             "properties": {
@@ -3757,6 +3942,20 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.ExploreChannelPageResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.ExploreChannelResponse"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.ExploreChannelResponse": {
             "type": "object",
             "properties": {
@@ -3783,11 +3982,14 @@ const docTemplate = `{
         "internal_api.InviteListResponse": {
             "type": "object",
             "properties": {
-                "invites": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/internal_api.InviteResponse"
                     }
+                },
+                "next_cursor": {
+                    "type": "string"
                 }
             }
         },
@@ -3922,6 +4124,20 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.MessagePageResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cove_backend_internal_models.Message"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.NoticeRequest": {
             "type": "object",
             "properties": {
@@ -4009,6 +4225,20 @@ const docTemplate = `{
             "properties": {
                 "action": {
                     "description": "\"request\" | \"accept\" | \"decline\" | \"cancel\" | \"remove\" | \"block\" | \"unblock\"",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.RelationshipPageResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.RelationshipResponse"
+                    }
+                },
+                "next_cursor": {
                     "type": "string"
                 }
             }
@@ -4475,6 +4705,20 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.UserPageResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.UserResponse"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.UserResponse": {
             "type": "object",
             "properties": {
@@ -4534,7 +4778,7 @@ const docTemplate = `{
                 "api_version": {
                     "description": "APIVersion is the integer client/server contract version, bumped only on breaking changes.",
                     "type": "integer",
-                    "example": 1
+                    "example": 2
                 },
                 "capabilities": {
                     "description": "Capabilities names the optional features this server supports; clients gate UI on these, not on versions.",

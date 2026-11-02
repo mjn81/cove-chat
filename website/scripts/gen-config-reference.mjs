@@ -59,7 +59,7 @@ description: Every key in config.toml, with defaults and explanations. Generated
 
 Copy \`backend/config.toml.example\` to \`config.toml\` next to the server binary (or mount it into the container). Keys not listed there use built-in defaults. Restart the server after editing the file unless the admin panel says the key applies live.
 
-Two more \`[server]\` keys are supported but not in the example file: \`min_client_version\` (a semver string such as \`"0.9.0"\`; empty by default, which disables the check) and \`enforce_min_client\` (\`false\` by default). See [Minimum client version](/docs/api/standard/#minimum-client-version).
+The \`[server]\` keys \`min_client_version\` and \`enforce_min_client\` control the minimum client check; see [Minimum client version](/docs/api/standard/#minimum-client-version). At the release that ships API version 2, set \`min_client_version = "0.10.0"\`.
 
 `;
 

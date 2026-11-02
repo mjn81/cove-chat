@@ -6,14 +6,14 @@ Goal: an old client never crashes or loses all access when the server gains feat
 
 ## 1. Versions
 
-- `api_version` is a single **integer** describing the wire contract. It is bumped **only on a breaking change** (removing or re-typing a field, changing the meaning of a value, removing an endpoint or event). Additive changes MUST NOT bump it. Current value: **1**.
+- `api_version` is a single **integer** describing the wire contract. It is bumped **only on a breaking change** (removing or re-typing a field, changing the meaning of a value, removing an endpoint or event). Additive changes MUST NOT bump it. Current value: **2** (see section 12 for what changed in 2).
 - The app version is separate semver (`0.9.9`). It identifies a build; it is never used to decide whether a feature exists (use capabilities, section 6).
 
 ## 2. Headers
 
 | Header | Direction | Value |
 |---|---|---|
-| `X-Cove-Client` | client -> server, every request | `<platform>/<semver> (api <n>)`, e.g. `web/0.9.9 (api 1)`. Platforms: `web`, `desktop`, `android`. |
+| `X-Cove-Client` | client -> server, every request | `<platform>/<semver> (api <n>)`, e.g. `web/0.10.0 (api 2)`. Platforms: `web`, `desktop`, `android`. |
 | `X-Cove-API-Version` | server -> client, every response (including errors and 404) | integer |
 | `X-Cove-Server-Version` | server -> client, every response | server semver |
 | `X-Cove-Client-Outdated` | server -> client | `1` when the caller is below `min_client_version` and the server only warns |
@@ -29,8 +29,8 @@ Goal: an old client never crashes or loses all access when the server gains feat
 {
   "version": "0.9.9",
   "udp_port": 9090,
-  "api_version": 1,
-  "min_client_version": "0.9.0",
+  "api_version": 2,
+  "min_client_version": "0.10.0",
   "capabilities": ["invite_messages", "whisper", "webrtc_sfu"]
 }
 ```
@@ -88,11 +88,11 @@ Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper
 
 ## 7. Minimum client version
 
-Server config (`[server]`): `min_client_version = "0.9.0"` and `enforce_min_client = false` (default).
+Server config (`[server]`): `min_client_version` (empty = no minimum) and `enforce_min_client = false` (default). At the release that ships API version 2, the owner SHOULD set `min_client_version = "0.10.0"` (see `backend/config.toml.example`), so clients that predate the paged envelope are told to update. Enforcement stays off by default.
 
 - **Soft** (`enforce_min_client = false`): the server never rejects. It advertises `min_client_version`; a known client below it gets `X-Cove-Client-Outdated: 1`. Clients show a dismissible banner ("Your Cove is out of date, some features are unavailable") and stay usable.
 - **Hard** (`enforce_min_client = true`): requests from a client below the minimum, or with no `X-Cove-Client` at all, get **HTTP 426** with `code: "client_outdated"` and `details.min_client_version`. Clients show a blocking screen that explains the problem and offers Reload (web) or an update link (desktop, Android).
-- Never blocked, even when hard: `GET /api/version`, `GET /api/server-info`, anything outside `/api/` (static files), CORS preflights, and the WebSocket upgrade (its `hello` event carries the same data). `/api/login` and the other routes do return 426, so the login screen can show the explanation.
+- Never blocked, even when hard: `GET /api/version`, `GET /api/server-info`, anything outside `/api/` (static files), CORS preflights, and the WebSocket upgrade (its `hello` event carries the same data). The upgrade still carries `X-Cove-API-Version` / `X-Cove-Server-Version` and counts against the same per-IP rate limit as the REST API. `/api/login` and the other routes do return 426, so the login screen can show the explanation.
 
 ## 8. WebSocket handshake
 
@@ -100,7 +100,13 @@ The first frame on every connection is `hello`: `{ "type": "hello", "payload": {
 
 ## 9. Pagination
 
-Bounded small lists return a JSON array. Unbounded lists return `{ "items": [...], "next_cursor": "<opaque>" }`; `next_cursor` is absent or empty on the last page. Clients treat the cursor as opaque.
+Every list that can grow without bound returns the paged envelope `{ "items": [...], "next_cursor": "<opaque>" }`; `next_cursor` is absent or empty on the last page.
+
+- Query: `limit` (default **50**, max **100**) and `cursor` (the previous page's `next_cursor`). A `limit` that is not an integer in 1..100, or a `cursor` the server did not issue (garbage, tampered, or taken from another endpoint), is rejected with **400** `validation_failed`.
+- Clients treat the cursor as opaque, never build or parse one, and stop when `next_cursor` is empty. A cursor is only valid for the endpoint and the caller that got it.
+- Ordering is part of each endpoint's contract and is documented in Swagger. Messages are **newest first**: the first page is the latest messages and `next_cursor` leads to older ones.
+- Paged endpoints (api 2): `GET /api/channels/{id}/messages`, `GET /api/channels`, `GET /api/channels/explore`, `GET /api/channels/{id}/members`, `GET /api/users` (still at most 50 results in total), `GET /api/relationships`, `GET /api/relationships/incoming`, `GET /api/admin/invites`, `GET /api/admin/audit`.
+- Left as bare arrays because they are bounded by design: `GET /api/sessions` (the caller's own devices) and `GET /api/admin/admins` (server admins).
 
 ## 10. Deprecation policy
 
@@ -116,3 +122,14 @@ A field, endpoint, event or code is first marked **deprecated** (Swagger `@Depre
 6. New WebSocket event? Old clients ignore it; do not rely on it for correctness.
 7. Backend test in `backend/tests/`; client tests for any parsing logic.
 8. Only bump `api_version` for a breaking change, and update this document.
+9. **A new list endpoint MUST use the paged envelope** (section 9) unless it is bounded by construction (own devices, admins) and says so in its Swagger block: `{items, next_cursor}`, `limit` 1..100 default 50, opaque `cursor`, 400 `validation_failed` for a bad `limit`/`cursor`, a named response type in `types.go`, and the `limit`/`cursor` `@Param` lines. Use `pageParams`/`writePage` (`backend/internal/api/paging.go`) and `apistd.Paginate`. Never return a bare array for something users can grow.
+
+## 12. Version history
+
+### api_version 2 (breaking, app 0.10.0)
+
+- Every unbounded list moved from a bare array (or an ad-hoc wrapper) to the paged envelope of section 9: messages, my channels, explore, channel members, user search, relationships, incoming requests, admin invites (was `{ "invites": [...] }`) and admin audit (was `{ "entries": [...] }`, silently cut at 200, now fully pageable).
+- `GET /api/channels/{id}/messages`: `limit` is 1..100 (default 50, was 1..500 default 250) and the `before` parameter is replaced by the opaque `cursor`; the response carries `next_cursor` for the next older page.
+- `DELETE /api/users/me` requires the caller's current password in the body (`{ "password": "..." }`): 400 without it, 403 `forbidden` when wrong, 429 after repeated failures.
+
+**Migration.** There are no compatibility shims: an api 1 client reading these endpoints will misparse them. Clients read `items`, follow `next_cursor`, send the password when deleting an account, and send `(api 2)` in `X-Cove-Client`. Servers should set `min_client_version = "0.10.0"` when releasing it.

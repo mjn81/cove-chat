@@ -141,10 +141,12 @@ definitions:
     type: object
   internal_api.AuditListResponse:
     properties:
-      entries:
+      items:
         items:
           $ref: '#/definitions/cove_backend_internal_models.AuditEntry'
         type: array
+      next_cursor:
+        type: string
     type: object
   internal_api.BackupRequest:
     properties:
@@ -175,6 +177,15 @@ definitions:
         description: Signature is hex(HMAC-SHA256(server key, challenge)); the server
           checks it when the solution comes back.
         example: c0ffee...
+        type: string
+    type: object
+  internal_api.ChannelPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.ChannelResponse'
+        type: array
+      next_cursor:
         type: string
     type: object
   internal_api.ChannelResponse:
@@ -321,6 +332,12 @@ definitions:
         example: launch party
         type: string
     type: object
+  internal_api.DeleteAccountRequest:
+    properties:
+      password:
+        example: s3cur3P@ss!
+        type: string
+    type: object
   internal_api.DeleteServerRequest:
     properties:
       confirm:
@@ -348,6 +365,15 @@ definitions:
         example: invalid credentials
         type: string
     type: object
+  internal_api.ExploreChannelPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.ExploreChannelResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   internal_api.ExploreChannelResponse:
     properties:
       avatar_id:
@@ -365,10 +391,12 @@ definitions:
     type: object
   internal_api.InviteListResponse:
     properties:
-      invites:
+      items:
         items:
           $ref: '#/definitions/internal_api.InviteResponse'
         type: array
+      next_cursor:
+        type: string
     type: object
   internal_api.InvitePreviewResponse:
     properties:
@@ -459,6 +487,15 @@ definitions:
         example: alice
         type: string
     type: object
+  internal_api.MessagePageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.Message'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   internal_api.NoticeRequest:
     properties:
       text:
@@ -523,6 +560,15 @@ definitions:
       action:
         description: '"request" | "accept" | "decline" | "cancel" | "remove" | "block"
           | "unblock"'
+        type: string
+    type: object
+  internal_api.RelationshipPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.RelationshipResponse'
+        type: array
+      next_cursor:
         type: string
     type: object
   internal_api.RelationshipResponse:
@@ -864,6 +910,15 @@ definitions:
       uploaded_at:
         type: string
     type: object
+  internal_api.UserPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.UserResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   internal_api.UserResponse:
     properties:
       allow_channel_adds:
@@ -907,7 +962,7 @@ definitions:
       api_version:
         description: APIVersion is the integer client/server contract version, bumped
           only on breaking changes.
-        example: 1
+        example: 2
         type: integer
       capabilities:
         description: Capabilities names the optional features this server supports;
@@ -1058,7 +1113,18 @@ paths:
       - admin
   /api/admin/audit:
     get:
-      description: '**Access:** Server Admin.'
+      description: |-
+        Paged (`{items, next_cursor}`), newest first. Every entry is reachable by following the cursor.
+        **Access:** Server Admin.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
@@ -1066,6 +1132,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.AuditListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1076,7 +1146,7 @@ paths:
             $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Recent admin actions
+      summary: Admin audit trail
       tags:
       - admin
   /api/admin/backup:
@@ -1239,7 +1309,18 @@ paths:
       - admin
   /api/admin/invites:
     get:
-      description: '**Access:** Server Admin.'
+      description: |-
+        Paged (`{items, next_cursor}`), newest first.
+        **Access:** Server Admin.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
@@ -1247,6 +1328,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.InviteListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1759,17 +1844,29 @@ paths:
   /api/channels:
     get:
       description: |-
-        Bounded list of the caller's channels and direct messages, returned as a bare JSON array.
+        The caller's channels and direct messages, paged (`{items, next_cursor}`) in a stable order by
+        channel id. Clients sort by activity themselves and fetch every page for the sidebar.
         **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.ChannelResponse'
-            type: array
+            $ref: '#/definitions/internal_api.ChannelPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2025,7 +2122,7 @@ paths:
   /api/channels/{id}/members:
     get:
       description: |-
-        Bounded list returned as a bare JSON array.
+        Paged (`{items, next_cursor}`). Profiles are loaded only for the page that is served.
         **Access:** Channel Member.
       parameters:
       - description: Channel ID
@@ -2033,15 +2130,25 @@ paths:
         name: id
         required: true
         type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.UserResponse'
-            type: array
+            $ref: '#/definitions/internal_api.UserPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2232,7 +2339,10 @@ paths:
   /api/channels/{id}/messages:
     get:
       description: |-
-        Returns messages newest-first as a bare JSON array. Supports cursor pagination with `before`; an invalid `limit` is rejected with 400.
+        Paged (`{items, next_cursor}`), **newest first**: the first page is the latest messages and
+        `next_cursor` points at the next older page (it encodes the position of the oldest message returned).
+        `next_cursor` is empty when the start of the conversation was reached. A malformed `cursor` or an
+        out-of-range `limit` is rejected with 400 `validation_failed`.
         **Access:** Channel Member.
       parameters:
       - description: Channel ID
@@ -2240,13 +2350,13 @@ paths:
         name: id
         required: true
         type: string
-      - description: Max messages to return (1-500, default 250)
+      - description: Page size (1-100, default 50)
         in: query
         name: limit
         type: integer
-      - description: KSUID string cursor for pagination
+      - description: Opaque cursor from the previous page's next_cursor
         in: query
-        name: before
+        name: cursor
         type: string
       produces:
       - application/json
@@ -2254,9 +2364,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/cove_backend_internal_models.Message'
-            type: array
+            $ref: '#/definitions/internal_api.MessagePageResponse'
         "400":
           description: Bad Request
           schema:
@@ -2279,19 +2387,28 @@ paths:
             $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: List recent messages for a channel
+      summary: List messages of a channel
       tags:
       - messages
   /api/channels/explore:
     get:
       description: |-
-        Lists public (non-private) group channels whose name contains `q`. The result carries no invite link:
-        a public channel is joined with `POST /api/join/{link}` using its **id**.
+        Lists public (non-private) group channels whose name contains `q`, paged (`{items, next_cursor}`),
+        ordered by name. The result carries no invite link: a public channel is joined with
+        `POST /api/join/{link}` using its **id**.
         **Access:** Authenticated.
       parameters:
       - description: Search query
         in: query
         name: q
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
         type: string
       produces:
       - application/json
@@ -2299,9 +2416,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.ExploreChannelResponse'
-            type: array
+            $ref: '#/definitions/internal_api.ExploreChannelPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2668,17 +2787,28 @@ paths:
   /api/relationships:
     get:
       description: |-
-        Friends, outgoing friend requests and blocked users, as a bare JSON array.
+        Friends, outgoing friend requests and blocked users. Paged (`{items, next_cursor}`).
         **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.RelationshipResponse'
-            type: array
+            $ref: '#/definitions/internal_api.RelationshipPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2699,17 +2829,28 @@ paths:
   /api/relationships/incoming:
     get:
       description: |-
-        Bare JSON array; each item embeds the requester's profile.
+        Paged (`{items, next_cursor}`); each item embeds the requester's profile.
         **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.RelationshipResponse'
-            type: array
+            $ref: '#/definitions/internal_api.RelationshipPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2834,13 +2975,22 @@ paths:
   /api/users:
     get:
       description: |-
-        Case-insensitive substring match. The query must be at least 2 characters (shorter ones return an empty
-        array) and at most 50 users are returned, as a bare JSON array.
+        Case-insensitive substring match, paged (`{items, next_cursor}`). The query must be at least 2
+        characters (shorter ones return an empty page). At most 50 users are returned in total across all
+        pages, so the endpoint cannot be used to enumerate the user base.
         **Access:** Authenticated.
       parameters:
       - description: Search query to filter by username (min 2 characters)
         in: query
         name: q
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
         type: string
       produces:
       - application/json
@@ -2848,9 +2998,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.UserResponse'
-            type: array
+            $ref: '#/definitions/internal_api.UserPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -3040,9 +3192,20 @@ paths:
       - relationships
   /api/users/me:
     delete:
+      consumes:
+      - application/json
       description: |-
-        Deletes the caller's account. The server owner must transfer ownership first.
+        Deletes the caller's account after a step-up check: the body must carry the caller's current
+        password, and repeated wrong passwords lock the check out for a while (429), like the dangerous
+        admin actions. The server owner must transfer ownership first.
         **Access:** Authenticated (self only).
+      parameters:
+      - description: Current password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.DeleteAccountRequest'
       produces:
       - application/json
       responses:
@@ -3050,12 +3213,20 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "403":
           description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "429":
