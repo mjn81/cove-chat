@@ -73,10 +73,11 @@ export const adminBackup = (password: string, passphrase: string) =>
 /** Replaces all server data with an uploaded backup; everyone is signed out afterwards. */
 export const adminRestore = (file: File, passphrase: string, password: string) => {
 	const form = new FormData();
-	form.append('file', file);
-	form.append('passphrase', passphrase);
+	// The server verifies the password before reading the (large) archive, so the file must be the last part.
 	form.append('password', password);
 	form.append('confirm', 'RESTORE');
+	form.append('passphrase', passphrase);
+	form.append('file', file);
 	return request<{ status: string }>(apiClient.post('/api/admin/restore', form));
 };
 
@@ -94,13 +95,24 @@ export const adminSendNotice = (text: string) =>
 export const adminUpdateInfo = (refresh = false) =>
 	request<ServerUpdateInfo>(apiClient.get('/api/admin/update', { params: refresh ? { refresh: 1 } : undefined }));
 
-/** Owner only: downloads, verifies and installs the newest release, then the server restarts. */
-export const adminStartUpdate = (source: 'release' | 'upload' = 'release') =>
-	request<ServerUpdateStarted>(apiClient.post('/api/admin/update', { source }));
+/**
+ * Owner only: downloads, verifies and installs the newest release, then the server restarts. Replacing the program
+ * file needs the owner's password again, like a backup restore.
+ */
+export const adminStartUpdate = (source: 'release' | 'upload', password: string) =>
+	request<ServerUpdateStarted>(apiClient.post('/api/admin/update', { source, password }));
 
 /** Owner only, non-Docker installs: stages a release zip or binary for an offline update. Nothing is applied yet. */
-export const adminUploadUpdate = (input: { file: File; version: string; sha256?: string; sums?: string }) => {
+export const adminUploadUpdate = (input: {
+	file: File;
+	version: string;
+	password: string;
+	sha256?: string;
+	sums?: string;
+}) => {
 	const form = new FormData();
+	// The server checks the password before it reads the file, so it has to come first.
+	form.append('password', input.password);
 	form.append('version', input.version);
 	if (input.sha256) form.append('sha256', input.sha256);
 	if (input.sums) form.append('sums', input.sums);

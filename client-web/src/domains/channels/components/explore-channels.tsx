@@ -33,7 +33,7 @@ export const ExploreChannels = ({ channels, isLoading, joiningId, onJoin }: Expl
 					{channels.map((ch) => (
 						<div
 							key={ch.id}
-							onClick={() => onJoin(ch.invite_link, ch.id)}
+							onClick={() => onJoin(ch.invite_link || ch.id, ch.id)}
 							className={cn(
 								'mx-2 flex min-w-0 cursor-pointer select-none items-center justify-between overflow-hidden rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground',
 							)}

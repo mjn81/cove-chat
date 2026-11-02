@@ -942,6 +942,7 @@
 				"source_github": "GitHub releases",
 				"upload_title": "Manual update (no internet)",
 				"upload_body": "For installs that cannot reach GitHub or covechat.dev. On another computer download the server zip for this machine from the release page, then upload it here. This is for non-Docker installs: with Docker, pull the new image instead.",
+				"upload_confirm": "Enter your password to stage this file. Nothing is installed until you press Install.",
 				"upload_file": "Release file (.zip or server binary)",
 				"upload_version": "Version of this release",
 				"upload_sha": "SHA-256 or SHA256SUMS (optional)",

@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField } from '@/components/form-field';
 import { useUploadServerUpdate } from '../api/use-admin';
-import { adminErrorMessage } from '../utils/admin-errors';
 import { classifyChecksumInput } from '../utils/server-update';
+import { StepUpDialog, type StepUpValues } from './step-up-dialog';
 import type { ServerUploadInfo } from '../types/admin.types';
 
 /**
@@ -32,16 +32,15 @@ export function ServerUpdateUpload({
 	const [file, setFile] = useState<File | null>(null);
 	const [version, setVersion] = useState('');
 	const [checksum, setChecksum] = useState('');
+	const [confirmOpen, setConfirmOpen] = useState(false);
 
-	const submit = async () => {
+	// Staging a binary the owner will later install is as sensitive as installing it, so the server wants the
+	// password again; a wrong one throws and StepUpDialog shows it inside the dialog.
+	const submit = async ({ password }: StepUpValues) => {
 		if (!file) return;
-		try {
-			await upload.mutateAsync({ file, version: version.trim(), ...classifyChecksumInput(checksum) });
-			toast.success(t('admin.update.upload_done'));
-			setFile(null);
-		} catch (err) {
-			toast.error(adminErrorMessage(t, err));
-		}
+		await upload.mutateAsync({ file, version: version.trim(), password, ...classifyChecksumInput(checksum) });
+		toast.success(t('admin.update.upload_done'));
+		setFile(null);
 	};
 
 	return (
@@ -90,12 +89,20 @@ export function ServerUpdateUpload({
 				<Button
 					variant="outline"
 					size="sm"
-					onClick={() => void submit()}
+					onClick={() => setConfirmOpen(true)}
 					disabled={!file || version.trim() === '' || upload.isPending || disabled}
 				>
 					<Upload />
 					{upload.isPending ? t('admin.update.uploading') : t('admin.update.upload_button')}
 				</Button>
+				<StepUpDialog
+					open={confirmOpen}
+					onOpenChange={setConfirmOpen}
+					title={t('admin.update.upload_title')}
+					description={t('admin.update.upload_confirm')}
+					confirmLabel={t('admin.update.upload_button')}
+					onSubmit={submit}
+				/>
 
 				{uploaded && (
 					<div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted p-2">

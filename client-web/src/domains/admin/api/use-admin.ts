@@ -133,7 +133,8 @@ export function useCheckServerUpdate() {
 export function useStartServerUpdate() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (source: 'release' | 'upload' = 'release') => adminStartUpdate(source),
+		mutationFn: ({ source = 'release', password }: { source?: 'release' | 'upload'; password: string }) =>
+			adminStartUpdate(source, password),
 		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
 	});
 }

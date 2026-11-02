@@ -66,7 +66,8 @@ export interface ExploreChannel {
 	name: string;
 	description?: string;
 	avatar_id?: string;
-	invite_link: string;
+	/** Servers since the explore-leak fix omit it: a public channel is joined by `id`. Older ones still send it. */
+	invite_link?: string;
 	member_count: number;
 	created_at: string;
 }

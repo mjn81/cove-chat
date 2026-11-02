@@ -7,13 +7,13 @@ import { Download, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ModalShell } from '@/components/modal-shell';
 import { SettingRow } from '@/components/setting-row';
 import { useAuthStore } from '@/store/store';
 import { adminKeys } from '../api/admin.api';
 import { useCheckServerUpdate, useServerUpdate, useStartServerUpdate } from '../api/use-admin';
 import { adminErrorMessage } from '../utils/admin-errors';
 import { ServerUpdateUpload } from './server-update-upload';
+import { StepUpDialog, type StepUpValues } from './step-up-dialog';
 import { isUpdateBusy, previewReleaseNotes, serverUpdateStage } from '../utils/server-update';
 
 /** Docker installs are replaced by pulling a new image, never in place; shows the exact commands. */
@@ -62,14 +62,10 @@ export function ServerUpdatePanel() {
 		return query.isLoading ? <Loader2 className="animate-spin text-muted-foreground" /> : null;
 	}
 
-	const confirm = async () => {
-		setConfirmOpen(false);
-		try {
-			const started = await start.mutateAsync(confirmSource);
-			setTarget(started.version);
-		} catch (err) {
-			toast.error(adminErrorMessage(t, err));
-		}
+	// A wrong password throws, and StepUpDialog shows the message inside the dialog and keeps it open.
+	const confirm = async ({ password }: StepUpValues) => {
+		const started = await start.mutateAsync({ source: confirmSource, password });
+		setTarget(started.version);
 	};
 
 	const stageText: Record<string, string> = {
@@ -194,25 +190,16 @@ export function ServerUpdatePanel() {
 				<p className="text-xs text-muted-foreground">{t('admin.update.owner_only')}</p>
 			)}
 
-			<ModalShell
+			<StepUpDialog
 				open={confirmOpen}
 				onOpenChange={setConfirmOpen}
 				title={t('admin.update.confirm_title', {
 					version: confirmSource === 'upload' ? (info.uploaded?.version ?? '') : info.latest_version,
 				})}
-				description={t('admin.update.confirm_body')}
-				size="sm"
-				footer={
-					<>
-						<Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-							{t('common.cancel')}
-						</Button>
-						<Button onClick={() => void confirm()}>{t('admin.update.confirm_action')}</Button>
-					</>
-				}
-			>
-				<p className="text-sm text-muted-foreground">{t('admin.update.confirm_detail')}</p>
-			</ModalShell>
+				description={`${t('admin.update.confirm_body')} ${t('admin.update.confirm_detail')}`}
+				confirmLabel={t('admin.update.confirm_action')}
+				onSubmit={confirm}
+			/>
 		</section>
 	);
 }
