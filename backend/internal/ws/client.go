@@ -131,6 +131,10 @@ func (c *Client) handleMessage(ctx context.Context, msg *models.WSMessage) error
 		}
 		return c.hub.store.SetPresence(c.UserID, "online")
 	default:
-		return fmt.Errorf("unknown message type: %s", msg.Type)
+		// Forward compatibility (docs/api-standard.md section 5): a newer client may send events this server
+		// does not know. Ignore them quietly; erroring here would be logged as a fault and tempt callers to drop
+		// the connection.
+		logger.Debugf("ws: ignoring unknown event type %q from %s", msg.Type, c.UserID)
+		return nil
 	}
 }

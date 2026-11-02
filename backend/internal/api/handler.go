@@ -48,6 +48,12 @@ type Handler struct {
 	IsDev               bool
 	FrontendOrigin      string
 
+	// API standard (docs/api-standard.md): the oldest client the admin supports, whether that is a hard 426 or only
+	// a warning, and the calling engine ("webrtc" | "raw_udp") that decides the advertised capabilities.
+	MinClientVersion string
+	EnforceMinClient bool
+	VoiceMode        string
+
 	// Admin panel and live settings. All optional: a Handler built without
 	// them behaves as an open server with no admin features configured.
 	Settings     *Settings // hot-applicable config (registration mode, upload limits)
@@ -157,5 +163,8 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/files", protect(h.UploadFile))
 	mux.Handle("GET /api/files/{id}", protect(h.DownloadFile))
 
-	return middleware.CORS(mux, h.IsDev, h.FrontendOrigin)
+	return middleware.CORS(middleware.ClientVersion(middleware.ClientVersionConfig{
+		MinClientVersion: h.MinClientVersion,
+		Enforce:          h.EnforceMinClient,
+	}, mux), h.IsDev, h.FrontendOrigin)
 }

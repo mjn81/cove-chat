@@ -154,6 +154,9 @@ func main() {
 		UDPPort:             cfg.Server.UDPPort,
 		IsDev:               cfg.Server.Dev,
 		FrontendOrigin:      cfg.Server.FrontendOrigin,
+		MinClientVersion:    cfg.Server.MinClientVersion,
+		EnforceMinClient:    cfg.Server.EnforceMinClient,
+		VoiceMode:           cfg.Voice.Mode,
 		Settings: api.NewSettings(api.SettingsInit{
 			RegistrationMode:    cfg.Registration.Mode,
 			CaptchaEnabled:      cfg.Captcha.Enabled,
@@ -183,6 +186,7 @@ func main() {
 	}
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
+	hub.SetMinClientVersion(cfg.Server.MinClientVersion)
 
 	// Sign-up proof-of-work. The service always exists; the admin panel switches enforcement on and off live.
 	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)

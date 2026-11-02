@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/models"
 )
 
@@ -549,7 +550,7 @@ func (ss *SessionStore) Require(next http.Handler) http.Handler {
 func writeError(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg, "code": apistd.CodeForStatus(code)})
 }
 
 // DeleteExcept ends every session that does not belong to userID. The admin

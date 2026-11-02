@@ -2023,7 +2023,7 @@ const docTemplate = `{
         },
         "/api/version": {
             "get": {
-                "description": "Returns the semantic version of the Cove backend currently running.",
+                "description": "Returns the semantic version of the Cove backend currently running, the API version,\nthe minimum supported client version and the capabilities the server advertises.\n**Access:** Public.",
                 "produces": [
                     "application/json"
                 ],
@@ -2576,7 +2576,20 @@ const docTemplate = `{
         "internal_api.ErrorResponse": {
             "type": "object",
             "properties": {
+                "code": {
+                    "description": "Code is a stable machine-readable code from the registry; clients branch on it, never on Error.",
+                    "type": "string",
+                    "example": "unauthorized"
+                },
+                "details": {
+                    "description": "Details carries optional code-specific data, e.g. min_client_version for client_outdated.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "error": {
+                    "description": "Error is a human-readable message (or an i18n key the client translates).",
                     "type": "string",
                     "example": "invalid credentials"
                 }
@@ -3060,6 +3073,28 @@ const docTemplate = `{
         "internal_api.VersionResponse": {
             "type": "object",
             "properties": {
+                "api_version": {
+                    "description": "APIVersion is the integer client/server contract version, bumped only on breaking changes.",
+                    "type": "integer",
+                    "example": 1
+                },
+                "capabilities": {
+                    "description": "Capabilities names the optional features this server supports; clients gate UI on these, not on versions.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "invite_messages",
+                        "whisper",
+                        "webrtc_sfu"
+                    ]
+                },
+                "min_client_version": {
+                    "description": "MinClientVersion is the oldest client semver the admin supports; empty when none is set.",
+                    "type": "string",
+                    "example": "0.9.0"
+                },
                 "udp_port": {
                     "type": "integer",
                     "example": 9090

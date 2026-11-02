@@ -131,6 +131,12 @@ type ServerConfig struct {
 	// behind a reverse proxy that overwrites these headers itself — otherwise
 	// any client can spoof its own rate-limit/log IP by setting them directly.
 	TrustProxyHeaders bool `toml:"trust_proxy_headers"`
+	// MinClientVersion is the oldest client semver (MAJOR.MINOR.PATCH) this server supports. Empty disables the
+	// check. Clients below it are warned via GET /api/version and, with EnforceMinClient, refused with HTTP 426.
+	MinClientVersion string `toml:"min_client_version"`
+	// EnforceMinClient turns the minimum into a hard limit (default off: warn only). When on, requests that send
+	// no X-Cove-Client header are refused too.
+	EnforceMinClient bool `toml:"enforce_min_client"`
 }
 
 type SecurityConfig struct {

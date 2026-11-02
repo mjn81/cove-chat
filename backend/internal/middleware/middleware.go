@@ -47,7 +47,9 @@ func Recover(next http.Handler) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				logger.Errorf("panic recovered: %s %s | %v", r.Method, r.URL.Path, rec)
-				http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`{"error":"internal server error","code":"internal"}`))
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -153,7 +155,9 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := realIP(r)
 		if !rl.getLimiter(ip).Allow() {
-			http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"error":"rate limit exceeded","code":"rate_limited"}`))
 			return
 		}
 		next.ServeHTTP(w, r)

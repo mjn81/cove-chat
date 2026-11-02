@@ -378,7 +378,20 @@ definitions:
     type: object
   internal_api.ErrorResponse:
     properties:
+      code:
+        description: Code is a stable machine-readable code from the registry; clients
+          branch on it, never on Error.
+        example: unauthorized
+        type: string
+      details:
+        additionalProperties:
+          type: string
+        description: Details carries optional code-specific data, e.g. min_client_version
+          for client_outdated.
+        type: object
       error:
+        description: Error is a human-readable message (or an i18n key the client
+          translates).
         example: invalid credentials
         type: string
     type: object
@@ -715,6 +728,26 @@ definitions:
     type: object
   internal_api.VersionResponse:
     properties:
+      api_version:
+        description: APIVersion is the integer client/server contract version, bumped
+          only on breaking changes.
+        example: 1
+        type: integer
+      capabilities:
+        description: Capabilities names the optional features this server supports;
+          clients gate UI on these, not on versions.
+        example:
+        - invite_messages
+        - whisper
+        - webrtc_sfu
+        items:
+          type: string
+        type: array
+      min_client_version:
+        description: MinClientVersion is the oldest client semver the admin supports;
+          empty when none is set.
+        example: 0.9.0
+        type: string
       udp_port:
         example: 9090
         type: integer
@@ -2047,7 +2080,10 @@ paths:
       - users
   /api/version:
     get:
-      description: Returns the semantic version of the Cove backend currently running.
+      description: |-
+        Returns the semantic version of the Cove backend currently running, the API version,
+        the minimum supported client version and the capabilities the server advertises.
+        **Access:** Public.
       produces:
       - application/json
       responses:

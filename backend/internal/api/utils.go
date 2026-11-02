@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+
+	"cove/backend/internal/apistd"
 )
 
 // ============================
@@ -15,8 +17,15 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// writeError sends the standard error envelope. The stable machine code is derived from the HTTP status; use
+// writeErrorCode when a handler needs a more specific one from the registry in internal/apistd.
 func writeError(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, ErrorResponse{Error: msg})
+	writeErrorCode(w, code, apistd.CodeForStatus(code), msg)
+}
+
+// writeErrorCode is writeError with an explicit registry code (for example apistd.CodeFeatureUnsupported).
+func writeErrorCode(w http.ResponseWriter, status int, machineCode, msg string) {
+	writeJSON(w, status, ErrorResponse{Error: msg, Code: machineCode})
 }
 
 func uniqueStrings(s []string) []string {

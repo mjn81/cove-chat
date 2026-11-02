@@ -9,11 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/auth"
 	"cove/backend/internal/desktop"
 	"cove/backend/internal/logger"
 	"cove/backend/internal/models"
 	"cove/backend/internal/store"
+	"cove/backend/internal/version"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -73,6 +75,9 @@ type Hub struct {
 	isDev          bool
 	originPatterns []string
 
+	// minClientVersion is advertised in the hello event; set once at startup, before connections are served.
+	minClientVersion string
+
 	broadcast chan *envelope
 	closed    bool
 }
@@ -114,6 +119,23 @@ func NewHub(s *store.Store, sessions *auth.SessionStore, kek []byte, isDev bool,
 	}
 	go h.run()
 	return h
+}
+
+// SetMinClientVersion sets the minimum client version advertised in the hello event. Call before serving.
+func (h *Hub) SetMinClientVersion(v string) {
+	h.minClientVersion = v
+}
+
+// helloMessage builds the first event of every connection: the same version/capability block as GET
+// /api/version, so a client can gate features and detect a mismatch without an extra request.
+func (h *Hub) helloMessage() *models.WSMessage {
+	payload, _ := json.Marshal(apistd.ServerInfo{
+		Version:          version.Version,
+		APIVersion:       apistd.APIVersion,
+		MinClientVersion: h.minClientVersion,
+		Capabilities:     apistd.Capabilities(h.rtc != nil),
+	})
+	return &models.WSMessage{Type: "hello", Payload: payload}
 }
 
 // SetVoiceRouter wires the voice router in after construction (NewRouter
@@ -281,12 +303,12 @@ func (h *Hub) dispatch(e *envelope) {
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, _, err := auth.ResolveToken(r)
 	if err != nil {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		http.Error(w, `{"error":"unauthorized","code":"unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
 	session, err := h.sessions.Validate(token)
 	if err != nil {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		http.Error(w, `{"error":"unauthorized","code":"unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
 
@@ -328,6 +350,8 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		hub:        h,
 	}
 	h.register(client)
+	// Queued before the pumps start (the buffer is empty), so hello is always the first frame the client sees.
+	client.send <- &envelope{msg: h.helloMessage()}
 
 	// Fetch user to check their status preference
 	effectiveStatus := "online"

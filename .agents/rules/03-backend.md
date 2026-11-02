@@ -123,3 +123,12 @@ Every handler has a complete swaggo block, and its access tier is stated explici
 - Wrap errors with context (`fmt.Errorf("load channel %s: %w", id, err)`); don't swallow errors silently.
 - Pass `context.Context` through long-running or cancellable operations.
 - Any goroutine has a clear owner and shutdown path; run `make test` (race detector on) for concurrency changes.
+
+## 9. Client/server API standard
+
+The wire contract (headers, error envelope with stable `code`, additive-change rules, capabilities, minimum client version, WebSocket `hello`) is specified in `docs/api-standard.md`. Follow it for every new or changed endpoint and event:
+
+- Errors go through `writeError` / `writeErrorCode`; add new codes to `internal/apistd`, never reuse one.
+- Changes must be additive. A breaking change bumps `apistd.APIVersion` and follows the deprecation policy.
+- Optional features are advertised as capabilities (`apistd.Capabilities`), not detected by version.
+- Servers ignore unknown WebSocket event types and unknown JSON fields.

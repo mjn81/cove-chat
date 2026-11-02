@@ -131,8 +131,14 @@ type UpdateUserRequest struct {
 	FriendRequestPermission *string   `json:"friend_request_permission,omitempty"`
 }
 
+// ErrorResponse is the standard error envelope (docs/api-standard.md section 4).
 type ErrorResponse struct {
+	// Error is a human-readable message (or an i18n key the client translates).
 	Error string `json:"error" example:"invalid credentials"`
+	// Code is a stable machine-readable code from the registry; clients branch on it, never on Error.
+	Code string `json:"code" example:"unauthorized"`
+	// Details carries optional code-specific data, e.g. min_client_version for client_outdated.
+	Details map[string]string `json:"details,omitempty"`
 }
 
 type StatusResponse struct {
