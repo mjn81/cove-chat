@@ -49,6 +49,20 @@ func TestPreferenceAndQuitOverrideKeepRunning(t *testing.T) {
 	}
 }
 
+func TestAppMenuQuitMarksTheQuitAsDeliberate(t *testing.T) {
+	a, _ := testApp(t)
+	m := a.appMenu()
+	if runtime.GOOS != "darwin" {
+		if m != nil {
+			t.Fatal("only macOS has a menu bar")
+		}
+		return
+	}
+	if m == nil || len(m.Items) == 0 || m.Items[0].SubMenu == nil || len(m.Items[0].SubMenu.Items) == 0 {
+		t.Fatal("macOS needs an app menu with a Quit item")
+	}
+}
+
 func TestCloseToTrayPersists(t *testing.T) {
 	a, secrets := testApp(t)
 	a.SetCloseToTray(false)
