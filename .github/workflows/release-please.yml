@@ -29,6 +29,14 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      # Releasing needs no manual step: the release PR merges itself once ci-gate passes, which tags the version and
+      # starts release.yml. The merge must use the personal token, or the tag push would not trigger the build.
+      - name: Merge the release PR when CI is green
+        if: steps.rp.outputs.pr != '' && env.HAS_PAT == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          PR_NUMBER: ${{ fromJSON(steps.rp.outputs.pr).number }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --merge --auto
       - name: Start the build for the new tag
         if: steps.rp.outputs.release_created == 'true' && env.HAS_PAT != 'true'
         env:
