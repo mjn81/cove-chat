@@ -6,7 +6,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -548,9 +547,7 @@ func (ss *SessionStore) Require(next http.Handler) http.Handler {
 
 // writeError writes a JSON error response.
 func writeError(w http.ResponseWriter, code int, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg, "code": apistd.CodeForStatus(code)})
+	apistd.WriteError(w, code, "", msg, nil)
 }
 
 // DeleteExcept ends every session that does not belong to userID. The admin

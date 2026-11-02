@@ -306,12 +306,12 @@ func (h *Hub) dispatch(e *envelope) {
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, _, err := auth.ResolveToken(r)
 	if err != nil {
-		http.Error(w, `{"error":"unauthorized","code":"unauthorized"}`, http.StatusUnauthorized)
+		apistd.WriteError(w, http.StatusUnauthorized, apistd.CodeUnauthorized, "unauthorized", nil)
 		return
 	}
 	session, err := h.sessions.Validate(token)
 	if err != nil {
-		http.Error(w, `{"error":"unauthorized","code":"unauthorized"}`, http.StatusUnauthorized)
+		apistd.WriteError(w, http.StatusUnauthorized, apistd.CodeUnauthorized, "unauthorized", nil)
 		return
 	}
 

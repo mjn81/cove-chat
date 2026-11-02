@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -55,15 +54,7 @@ func ClientVersion(cfg ClientVersionConfig, next http.Handler) http.Handler {
 }
 
 func writeClientOutdated(w http.ResponseWriter, min string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusUpgradeRequired)
-	_ = json.NewEncoder(w).Encode(struct {
-		Error   string            `json:"error"`
-		Code    string            `json:"code"`
-		Details map[string]string `json:"details"`
-	}{
-		Error:   "This version of Cove is too old for this server. Please update the app.",
-		Code:    apistd.CodeClientOutdated,
-		Details: map[string]string{"min_client_version": min},
-	})
+	apistd.WriteError(w, http.StatusUpgradeRequired, apistd.CodeClientOutdated,
+		"This version of Cove is too old for this server. Please update the app.",
+		map[string]string{"min_client_version": min})
 }

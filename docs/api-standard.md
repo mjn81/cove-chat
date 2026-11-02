@@ -48,7 +48,8 @@ Every non-2xx JSON response MUST be:
 - `error` is for people; clients MAY show it. It can change between releases. Clients MUST NOT branch on it.
 - `code` is for programs; it is stable. Clients branch on it. A client that sees an unknown code MUST fall back to the HTTP status.
 - `details` is optional and code-specific (for example `min_client_version`).
-- When a handler gives no code, the server derives one from the status.
+- When a handler gives no code, the server derives one from the status (501 maps to `feature_unsupported`, 413 to `payload_too_large`).
+- Every layer (handlers, auth, rate limiting, client-version check, WebSocket upgrade) writes the envelope through the same helper (`apistd.WriteError`), always as `application/json`. JSON request bodies are size-capped; an oversize body is a 413 `payload_too_large`, never silently truncated.
 
 Registry (`backend/internal/apistd`):
 

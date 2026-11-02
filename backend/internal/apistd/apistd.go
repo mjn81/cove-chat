@@ -4,6 +4,7 @@
 package apistd
 
 import (
+	"encoding/json"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -62,6 +63,8 @@ func CodeForStatus(status int) string {
 		return CodeMethodNotAllowed
 	case http.StatusConflict:
 		return CodeConflict
+	case http.StatusNotImplemented:
+		return CodeFeatureUnsupported
 	case http.StatusRequestEntityTooLarge:
 		return CodePayloadTooLarge
 	case http.StatusTooManyRequests:
@@ -174,4 +177,23 @@ type ServerInfo struct {
 	APIVersion       int      `json:"api_version" example:"1"`
 	MinClientVersion string   `json:"min_client_version" example:"0.9.0"`
 	Capabilities     []string `json:"capabilities"`
+}
+
+// Envelope is the JSON body of every non-2xx response (docs/api-standard.md section 4).
+type Envelope struct {
+	Error   string            `json:"error"`
+	Code    string            `json:"code"`
+	Details map[string]string `json:"details,omitempty"`
+}
+
+// WriteError writes the standard error envelope as application/json. It is the single writer shared by the
+// handlers, the auth and rate-limit middleware, the client-version check and the WebSocket upgrade, so a client
+// can always parse a failure the same way. An empty code is derived from the status.
+func WriteError(w http.ResponseWriter, status int, code, msg string, details map[string]string) {
+	if code == "" {
+		code = CodeForStatus(status)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(Envelope{Error: msg, Code: code, Details: details})
 }
