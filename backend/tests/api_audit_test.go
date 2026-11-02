@@ -261,9 +261,7 @@ func TestSearchUsers_MinLengthAndCap(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("search %q = %d", q, resp.StatusCode)
 		}
-		var out []map[string]any
-		decodeJSON(t, resp, &out)
-		return out
+		return decodeItems[map[string]any](t, resp)
 	}
 	if got := list("b"); len(got) != 0 {
 		t.Fatalf("1-char query returned %d users, want 0", len(got))

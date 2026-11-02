@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/auth"
 	"cove/backend/internal/db"
 	"cove/backend/internal/logger"
@@ -159,84 +161,125 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, h.toChannelResponse(ch, session.UserID))
 }
 
+// channelCursorKind namespaces channel cursors; the value is the id of the last channel of the page just served.
+const channelCursorKind = "chan"
+
 // ListChannels godoc
 //
 //	@Summary     List channels for the current user
-//	@Description Bounded list of the caller's channels and direct messages, returned as a bare JSON array.
+//	@Description The caller's channels and direct messages, paged (`{items, next_cursor}`) in a stable order by
+//	@Description channel id. Clients sort by activity themselves and fetch every page for the sidebar.
 //	@Description **Access:** Authenticated.
 //	@Tags        channels
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Success     200 {array} ChannelResponse
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} ChannelPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/channels [get]
 func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
+	limit, rawCursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
+	after, err := apistd.DecodeCursor(channelCursorKind, rawCursor)
+	if err != nil {
+		writeBadCursor(w, err)
+		return
+	}
 
-	channels, err := h.Store.ListUserChannels(session.UserID)
+	channels, hasMore, err := h.Store.ListUserChannelsPage(session.UserID, after, limit)
 	if err != nil {
 		writeInternal(w, "list channels", err, "could not list channels")
 		return
 	}
 
-	resp := make([]ChannelResponse, 0)
+	resp := make([]ChannelResponse, 0, len(channels))
 	for _, ch := range channels {
 		resp = append(resp, h.toChannelResponse(ch, session.UserID))
 	}
-	writeJSON(w, http.StatusOK, resp)
+	next := ""
+	if hasMore && len(channels) > 0 {
+		next = apistd.EncodeCursor(channelCursorKind, channels[len(channels)-1].ID)
+	}
+	writeJSON(w, http.StatusOK, ChannelPageResponse{Items: resp, NextCursor: next})
 }
 
 // ExploreChannels godoc
 //
 //	@Summary     Search public channels
-//	@Description Lists public (non-private) group channels whose name contains `q`. The result carries no invite link:
-//	@Description a public channel is joined with `POST /api/join/{link}` using its **id**.
+//	@Description Lists public (non-private) group channels whose name contains `q`, paged (`{items, next_cursor}`),
+//	@Description ordered by name. The result carries no invite link: a public channel is joined with
+//	@Description `POST /api/join/{link}` using its **id**.
 //	@Description **Access:** Authenticated.
 //	@Tags        channels
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       q query string false "Search query"
-//	@Success     200 {array} ExploreChannelResponse
+//	@Param       q      query string false "Search query"
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} ExploreChannelPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/channels/explore [get]
 func (h *Handler) ExploreChannels(w http.ResponseWriter, r *http.Request) {
-	search := r.URL.Query().Get("q")
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
+	searchQuery := strings.ToLower(r.URL.Query().Get("q"))
 	allChannels, err := h.Store.ListAllChannels()
 	if err != nil {
 		writeInternal(w, "explore channels", err, "could not list all channels")
 		return
 	}
 
-	filtered := make([]ExploreChannelResponse, 0)
-	searchQuery := strings.ToLower(search)
-
+	// Filter first and count members only for the page that is served (one index scan, not one per channel).
+	matched := make([]*models.Channel, 0)
 	for _, ch := range allChannels {
 		if ch.IsPrivate {
 			continue // Hide private
 		}
-
-		members, merr := h.Store.GetChannelMembers(ch.ID)
-		if merr != nil {
-			logger.Warnf("api: explore: members of %s unreadable: %v", ch.ID, merr)
-		}
-
-		if search == "" || strings.Contains(strings.ToLower(ch.Name), searchQuery) {
-			filtered = append(filtered, ExploreChannelResponse{
-				ID:          ch.ID,
-				Name:        ch.Name,
-				Description: ch.Description,
-				AvatarID:    ch.AvatarID,
-				MemberCount: len(members),
-				CreatedAt:   ch.CreatedAt,
-			})
+		if searchQuery == "" || strings.Contains(strings.ToLower(ch.Name), searchQuery) {
+			matched = append(matched, ch)
 		}
 	}
+	sort.Slice(matched, func(i, j int) bool {
+		a, b := strings.ToLower(matched[i].Name), strings.ToLower(matched[j].Name)
+		if a != b {
+			return a < b
+		}
+		return matched[i].ID < matched[j].ID
+	})
 
-	writeJSON(w, http.StatusOK, filtered)
+	page, next, perr := apistd.Paginate(matched, cursor, limit)
+	if perr != nil {
+		writeBadCursor(w, perr)
+		return
+	}
+	counts, cerr := h.Store.CountMembersByChannel()
+	if cerr != nil {
+		logger.Warnf("api: explore: member counts unreadable: %v", cerr)
+	}
+	items := make([]ExploreChannelResponse, 0, len(page))
+	for _, ch := range page {
+		items = append(items, ExploreChannelResponse{
+			ID:          ch.ID,
+			Name:        ch.Name,
+			Description: ch.Description,
+			AvatarID:    ch.AvatarID,
+			MemberCount: counts[ch.ID],
+			CreatedAt:   ch.CreatedAt,
+		})
+	}
+	writeJSON(w, http.StatusOK, ExploreChannelPageResponse{Items: items, NextCursor: next})
 }
 
 // GetChannel godoc
@@ -565,13 +608,16 @@ func (h *Handler) RegenerateInvite(w http.ResponseWriter, r *http.Request) {
 // GetChannelMembers godoc
 //
 //	@Summary     List members of a channel
-//	@Description Bounded list returned as a bare JSON array.
+//	@Description Paged (`{items, next_cursor}`). Profiles are loaded only for the page that is served.
 //	@Description **Access:** Channel Member.
 //	@Tags        channels
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       id path string true "Channel ID"
-//	@Success     200 {array} UserResponse
+//	@Param       id     path  string true  "Channel ID"
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} UserPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     404 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
@@ -579,14 +625,24 @@ func (h *Handler) RegenerateInvite(w http.ResponseWriter, r *http.Request) {
 //	@Router      /api/channels/{id}/members [get]
 func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 	ch := ChannelFromContext(r.Context())
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
 	memberList, err := h.Store.GetChannelMembers(ch.ID)
 	if err != nil {
 		writeInternal(w, "list members of channel "+ch.ID, err, "could not list members")
 		return
 	}
+	sort.Slice(memberList, func(i, j int) bool { return memberList[i].UserID < memberList[j].UserID })
 
-	members := make([]UserResponse, 0, len(memberList))
-	for _, m := range memberList {
+	page, next, perr := apistd.Paginate(memberList, cursor, limit)
+	if perr != nil {
+		writeBadCursor(w, perr)
+		return
+	}
+	members := make([]UserResponse, 0, len(page))
+	for _, m := range page {
 		u, err := h.Store.GetUser(m.UserID)
 		if err != nil {
 			logger.Warnf("api: members of %s: user %s unreadable: %v", ch.ID, m.UserID, err)
@@ -600,7 +656,7 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 			AvatarID: u.AvatarID,
 		})
 	}
-	writeJSON(w, http.StatusOK, members)
+	writeJSON(w, http.StatusOK, UserPageResponse{Items: members, NextCursor: next})
 }
 
 // AddMembers godoc

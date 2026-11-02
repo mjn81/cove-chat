@@ -13,7 +13,7 @@ import (
 
 // APIVersion is the integer version of the client/server contract. It is bumped only on a breaking change
 // (a removed or re-typed field, a changed meaning); additive changes never bump it.
-const APIVersion = 1
+const APIVersion = 2
 
 // Header names. The client announces itself with HeaderClient; the server stamps the other two on every response.
 const (

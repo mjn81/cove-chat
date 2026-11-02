@@ -249,6 +249,56 @@ func (d *DB) ListUserChannels(userID string) ([]*models.Channel, error) {
 	return channels, err
 }
 
+// ListActiveMemberships returns the user's ACTIVE junction entries in one prefix scan (no channel lookups), so
+// callers can page and enrich lazily instead of loading every channel up front.
+func (d *DB) ListActiveMemberships(userID string) ([]*models.UserChannel, error) {
+	prefix := prefixUserChannel + userID + ":"
+	var out []*models.UserChannel
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefix)
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			var uc models.UserChannel
+			if err := it.Item().Value(func(val []byte) error { return json.Unmarshal(val, &uc) }); err != nil {
+				return err
+			}
+			if uc.Status == models.StatusActive {
+				if uc.UserID == "" {
+					uc.UserID = userID
+				}
+				out = append(out, &uc)
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
+// CountActiveMembersByChannel returns the number of active members of every channel from a single scan of the
+// membership index. It replaces one full scan per channel (ListChannelMembers) when many counts are needed at once.
+func (d *DB) CountActiveMembersByChannel() (map[string]int, error) {
+	counts := make(map[string]int)
+	err := d.bdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(prefixUserChannel)
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			var uc models.UserChannel
+			if err := it.Item().Value(func(val []byte) error { return json.Unmarshal(val, &uc) }); err != nil {
+				return err
+			}
+			if uc.Status == models.StatusActive {
+				counts[uc.ChannelID]++
+			}
+		}
+		return nil
+	})
+	return counts, err
+}
+
 // ListChannelMembers returns all users currently in a channel.
 func (d *DB) ListChannelMembers(channelID string) ([]*models.UserChannel, error) {
 	var members []*models.UserChannel

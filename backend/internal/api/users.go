@@ -16,7 +16,7 @@ import (
 const (
 	// minUserSearchRunes is the shortest search term accepted; one letter would just enumerate the user base.
 	minUserSearchRunes = 2
-	// maxUserSearchResults caps a search so the (bare-array) response stays bounded.
+	// maxUserSearchResults caps the total result of a search across all pages, so it cannot enumerate the user base.
 	maxUserSearchResults = 50
 )
 
@@ -81,14 +81,20 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 // DeleteAccount godoc
 //
 //	@Summary     Delete current user account
-//	@Description Deletes the caller's account. The server owner must transfer ownership first.
+//	@Description Deletes the caller's account after a step-up check: the body must carry the caller's current
+//	@Description password, and repeated wrong passwords lock the check out for a while (429), like the dangerous
+//	@Description admin actions. The server owner must transfer ownership first.
 //	@Description **Access:** Authenticated (self only).
 //	@Tags        users
+//	@Accept      json
 //	@Produce     json
 //	@Security    BearerAuth
+//	@Param       body body DeleteAccountRequest true "Current password"
 //	@Success     200 {object} StatusResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users/me [delete]
@@ -96,9 +102,27 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	token, _, _ := auth.ResolveToken(r)
 
+	var body DeleteAccountRequest
+	if !decodeJSONLimit(w, r, &body, 1<<14, "invalid JSON body") {
+		return
+	}
+	if body.Password == "" {
+		writeError(w, http.StatusBadRequest, "password required")
+		return
+	}
+	me, err := h.Store.GetUser(session.UserID)
+	if err != nil {
+		userNotFoundOr(w, "delete account "+session.UserID, err)
+		return
+	}
+	// A wrong password is 403, not 401: 401 means "session invalid" and makes clients sign the user out.
+	if !h.confirmPassword(w, me, body.Password) {
+		return
+	}
+
 	// The owner cannot vanish from under the server: they must hand the role
 	// over first, otherwise nobody could ever reach the admin panel again.
-	if me, err := h.Store.GetUser(session.UserID); err == nil && me.ServerRole == models.ServerRoleOwner {
+	if me.ServerRole == models.ServerRoleOwner {
 		writeError(w, http.StatusForbidden, "admin.errors.owner_cannot_delete")
 		return
 	}
@@ -309,22 +333,30 @@ func validateProfileEnums(b *UpdateUserRequest) string {
 // SearchUsers godoc
 //
 //	@Summary     Search globally for users by username
-//	@Description Case-insensitive substring match. The query must be at least 2 characters (shorter ones return an empty
-//	@Description array) and at most 50 users are returned, as a bare JSON array.
+//	@Description Case-insensitive substring match, paged (`{items, next_cursor}`). The query must be at least 2
+//	@Description characters (shorter ones return an empty page). At most 50 users are returned in total across all
+//	@Description pages, so the endpoint cannot be used to enumerate the user base.
 //	@Description **Access:** Authenticated.
 //	@Tags        users
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       q query string false "Search query to filter by username (min 2 characters)"
-//	@Success     200 {array} UserResponse
+//	@Param       q      query string false "Search query to filter by username (min 2 characters)"
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} UserPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users [get]
 func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	if utf8.RuneCountInString(q) < minUserSearchRunes {
-		writeJSON(w, http.StatusOK, []UserResponse{})
+		writeJSON(w, http.StatusOK, UserPageResponse{Items: []UserResponse{}})
 		return
 	}
 	users, err := h.Store.SearchUsers(q)
@@ -349,7 +381,9 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 			CustomMsg:   u.CustomMsg,
 		})
 	}
-	writeJSON(w, http.StatusOK, res)
+	writePage(w, res, cursor, limit, func(items []UserResponse, next string) UserPageResponse {
+		return UserPageResponse{Items: items, NextCursor: next}
+	})
 }
 
 // GetUser godoc

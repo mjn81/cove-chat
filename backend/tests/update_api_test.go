@@ -102,7 +102,7 @@ func (u *updateEnv) auditActions(t *testing.T) []string {
 	var out api.AuditListResponse
 	readJSON(t, resp, &out)
 	var actions []string
-	for _, en := range out.Entries {
+	for _, en := range out.Items {
 		actions = append(actions, en.Action)
 	}
 	return actions

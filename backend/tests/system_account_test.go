@@ -134,8 +134,7 @@ func TestCoveAccount_ReservedNameAndHiddenFromSearch(t *testing.T) {
 	loginAs(t, srv, "searcher", "Password123!", map[string]string{"X-Cove-Device": "Second"}) // creates the Cove account
 
 	resp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/users?q=cove", tok, nil))
-	var found []api.UserResponse
-	decodeJSON(t, resp, &found)
+	found := decodeItems[api.UserResponse](t, resp)
 	for _, u := range found {
 		if strings.EqualFold(u.Username, "cove") {
 			t.Fatalf("the system account must not be searchable: %+v", found)
@@ -174,8 +173,7 @@ func TestCoveAccount_ChannelShowsServerLabelAndBrandAvatar(t *testing.T) {
 	loginAs(t, srv, "labeluser", "Password123!", map[string]string{"X-Cove-Device": "Second"})
 
 	resp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tok, nil))
-	var chans []api.ChannelResponse
-	decodeJSON(t, resp, &chans)
+	chans := decodeItems[api.ChannelResponse](t, resp)
 	if len(chans) != 1 {
 		t.Fatalf("channels = %d, want the Cove DM", len(chans))
 	}

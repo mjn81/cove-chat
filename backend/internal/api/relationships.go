@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/auth"
 	"cove/backend/internal/models"
 	"cove/backend/internal/store"
@@ -41,59 +42,83 @@ func relationshipResponse(rel *models.Relationship, user *models.User) Relations
 // ListRelationships godoc
 //
 //	@Summary     List the caller's relationships
-//	@Description Friends, outgoing friend requests and blocked users, as a bare JSON array.
+//	@Description Friends, outgoing friend requests and blocked users. Paged (`{items, next_cursor}`).
 //	@Description **Access:** Authenticated.
 //	@Tags        relationships
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Success     200 {array} RelationshipResponse
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} RelationshipPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/relationships [get]
 func (h *Handler) ListRelationships(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
 	rels, err := h.Store.ListRelationships(session.UserID)
 	if err != nil {
 		writeInternal(w, "list relationships", err, "failed to list relationships")
 		return
 	}
-
-	res := make([]RelationshipResponse, 0, len(rels))
-	for _, rel := range rels {
+	// The index is keyed by the other user's id, so the scan order is already stable for offset paging. Profiles
+	// are only loaded for the page being served.
+	page, next, perr := apistd.Paginate(rels, cursor, limit)
+	if perr != nil {
+		writeBadCursor(w, perr)
+		return
+	}
+	res := make([]RelationshipResponse, 0, len(page))
+	for _, rel := range page {
 		u, _ := h.Store.GetUser(rel.ToUserID) // a vanished user just has no embedded profile
 		res = append(res, relationshipResponse(rel, u))
 	}
-	writeJSON(w, http.StatusOK, res)
+	writeJSON(w, http.StatusOK, RelationshipPageResponse{Items: res, NextCursor: next})
 }
 
 // ListIncomingRequests godoc
 //
 //	@Summary     List pending incoming friend requests
-//	@Description Bare JSON array; each item embeds the requester's profile.
+//	@Description Paged (`{items, next_cursor}`); each item embeds the requester's profile.
 //	@Description **Access:** Authenticated.
 //	@Tags        relationships
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Success     200 {array} RelationshipResponse
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} RelationshipPageResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     429 {object} ErrorResponse
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/relationships/incoming [get]
 func (h *Handler) ListIncomingRequests(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
 	reqs, err := h.Store.ListIncomingRequests(session.UserID)
 	if err != nil {
 		writeInternal(w, "list incoming requests", err, "failed to list incoming requests")
 		return
 	}
-
-	res := make([]RelationshipResponse, 0, len(reqs))
-	for _, req := range reqs {
+	page, next, perr := apistd.Paginate(reqs, cursor, limit)
+	if perr != nil {
+		writeBadCursor(w, perr)
+		return
+	}
+	res := make([]RelationshipResponse, 0, len(page))
+	for _, req := range page {
 		u, _ := h.Store.GetUser(req.FromUserID)
 		res = append(res, relationshipResponse(req, u))
 	}
-	writeJSON(w, http.StatusOK, res)
+	writeJSON(w, http.StatusOK, RelationshipPageResponse{Items: res, NextCursor: next})
 }
 
 // GetRelationship godoc

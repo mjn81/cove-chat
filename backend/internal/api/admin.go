@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/config"
 	"cove/backend/internal/db"
 	"cove/backend/internal/models"
@@ -80,14 +81,16 @@ type InviteResponse struct {
 	Status string `json:"status"`
 }
 
-// InviteListResponse wraps the invite list.
+// InviteListResponse is one page of invitation codes, newest first.
 type InviteListResponse struct {
-	Invites []InviteResponse `json:"invites"`
+	Items      []InviteResponse `json:"items"`
+	NextCursor string           `json:"next_cursor,omitempty"`
 }
 
-// AuditListResponse wraps recent audit entries.
+// AuditListResponse is one page of audit entries, newest first.
 type AuditListResponse struct {
-	Entries []*models.AuditEntry `json:"entries"`
+	Items      []*models.AuditEntry `json:"items"`
+	NextCursor string               `json:"next_cursor,omitempty"`
 }
 
 // AdminAccountResponse is one account with a server role.
@@ -347,26 +350,36 @@ func inviteView(inv *models.Invite, now time.Time) InviteResponse {
 // AdminListInvites godoc
 //
 //	@Summary     List invitation codes
+//	@Description Paged (`{items, next_cursor}`), newest first.
 //	@Description **Access:** Server Admin.
 //	@Tags        admin
 //	@Produce     json
 //	@Security    BearerAuth
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
 //	@Success     200 {object} InviteListResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
 //	@Router      /api/admin/invites [get]
 func (h *Handler) AdminListInvites(w http.ResponseWriter, r *http.Request) {
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
 	invites, err := h.Store.ListInvites()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "admin.errors.internal")
 		return
 	}
 	now := time.Now()
-	out := InviteListResponse{Invites: []InviteResponse{}}
+	views := make([]InviteResponse, 0, len(invites))
 	for _, inv := range invites {
-		out.Invites = append(out.Invites, inviteView(inv, now))
+		views = append(views, inviteView(inv, now))
 	}
-	writeJSON(w, http.StatusOK, out)
+	writePage(w, views, cursor, limit, func(items []InviteResponse, next string) InviteListResponse {
+		return InviteListResponse{Items: items, NextCursor: next}
+	})
 }
 
 // AdminCreateInvite godoc
@@ -468,25 +481,39 @@ func (h *Handler) AdminRevokeInvite(w http.ResponseWriter, r *http.Request) {
 
 // AdminAudit godoc
 //
-//	@Summary     Recent admin actions
+//	@Summary     Admin audit trail
+//	@Description Paged (`{items, next_cursor}`), newest first. Every entry is reachable by following the cursor.
 //	@Description **Access:** Server Admin.
 //	@Tags        admin
 //	@Produce     json
 //	@Security    BearerAuth
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
 //	@Success     200 {object} AuditListResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
 //	@Router      /api/admin/audit [get]
 func (h *Handler) AdminAudit(w http.ResponseWriter, r *http.Request) {
-	entries, err := h.Store.ListAudit(200)
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
+	off, err := apistd.DecodeOffsetCursor(cursor)
+	if err != nil {
+		writeBadCursor(w, err)
+		return
+	}
+	// The audit key order is the newest-first order, so fetch just far enough for this page plus one to learn
+	// whether another follows.
+	entries, err := h.Store.ListAudit(off + limit + 1)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "admin.errors.internal")
 		return
 	}
-	if entries == nil {
-		entries = []*models.AuditEntry{}
-	}
-	writeJSON(w, http.StatusOK, AuditListResponse{Entries: entries})
+	writePage(w, entries, cursor, limit, func(items []*models.AuditEntry, next string) AuditListResponse {
+		return AuditListResponse{Items: items, NextCursor: next}
+	})
 }
 
 // ---- Admins and ownership --------------------------------------------------- //

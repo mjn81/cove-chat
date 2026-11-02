@@ -1,6 +1,7 @@
 package store
 
 import (
+	"sort"
 	"errors"
 	"fmt"
 	"strings"
@@ -110,6 +111,8 @@ func (s *Store) AuthenticateUser(username, password string) (*models.User, error
 	u, err := s.GetUserByUsername(username)
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {
+			// Same Argon2id cost as a wrong password, so response time does not reveal which usernames exist.
+			crypto.BurnPasswordVerify(password)
 			return nil, ErrInvalidCredentials
 		}
 		return nil, fmt.Errorf("store: look up user: %w", err)
@@ -345,6 +348,58 @@ func (s *Store) ListUserChannels(userID string) ([]*models.Channel, error) {
 		visible = append(visible, ch)
 	}
 	return visible, nil
+}
+
+// ListUserChannelsPage returns one page of the user's visible channels ordered by channel id, starting after the
+// channel id `after` ("" = first page), plus whether more exist. Only the channels of the page are enriched with the
+// last message and unread count, so a user with many channels no longer pays for all of them on every request.
+func (s *Store) ListUserChannelsPage(userID, after string, limit int) (page []*models.Channel, hasMore bool, err error) {
+	ucs, err := s.db.ListActiveMemberships(userID)
+	if err != nil {
+		return nil, false, err
+	}
+	sort.Slice(ucs, func(i, j int) bool { return ucs[i].ChannelID < ucs[j].ChannelID })
+	for _, uc := range ucs {
+		if uc.ChannelID <= after {
+			continue
+		}
+		ch, gerr := s.db.GetChannel(uc.ChannelID)
+		if gerr != nil {
+			continue // orphan membership index entry
+		}
+		s.enrichChannelForUser(ch, uc)
+		if !uc.ClearedAt.IsZero() && !ch.LastMessageAt.After(uc.ClearedAt) {
+			continue // cleared DM with nothing newer
+		}
+		if len(page) == limit {
+			return page, true, nil
+		}
+		page = append(page, ch)
+	}
+	return page, false, nil
+}
+
+// enrichChannelForUser fills the per-user derived fields (last message summary, unread count).
+func (s *Store) enrichChannelForUser(ch *models.Channel, uc *models.UserChannel) {
+	ch.LastMessageAt = ch.CreatedAt
+	if latest, err := s.db.ListMessages(ch.ID, "", 1); err == nil && len(latest) > 0 {
+		ch.LastMessageAt = latest[0].SentAt
+		ch.LastMessageCiphertext = latest[0].Ciphertext
+		ch.LastMessageNonce = latest[0].Nonce
+		ch.LastMessageType = latest[0].Type
+		ch.LastMessageSenderID = latest[0].SenderID
+		ch.LastMessageID = latest[0].ID
+	}
+	if uc.ClearedAt.IsZero() || ch.LastMessageAt.After(uc.ClearedAt) {
+		if count, err := s.db.CountUnreadMessages(uc.UserID, ch.ID); err == nil {
+			ch.UnreadCount = count
+		}
+	}
+}
+
+// CountMembersByChannel returns the active member count of every channel in a single index scan.
+func (s *Store) CountMembersByChannel() (map[string]int, error) {
+	return s.db.CountActiveMembersByChannel()
 }
 
 // ClearChannelForUser updates ClearedAt and LastReadAt timestamps for a user's channel membership.

@@ -78,7 +78,7 @@ func TestAPIStandard_HeadersOnEveryResponse(t *testing.T) {
 	// success, 401 (protected), 404 (unknown route)
 	for _, path := range []string{"/api/version", "/api/me", "/api/nope"} {
 		resp := getWith(t, srv, path, "")
-		if got := resp.Header.Get(apistd.HeaderAPIVersion); got != "1" {
+		if got := resp.Header.Get(apistd.HeaderAPIVersion); got != "2" {
 			t.Errorf("%s: %s = %q", path, apistd.HeaderAPIVersion, got)
 		}
 		if got := resp.Header.Get(apistd.HeaderServerVersion); got != version.Version {

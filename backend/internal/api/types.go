@@ -231,3 +231,43 @@ type RelationshipResponse struct {
 	CreatedAt  time.Time     `json:"created_at,omitempty"`
 	UpdatedAt  time.Time     `json:"updated_at,omitempty"`
 }
+
+// ── Paged list envelopes (docs/api-standard.md section 9) ───────────────────
+//
+// Every unbounded list answers {"items": [...], "next_cursor": "<opaque>"}. next_cursor is empty on the last page.
+// One named type per endpoint because swaggo cannot render generics.
+
+// MessagePageResponse is one page of channel messages, newest first.
+type MessagePageResponse struct {
+	Items      []*models.Message `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+}
+
+// ChannelPageResponse is one page of the caller's channels.
+type ChannelPageResponse struct {
+	Items      []ChannelResponse `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+}
+
+// ExploreChannelPageResponse is one page of public channel search results.
+type ExploreChannelPageResponse struct {
+	Items      []ExploreChannelResponse `json:"items"`
+	NextCursor string                   `json:"next_cursor,omitempty"`
+}
+
+// UserPageResponse is one page of users (channel members, user search).
+type UserPageResponse struct {
+	Items      []UserResponse `json:"items"`
+	NextCursor string         `json:"next_cursor,omitempty"`
+}
+
+// RelationshipPageResponse is one page of relationships or incoming friend requests.
+type RelationshipPageResponse struct {
+	Items      []RelationshipResponse `json:"items"`
+	NextCursor string                 `json:"next_cursor,omitempty"`
+}
+
+// DeleteAccountRequest confirms an account deletion with the caller's current password (step-up).
+type DeleteAccountRequest struct {
+	Password string `json:"password" example:"s3cur3P@ss!"`
+}

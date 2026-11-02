@@ -109,8 +109,7 @@ func TestWS_ReadReceipt_DoesNotJoinChannel(t *testing.T) {
 		t.Fatalf("read receipt created a membership: %+v", uc)
 	}
 	chans := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokE, nil))
-	var list []map[string]any
-	decodeJSON(t, chans, &list)
+	list := decodeItems[map[string]any](t, chans)
 	if len(list) != 0 {
 		t.Fatalf("eve sees %d channels, want 0", len(list))
 	}

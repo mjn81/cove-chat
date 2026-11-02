@@ -12,7 +12,7 @@ type VersionResponse struct {
 	Version string `json:"version" example:"V1.0.0"`
 	UDPPort int    `json:"udp_port" example:"9090"`
 	// APIVersion is the integer client/server contract version, bumped only on breaking changes.
-	APIVersion int `json:"api_version" example:"1"`
+	APIVersion int `json:"api_version" example:"2"`
 	// MinClientVersion is the oldest client semver the admin supports; empty when none is set.
 	MinClientVersion string `json:"min_client_version" example:"0.9.0"`
 	// Capabilities names the optional features this server supports; clients gate UI on these, not on versions.

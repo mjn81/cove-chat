@@ -153,14 +153,14 @@ func TestMessages_InvalidLimitIs400(t *testing.T) {
 	srv := testServer(t)
 	tok := registerAndLogin(t, srv, "lim_user", "password123!")
 	chID := createGroupChannel(t, srv, tok, "g")
-	for _, q := range []string{"abc", "0", "-5", "501"} {
+	for _, q := range []string{"abc", "0", "-5", "101", "500"} {
 		r := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels/"+chID+"/messages?limit="+q, tok, nil))
 		if r.StatusCode != http.StatusBadRequest {
 			t.Fatalf("limit=%s = %d, want 400", q, r.StatusCode)
 		}
 	}
-	if r := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels/"+chID+"/messages?limit=500", tok, nil)); r.StatusCode != http.StatusOK {
-		t.Fatalf("limit=500 = %d, want 200", r.StatusCode)
+	if r := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels/"+chID+"/messages?limit=100", tok, nil)); r.StatusCode != http.StatusOK {
+		t.Fatalf("limit=100 = %d, want 200", r.StatusCode)
 	}
 }
 
