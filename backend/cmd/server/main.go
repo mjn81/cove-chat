@@ -205,12 +205,13 @@ func main() {
 	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)
 
 	rootMux := http.NewServeMux()
-	rootMux.Handle("/ws", hub)
 	// Swagger UI — available at /api/docs/ only in dev mode
 	if cfg.Server.Dev {
 		rootMux.Handle("/api/docs/", httpSwagger.WrapHandler)
 	}
 	rootMux.Handle("/", api.NewRouter(apiHandler, float64(cfg.RateLimit.GlobalRPS), float64(cfg.RateLimit.AuthRPS)))
+	// Mounted after NewRouter so the upgrade shares the API's per-IP rate limiter and carries the version headers.
+	rootMux.Handle("/ws", apiHandler.WrapWS(hub))
 
 	// ── 7. HTTP server ─────────────────────────────────────────────────────
 	addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)

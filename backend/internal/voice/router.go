@@ -139,11 +139,8 @@ func (r *Router) handleRegister(addr *net.UDPAddr, token string) {
 	token = strings.TrimRight(token, "\x00")
 	session, err := r.sessions.Validate(token)
 	if err != nil {
-		preview := token
-		if len(preview) > 10 {
-			preview = preview[:10]
-		}
-		logger.Warnf("voice: REGISTRATION FAILED for %v: %v (token: %s...)", addr, err, preview)
+		// Never log any part of the token: even a prefix narrows a session credential.
+		logger.Warnf("voice: REGISTRATION FAILED for %v: %v", addr, err)
 		return
 	}
 

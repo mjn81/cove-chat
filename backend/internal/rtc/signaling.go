@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cove/backend/internal/logger"
+	"cove/backend/internal/models"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -71,7 +72,8 @@ func (m *Manager) HandleSignal(userID, username, msgType string, raw json.RawMes
 }
 
 func (m *Manager) handleJoin(userID, username, channelID string) error {
-	if _, err := m.membership.GetUserChannel(userID, channelID); err != nil {
+	// A kicked/left/banned member keeps a junction record, so existence alone is not membership.
+	if uc, err := m.membership.GetUserChannel(userID, channelID); err != nil || uc == nil || uc.Status != models.StatusActive {
 		m.metricsState.joinsRejected.Add(1)
 		m.sendError(userID, channelID, "not a member of this channel")
 		return nil

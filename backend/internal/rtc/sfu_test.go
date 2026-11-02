@@ -24,7 +24,7 @@ type fakeMembership struct {
 
 func (f *fakeMembership) GetUserChannel(userID, channelID string) (*models.UserChannel, error) {
 	if f.allowed[userID+":"+channelID] {
-		return &models.UserChannel{UserID: userID, ChannelID: channelID}, nil
+		return &models.UserChannel{UserID: userID, ChannelID: channelID, Status: models.StatusActive}, nil
 	}
 	return nil, errNotMember
 }

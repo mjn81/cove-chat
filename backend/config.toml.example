@@ -22,6 +22,15 @@ max_video_duration_sec = 60
 ffmpeg_path = "ffmpeg"
 # Enable development mode (extra logging, Swagger UI at /api/docs/).
 dev = false
+# Oldest client app version (MAJOR.MINOR.PATCH) this server supports. Empty = no minimum.
+# Clients below it get an "out of date" banner (soft mode, see enforce_min_client).
+# API v2 changed every list endpoint to a paged {items, next_cursor} envelope, so at the release that ships it
+# set this to "0.10.0" so clients that predate it are told to update instead of misreading the lists.
+min_client_version = ""
+# false (default): warn only, old clients keep working as far as they can.
+# true: requests from clients below min_client_version (or sending no X-Cove-Client header) get HTTP 426 and the
+# client shows a blocking "update required" screen. /api/version, /api/server-info and /ws stay reachable.
+enforce_min_client = false
 
 [security]
 # Master password for encrypting the database DEK via Argon2id (KEK derivation).

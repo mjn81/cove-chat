@@ -76,6 +76,10 @@ type Handler struct {
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 
+	// globalLimiter is the per-IP limiter NewRouter builds for the API; WrapWS reuses it so the WebSocket upgrade
+	// shares the same bucket. Ephemeral by design, like every rate limiter.
+	globalLimiter *middleware.RateLimiter
+
 	// Updater powers GET/POST /api/admin/update (server self-update). Nil reports "unsupported".
 	Updater *Updater
 	// NotifyUpdates makes the update notifier message the owner and admins about each new release.
@@ -88,6 +92,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 
 	authLimiter := middleware.NewRateLimiter(authRPS, int(authRPS)*2)
 	globalLimiter := middleware.NewRateLimiter(globalRPS, int(globalRPS)*2)
+	h.globalLimiter = globalLimiter
 	protect := func(handler http.HandlerFunc) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(handler))
 	}
@@ -177,4 +182,18 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 		MinClientVersion: h.MinClientVersion,
 		Enforce:          h.EnforceMinClient,
 	}, mux), h.IsDev, h.FrontendOrigin)
+}
+
+// WrapWS puts the WebSocket upgrade handler (mounted at /ws outside NewRouter) under the same API-standard
+// treatment as the REST routes: X-Cove-API-Version / X-Cove-Server-Version on the 101 (and on a 429) and the
+// same per-IP rate limit bucket. The minimum-client check never blocks it (the path is outside /api/); an outdated
+// client learns about the problem from the hello event. Call it after NewRouter so the shared limiter exists.
+func (h *Handler) WrapWS(next http.Handler) http.Handler {
+	if h.globalLimiter != nil {
+		next = h.globalLimiter.Limit(next)
+	}
+	return middleware.ClientVersion(middleware.ClientVersionConfig{
+		MinClientVersion: h.MinClientVersion,
+		Enforce:          h.EnforceMinClient,
+	}, next)
 }
