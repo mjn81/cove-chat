@@ -75,6 +75,11 @@ type Handler struct {
 	signups signupLimiter
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
+
+	// Updater powers GET/POST /api/admin/update (server self-update). Nil reports "unsupported".
+	Updater *Updater
+	// NotifyUpdates makes the update notifier message the owner and admins about each new release.
+	NotifyUpdates bool
 }
 
 // NewRouter wires the full HTTP API with rate limiting.
@@ -114,6 +119,9 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/admin/restore", protectOwner(h.AdminRestore))
 	mux.Handle("POST /api/admin/reset", protectOwner(h.AdminReset))
 	mux.Handle("POST /api/admin/delete", protectOwner(h.AdminDeleteServer))
+	mux.Handle("GET /api/admin/update", protectAdmin(h.AdminGetUpdate))
+	mux.Handle("POST /api/admin/update", protectOwner(h.AdminStartUpdate))
+	mux.Handle("POST /api/admin/update/upload", protectOwner(h.AdminUploadUpdate))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "admin.errors.not_found")
 	}))

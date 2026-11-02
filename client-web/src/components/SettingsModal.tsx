@@ -22,12 +22,14 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface SettingsModalProps {
 	onClose: () => void;
+	/** Tab to open first (default: account). */
+	initialTab?: SettingsTab;
 }
 
-export default function SettingsModal({ onClose }: SettingsModalProps) {
+export default function SettingsModal({ onClose, initialTab = 'account' }: SettingsModalProps) {
 	const { t } = useTranslation();
 	const user = useAuthStore((state) => state.user);
-	const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+	const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 	const [isViewingContent, setIsViewingContent] = useState(false);
 	const isMobile = useMediaQuery('(max-width: 768px)');
 

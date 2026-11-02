@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 import { useAdminAudit, useAdminOverview } from '../api/use-admin';
 import { formatBytes, formatUptime } from '../utils/admin-format';
+import { ServerUpdatePanel } from './server-update-panel';
 
 function Stat({ label, value }: { label: string; value: string | number }) {
 	return (
@@ -33,6 +34,8 @@ export function OverviewPanel() {
 				<Stat label={t('admin.overview.data_size')} value={formatBytes(o.data_size_bytes)} />
 				<Stat label={t('admin.overview.version')} value={o.version} />
 			</div>
+
+			<ServerUpdatePanel />
 
 			<section>
 				<h3 className="mb-2 text-sm font-semibold text-foreground">

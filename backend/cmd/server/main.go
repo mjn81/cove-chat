@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -141,6 +142,16 @@ func main() {
 	// Buffered: the admin "delete server" action sends SIGTERM here too.
 	quit := make(chan os.Signal, 2)
 
+	// The admin panel's "Update server" button replaces the binary, then asks for this restart: the normal
+	// graceful shutdown runs first (database closed, ports freed) and the process re-executes afterwards.
+	var restartForUpdate atomic.Bool
+	updater := api.NewUpdater(version.Version, func() {
+		restartForUpdate.Store(true)
+		quit <- syscall.SIGTERM
+	})
+	updater.Client.ManifestURL = cfg.Update.ManifestURL
+	updater.Client.NoGitHubFallback = !cfg.Update.GitHubFallback
+
 	apiHandler := &api.Handler{
 		Store:               dataStore,
 		Sessions:            sessions,
@@ -172,6 +183,8 @@ func main() {
 		ServerDomain: cfg.Server.Domain,
 		StartedAt:    time.Now(),
 		Shutdown:     func() { quit <- syscall.SIGTERM },
+		Updater:      updater,
+		NotifyUpdates: cfg.Update.NotifyAdmins,
 	}
 	if _, err := dataStore.EnsureSystemUser(); err != nil {
 		logger.Warnf("could not create the Cove system account: %v", err)
@@ -261,6 +274,14 @@ func main() {
 		}
 	}
 
+	// Tell the owner and admins (once per version) when a new release is out. Stopped during shutdown below.
+	notifierCtx, stopNotifier := context.WithCancel(context.Background())
+	notifierDone := make(chan struct{})
+	go func() {
+		defer close(notifierDone)
+		apiHandler.RunUpdateNotifier(notifierCtx, 2*time.Minute, 12*time.Hour)
+	}()
+
 	// ── 9. Graceful shutdown ───────────────────────────────────────────────
 	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -299,8 +320,10 @@ func main() {
 		os.Exit(1)
 	}()
 
-	// 1. Stop background GC ticker
+	// 1. Stop background GC ticker and the update notifier
 	close(stopGC)
+	stopNotifier()
+	<-notifierDone
 
 	// 2. Close UDP voice listener immediately (releases UDP port)
 	if udpConn != nil {
@@ -330,6 +353,13 @@ func main() {
 	}
 
 	logger.Info("Cove stopped.")
+
+	if restartForUpdate.Load() {
+		// Only returns on Windows (child started) or on failure; Unix replaces the process image.
+		if err := restartSelf(updater.ExePath); err != nil {
+			logger.Fatalf("Could not restart after the update: %v", err)
+		}
+	}
 }
 
 // startUDPRouter opens a raw UDP socket for desktop voice routing.

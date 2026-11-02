@@ -6,12 +6,20 @@ export function AppVersion() {
   return window['go']['main']['App']['AppVersion']();
 }
 
+export function CheckForUpdate() {
+  return window['go']['main']['App']['CheckForUpdate']();
+}
+
 export function ClearSession() {
   return window['go']['main']['App']['ClearSession']();
 }
 
 export function CloseWindow() {
   return window['go']['main']['App']['CloseWindow']();
+}
+
+export function DownloadUpdate() {
+  return window['go']['main']['App']['DownloadUpdate']();
 }
 
 export function GetAutostart() {
@@ -40,6 +48,18 @@ export function GetServerURL() {
 
 export function GetSession() {
   return window['go']['main']['App']['GetSession']();
+}
+
+export function GetUpdateSettings() {
+  return window['go']['main']['App']['GetUpdateSettings']();
+}
+
+export function GetUpdateState() {
+  return window['go']['main']['App']['GetUpdateState']();
+}
+
+export function InstallUpdateAndRestart() {
+  return window['go']['main']['App']['InstallUpdateAndRestart']();
 }
 
 export function JoinVoiceChannel(arg1) {
@@ -96,6 +116,10 @@ export function SetAutostart(arg1) {
 
 export function SetCloseToTray(arg1) {
   return window['go']['main']['App']['SetCloseToTray'](arg1);
+}
+
+export function SetUpdateSettings(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2, arg3, arg4);
 }
 
 export function SetPasscode(arg1, arg2) {

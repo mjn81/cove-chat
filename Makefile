@@ -10,6 +10,8 @@ PNPM  := pnpm
 BIN   := cove-server
 VERSION := $(shell cat VERSION)
 LDFLAGS := -s -w -X cove/backend/internal/version.Version=$(VERSION)
+# Stamps the desktop app so the auto-updater knows its real version (including any -rc suffix).
+WAILS_LDFLAGS := -X main.buildVersion=$(VERSION)
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_/-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -37,9 +39,11 @@ run: dev-back ## Run standalone backend (alias for dev-back)
 
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
+	cd backend/pkg/update && $(GO) vet ./...
 
 lint: ## Run golangci-lint (via go run, no install needed)
 	cd backend && $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
+	cd backend/pkg/update && $(GO) vet ./...
 
 swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
 	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
@@ -127,28 +131,28 @@ wails/build: build front/build ## Build production Wails desktop binary
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && wails build -clean -s
+	cd client-desktop && wails build -clean -s -ldflags "$(WAILS_LDFLAGS)"
 
 wails/build/mac: build front/build ## Build macOS universal binary
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && wails build -clean -platform darwin/universal -s
+	cd client-desktop && wails build -clean -platform darwin/universal -s -ldflags "$(WAILS_LDFLAGS)"
 
 wails/build/windows: build front/build ## Build Windows binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && wails build -clean -platform windows/amd64 -s
+	cd client-desktop && wails build -clean -platform windows/amd64 -s -ldflags "$(WAILS_LDFLAGS)"
 
 wails/build/linux: build front/build ## Build Linux binary (amd64)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
 	cp -r client-web/dist/* client-desktop/frontend/dist/
 	touch client-desktop/frontend/dist/.gitkeep
-	cd client-desktop && wails build -clean -platform linux/amd64 -s
+	cd client-desktop && wails build -clean -platform linux/amd64 -s -ldflags "$(WAILS_LDFLAGS)"
 
 backend/release: ## Build backend binaries for multiple platforms
 	mkdir -p release/backend

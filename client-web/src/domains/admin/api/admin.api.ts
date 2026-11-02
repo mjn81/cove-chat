@@ -8,6 +8,9 @@ import type {
 	CreateInviteInput,
 	Invite,
 	NoticeResult,
+	ServerUpdateInfo,
+	ServerUpdateStarted,
+	ServerUploadInfo,
 	UpdateConfigResult,
 } from '../types/admin.types';
 
@@ -19,6 +22,7 @@ export const adminKeys = {
 	invites: () => ['admin', 'invites'] as const,
 	admins: () => ['admin', 'admins'] as const,
 	audit: () => ['admin', 'audit'] as const,
+	update: () => ['admin', 'update'] as const,
 };
 
 export const adminOverview = () => request<AdminOverview>(apiClient.get('/api/admin/overview'));
@@ -85,3 +89,22 @@ export const adminDeleteServer = (password: string, confirm: string) =>
 /** Owner only: delivers `text` from the server's Cove account to every user. */
 export const adminSendNotice = (text: string) =>
 	request<NoticeResult>(apiClient.post('/api/admin/notices', { text }));
+
+/** Current vs latest release and update capability; `refresh` bypasses the server's 10-minute release cache. */
+export const adminUpdateInfo = (refresh = false) =>
+	request<ServerUpdateInfo>(apiClient.get('/api/admin/update', { params: refresh ? { refresh: 1 } : undefined }));
+
+/** Owner only: downloads, verifies and installs the newest release, then the server restarts. */
+export const adminStartUpdate = (source: 'release' | 'upload' = 'release') =>
+	request<ServerUpdateStarted>(apiClient.post('/api/admin/update', { source }));
+
+/** Owner only, non-Docker installs: stages a release zip or binary for an offline update. Nothing is applied yet. */
+export const adminUploadUpdate = (input: { file: File; version: string; sha256?: string; sums?: string }) => {
+	const form = new FormData();
+	form.append('version', input.version);
+	if (input.sha256) form.append('sha256', input.sha256);
+	if (input.sums) form.append('sums', input.sums);
+	// The file goes last so the server can validate the small fields without waiting for the whole upload.
+	form.append('file', input.file);
+	return request<{ status: string; upload: ServerUploadInfo }>(apiClient.post('/api/admin/update/upload', form));
+};

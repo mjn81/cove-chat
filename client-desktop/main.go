@@ -3,14 +3,18 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+
+	"cove/desktop/internal/updater"
 )
 
 // frontend/dist is embedded at build time via `wails build`.
@@ -20,6 +24,11 @@ import (
 var assets embed.FS
 
 func main() {
+	// After an update the new copy is started while the old one is still closing; wait for it so the
+	// single-instance lock below is free instead of the new copy handing over to a dying process.
+	if pid, ok := updater.ParseRelaunchArg(os.Args[1:]); ok {
+		updater.WaitForExit(pid, 15*time.Second)
+	}
 	app := NewApp()
 
 	err := wails.Run(&options.App{

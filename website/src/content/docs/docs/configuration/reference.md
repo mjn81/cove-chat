@@ -236,3 +236,24 @@ Default: `"/etc/cove/GeoLite2-City.mmdb"` (commented out in the example; optiona
 
 Default: `true    # send a "new login" message from the Cove account on each sign-in` (commented out in the example; optional)
 
+### `sessions.github_fallback`
+
+Default: `false there. See docs/auto-update.md for the manifest format.` (commented out in the example; optional)
+
+Where the server looks for new releases (admin panel > Overview > Server update). The manifest is published next to
+every release; GitHub is the fallback. Point manifest_url at your own mirror for air-gapped installs and set
+
+## `[update]`
+
+### `update.manifest_url`
+
+Default: `"https://covechat.dev/releases/manifest.json"` (commented out in the example; optional)
+
+### `update.github_fallback`
+
+Default: `true` (commented out in the example; optional)
+
+### `update.notify_admins`
+
+Default: `true          # tell the owner and admins (once per version) when a new release is out` (commented out in the example; optional)
+

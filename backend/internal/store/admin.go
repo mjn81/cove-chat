@@ -116,6 +116,13 @@ func (s *Store) ListAdmins() ([]*models.User, error) {
 	return out, nil
 }
 
+// LastNotifiedUpdate returns the newest server release version the admins were already messaged about ("" if none).
+func (s *Store) LastNotifiedUpdate() (string, error) { return s.db.GetUpdateNotified() }
+
+// SetLastNotifiedUpdate remembers that the admins were messaged about version, so each release is announced once
+// even across restarts.
+func (s *Store) SetLastNotifiedUpdate(version string) error { return s.db.SetUpdateNotified(version) }
+
 // PurgeUser removes a user record entirely. Only for undoing a sign-up that
 // lost the first-owner race while registration is closed.
 func (s *Store) PurgeUser(id string) error { return s.db.DeleteUserRecord(id) }

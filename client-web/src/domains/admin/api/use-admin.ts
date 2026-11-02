@@ -11,8 +11,11 @@ import {
 	adminRevokeAdmin,
 	adminRevokeInvite,
 	adminSendNotice,
+	adminStartUpdate,
 	adminTransferOwner,
 	adminUpdateConfig,
+	adminUpdateInfo,
+	adminUploadUpdate,
 } from './admin.api';
 import type { ConfigValue, CreateInviteInput } from '../types/admin.types';
 
@@ -91,5 +94,55 @@ export function useSendNotice() {
 	return useMutation({
 		mutationFn: (text: string) => adminSendNotice(text),
 		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.audit() }),
+	});
+}
+
+/**
+ * Server update status. While this browser is installing `target`, it polls every 1.5 s until the server answers
+ * idle on that version; a failed poll is expected during the restart, so retries are off and the previous data is
+ * kept.
+ *
+ * @param target - Version being installed by this browser, or null when it started no update.
+ */
+export const useServerUpdate = (target: string | null = null) =>
+	useQuery({
+		queryKey: adminKeys.update(),
+		queryFn: () => adminUpdateInfo(),
+		staleTime: 60_000,
+		retry: target === null ? 1 : false,
+		refetchInterval: (query) => {
+			if (target === null) return false;
+			const data = query.state.data;
+			return data?.state === 'idle' && data.current_version === target ? false : 1500;
+		},
+	});
+
+/** "Check now": re-queries GitHub and stores the answer in the update query. */
+export function useCheckServerUpdate() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => adminUpdateInfo(true),
+		onSuccess: (info) => {
+			qc.setQueryData(adminKeys.update(), info);
+			void qc.invalidateQueries({ queryKey: adminKeys.audit() });
+		},
+	});
+}
+
+/** Owner only: starts the update job. Progress then comes from {@link useServerUpdate}. */
+export function useStartServerUpdate() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (source: 'release' | 'upload' = 'release') => adminStartUpdate(source),
+		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
+	});
+}
+
+/** Owner only: uploads a release file for an offline update; the update status then shows it as staged. */
+export function useUploadServerUpdate() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: adminUploadUpdate,
+		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
 	});
 }

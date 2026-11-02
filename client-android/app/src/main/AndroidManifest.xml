@@ -5,6 +5,8 @@
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Lets the in-app updater hand a downloaded, checksum-verified APK to the system installer (user confirms every install). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Calling & Media (WebRTC SFU & Raw UDP) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
