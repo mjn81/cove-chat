@@ -29,6 +29,9 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `POST` | `/api/admin/owner/transfer` | Hand the owner role to another account | Server Owner. |
 | `POST` | `/api/admin/reset` | Reset server data | Server Owner, with their password and the phrase `RESET`. |
 | `POST` | `/api/admin/restore` | Restore a backup | Server Owner, with their password, the archive passphrase and the phrase `RESTORE`. |
+| `GET` | `/api/admin/update` | Server update status | Server Admin. |
+| `POST` | `/api/admin/update` | Update the server | Server Owner. |
+| `POST` | `/api/admin/update/upload` | Upload a server release manually | Server Owner. |
 
 ## auth
 
