@@ -125,7 +125,10 @@ jobs:
           cp -r client-web/dist/* client-desktop/frontend/dist/
       - name: Build
         working-directory: client-desktop
-        run: wails build -clean -s -platform ${{ matrix.platform }} ${{ matrix.tags && format('-tags {0}', matrix.tags) || '' }}
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        # buildVersion lets the in-app updater compare against the exact release version (wails.json drops -rc suffixes).
+        run: wails build -clean -s -platform ${{ matrix.platform }} -ldflags "-X main.buildVersion=${VERSION}" ${{ matrix.tags && format('-tags {0}', matrix.tags) || '' }}
       - name: Package
         run: |
 
