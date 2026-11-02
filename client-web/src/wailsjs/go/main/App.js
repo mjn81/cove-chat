@@ -18,6 +18,10 @@ export function CloseWindow() {
   return window['go']['main']['App']['CloseWindow']();
 }
 
+export function DownloadUpdate() {
+  return window['go']['main']['App']['DownloadUpdate']();
+}
+
 export function GetAutostart() {
   return window['go']['main']['App']['GetAutostart']();
 }
@@ -114,8 +118,8 @@ export function SetCloseToTray(arg1) {
   return window['go']['main']['App']['SetCloseToTray'](arg1);
 }
 
-export function SetUpdateSettings(arg1, arg2) {
-  return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2);
+export function SetUpdateSettings(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2, arg3, arg4);
 }
 
 export function SetPasscode(arg1, arg2) {

@@ -29,6 +29,21 @@ func TestResolveUpdateSettingsExplicitChoicesWin(t *testing.T) {
 	}
 }
 
+func TestUpdateSettingsDownloadAndSourceDefaults(t *testing.T) {
+	s := resolveUpdateSettings(Config{}, "0.9.9")
+	if s.AutoDownload {
+		t.Error("automatic downloading must be off by default")
+	}
+	if s.ManifestURL != "https://covechat.dev/releases/manifest.json" {
+		t.Errorf("default source = %q", s.ManifestURL)
+	}
+	on := true
+	s = resolveUpdateSettings(Config{AutoDownload: &on, UpdateManifestURL: " https://mirror.test/m.json "}, "0.9.9")
+	if !s.AutoDownload || s.ManifestURL != "https://mirror.test/m.json" {
+		t.Errorf("explicit settings = %+v", s)
+	}
+}
+
 func TestInstallTarget(t *testing.T) {
 	cases := []struct{ goos, exe, want string }{
 		{"windows", `C:\Apps\Cove\Cove.exe`, `C:\Apps\Cove\Cove.exe`},

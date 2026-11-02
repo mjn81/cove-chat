@@ -114,7 +114,7 @@ type harness struct {
 // newHarness builds a Manager for a fake "Windows" install: Target is a temp Cove.exe running version 0.9.9.
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	h := &harness{t: t, gh: newFakeGitHub(t), settings: Settings{Enabled: true, IncludePrerelease: true}}
+	h := &harness{t: t, gh: newFakeGitHub(t), settings: Settings{Enabled: true, IncludePrerelease: true, AutoDownload: true}}
 	h.stage = filepath.Join(t.TempDir(), "updates")
 	dir := t.TempDir()
 	h.target = filepath.Join(dir, "Cove.exe")
@@ -178,7 +178,7 @@ func TestCheckStagesAVerifiedUpdate(t *testing.T) {
 			seen = append(seen, e.Phase)
 		}
 	}
-	want := []Phase{PhaseChecking, PhaseDownloading, PhaseReady}
+	want := []Phase{PhaseChecking, PhaseAvailable, PhaseDownloading, PhaseReady}
 	if fmt.Sprint(seen) != fmt.Sprint(want) {
 		t.Errorf("phases = %v, want %v", seen, want)
 	}
@@ -214,7 +214,10 @@ func TestBadChecksumIsRefusedAndNothingStaged(t *testing.T) {
 	h := newHarness(t)
 	h.gh.publish("v1.0.0", true, "cove-desktop-windows-amd64.zip", zipOf(t, map[string]string{"Cove.exe": newExe}), strings.Repeat("0", 64)+"  cove-desktop-windows-amd64.zip\n")
 
-	if err := h.m.Check(t.Context(), true); err == nil {
+	if err := h.m.Check(t.Context(), true); err != nil {
+		t.Fatalf("a manual check only looks and must not fail: %v", err)
+	}
+	if err := h.m.Download(t.Context()); err == nil {
 		t.Fatal("expected an error")
 	}
 	st := h.m.State()
@@ -278,7 +281,7 @@ func TestDisabledSkipsBackgroundChecksButNotManualOnes(t *testing.T) {
 	if err := h.m.Check(t.Context(), false); err != nil || h.gh.listHits != 0 {
 		t.Fatalf("background check ran while disabled (hits=%d, err=%v)", h.gh.listHits, err)
 	}
-	if err := h.m.Check(t.Context(), true); err != nil || h.m.State().Phase != PhaseReady {
+	if err := h.m.Check(t.Context(), true); err != nil || h.m.State().Phase != PhaseAvailable {
 		t.Fatalf("manual check = %v, state %+v", err, h.m.State())
 	}
 }
@@ -294,7 +297,7 @@ func TestPrereleaseSettingIsRespected(t *testing.T) {
 		t.Fatalf("pre-release offered although switched off: %+v", st)
 	}
 	h.settings.IncludePrerelease = true
-	if err := h.m.Check(t.Context(), true); err != nil || h.m.State().Phase != PhaseReady {
+	if err := h.m.Check(t.Context(), true); err != nil || h.m.State().Phase != PhaseAvailable {
 		t.Fatalf("pre-release not offered when on: %v %+v", err, h.m.State())
 	}
 }

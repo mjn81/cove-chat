@@ -9,6 +9,8 @@ export function ClearSession():Promise<void>;
 
 export function CloseWindow():Promise<void>;
 
+export function DownloadUpdate():Promise<void>;
+
 export function GetAutostart():Promise<boolean>;
 
 export function GetCacheKey():Promise<string>;
@@ -57,7 +59,7 @@ export function SetAutostart(arg1:boolean):Promise<void>;
 
 export function SetCloseToTray(arg1:boolean):Promise<void>;
 
-export function SetUpdateSettings(arg1:boolean,arg2:boolean):Promise<void>;
+export function SetUpdateSettings(arg1:boolean,arg2:boolean,arg3:boolean,arg4:string):Promise<void>;
 
 export function SetPasscode(arg1:string,arg2:string):Promise<void>;
 

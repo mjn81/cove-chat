@@ -20,6 +20,11 @@ type Config struct {
 	AutoUpdate *bool `json:"auto_update,omitempty"`
 	// UpdatePrerelease offers pre-releases. Nil means on while the app is a 0.x/pre-release build, off otherwise.
 	UpdatePrerelease *bool `json:"update_prerelease,omitempty"`
+	// AutoDownload lets the background check also download updates. Nil means off: checking is automatic,
+	// downloading and installing are the user's choice.
+	AutoDownload *bool `json:"auto_download,omitempty"`
+	// UpdateManifestURL overrides the update source (mirrors, air-gapped networks). Empty means Cove's own domain.
+	UpdateManifestURL string `json:"update_manifest_url,omitempty"`
 }
 
 // App is the Wails application struct.

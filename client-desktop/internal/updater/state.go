@@ -10,7 +10,8 @@ type Phase string
 // Phases reported to the web UI.
 const (
 	PhaseIdle        Phase = "idle"        // nothing staged; see State.UpToDate for the outcome of the last check
-	PhaseChecking    Phase = "checking"    // asking GitHub for releases
+	PhaseChecking    Phase = "checking"    // asking the update source for releases
+	PhaseAvailable   Phase = "available"   // a newer release exists but nothing was downloaded (the user decides)
 	PhaseDownloading Phase = "downloading" // fetching and verifying the zip
 	PhaseReady       Phase = "ready"       // a verified update is staged and waits for the user's restart
 	PhaseInstalling  Phase = "installing"  // swapping files and relaunching
@@ -56,4 +57,9 @@ type Settings struct {
 	// IncludePrerelease offers pre-releases. Every 0.x release is a GitHub pre-release, so this defaults to on
 	// while the app itself is 0.x (see DefaultIncludePrerelease).
 	IncludePrerelease bool `json:"include_prerelease"`
+	// AutoDownload lets background checks also download the update (default off: checking is cheap, downloading
+	// is the user's call). Installing always needs a click.
+	AutoDownload bool `json:"auto_download"`
+	// ManifestURL is the update source; empty means GitHub only. Defaults to Cove's own domain.
+	ManifestURL string `json:"manifest_url"`
 }

@@ -57,8 +57,17 @@ type Manager struct {
 	state        State
 	busy         bool
 	staged       *stagedManifest
+	found        *foundRelease
 	lastProgress int
 	healthy      *time.Timer
+}
+
+// foundRelease is what the last check chose, kept so the user's Download click does not need another lookup.
+type foundRelease struct {
+	rel     update.Release
+	zipName string
+	entry   string
+	version string
 }
 
 // stagedManifest describes a verified download waiting for the user's restart.
@@ -168,7 +177,9 @@ func (m *Manager) purgeStaged() {
 	}
 }
 
-// Check looks for a newer release and, if one exists, downloads and verifies it in the background.
+// Check looks for a newer release. It only DOWNLOADS when the user opted in to automatic downloads (and this is a
+// background check); otherwise the state becomes "available" and the user's click on Download (see Download) starts
+// the transfer. Installing always needs a click.
 //
 // manual is true for the user's "Check now": it runs even when background checks are off, and its failures are
 // shown. Automatic failures are only logged by the caller (a flaky network must not nag), and leave the previous
@@ -178,36 +189,21 @@ func (m *Manager) Check(ctx context.Context, manual bool) error {
 	if !manual && !s.Enabled {
 		return nil
 	}
-	m.mu.Lock()
-	if m.busy || m.state.Phase == PhaseInstalling {
-		m.mu.Unlock()
+	prev, ok := m.begin()
+	if !ok {
 		return ErrBusy
 	}
-	m.busy = true
-	prev := m.state
-	m.mu.Unlock()
-	defer func() {
-		m.mu.Lock()
-		m.busy = false
-		m.mu.Unlock()
-	}()
+	defer m.end()
 
-	fail := func(code string, err error) error {
-		if manual {
-			m.update(func(st *State) { st.Phase, st.Error, st.Progress = PhaseError, code, 0 })
-		} else {
-			m.update(func(st *State) { *st = prev })
-		}
-		return err
-	}
-
-	zipName, entry, ok := update.DesktopAsset(m.cfg.GOOS, m.cfg.GOARCH)
-	if !ok {
+	fail := func(code string, err error) error { return m.failWith(manual, prev, code, err) }
+	zipName, entry, platformOK := update.DesktopAsset(m.cfg.GOOS, m.cfg.GOARCH)
+	if !platformOK {
 		return fail(ErrUnsupported, fmt.Errorf("updater: no desktop build for %s/%s", m.cfg.GOOS, m.cfg.GOARCH))
 	}
 	m.update(func(st *State) { st.Phase, st.Error, st.Progress = PhaseChecking, "", 0 })
 
-	rels, err := m.cfg.Client.ListReleases(ctx)
+	m.cfg.Client.ManifestURL = s.ManifestURL
+	rels, _, err := m.cfg.Client.LoadReleases(ctx)
 	if err != nil {
 		return fail(ErrCheckFailed, err)
 	}
@@ -220,6 +216,7 @@ func (m *Manager) Check(ctx context.Context, manual bool) error {
 	if errors.Is(err, update.ErrNoRelease) {
 		m.mu.Lock()
 		hasStaged := m.staged != nil
+		m.found = nil
 		m.mu.Unlock()
 		m.update(func(st *State) {
 			st.CheckedAt, st.UpToDate, st.Progress, st.Error = checkedAt, !hasStaged, 0, ""
@@ -238,21 +235,75 @@ func (m *Manager) Check(ctx context.Context, manual bool) error {
 
 	m.mu.Lock()
 	alreadyStaged := m.staged != nil && m.staged.Version == version
+	m.found = &foundRelease{rel: rel, zipName: zipName, entry: entry, version: version}
 	m.mu.Unlock()
-	if alreadyStaged {
-		m.update(func(st *State) {
-			st.Phase, st.CheckedAt, st.UpToDate, st.Progress, st.Error = PhaseReady, checkedAt, false, 0, ""
-		})
+	m.update(func(st *State) {
+		st.LatestVersion, st.ReleaseNotes, st.ReleaseURL = version, rel.Notes, rel.HTMLURL
+		st.CheckedAt, st.UpToDate, st.Progress, st.Error = checkedAt, false, 0, ""
+		st.Phase = PhaseAvailable
+		if alreadyStaged {
+			st.Phase, st.Progress = PhaseReady, 100
+		}
+	})
+	if alreadyStaged || manual || !s.AutoDownload {
 		return nil
 	}
+	return m.fetch(ctx, false, prev)
+}
 
-	m.update(func(st *State) {
-		st.Phase, st.LatestVersion, st.ReleaseNotes, st.ReleaseURL = PhaseDownloading, version, rel.Notes, rel.HTMLURL
-		st.CheckedAt, st.UpToDate, st.Progress, st.Error = checkedAt, false, 0, ""
-	})
+// Download fetches and verifies the update found by the last check. It is what the user's Download click calls, so
+// failures are shown. Nothing is installed: the result is the "ready" state.
+func (m *Manager) Download(ctx context.Context) error {
+	prev, ok := m.begin()
+	if !ok {
+		return ErrBusy
+	}
+	defer m.end()
+	m.mu.Lock()
+	found := m.found
+	m.mu.Unlock()
+	if found == nil {
+		return m.failWith(true, prev, ErrNothingStaged, errors.New("updater: no update has been found yet"))
+	}
+	return m.fetch(ctx, true, prev)
+}
+
+// begin claims the busy flag and returns the state to fall back to.
+func (m *Manager) begin() (State, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.busy || m.state.Phase == PhaseInstalling {
+		return State{}, false
+	}
+	m.busy = true
+	return m.state, true
+}
+
+func (m *Manager) end() {
+	m.mu.Lock()
+	m.busy = false
+	m.mu.Unlock()
+}
+
+// failWith reports a failure: shown to the user when shown is true, otherwise the previous state is restored.
+func (m *Manager) failWith(shown bool, prev State, code string, err error) error {
+	if shown {
+		m.update(func(st *State) { st.Phase, st.Error, st.Progress = PhaseError, code, 0 })
+	} else {
+		m.update(func(st *State) { *st = prev })
+	}
+	return err
+}
+
+// fetch downloads the release recorded by Check, verifies it and stages it.
+func (m *Manager) fetch(ctx context.Context, shown bool, prev State) error {
+	m.mu.Lock()
+	found := m.found
+	m.mu.Unlock()
+	m.update(func(st *State) { st.Phase, st.Progress, st.Error = PhaseDownloading, 0, "" })
 	m.lastProgress = -1
-	staged, err := m.cfg.Client.Fetch(ctx, rel, zipName, update.FetchOptions{
-		Dir:      filepath.Join(m.cfg.StageDir, version),
+	staged, err := m.cfg.Client.Fetch(ctx, found.rel, found.zipName, update.FetchOptions{
+		Dir:      filepath.Join(m.cfg.StageDir, found.version),
 		MaxBytes: m.cfg.MaxDownload,
 		Current:  m.cfg.Current,
 		Progress: func(done, total int64) { m.progress(done, total) },
@@ -262,12 +313,12 @@ func (m *Manager) Check(ctx context.Context, manual bool) error {
 		if errors.Is(err, update.ErrChecksumMismatch) || errors.Is(err, update.ErrNoChecksums) {
 			code = ErrChecksum
 		}
-		return fail(code, err)
+		return m.failWith(shown, prev, code, err)
 	}
 
-	sm := &stagedManifest{Version: version, Zip: staged.Path, SHA256: staged.SHA256, Entry: entry, Notes: rel.Notes, URL: rel.HTMLURL}
+	sm := &stagedManifest{Version: found.version, Zip: staged.Path, SHA256: staged.SHA256, Entry: found.entry, Notes: found.rel.Notes, URL: found.rel.HTMLURL}
 	if err := m.saveStaged(sm); err != nil {
-		return fail(ErrDownloadFailed, err)
+		return m.failWith(shown, prev, ErrDownloadFailed, err)
 	}
 	m.update(func(st *State) { st.Phase, st.Progress = PhaseReady, 100 })
 	return nil

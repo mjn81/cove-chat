@@ -48,7 +48,13 @@ func (a *App) updateSettings() updater.Settings {
 
 // resolveUpdateSettings applies the defaults for unset config values.
 func resolveUpdateSettings(c Config, version string) updater.Settings {
-	s := updater.Settings{Enabled: true, IncludePrerelease: update.AllowPrerelease(version, false)}
+	s := updater.Settings{Enabled: true, IncludePrerelease: update.AllowPrerelease(version, false), ManifestURL: update.DefaultManifestURL}
+	if c.AutoDownload != nil {
+		s.AutoDownload = *c.AutoDownload
+	}
+	if strings.TrimSpace(c.UpdateManifestURL) != "" {
+		s.ManifestURL = strings.TrimSpace(c.UpdateManifestURL)
+	}
 	if c.AutoUpdate != nil {
 		s.Enabled = *c.AutoUpdate
 	}
@@ -147,17 +153,37 @@ func (a *App) InstallUpdateAndRestart() error {
 	return a.upd.mgr.Install()
 }
 
-// GetUpdateSettings returns the update preferences as JSON ({"enabled": bool, "include_prerelease": bool}).
+// DownloadUpdate is the user's Download click: it fetches and verifies the update found by the last check and
+// returns immediately; progress arrives as "update:state" events. Nothing is installed.
+func (a *App) DownloadUpdate() {
+	if a.upd.mgr == nil {
+		return
+	}
+	go func() {
+		if err := a.upd.mgr.Download(context.Background()); err != nil {
+			log.Printf("update download failed: %v", err)
+		}
+	}()
+}
+
+// GetUpdateSettings returns the update preferences as JSON ({"enabled", "include_prerelease", "auto_download",
+// "manifest_url"}).
 func (a *App) GetUpdateSettings() string {
 	data, _ := json.Marshal(a.updateSettings())
 	return string(data)
 }
 
-// SetUpdateSettings saves the update preferences.
-func (a *App) SetUpdateSettings(enabled, includePrerelease bool) {
+// SetUpdateSettings saves the update preferences. An empty or default manifestURL is stored as "use the default".
+func (a *App) SetUpdateSettings(enabled, includePrerelease, autoDownload bool, manifestURL string) {
+	manifestURL = strings.TrimSpace(manifestURL)
+	if manifestURL == update.DefaultManifestURL {
+		manifestURL = ""
+	}
 	a.upd.mu.Lock()
 	a.config.AutoUpdate = &enabled
 	a.config.UpdatePrerelease = &includePrerelease
+	a.config.AutoDownload = &autoDownload
+	a.config.UpdateManifestURL = manifestURL
 	a.upd.mu.Unlock()
 	a.saveConfig()
 }
