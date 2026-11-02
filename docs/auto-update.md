@@ -1,105 +1,191 @@
 # Auto-update
 
-Cove can update itself in two places: the **desktop app** (Telegram-style background updates) and the **server**
-(a button in the admin panel). Both use the same library, `backend/pkg/update` (Go module `cove/update`), and the
-assets attached to each GitHub release by `.github/workflows/release.yml`.
+Cove updates in four places, all built on the same rules: **check quietly, tell the user, never download or install
+without being asked** (downloads can be switched to automatic; installs never can).
 
-## What a release contains
+| Client | Check | Download | Install |
+|---|---|---|---|
+| Desktop app | background, every 6 h | click on the update icon (or opt-in automatic) | click "Restart" |
+| Android app | background, once a day | tap "Download" (or opt-in automatic, Wi-Fi only) | tap "Install" then confirm in Android |
+| Server | background (admin notice) / "Check now" | owner clicks "Update server" | same click, then it restarts |
+| Web client | none | none | it is updated with the server it is served from |
 
-| Asset | Used by |
-|---|---|
-| `cove-server-{linux,darwin}-{amd64,arm64}.zip`, `cove-server-windows-amd64.zip` | server update (one binary inside, named like the zip) |
-| `cove-desktop-windows-amd64.zip` (`Cove.exe`), `cove-desktop-linux-amd64.zip` (`Cove`), `cove-desktop-mac-universal.zip` (`Cove.app`) | desktop update |
-| `SHA256SUMS` | integrity check for every download |
+The shared Go library is `backend/pkg/update` (module `cove/update`); Android has a Kotlin port of the same rules
+(`client-android/.../data/update`).
+
+## Update source and the manifest
+
+Order of sources, for every client:
+
+1. **The release manifest**, default `https://covechat.dev/releases/manifest.json` (the website build publishes it).
+2. **The GitHub releases API** (`mjn81/cove-chat`) when the manifest is unreachable or invalid.
+
+The server and the desktop app can point at their own manifest URL (mirrors, air-gapped networks). On the server it is
+`[update] manifest_url` in `config.toml` (also editable by the owner in Admin > Settings > Updates) and
+`github_fallback = false` stops it from trying GitHub; on the desktop it is Settings > Updates > Update source.
+
+### Manifest format
+
+```json
+{
+  "channel": "beta",
+  "version": "0.10.0",
+  "released_at": "2026-11-02T10:00:00Z",
+  "notes": "Markdown release notes",
+  "release_url": "https://github.com/mjn81/cove-chat/releases/tag/v0.10.0",
+  "min_version": "0.9.0",
+  "assets": {
+    "server-linux-amd64":  { "url": "https://github.com/.../cove-server-linux-amd64.zip", "sha256": "<64 hex>", "size": 31457280 },
+    "server-linux-arm64":  { "...": "..." },
+    "server-windows-amd64": { "...": "..." },
+    "server-darwin-arm64": { "...": "..." },
+    "windows-amd64":       { "url": "...cove-desktop-windows-amd64.zip", "sha256": "...", "size": 0 },
+    "linux-amd64":         { "url": "...cove-desktop-linux-amd64.zip", "sha256": "...", "size": 0 },
+    "darwin-universal":    { "url": "...cove-desktop-mac-universal.zip", "sha256": "...", "size": 0 },
+    "android":             { "url": "...cove-android-0.10.0.apk", "sha256": "...", "size": 0 }
+  }
+}
+```
+
+* `channel` is `stable` or `beta`; anything but `stable` is a pre-release.
+* `min_version` (optional) is the lowest running version allowed to upgrade directly; older installs are told to
+  install an intermediate release first.
+* Asset `url` must be HTTPS and can point anywhere (the website points at GitHub release downloads); `sha256` is
+  mandatory and is what every client verifies. A manifest with a missing or malformed checksum, a non-HTTPS URL or a
+  bad version is rejected as a whole, and the client falls back to GitHub.
+* Platform keys: `server-<os>-<arch>` (linux/darwin amd64+arm64, windows amd64), desktop `windows-amd64`,
+  `linux-amd64`, `darwin-universal`, and `android`.
+
+**How it is published.** `website/src/pages/releases/manifest.json.ts` builds it at site-build time from the GitHub
+releases and each release's `SHA256SUMS` (files without a checksum are left out), plus a per-version copy at
+`/releases/<version>.json`. The release workflow's `publish` job already ends by starting the website workflow, so
+the manifest follows every release. If GitHub is unreachable during the site build, the endpoint publishes
+`{"error": ...}`, which clients treat as "no manifest" and fall back.
 
 ## How versions are chosen
 
-* The updater reads the **releases list** (`GET /repos/mjn81/cove-chat/releases`), not `/releases/latest`: that
-  endpoint ignores pre-releases and every 0.x Cove release is published as one.
-* It picks the **highest semver** that is newer than the running version, never a downgrade or the same version.
-* Pre-releases (the GitHub flag or a `-rc.1` tag) are offered when the running build is itself 0.x or a pre-release,
-  or when the user switched "Include pre-releases" on. A user who switches it off keeps it off.
-* A release is only considered if it already carries the platform zip **and** `SHA256SUMS`, so a release that is
-  still uploading is skipped until it is complete.
+* The **highest semver** newer than the running version wins; never a downgrade or the same version.
+* The releases list is read, not `/releases/latest` (it ignores pre-releases and every 0.x release is one).
+* Pre-releases are offered when the running build is 0.x or itself a pre-release, or when the user opted in. A user
+  who switches it off keeps it off.
+* A release is only considered when it already carries the platform file and a checksum.
+
+## Opt-in rules
+
+* **Checking** is automatic and cheap (one small request).
+* **Downloading** needs a click. The setting "Download updates automatically" is **off by default** on desktop and
+  Android (Android additionally requires unmetered Wi-Fi).
+* **Installing** always needs a click; Android also shows its own system confirmation. Nothing ever restarts by
+  itself, and on desktop a restart asks first while a call is running or any chat has an unsent draft.
 
 ## Desktop
 
-1. A first check runs ~30 s after start-up, then every 6 hours (toggle: Settings > Notifications > Updates >
-   "Check for updates automatically"; "Check now" always works).
-2. A newer release is downloaded to `<app data>/updates/<version>/`, hashed while downloading and compared with
-   `SHA256SUMS`. A mismatch deletes the file and nothing is staged. A staged update survives restarting the app.
-3. The web UI shows a small **"Update ready: Restart"** card at the bottom corner of the window (and a button in
-   Settings). It never restarts by itself. If a call is running or any chat has an unsent draft, clicking Restart
-   first asks for confirmation.
+1. A first check runs ~30 s after start-up, then every 6 hours. Toggle: Settings > Notifications > Updates.
+2. A newer version shows a small **icon with a dot** in the left sidebar, in its own row directly above the profile
+   card (below the call bar when one is showing, so they stack without overlapping). Its popover shows the version
+   and notes with **Download** -> progress -> **Restart to update**. Settings > Updates has the same actions plus
+   "Check now".
+3. Download goes to `<app data>/updates/<version>/`, is hashed while downloading and compared with the manifest
+   (or `SHA256SUMS`); a mismatch deletes the file. A staged update survives restarting the app.
 4. On Restart the zip is hashed again (a file changed on disk since verification is refused), extracted next to the
-   installed app and swapped in by renaming: the current `Cove.exe` / `Cove` / `Cove.app` becomes `*.old`, the new
-   one takes its name. Windows cannot overwrite a running exe but can rename it, which is why renaming is used.
-5. The new copy is started with `--relaunch-after=<pid>`; it waits for the old process to exit before taking the
-   single-instance lock. On macOS the relaunch goes through `open -n`.
-6. **Rollback.** A marker file records the update. The new version must stay up for 60 s to be confirmed (then the
-   marker and the `*.old` copy are deleted). If it dies on start twice, the third start restores the `*.old` copy
-   and relaunches it. If the relaunch itself fails, the previous version is restored immediately.
-7. Installs in a read-only location (for example `C:\Program Files` without admin rights, `/usr/bin`) cannot swap
-   themselves: the card then links to the release page for a manual download.
+   app and swapped in by renaming: `Cove.exe` / `Cove` / `Cove.app` becomes `*.old`. (Windows cannot overwrite a
+   running exe but can rename it.)
+5. The new copy is started with `--relaunch-after=<pid>` and waits for the old process to exit before taking the
+   single-instance lock; macOS goes through `open -n`.
+6. **Rollback.** The new version must stay up 60 s to be confirmed (then the `*.old` copy is deleted). If it dies
+   on start twice, the third start restores `*.old` and relaunches it. If the relaunch itself fails, the previous
+   version is restored immediately.
+7. Read-only install locations cannot swap themselves; the icon then links to the release page.
 
-Config keys in the desktop `config.json`: `auto_update` (default on) and `update_prerelease` (default on while the
-app is 0.x, off for stable builds).
+Config (`config.json`): `auto_update` (default on), `update_prerelease` (default on while 0.x), `auto_download`
+(default off), `update_manifest_url` (default the domain). The app learns its real version from
+`-ldflags "-X main.buildVersion=<VERSION>"`, falling back to `wails.json`.
 
-The desktop app learns its real version from `-ldflags "-X main.buildVersion=<VERSION>"` (set by the release
-workflow and the `wails/build*` Makefile targets); without it, it falls back to `productVersion` in `wails.json`.
+## Android
 
-## Server
+Sideloaded / GitHub builds only (`BuildConfig.SELF_UPDATE`; a Play-store flavour sets it to `false`).
 
-Admin panel > Overview > **Server update** (admins see the status, only the owner sees the button).
+1. After start-up the app checks the manifest (GitHub fallback) at most once a day, with a client that never sends
+   the Cove session token.
+2. A newer APK shows a **badged "Update available" entry at the top of Settings** and a **one-time dismissible
+   card** in the chat list. It is never a dialog and never blocks anything.
+3. Settings > App updates: notes, **Download** with progress, then **Install update**. The APK is downloaded to
+   `cache/updates/`, its SHA-256 is verified against the manifest (a mismatch deletes it) and checked again right
+   before the installer opens.
+4. Install uses a `FileProvider` URI with `ACTION_VIEW` (`application/vnd.android.package-archive`). It needs
+   `REQUEST_INSTALL_PACKAGES`; if "install unknown apps" is not yet allowed for Cove, the app opens that settings
+   screen first. Android always shows its own confirmation, so there is no silent install.
+5. "Download updates automatically" (off by default) downloads on unmetered Wi-Fi only.
 
-* `GET /api/admin/update` reports current and latest version, release notes, the install `mode` and progress.
-  Release lookups are cached for 10 minutes (GitHub allows 60 unauthenticated calls per hour per IP);
-  `?refresh=1` ("Check now") bypasses the cache and is audited.
-* `POST /api/admin/update` (owner only) returns `202` and runs the job: download, verify `SHA256SUMS`, extract the
-  binary next to the running one, rename-swap (old kept as `<binary>.old`), then restart. Progress is polled from
-  `GET`. Every step is written to the audit log (`server.update.start`, `.installed`, `.failed`).
-* **Restart.** The server shuts down gracefully (WebSocket clients disconnected, database closed, ports freed) and
-  then re-executes itself: `exec` on Linux/macOS (same PID, so systemd or a shell keeps supervising it) and a
-  detached child process on Windows. If the new binary cannot start, the `.old` copy is restored and started.
-* **Docker is never self-updated.** The container is detected (`/.dockerenv`, container markers in
-  `/proc/1/cgroup`, or `COVE_IN_DOCKER=1`); the endpoint answers `mode: "docker"`, refuses `POST` with `409` and
-  the panel shows:
+## Server and the web client
 
-  ```
-  docker compose pull && docker compose up -d
-  ```
+The web client has no installer: it is updated with the server it is served from, so **Admin > Overview > Server
+update** is the single place.
 
-  Containers can also be kept current automatically with [Watchtower](https://containrrr.dev/watchtower/).
-* Installs that cannot be replaced (`go run`, read-only directory, no release build for the platform, e.g.
-  Windows/arm64) report `mode: "unknown"` and must be updated by hand.
+* `GET /api/admin/update` reports current and latest version, notes, the source used (manifest or GitHub), the
+  install `mode` and progress. Lookups are cached for 10 minutes; `?refresh=1` bypasses the cache and is audited.
+* `POST /api/admin/update` (owner) returns `202` and runs the job: download, verify checksum, extract the binary next
+  to the running one, rename-swap (old kept as `<binary>.old`), restart. Audit: `server.update.start`, `.installed`,
+  `.failed`.
+* **Restart.** Graceful shutdown (clients disconnected, database closed, ports freed), then `exec` on Linux/macOS
+  (same PID, so systemd or a shell keeps supervising it) or a detached child on Windows. If the new binary cannot
+  start, `.old` is restored and started.
+* **Docker is never self-updated.** Detected via `/.dockerenv`, container markers in `/proc/1/cgroup` or
+  `COVE_IN_DOCKER=1`; the endpoint answers `mode: "docker"` and refuses `POST`/upload with `409`. Run
+  `docker compose pull && docker compose up -d` (or let Watchtower do it).
+* `go run`, read-only directories and platforms without a release build report `mode: "unknown"`.
+
+### Admin notices
+
+A background checker (every 12 h, first run 2 min after start, stopped during graceful shutdown) messages **only the
+owner and admins** from the Cove account when a new version exists: version, short notes and a link
+`<frontend_origin>/?settings=admin` that opens Settings > Admin. Each version is announced once; the last announced
+version is stored in the database. Setting: `[update] notify_admins` (default on).
+
+### Manual / air-gapped update
+
+For non-Docker installs that cannot reach GitHub or the website:
+
+1. On a computer with internet, download `cove-server-<os>-<arch>.zip` for the server's platform from the release
+   page (and `SHA256SUMS`).
+2. Admin > Overview > Server update > **Manual update**: choose the file, type the **version** (for example
+   `0.10.0`) and paste the checksum (a 64-hex SHA-256 or the whole `SHA256SUMS`). Upload.
+3. `POST /api/admin/update/upload` (owner, multipart) streams the file to a private temp directory (never held in
+   memory, capped at 256 MiB), then checks: the zip holds exactly one entry, the binary for this OS/architecture
+   (or, for a plain binary, the ELF/PE/Mach-O header matches); the checksum matches when given; the version is
+   newer than the running one. Nothing from the file is executed.
+4. Press **Install uploaded version**: same swap, `.old` rollback copy and restart as an online update
+   (`POST /api/admin/update` with `{"source":"upload"}`).
+
+Limits: the version comes from the form (the file carries no verifiable version without running it), so a wrong
+version only mislabels the install; without a checksum the file is trusted as uploaded and the UI says so. Point
+`[update] manifest_url` at an internal mirror and set `github_fallback = false` to make online checks work inside
+an air-gapped network too.
 
 ## Security model
 
-* Downloads use **HTTPS to GitHub** only (plain `http://` is refused except in tests).
-* Every artifact is checked against the release's **`SHA256SUMS`**; a missing file, a missing entry or a different
-  digest aborts before anything is replaced. Downloads and extraction are size-limited, and archives are extracted
-  with zip-slip and symlink-escape protection.
-* The checksum file is served by the same GitHub release as the binary, so it protects against corruption and
-  partial uploads, **not** against someone who can publish to the repository (or break TLS to GitHub).
-  Hardening step for the future: sign a release manifest (for example minisign/ed25519) with an offline key whose
-  public half is compiled into the server and desktop app, and verify it before trusting `SHA256SUMS`. Release
-  provenance attestations (`actions/attest-build-provenance`) are already produced and can be checked by hand.
-* Updates are only ever applied by an explicit user action (desktop button, server owner button).
+* HTTPS only for downloads (plain `http://` is refused except in tests).
+* Every artifact is verified against a **SHA-256** from the manifest or `SHA256SUMS`; a missing or different digest
+  aborts before anything is replaced. Downloads and extraction are size-limited and archives are extracted with
+  zip-slip and symlink-escape protection.
+* The checksums come from the same place as the files (the website, or the GitHub release), so they protect against
+  corruption and partial uploads, **not** against someone who can publish to the repository or the domain. Hardening
+  for later: sign the manifest (for example ed25519/minisign with an offline key whose public half ships inside the
+  apps) and verify it before trusting any checksum. Build provenance attestations are already produced.
+* Updates are only ever applied by an explicit user action.
 
 ## Manual fallbacks
 
-* **Desktop:** download the zip for your platform from the GitHub release, verify it with
-  `sha256sum -c --ignore-missing SHA256SUMS`, and replace the app yourself. To undo an automatic update, rename
-  `Cove.exe.old` (or `Cove.old`, `Cove.app.old`) back to the original name while the app is closed.
-* **Server (binary):** download `cove-server-<os>-<arch>.zip`, verify the checksum, stop the server, replace the
-  binary, start it. To roll back, stop it and rename `<binary>.old` back.
+* **Desktop:** download the zip, verify with `sha256sum -c --ignore-missing SHA256SUMS`, replace the app. To undo
+  an automatic update rename `*.old` back while the app is closed.
+* **Server (binary):** replace the binary and restart; roll back by renaming `<binary>.old`.
 * **Server (Docker):** `docker compose pull && docker compose up -d`.
-* **Disable the desktop checks:** Settings > Notifications > Updates, or `"auto_update": false` in `config.json`.
+* **Android:** install the APK from the GitHub release.
 
 ## Not verified yet
 
-The swap-and-relaunch paths are covered by unit tests with temp directories and injected relaunch hooks, but the
-real process restarts (server `exec` on Linux/macOS and the detached child on Windows, the desktop relaunch on each
-OS including macOS `open -n`, an unsigned `Cove.app` being replaced while Gatekeeper is active) have not been run
-for real on any OS. Treat the first real-world release as a test of the updater itself, and keep the manual
-fallbacks above in mind.
+Unit tests cover the logic with temp directories and injected hooks, but the real process restarts (server `exec` on
+Linux/macOS, the Windows detached child, the desktop relaunch on each OS including macOS `open -n`), replacing an
+unsigned `Cove.app` under Gatekeeper, the Android installer intent on a device, and publishing the manifest from CI
+(the site build was run locally against the real releases) have not been exercised end to end. Treat the first
+release after this ships as a test of the updater itself and keep the manual fallbacks in mind.
