@@ -1017,5 +1017,46 @@
 		"verified": "You are verified",
 		"failed": "The check could not be completed.",
 		"retry": "Try again"
-	}
+	},
+		"desktopUpdate": {
+			"title": "Updates",
+			"auto": "Check for updates automatically",
+			"autoHint": "Cove looks for new versions in the background and downloads them, ready to install when you choose.",
+			"prerelease": "Include pre-releases",
+			"prereleaseHint": "Also offer early builds. Every 0.x version is published as a pre-release.",
+			"version": "Version {{version}}",
+			"checkNow": "Check now",
+			"status": {
+				"unknown": "Update status is not available yet.",
+				"checking": "Checking for updates…",
+				"downloading": "Downloading {{version}}… {{percent}}%",
+				"installing": "Installing the update…",
+				"ready": "Version {{version}} is downloaded and ready to install.",
+				"manual": "Version {{version}} is available, but this install location is read-only. Download it manually.",
+				"upToDate": "Cove is up to date. Last checked {{time}}.",
+				"notChecked": "Not checked yet."
+			},
+			"banner": {
+				"ready": "Update ready: Cove {{version}}",
+				"available": "Cove {{version}} is available",
+				"restart": "Restart",
+				"download": "Download",
+				"later": "Later"
+			},
+			"confirm": {
+				"title": "Restart to update?",
+				"body": "Cove will close and reopen on version {{version}}.",
+				"call": "You are in a call. Restarting will end it.",
+				"draft": "You have unsent messages. They will be lost.",
+				"action": "Restart now"
+			},
+			"errors": {
+				"check_failed": "Could not check for updates. Check your connection and try again.",
+				"download_failed": "The update could not be downloaded.",
+				"checksum": "The downloaded update failed its integrity check, so it was discarded.",
+				"install_failed": "The update could not be installed. Your current version was kept.",
+				"unsupported": "Automatic updates are not available for this platform.",
+				"nothing_staged": "There is no downloaded update to install."
+			}
+		}
 }

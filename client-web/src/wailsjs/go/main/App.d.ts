@@ -3,6 +3,8 @@
 
 export function AppVersion():Promise<string>;
 
+export function CheckForUpdate():Promise<void>;
+
 export function ClearSession():Promise<void>;
 
 export function CloseWindow():Promise<void>;
@@ -20,6 +22,12 @@ export function GetMicrophonePermissionStatus():Promise<number>;
 export function GetServerURL():Promise<string>;
 
 export function GetSession():Promise<string>;
+
+export function GetUpdateSettings():Promise<string>;
+
+export function GetUpdateState():Promise<string>;
+
+export function InstallUpdateAndRestart():Promise<void>;
 
 export function JoinVoiceChannel(arg1:string):Promise<void>;
 
@@ -48,6 +56,8 @@ export function SetAutoLock(arg1:number):Promise<void>;
 export function SetAutostart(arg1:boolean):Promise<void>;
 
 export function SetCloseToTray(arg1:boolean):Promise<void>;
+
+export function SetUpdateSettings(arg1:boolean,arg2:boolean):Promise<void>;
 
 export function SetPasscode(arg1:string,arg2:string):Promise<void>;
 
