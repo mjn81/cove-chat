@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -128,17 +127,31 @@ type TransferOwnerRequest struct {
 //	@Success     200 {object} AdminOverviewResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/admin/overview [get]
 func (h *Handler) AdminOverview(w http.ResponseWriter, r *http.Request) {
-	users, _ := h.Store.ListAllUsers()
+	users, err := h.Store.ListAllUsers()
+	if err != nil {
+		writeInternal(w, "admin overview: users", err, "admin.errors.internal")
+		return
+	}
 	active := 0
 	for _, u := range users {
 		if u.Status != "deleted" {
 			active++
 		}
 	}
-	channels, _ := h.Store.ListAllChannels()
-	invites, _ := h.Store.ListInvites()
+	channels, err := h.Store.ListAllChannels()
+	if err != nil {
+		writeInternal(w, "admin overview: channels", err, "admin.errors.internal")
+		return
+	}
+	invites, err := h.Store.ListInvites()
+	if err != nil {
+		writeInternal(w, "admin overview: invites", err, "admin.errors.internal")
+		return
+	}
 	now := time.Now()
 	liveInvites := 0
 	for _, inv := range invites {
@@ -223,8 +236,7 @@ func (h *Handler) AdminGetConfig(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AdminUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body UpdateConfigRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<16, "admin.errors.invalid_json") {
 		return
 	}
 	changes, err := config.ValidateChanges(body.Changes)
@@ -376,8 +388,7 @@ func (h *Handler) AdminListInvites(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AdminCreateInvite(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body CreateInviteRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<14)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<14, "admin.errors.invalid_json") {
 		return
 	}
 	if body.MaxUses < 0 || body.MaxUses > 1_000_000 {
@@ -410,7 +421,7 @@ func (h *Handler) AdminCreateInvite(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "admin.errors.internal")
 		return
 	}
-	h.audit(actor, "invite.create", inv.Code)
+	h.audit(actor, "invite.create", inviteRef(inv.Code))
 	writeJSON(w, http.StatusCreated, inviteView(inv, time.Now()))
 }
 
@@ -434,7 +445,11 @@ func (h *Handler) AdminRevokeInvite(w http.ResponseWriter, r *http.Request) {
 	code := r.PathValue("code")
 	inv, err := h.Store.GetInvite(code)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "admin.errors.invite_not_found")
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "admin.errors.invite_not_found")
+		} else {
+			writeInternal(w, "admin: load invite", err, "admin.errors.internal")
+		}
 		return
 	}
 	if inv.Source == models.InviteSourceConfig {
@@ -445,7 +460,7 @@ func (h *Handler) AdminRevokeInvite(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "admin.errors.internal")
 		return
 	}
-	h.audit(actor, "invite.revoke", code)
+	h.audit(actor, "invite.revoke", inviteRef(code))
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }
 
@@ -500,11 +515,29 @@ func (h *Handler) AdminListAdmins(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// accountByUsername loads a live (not deleted) account, answering 404 when it does not exist and a logged 500 for a
+// storage failure, so an outage is never reported as "no such user".
+func (h *Handler) accountByUsername(w http.ResponseWriter, username string) (*models.User, bool) {
+	u, err := h.Store.GetUserByUsername(username)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "admin.errors.user_not_found")
+		} else {
+			writeInternal(w, "admin: look up account", err, "admin.errors.internal")
+		}
+		return nil, false
+	}
+	if u.Status == "deleted" {
+		writeError(w, http.StatusNotFound, "admin.errors.user_not_found")
+		return nil, false
+	}
+	return u, true
+}
+
 // findAccount resolves {username} for the admin-management routes.
 func (h *Handler) findAccount(w http.ResponseWriter, r *http.Request) *models.User {
-	u, err := h.Store.GetUserByUsername(r.PathValue("username"))
-	if err != nil || u.Status == "deleted" {
-		writeError(w, http.StatusNotFound, "admin.errors.user_not_found")
+	u, ok := h.accountByUsername(w, r.PathValue("username"))
+	if !ok {
 		return nil
 	}
 	return u
@@ -553,8 +586,7 @@ func (h *Handler) AdminRevokeAdmin(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) setAdminRole(w http.ResponseWriter, r *http.Request, role, action string) {
 	actor := adminActor(r)
 	var body PasswordRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<12, "admin.errors.invalid_json") {
 		return
 	}
 	if !h.confirmPassword(w, actor, body.Password) {
@@ -595,8 +627,7 @@ func (h *Handler) setAdminRole(w http.ResponseWriter, r *http.Request, role, act
 func (h *Handler) AdminTransferOwner(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body TransferOwnerRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<12, "admin.errors.invalid_json") {
 		return
 	}
 	if !h.confirmPassword(w, actor, body.Password) {
@@ -606,9 +637,8 @@ func (h *Handler) AdminTransferOwner(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "admin.errors.confirm_mismatch")
 		return
 	}
-	target, err := h.Store.GetUserByUsername(body.Username)
-	if err != nil || target.Status == "deleted" {
-		writeError(w, http.StatusNotFound, "admin.errors.user_not_found")
+	target, ok := h.accountByUsername(w, body.Username)
+	if !ok {
 		return
 	}
 	if target.ID == actor.ID {

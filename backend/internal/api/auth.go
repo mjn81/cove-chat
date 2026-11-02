@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -31,13 +30,13 @@ import (
 //	@Failure     400 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse "registration closed, invite required, invite not valid or demo server full"
 //	@Failure     409 {object} ErrorResponse
-//	@Failure     429 {object} ErrorResponse "too many sign-ups from this IP (demo mode)"
-//	@Failure     503 {object} ErrorResponse "bot-check service unreachable"
+//	@Failure     429 {object} ErrorResponse "too many requests, or too many sign-ups from this IP (demo mode)"
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/register [post]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var body RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "auth.errors.invalid_json")
+	if !decodeJSON(w, r, &body, "auth.errors.invalid_json") {
 		return
 	}
 	if len(body.Username) < 3 || len(body.Password) < 8 {
@@ -105,7 +104,11 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		if reservedCode != "" {
 			h.Store.ReleaseInviteUse(reservedCode)
 		}
-		writeError(w, http.StatusConflict, "auth.errors.username_taken")
+		if errors.Is(err, store.ErrUsernameTaken) {
+			writeError(w, http.StatusConflict, "auth.errors.username_taken")
+			return
+		}
+		writeInternal(w, "register: create user", err, "auth.errors.session_failed")
 		return
 	}
 
@@ -134,6 +137,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // Login godoc
 //
 //	@Summary     Log in and obtain a session token
+//	@Description Sets the httpOnly `cove_session` and `cove_csrf` cookies for browsers and also returns the token for Bearer clients.
+//	@Description **Access:** Public.
 //	@Tags        auth
 //	@Accept      json
 //	@Produce     json
@@ -141,16 +146,23 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 //	@Success     200 {object} LoginResponse
 //	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/login [post]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var body LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "auth.errors.invalid_json")
+	if !decodeJSON(w, r, &body, "auth.errors.invalid_json") {
 		return
 	}
 	u, err := h.Store.AuthenticateUser(body.Username, body.Password)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "auth.errors.invalid_credentials")
+		if errors.Is(err, store.ErrInvalidCredentials) {
+			writeError(w, http.StatusUnauthorized, "auth.errors.invalid_credentials")
+			return
+		}
+		// A database or hashing failure is not a wrong password: report it as ours.
+		writeInternal(w, "login", err, "auth.errors.session_failed")
 		return
 	}
 	meta := h.sessionMetaFor(r)
@@ -189,10 +201,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Logout godoc
 //
 //	@Summary     Log out and invalidate session
+//	@Description **Access:** Authenticated.
 //	@Tags        auth
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Success     200 {object} StatusResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
 //	@Router      /api/logout [post]
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	token, _, _ := auth.ResolveToken(r)
@@ -203,5 +218,5 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	h.Sessions.Delete(token)
 	auth.ClearSessionCookies(w, !h.IsDev)
 
-	writeJSON(w, http.StatusOK, StatusResponse{Status: "logged out"})
+	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }

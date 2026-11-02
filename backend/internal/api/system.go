@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -145,8 +144,7 @@ type NoticeResponse struct {
 func (h *Handler) AdminSendNotice(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body NoticeRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON body")
+	if !decodeJSON(w, r, &body, "invalid JSON body") {
 		return
 	}
 	text := strings.TrimSpace(body.Text)
@@ -156,7 +154,7 @@ func (h *Handler) AdminSendNotice(w http.ResponseWriter, r *http.Request) {
 	}
 	users, err := h.Store.ListAllUsers()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list users")
+		writeInternal(w, "notice: list users", err, "failed to list users")
 		return
 	}
 

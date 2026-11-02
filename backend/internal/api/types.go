@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"cove/backend/internal/models"
 )
 
 // ── Request / Response types (used in Swagger annotations) ──────────────────
@@ -95,7 +97,6 @@ type ExploreChannelResponse struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
 	AvatarID    string    `json:"avatar_id"`
-	InviteLink  string    `json:"invite_link"`
 	MemberCount int       `json:"member_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -181,13 +182,40 @@ type AddMembersResponse struct {
 	Skipped []SkippedMember `json:"skipped"`
 }
 
+// UpdateMemberRequest changes a channel member's role.
+type UpdateMemberRequest struct {
+	// Role is 0 (member) or 10 (admin). Ownership cannot be granted through this endpoint.
+	Role int `json:"role" example:"10" enums:"0,10"`
+}
+
+// PresenceResponse is a user's live presence.
+type PresenceResponse struct {
+	LastSeen      time.Time `json:"last_seen"`
+	CurrentStatus string    `json:"current_status" example:"online" enums:"online,away,dnd,offline"`
+}
+
+// UploadFileResponse describes a stored upload. It mirrors the stored file record minus the server-side storage
+// path, which is never sent to clients.
 type UploadFileResponse struct {
-	FileID           string  `json:"file_id"`
-	Size             int64   `json:"size"`
-	Mime             string  `json:"mime"`
-	ProcessingStatus string  `json:"processing_status,omitempty"`
-	DurationSec      float64 `json:"duration_sec,omitempty"`
-	Uploaded         string  `json:"uploaded"`
+	ID               string    `json:"id"`
+	OwnerID          string    `json:"owner_id"`
+	ChannelID        string    `json:"channel_id"`
+	Size             int64     `json:"size"`
+	Mime             string    `json:"mime" example:"application/octet-stream"`
+	ThumbCipher      []byte    `json:"thumb_ciphertext,omitempty"`
+	ThumbNonce       []byte    `json:"thumb_nonce,omitempty"`
+	ProcessingStatus string    `json:"processing_status,omitempty" enums:"ready,processing,failed"`
+	DurationSec      float64   `json:"duration_sec,omitempty"`
+	UploadedAt       time.Time `json:"uploaded_at"`
+}
+
+// newUploadFileResponse copies the client-visible fields of a stored file.
+func newUploadFileResponse(f *models.File) UploadFileResponse {
+	return UploadFileResponse{
+		ID: f.ID, OwnerID: f.OwnerID, ChannelID: f.ChannelID, Size: f.SizeBytes, Mime: f.MIMEType,
+		ThumbCipher: f.ThumbCipher, ThumbNonce: f.ThumbNonce, ProcessingStatus: f.ProcessingStatus,
+		DurationSec: f.DurationSec, UploadedAt: f.UploadedAt,
+	}
 }
 
 // Relationship types

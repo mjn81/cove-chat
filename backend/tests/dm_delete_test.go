@@ -138,9 +138,9 @@ func TestDeleteDM_Unauthorized(t *testing.T) {
 	var dm models.Channel
 	decodeJSON(t, chResp, &dm)
 
-	// Outsider User E attempts to delete DM -> 403 Forbidden (protectMember middleware)
+	// Outsider User E attempts to delete DM -> 404, same as a missing channel (no existence oracle)
 	delResp := mustDo(t, newJSONReq(t, http.MethodDelete, srv.URL+"/api/channels/"+dm.ID, tokenE, nil))
-	if delResp.StatusCode != http.StatusForbidden {
-		t.Fatalf("expected status 403 Forbidden for outsider, got %d", delResp.StatusCode)
+	if delResp.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404 for outsider, got %d", delResp.StatusCode)
 	}
 }

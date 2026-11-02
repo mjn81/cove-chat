@@ -461,11 +461,11 @@ func TestExploreAndJoinChannel(t *testing.T) {
 		t.Errorf("expected Global Tech, got %v", explored[0]["name"])
 	}
 
-	// Bob joins using invite_link
-	link := explored[0]["invite_link"].(string)
-	if link == "" {
-		t.Fatalf("Invite link is empty")
+	// Explore carries no invite link; Bob joins the public channel with its id.
+	if _, leaked := explored[0]["invite_link"]; leaked {
+		t.Fatalf("explore must not expose invite_link")
 	}
+	link := explored[0]["id"].(string)
 
 	joinResp := mustDo(t, newJSONReq(t, http.MethodPost, srv.URL+"/api/join/"+link, tokenB, nil))
 	if joinResp.StatusCode != http.StatusOK {

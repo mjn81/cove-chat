@@ -36,8 +36,16 @@ func (u *updateEnv) upload(t *testing.T, token string, fields map[string]string,
 	t.Helper()
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
+	// The password goes first: the server checks it before it reads the (large) file part. A test can override it.
+	pw, ok := fields["password"]
+	if !ok {
+		pw = testPassword
+	}
+	_ = mw.WriteField("password", pw)
 	for k, v := range fields {
-		_ = mw.WriteField(k, v)
+		if k != "password" {
+			_ = mw.WriteField(k, v)
+		}
 	}
 	if file != nil {
 		fw, _ := mw.CreateFormFile("file", filename)
@@ -93,7 +101,7 @@ func TestUploadThenApplyHappyPath(t *testing.T) {
 		t.Fatal("uploading alone must not change the binary")
 	}
 
-	apply := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload"})
+	apply := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload", "password": testPassword})
 	if apply.StatusCode != http.StatusAccepted {
 		t.Fatalf("apply = %d (%s)", apply.StatusCode, errorCode(t, apply))
 	}
@@ -125,7 +133,7 @@ func TestUploadPlainBinaryWithSumsFile(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("upload = %d (%s)", resp.StatusCode, errorCode(t, resp))
 	}
-	if r := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload"}); r.StatusCode != http.StatusAccepted {
+	if r := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload", "password": testPassword}); r.StatusCode != http.StatusAccepted {
 		t.Fatalf("apply = %d", r.StatusCode)
 	}
 	u.waitState(t, api.UpdateStateRestarting)
@@ -180,7 +188,7 @@ func TestUploadRejections(t *testing.T) {
 	if in := u.info(t, u.owner, ""); in.Uploaded != nil {
 		t.Error("a rejected upload was staged")
 	}
-	if r := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload"}); r.StatusCode != http.StatusConflict || errorCode(t, r) != "admin.errors.update_no_upload" {
+	if r := u.do(t, "POST", "/api/admin/update", u.owner, map[string]string{"source": "upload", "password": testPassword}); r.StatusCode != http.StatusConflict || errorCode(t, r) != "admin.errors.update_no_upload" {
 		t.Errorf("apply without upload = %d", r.StatusCode)
 	}
 }

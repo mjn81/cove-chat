@@ -149,7 +149,7 @@ func TestUpdateDockerModeNeverSelfReplaces(t *testing.T) {
 	if in.Mode != "docker" || in.CanUpdate || in.Reason != "docker" || in.Instructions != "docker compose pull && docker compose up -d" {
 		t.Fatalf("docker info = %+v", in)
 	}
-	resp := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+	resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 	if resp.StatusCode != http.StatusConflict || errorCode(t, resp) != "admin.errors.update_docker" {
 		t.Fatalf("docker POST = %d, want 409 admin.errors.update_docker", resp.StatusCode)
 	}
@@ -168,7 +168,7 @@ func TestUpdateUnknownModeIsRefused(t *testing.T) {
 	if in := u.info(t, u.owner, ""); in.CanUpdate || in.Reason != "unsupported" {
 		t.Errorf("info = %+v", in)
 	}
-	resp := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+	resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 	if resp.StatusCode != http.StatusConflict || errorCode(t, resp) != "admin.errors.update_unsupported" {
 		t.Errorf("POST = %d", resp.StatusCode)
 	}
@@ -198,7 +198,7 @@ func TestUpdateRequiresOwnerAndAuth(t *testing.T) {
 
 func TestUpdateHappyPathSwapsBinaryAndRestarts(t *testing.T) {
 	u := newUpdateEnv(t, update.ModeBinary, nil)
-	resp := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+	resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 	if resp.StatusCode != http.StatusAccepted {
 		t.Fatalf("POST = %d, want 202", resp.StatusCode)
 	}
@@ -232,7 +232,7 @@ func TestUpdateHappyPathSwapsBinaryAndRestarts(t *testing.T) {
 	}
 
 	// A second click while restarting is refused rather than starting another job.
-	again := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+	again := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 	if again.StatusCode != http.StatusConflict {
 		t.Errorf("POST while restarting = %d, want 409", again.StatusCode)
 	}
@@ -241,7 +241,7 @@ func TestUpdateHappyPathSwapsBinaryAndRestarts(t *testing.T) {
 func TestUpdateChecksumMismatchAbortsBeforeReplacing(t *testing.T) {
 	bad := []byte(strings.Repeat("0", 64) + "  cove-server-linux-amd64.zip\n")
 	u := newUpdateEnv(t, update.ModeBinary, bad)
-	if resp := u.do(t, "POST", "/api/admin/update", u.owner, nil); resp.StatusCode != http.StatusAccepted {
+	if resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW); resp.StatusCode != http.StatusAccepted {
 		t.Fatalf("POST = %d, want 202", resp.StatusCode)
 	}
 	in := u.waitState(t, api.UpdateStateFailed)
@@ -270,7 +270,7 @@ func TestUpdateMissingSumsAbortsToo(t *testing.T) {
 	if in := u.info(t, u.owner, ""); in.UpdateAvailable {
 		t.Errorf("a release without SHA256SUMS was offered: %+v", in)
 	}
-	resp := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+	resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 	if resp.StatusCode != http.StatusConflict {
 		t.Errorf("POST = %d, want 409", resp.StatusCode)
 	}
@@ -283,7 +283,7 @@ func TestUpdateRefusesDowngradeAndSameVersion(t *testing.T) {
 	u := newUpdateEnv(t, update.ModeBinary, nil)
 	for _, cur := range []string{"1.0.0", "2.0.0"} {
 		u.updater.Current = cur
-		resp := u.do(t, "POST", "/api/admin/update", u.owner, nil)
+		resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW)
 		if resp.StatusCode != http.StatusConflict || errorCode(t, resp) != "admin.errors.update_up_to_date" {
 			t.Errorf("current %s: POST = %d, want 409 up_to_date", cur, resp.StatusCode)
 		}
@@ -299,7 +299,7 @@ func TestUpdateWrongArchitectureAssetIsSkipped(t *testing.T) {
 	if in := u.info(t, u.owner, ""); in.UpdateAvailable || in.CanUpdate {
 		t.Errorf("offered a release with no arm64 build: %+v", in)
 	}
-	if resp := u.do(t, "POST", "/api/admin/update", u.owner, nil); resp.StatusCode != http.StatusConflict {
+	if resp := u.do(t, "POST", "/api/admin/update", u.owner, ownerPW); resp.StatusCode != http.StatusConflict {
 		t.Errorf("POST = %d, want 409", resp.StatusCode)
 	}
 }
@@ -328,3 +328,6 @@ func TestUpdateWithoutUpdaterConfigured(t *testing.T) {
 		t.Errorf("POST = %d, want 501", got.StatusCode)
 	}
 }
+
+// ownerPW is the step-up body for POST /api/admin/update (the owner re-enters their password).
+var ownerPW = map[string]any{"password": testPassword}

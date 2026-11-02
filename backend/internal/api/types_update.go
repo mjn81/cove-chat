@@ -59,6 +59,8 @@ type UpdateUploadInfo struct {
 type UpdateStartRequest struct {
 	// Source is "release" (default: download the latest) or "upload" (install the staged manual upload).
 	Source string `json:"source,omitempty" example:"upload" enums:"release,upload"`
+	// Password is the owner's current password (step-up for replacing the server binary).
+	Password string `json:"password"`
 }
 
 // UpdateUploadResponse confirms a staged manual update.

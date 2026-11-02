@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/logger"
 	"cove/update"
 )
@@ -334,6 +335,18 @@ func truncate(s string, max int) string {
 	return s[:cut]
 }
 
+// writeUpdateError answers an update refusal. "This install cannot be updated this way" (no updater, Docker, unknown
+// install) carries the registry's feature_unsupported code so clients can branch on it; everything else keeps the
+// code derived from its status.
+func writeUpdateError(w http.ResponseWriter, status int, key string) {
+	switch key {
+	case "admin.errors.update_unsupported", "admin.errors.update_docker":
+		writeErrorCode(w, status, apistd.CodeFeatureUnsupported, key)
+	default:
+		writeError(w, status, key)
+	}
+}
+
 // ---- Handlers --------------------------------------------------------------- //
 
 // AdminGetUpdate godoc
@@ -369,31 +382,44 @@ func (h *Handler) AdminGetUpdate(w http.ResponseWriter, r *http.Request) {
 //
 //	@Summary     Update the server
 //	@Description Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as `.old`) and restarts the process. Returns 202 immediately; poll `GET /api/admin/update` for progress. Refused with 409 in docker mode (use `docker compose pull && docker compose up -d`), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.
-//	@Description **Access:** Server Owner.
+//	@Description **Access:** Server Owner, with their password.
 //	@Tags        admin
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       body body UpdateStartRequest false "Optional. source=upload installs the release uploaded with POST /api/admin/update/upload instead of downloading"
+//	@Param       body body UpdateStartRequest true "Owner password, and optionally source=upload to install the release uploaded with POST /api/admin/update/upload instead of downloading"
 //	@Success     202 {object} UpdateStartResponse
 //	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
 //	@Failure     409 {object} ErrorResponse
 //	@Failure     501 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
 //	@Failure     502 {object} ErrorResponse
 //	@Router      /api/admin/update [post]
 func (h *Handler) AdminStartUpdate(w http.ResponseWriter, r *http.Request) {
 	if h.Updater == nil {
-		writeError(w, http.StatusNotImplemented, "admin.errors.update_unsupported")
+		writeUpdateError(w, http.StatusNotImplemented, "admin.errors.update_unsupported")
 		return
 	}
 	actor := adminActor(r)
 	ctx, cancel := context.WithTimeout(r.Context(), updateCheckTimeout)
 	defer cancel()
 	var body UpdateStartRequest
-	// The body is optional: an empty one (or none) means "download the latest release".
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<10)).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+	// An empty body is not a malformed one: it simply carries no password, which the step-up below refuses with 403
+	// like any other wrong password. A body over 1 KiB is refused (413), never silently cut short.
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			writeError(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+		return
+	}
+	// Replacing the server binary is as dangerous as a backup restore or an ownership transfer, so it needs the
+	// owner's password too: a stolen session token alone must not be able to swap in arbitrary code.
+	if !h.confirmPassword(w, actor, body.Password) {
 		return
 	}
 	if body.Source != "" && body.Source != "release" && body.Source != "upload" {
@@ -402,7 +428,7 @@ func (h *Handler) AdminStartUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	version, code, key := h.Updater.start(ctx, body.Source == "upload", func(action, target string) { h.audit(actor, action, target) })
 	if key != "" {
-		writeError(w, code, key)
+		writeUpdateError(w, code, key)
 		return
 	}
 	writeJSON(w, code, UpdateStartResponse{Status: "success", Version: version, State: UpdateStateDownloading})

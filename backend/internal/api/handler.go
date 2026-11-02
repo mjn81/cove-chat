@@ -132,8 +132,10 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/register", authLimiter.Limit(http.HandlerFunc(h.Register)))
 	mux.Handle("POST /api/login", authLimiter.Limit(http.HandlerFunc(h.Login)))
 	// Deliberately not behind authLimiter: a challenge is cheap to issue and worthless without a sign-up, which
-	// has its own limit. The strict sign-in limit would turn a retry, or a shared address, into a failed check.
-	mux.Handle("GET /api/captcha/challenge", http.HandlerFunc(h.GetCaptchaChallenge))
+	// has its own limit, and the strict sign-in limit would turn a retry or a shared address into a failed check.
+	// It still gets the general per-IP limit so the endpoint (which signs a fresh challenge per call) cannot be
+	// used to burn CPU or fill the one-use cache.
+	mux.Handle("GET /api/captcha/challenge", globalLimiter.Limit(http.HandlerFunc(h.GetCaptchaChallenge)))
 
 	// Protected
 	mux.Handle("POST /api/logout", protect(h.Logout))

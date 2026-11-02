@@ -93,8 +93,11 @@ type uploadForm struct {
 // readUploadForm streams the multipart body to disk. The file part is never held in memory: it goes through a
 // size-capped copy into a private temp directory while being hashed. Text parts are bounded to 64 KiB.
 //
+// The owner's password must be the first part that matters: it is verified through checkPassword before the file
+// part is read, so a wrong password costs the server nothing. A file that arrives before a verified password is refused.
+//
 // Returns an HTTP status and error key on failure (413 for oversize).
-func (u *Updater) readUploadForm(mr *multipart.Reader) (*uploadForm, int, string) {
+func (u *Updater) readUploadForm(mr *multipart.Reader, checkPassword func(password string) (int, string)) (*uploadForm, int, string) {
 	f := &uploadForm{}
 	dir, err := os.MkdirTemp("", "cove-upload-")
 	if err != nil {
@@ -105,6 +108,7 @@ func (u *Updater) readUploadForm(mr *multipart.Reader) (*uploadForm, int, string
 		_ = os.RemoveAll(dir)
 		return nil, code, key
 	}
+	verified := false
 	for {
 		part, err := mr.NextPart()
 		if errors.Is(err, io.EOF) {
@@ -118,7 +122,24 @@ func (u *Updater) readUploadForm(mr *multipart.Reader) (*uploadForm, int, string
 			return fail(http.StatusBadRequest, "admin.errors.invalid_upload")
 		}
 		switch part.FormName() {
+		case "password":
+			b, rerr := io.ReadAll(io.LimitReader(part, 4096))
+			if rerr != nil {
+				return fail(http.StatusBadRequest, "admin.errors.invalid_upload")
+			}
+			if code, key := checkPassword(string(b)); code != 0 {
+				return fail(code, key)
+			}
+			verified = true
 		case "file":
+			if !verified {
+				// No (or a late) password: refuse without reading the file. Asking with "" also counts the attempt.
+				code, key := checkPassword("")
+				if code == 0 {
+					code, key = http.StatusForbidden, "admin.errors.password_invalid"
+				}
+				return fail(code, key)
+			}
 			if f.path != "" {
 				return fail(http.StatusBadRequest, "admin.errors.invalid_upload")
 			}
@@ -160,6 +181,13 @@ func (u *Updater) readUploadForm(mr *multipart.Reader) (*uploadForm, int, string
 		default:
 			_, _ = io.Copy(io.Discard, io.LimitReader(part, maxUploadFieldBytes))
 		}
+	}
+	if !verified {
+		code, key := checkPassword("")
+		if code == 0 {
+			code, key = http.StatusForbidden, "admin.errors.password_invalid"
+		}
+		return fail(code, key)
 	}
 	if f.path == "" {
 		return fail(http.StatusBadRequest, "admin.errors.invalid_upload")
@@ -308,13 +336,14 @@ func copyExecutable(src, dst string) error {
 //
 //	@Summary     Upload a server release manually
 //	@Description For non-Docker installs without internet access (air-gapped): upload the `cove-server-<os>-<arch>.zip` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with `POST /api/admin/update` and `{"source":"upload"}`. Docker installs are refused: pull the new image instead.
-//	@Description **Access:** Server Owner.
+//	@Description **Access:** Server Owner, with their password (sent before the file).
 //	@Tags        admin
 //	@Accept      multipart/form-data
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       file    formData file   true  "Release zip or plain server binary"
+//	@Param       password formData string true  "Owner password (must precede file)"
 //	@Param       version formData string true  "Version of the uploaded release, e.g. 0.10.0"
+//	@Param       file    formData file   true  "Release zip or plain server binary"
 //	@Param       sha256  formData string false "Expected SHA-256 of the uploaded file (hex)"
 //	@Param       sums    formData string false "Contents of the release's SHA256SUMS file"
 //	@Success     200 {object} UpdateUploadResponse
@@ -324,20 +353,21 @@ func copyExecutable(src, dst string) error {
 //	@Failure     409 {object} ErrorResponse
 //	@Failure     413 {object} ErrorResponse
 //	@Failure     501 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
 //	@Router      /api/admin/update/upload [post]
 func (h *Handler) AdminUploadUpdate(w http.ResponseWriter, r *http.Request) {
 	u := h.Updater
 	if u == nil {
-		writeError(w, http.StatusNotImplemented, "admin.errors.update_unsupported")
+		writeUpdateError(w, http.StatusNotImplemented, "admin.errors.update_unsupported")
 		return
 	}
 	switch u.Mode {
 	case update.ModeDocker:
-		writeError(w, http.StatusConflict, "admin.errors.update_docker")
+		writeUpdateError(w, http.StatusConflict, "admin.errors.update_docker")
 		return
 	case update.ModeBinary:
 	default:
-		writeError(w, http.StatusConflict, "admin.errors.update_unsupported")
+		writeUpdateError(w, http.StatusConflict, "admin.errors.update_unsupported")
 		return
 	}
 	u.mu.Lock()
@@ -354,7 +384,7 @@ func (h *Handler) AdminUploadUpdate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "admin.errors.invalid_upload")
 		return
 	}
-	form, code, key := u.readUploadForm(mr)
+	form, code, key := u.readUploadForm(mr, func(pw string) (int, string) { return h.checkStepUp(adminActor(r), pw) })
 	if key != "" {
 		writeError(w, code, key)
 		return
