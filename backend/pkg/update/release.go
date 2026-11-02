@@ -50,6 +50,11 @@ type Release struct {
 	Prerelease  bool      `json:"prerelease"`
 	PublishedAt time.Time `json:"published_at"`
 	Assets      []Asset   `json:"assets"`
+
+	// MinVersion and Sums are only set for releases that came from a manifest: the lowest version allowed to
+	// upgrade directly, and the checksums (asset name -> hex) that replace a SHA256SUMS download.
+	MinVersion string            `json:"-"`
+	Sums       map[string]string `json:"-"`
 }
 
 // Version parses the release tag.
@@ -78,6 +83,10 @@ type Client struct {
 	UserAgent string
 	// AllowInsecure permits http:// URLs. It exists for tests only: production downloads must be HTTPS.
 	AllowInsecure bool
+	// ManifestURL is the preferred update source (see DefaultManifestURL). Empty means GitHub only.
+	ManifestURL string
+	// NoGitHubFallback keeps a failing manifest from falling back to GitHub: for mirrors and air-gapped installs.
+	NoGitHubFallback bool
 }
 
 func (c *Client) httpClient() *http.Client {
@@ -219,6 +228,9 @@ func pick(releases []Release, above *Version, includePre bool, require []string)
 
 func hasAssets(r Release, names []string) bool {
 	for _, n := range names {
+		if n == ChecksumsAsset && r.Sums != nil {
+			continue // manifest releases carry their checksums inline
+		}
 		if _, ok := r.Asset(n); !ok {
 			return false
 		}

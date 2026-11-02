@@ -658,6 +658,21 @@ func (d *DB) DropAll() error { return d.bdb.DropAll() }
 //  Known devices (login notice throttling)
 // ============================================================
 
+// GetUpdateNotified returns the newest release version admins were already told about, or "" if none.
+func (d *DB) GetUpdateNotified() (string, error) {
+	var v string
+	if err := d.get(keyUpdateNotified, &v); err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return "", nil
+		}
+		return "", err
+	}
+	return v, nil
+}
+
+// SetUpdateNotified records the release version admins were told about.
+func (d *DB) SetUpdateNotified(version string) error { return d.set(keyUpdateNotified, version) }
+
 // GetKnownDevices returns the device fingerprints a user has signed in from, oldest first.
 func (d *DB) GetKnownDevices(userID string) ([]string, error) {
 	var out []string

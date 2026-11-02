@@ -35,10 +35,36 @@ type UpdateInfoResponse struct {
 	Instructions string `json:"instructions,omitempty" example:"docker compose pull && docker compose up -d"`
 
 	// State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.
-	State           string `json:"state" example:"idle" enums:"idle,downloading,installing,restarting,failed"`
-	ProgressPercent int    `json:"progress_percent" example:"42"`
+	// Source is where the release list came from: "manifest" (covechat.dev or a configured mirror) or "github".
+	Source string `json:"source,omitempty" example:"manifest"`
+	// Uploaded describes a manually uploaded release waiting to be applied (air-gapped installs).
+	Uploaded        *UpdateUploadInfo `json:"uploaded,omitempty"`
+	State           string            `json:"state" example:"idle" enums:"idle,downloading,installing,restarting,failed"`
+	ProgressPercent int               `json:"progress_percent" example:"42"`
 	// Error is an i18n key describing why the last update attempt failed.
 	Error string `json:"error,omitempty" example:"admin.errors.update_checksum_failed"`
+}
+
+// UpdateUploadInfo describes a manually uploaded release that is staged on the server.
+type UpdateUploadInfo struct {
+	Version string `json:"version" example:"0.10.0"`
+	// Verified is true when a checksum was supplied and matched; false means the owner chose to trust the file.
+	Verified  bool   `json:"verified"`
+	SHA256    string `json:"sha256" example:"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"`
+	Kind      string `json:"kind" example:"zip" enums:"zip,binary"`
+	SizeBytes int64  `json:"size_bytes" example:"31457280"`
+}
+
+// UpdateStartRequest optionally selects what POST /api/admin/update installs.
+type UpdateStartRequest struct {
+	// Source is "release" (default: download the latest) or "upload" (install the staged manual upload).
+	Source string `json:"source,omitempty" example:"upload" enums:"release,upload"`
+}
+
+// UpdateUploadResponse confirms a staged manual update.
+type UpdateUploadResponse struct {
+	Status string           `json:"status" example:"success"`
+	Upload UpdateUploadInfo `json:"upload"`
 }
 
 // UpdateStartResponse acknowledges that an update job was accepted; poll GET /api/admin/update for progress.

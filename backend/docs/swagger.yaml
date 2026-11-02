@@ -705,9 +705,13 @@ definitions:
         type: string
       release_url:
         type: string
+      source:
+        description: |-
+          State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.
+          Source is where the release list came from: "manifest" (covechat.dev or a configured mirror) or "github".
+        example: manifest
+        type: string
       state:
-        description: 'State is the progress of an update started with POST: idle,
-          downloading, installing, restarting or failed.'
         enum:
         - idle
         - downloading
@@ -719,6 +723,22 @@ definitions:
       update_available:
         example: true
         type: boolean
+      uploaded:
+        allOf:
+        - $ref: '#/definitions/internal_api.UpdateUploadInfo'
+        description: Uploaded describes a manually uploaded release waiting to be
+          applied (air-gapped installs).
+    type: object
+  internal_api.UpdateStartRequest:
+    properties:
+      source:
+        description: 'Source is "release" (default: download the latest) or "upload"
+          (install the staged manual upload).'
+        enum:
+        - release
+        - upload
+        example: upload
+        type: string
     type: object
   internal_api.UpdateStartResponse:
     properties:
@@ -732,6 +752,36 @@ definitions:
         description: the release being installed
         example: 0.10.0
         type: string
+    type: object
+  internal_api.UpdateUploadInfo:
+    properties:
+      kind:
+        enum:
+        - zip
+        - binary
+        example: zip
+        type: string
+      sha256:
+        example: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+        type: string
+      size_bytes:
+        example: 31457280
+        type: integer
+      verified:
+        description: Verified is true when a checksum was supplied and matched; false
+          means the owner chose to trust the file.
+        type: boolean
+      version:
+        example: 0.10.0
+        type: string
+    type: object
+  internal_api.UpdateUploadResponse:
+    properties:
+      status:
+        example: success
+        type: string
+      upload:
+        $ref: '#/definitions/internal_api.UpdateUploadInfo'
     type: object
   internal_api.UpdateUserRequest:
     properties:
@@ -1469,6 +1519,13 @@ paths:
       description: |-
         Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as `.old`) and restarts the process. Returns 202 immediately; poll `GET /api/admin/update` for progress. Refused with 409 in docker mode (use `docker compose pull && docker compose up -d`), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.
         **Access:** Server Owner.
+      parameters:
+      - description: Optional. source=upload installs the release uploaded with POST
+          /api/admin/update/upload instead of downloading
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/internal_api.UpdateStartRequest'
       produces:
       - application/json
       responses:
@@ -1476,6 +1533,10 @@ paths:
           description: Accepted
           schema:
             $ref: '#/definitions/internal_api.UpdateStartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1499,6 +1560,68 @@ paths:
       security:
       - BearerAuth: []
       summary: Update the server
+      tags:
+      - admin
+  /api/admin/update/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        For non-Docker installs without internet access (air-gapped): upload the `cove-server-<os>-<arch>.zip` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with `POST /api/admin/update` and `{"source":"upload"}`. Docker installs are refused: pull the new image instead.
+        **Access:** Server Owner.
+      parameters:
+      - description: Release zip or plain server binary
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Version of the uploaded release, e.g. 0.10.0
+        in: formData
+        name: version
+        required: true
+        type: string
+      - description: Expected SHA-256 of the uploaded file (hex)
+        in: formData
+        name: sha256
+        type: string
+      - description: Contents of the release's SHA256SUMS file
+        in: formData
+        name: sums
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload a server release manually
       tags:
       - admin
   /api/captcha/challenge:

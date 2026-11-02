@@ -24,6 +24,7 @@ type Config struct {
 	Demo         DemoConfig         `toml:"demo"`
 	Captcha      CaptchaConfig      `toml:"captcha"`
 	Sessions     SessionsConfig     `toml:"sessions"`
+	Update       UpdateConfig       `toml:"update"`
 }
 
 // Registration modes.
@@ -168,6 +169,7 @@ func defaults() *Config {
 	return &Config{
 		Captcha: CaptchaConfig{Difficulty: "medium"},
 		Sessions: SessionsConfig{LoginNotifications: true},
+		Update:   UpdateConfig{ManifestURL: "https://covechat.dev/releases/manifest.json", GitHubFallback: true, NotifyAdmins: true},
 		Server: ServerConfig{
 			Domain:              "localhost",
 			HTTPPort:            4000,
@@ -337,6 +339,18 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+// UpdateConfig controls where the server looks for new releases and whether admins are told about them.
+type UpdateConfig struct {
+	// ManifestURL is the release manifest (see docs/auto-update.md). Point it at a mirror for air-gapped installs;
+	// empty means GitHub only.
+	ManifestURL string `toml:"manifest_url"`
+	// GitHubFallback lets the check fall back to the GitHub releases API when the manifest cannot be reached.
+	// Turn it off on networks that cannot reach GitHub.
+	GitHubFallback bool `toml:"github_fallback"`
+	// NotifyAdmins sends the owner and admins one message from the Cove account per new version.
+	NotifyAdmins bool `toml:"notify_admins"`
 }
 
 // SessionsConfig controls the active-devices list and the login notices sent from the Cove system account.

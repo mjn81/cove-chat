@@ -1011,11 +1011,27 @@ const docTemplate = `{
                     "admin"
                 ],
                 "summary": "Update the server",
+                "parameters": [
+                    {
+                        "description": "Optional. source=upload installs the release uploaded with POST /api/admin/update/upload instead of downloading",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateStartRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "202": {
                         "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/internal_api.UpdateStartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1044,6 +1060,98 @@ const docTemplate = `{
                     },
                     "502": {
                         "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/update/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "For non-Docker installs without internet access (air-gapped): upload the ` + "`" + `cove-server-\u003cos\u003e-\u003carch\u003e.zip` + "`" + ` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with ` + "`" + `POST /api/admin/update` + "`" + ` and ` + "`" + `{\"source\":\"upload\"}` + "`" + `. Docker installs are refused: pull the new image instead.\n**Access:** Server Owner.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Upload a server release manually",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Release zip or plain server binary",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version of the uploaded release, e.g. 0.10.0",
+                        "name": "version",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expected SHA-256 of the uploaded file (hex)",
+                        "name": "sha256",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Contents of the release's SHA256SUMS file",
+                        "name": "sums",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdateUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -3130,8 +3238,12 @@ const docTemplate = `{
                 "release_url": {
                     "type": "string"
                 },
+                "source": {
+                    "description": "State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.\nSource is where the release list came from: \"manifest\" (covechat.dev or a configured mirror) or \"github\".",
+                    "type": "string",
+                    "example": "manifest"
+                },
                 "state": {
-                    "description": "State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.",
                     "type": "string",
                     "enum": [
                         "idle",
@@ -3145,6 +3257,28 @@ const docTemplate = `{
                 "update_available": {
                     "type": "boolean",
                     "example": true
+                },
+                "uploaded": {
+                    "description": "Uploaded describes a manually uploaded release waiting to be applied (air-gapped installs).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/internal_api.UpdateUploadInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "internal_api.UpdateStartRequest": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "description": "Source is \"release\" (default: download the latest) or \"upload\" (install the staged manual upload).",
+                    "type": "string",
+                    "enum": [
+                        "release",
+                        "upload"
+                    ],
+                    "example": "upload"
                 }
             }
         },
@@ -3163,6 +3297,47 @@ const docTemplate = `{
                     "description": "the release being installed",
                     "type": "string",
                     "example": "0.10.0"
+                }
+            }
+        },
+        "internal_api.UpdateUploadInfo": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "zip",
+                        "binary"
+                    ],
+                    "example": "zip"
+                },
+                "sha256": {
+                    "type": "string",
+                    "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+                },
+                "size_bytes": {
+                    "type": "integer",
+                    "example": 31457280
+                },
+                "verified": {
+                    "description": "Verified is true when a checksum was supplied and matched; false means the owner chose to trust the file.",
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "0.10.0"
+                }
+            }
+        },
+        "internal_api.UpdateUploadResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "upload": {
+                    "$ref": "#/definitions/internal_api.UpdateUploadInfo"
                 }
             }
         },

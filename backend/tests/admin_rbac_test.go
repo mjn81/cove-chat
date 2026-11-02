@@ -34,6 +34,7 @@ func adminRoutes() []adminRoute {
 		{"GET", "/api/admin/audit", nil, levelAdmin},
 		{"GET", "/api/admin/update", nil, levelAdmin},
 		{"POST", "/api/admin/update", nil, levelOwner},
+		{"POST", "/api/admin/update/upload", nil, levelOwner},
 		{"GET", "/api/admin/admins", nil, levelAdmin},
 		{"PUT", "/api/admin/admins/nobody-here", pw, levelOwner},
 		{"DELETE", "/api/admin/admins/nobody-here", pw, levelOwner},

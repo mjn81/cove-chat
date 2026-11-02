@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,8 +45,10 @@ type Updater struct {
 
 	mu        sync.Mutex
 	releases  []update.Release
+	source    update.SourceName
 	fetchedAt time.Time
 	job       updateJob
+	uploaded  *stagedUpload
 }
 
 type updateJob struct {
@@ -61,7 +65,7 @@ func NewUpdater(current string, restart func()) *Updater {
 		exe = resolved
 	}
 	return &Updater{
-		Client:       &update.Client{UserAgent: "cove-server/" + current},
+		Client:       &update.Client{UserAgent: "cove-server/" + current, ManifestURL: update.DefaultManifestURL},
 		Current:      current,
 		ExePath:      exe,
 		GOOS:         runtime.GOOS,
@@ -95,7 +99,7 @@ func (u *Updater) listReleases(ctx context.Context, force bool) ([]update.Releas
 	}
 	u.mu.Unlock()
 
-	rels, err := u.Client.ListReleases(ctx)
+	rels, source, err := u.Client.LoadReleases(ctx)
 	if err != nil {
 		u.mu.Lock()
 		stale, at := u.releases, u.fetchedAt
@@ -103,7 +107,7 @@ func (u *Updater) listReleases(ctx context.Context, force bool) ([]update.Releas
 		return stale, at, err
 	}
 	u.mu.Lock()
-	u.releases, u.fetchedAt = rels, time.Now()
+	u.releases, u.fetchedAt, u.source = rels, time.Now(), source
 	at := u.fetchedAt
 	u.mu.Unlock()
 	return rels, at, nil
@@ -136,6 +140,10 @@ func (u *Updater) info(ctx context.Context, force bool) UpdateInfoResponse {
 
 	u.mu.Lock()
 	job := u.job
+	resp.Source = string(u.source)
+	if up := u.uploaded; up != nil {
+		resp.Uploaded = &UpdateUploadInfo{Version: up.version, Verified: up.verified, SHA256: up.sha256, Kind: up.kind, SizeBytes: up.size}
+	}
 	u.mu.Unlock()
 	if job.state != "" {
 		resp.State, resp.ProgressPercent, resp.Error = job.state, job.percent, job.errKey
@@ -160,7 +168,7 @@ func (u *Updater) info(ctx context.Context, force bool) UpdateInfoResponse {
 // start validates and launches the update job.
 //
 // @returns the version being installed, or an HTTP status and i18n error key when it cannot start.
-func (u *Updater) start(ctx context.Context, audit func(action, target string)) (string, int, string) {
+func (u *Updater) start(ctx context.Context, fromUpload bool, audit func(action, target string)) (string, int, string) {
 	switch u.Mode {
 	case update.ModeDocker:
 		return "", http.StatusConflict, "admin.errors.update_docker"
@@ -177,6 +185,18 @@ func (u *Updater) start(ctx context.Context, audit func(action, target string)) 
 	if s := u.job.state; s == UpdateStateDownloading || s == UpdateStateInstalling || s == UpdateStateRestarting {
 		u.mu.Unlock()
 		return "", http.StatusConflict, "admin.errors.update_in_progress"
+	}
+	if fromUpload {
+		up := u.uploaded
+		if up == nil {
+			u.mu.Unlock()
+			return "", http.StatusConflict, "admin.errors.update_no_upload"
+		}
+		u.job = updateJob{state: UpdateStateInstalling, percent: 100, targetTo: up.version}
+		u.mu.Unlock()
+		audit("server.update.start", up.version+" (uploaded)")
+		go u.runUpload(up, entry, audit)
+		return up.version, http.StatusAccepted, ""
 	}
 	// Claim the slot before the (slow) network lookup so two clicks cannot start two jobs.
 	u.job = updateJob{state: UpdateStateDownloading}
@@ -251,13 +271,23 @@ func (u *Updater) run(rel update.Release, zipName, entry string, audit func(acti
 	}
 
 	u.setJob(updateJob{state: UpdateStateInstalling, percent: 100, targetTo: target})
+	u.install(target, staged.Path, entry, audit)
+}
+
+// install swaps the binary found in the zip into place and asks the process to restart.
+func (u *Updater) install(target, zipPath, entry string, audit func(action, target string)) {
 	newPath := u.ExePath + update.NewSuffix
-	if err := update.ExtractFile(staged.Path, entry, newPath, u.MaxDownload*2); err != nil {
+	if err := update.ExtractFile(zipPath, entry, newPath, u.MaxDownload*2); err != nil {
 		_ = os.Remove(newPath)
 		logger.Errorf("admin: update extract: %v", err)
 		u.fail(target, "admin.errors.update_failed", audit)
 		return
 	}
+	u.swap(target, newPath, audit)
+}
+
+// swap renames newPath over the executable (keeping the old one as .old) and restarts.
+func (u *Updater) swap(target, newPath string, audit func(action, target string)) {
 	if _, err := update.ReplacePath(u.ExePath, newPath); err != nil {
 		logger.Errorf("admin: update replace: %v", err)
 		u.fail(target, "admin.errors.update_failed", audit)
@@ -279,6 +309,8 @@ func updateErrorKey(err error) string {
 		return "admin.errors.update_checksum_failed"
 	case errors.Is(err, update.ErrNoChecksums):
 		return "admin.errors.update_no_checksums"
+	case errors.Is(err, update.ErrTooOld):
+		return "admin.errors.update_too_old"
 	default:
 		return "admin.errors.update_download_failed"
 	}
@@ -341,7 +373,9 @@ func (h *Handler) AdminGetUpdate(w http.ResponseWriter, r *http.Request) {
 //	@Tags        admin
 //	@Produce     json
 //	@Security    BearerAuth
+//	@Param       body body UpdateStartRequest false "Optional. source=upload installs the release uploaded with POST /api/admin/update/upload instead of downloading"
 //	@Success     202 {object} UpdateStartResponse
+//	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     403 {object} ErrorResponse
 //	@Failure     409 {object} ErrorResponse
@@ -356,7 +390,17 @@ func (h *Handler) AdminStartUpdate(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	ctx, cancel := context.WithTimeout(r.Context(), updateCheckTimeout)
 	defer cancel()
-	version, code, key := h.Updater.start(ctx, func(action, target string) { h.audit(actor, action, target) })
+	var body UpdateStartRequest
+	// The body is optional: an empty one (or none) means "download the latest release".
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<10)).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+		return
+	}
+	if body.Source != "" && body.Source != "release" && body.Source != "upload" {
+		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+		return
+	}
+	version, code, key := h.Updater.start(ctx, body.Source == "upload", func(action, target string) { h.audit(actor, action, target) })
 	if key != "" {
 		writeError(w, code, key)
 		return

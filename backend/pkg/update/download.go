@@ -60,6 +60,11 @@ func (c *Client) Fetch(ctx context.Context, rel Release, assetName string, opts 
 		if rv.Compare(cv) <= 0 {
 			return nil, ErrNotNewer
 		}
+		if rel.MinVersion != "" {
+			if mv, merr := ParseVersion(rel.MinVersion); merr == nil && cv.Compare(mv) < 0 {
+				return nil, ErrTooOld
+			}
+		}
 	}
 	if assetName != filepath.Base(assetName) || strings.ContainsAny(assetName, `/\`) || assetName == "" {
 		return nil, fmt.Errorf("update: unsafe asset name %q", assetName)
@@ -75,9 +80,12 @@ func (c *Client) Fetch(ctx context.Context, rel Release, assetName string, opts 
 	if asset.Size > max {
 		return nil, ErrTooLarge
 	}
-	sums, err := c.Checksums(ctx, rel)
-	if err != nil {
-		return nil, err
+	sums := rel.Sums
+	if sums == nil {
+		var err error
+		if sums, err = c.Checksums(ctx, rel); err != nil {
+			return nil, err
+		}
 	}
 	want, ok := sums[assetName]
 	if !ok {
@@ -184,6 +192,23 @@ func (c *Client) Checksums(ctx context.Context, rel Release) (map[string]string,
 	}
 	return ParseChecksums(io.LimitReader(resp.Body, maxChecksumsBytes))
 }
+
+// FileSHA256 returns the lower-case hex SHA-256 of a file.
+func FileSHA256(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// DigestEqual compares two hex digests in constant time, ignoring case.
+func DigestEqual(a, b string) bool { return digestEqual(a, b) }
 
 // ParseChecksums reads `sha256sum` output ("<hex>  <name>" or "<hex> *<name>"). Malformed lines are ignored.
 //
