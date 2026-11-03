@@ -67,9 +67,6 @@ data class Invite(
 )
 
 @Serializable
-data class InvitesResponse(val invites: List<Invite> = emptyList())
-
-@Serializable
 data class CreateInviteRequest(
     val code: String? = null,
     val note: String? = null,
@@ -87,8 +84,9 @@ data class AuditEntry(
     val target: String? = null
 )
 
+/** Body of `DELETE /api/users/me`: the current password (step-up). */
 @Serializable
-data class AuditResponse(val entries: List<AuditEntry> = emptyList())
+data class DeleteAccountRequest(val password: String)
 
 @Serializable
 data class AdminAccount(val id: String, val username: String, val role: String = "admin")

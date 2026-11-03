@@ -6,14 +6,16 @@ import com.cove.chat.data.model.AdminAccount
 import com.cove.chat.data.model.AdminOverview
 import com.cove.chat.data.model.AdminsResponse
 import com.cove.chat.data.model.AuditEntry
-import com.cove.chat.data.model.AuditResponse
+import com.cove.chat.data.model.MAX_PAGE_LIMIT
+import com.cove.chat.data.model.PageResponse
+import com.cove.chat.data.model.collectAllPages
+import com.cove.chat.data.model.DeleteAccountRequest
 import com.cove.chat.data.model.BackupRequest
 import com.cove.chat.data.model.ConfigResponse
 import com.cove.chat.data.model.ConfigSetting
 import com.cove.chat.data.model.ConfirmRequest
 import com.cove.chat.data.model.CreateInviteRequest
 import com.cove.chat.data.model.Invite
-import com.cove.chat.data.model.InvitesResponse
 import com.cove.chat.data.model.PasswordRequest
 import com.cove.chat.data.CaptchaChallenge
 import com.cove.chat.data.model.ServerInfo
@@ -171,14 +173,40 @@ class ApiClient(private val prefs: PreferencesManager) {
         Unit
     }
 
+    /**
+     * Deletes this account. The server re-checks [password] (step-up), so a stolen session cannot erase it:
+     * a wrong password is a 403 ApiException, repeated failures a 429.
+     */
+    suspend fun deleteAccount(password: String): Result<Unit> = runCatching {
+        client.delete(url("/api/users/me")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(DeleteAccountRequest(password))
+        }.ok()
+        Unit
+    }
+
     /** Ends every session except this phone's. */
     suspend fun terminateOtherSessions(): Result<Unit> = runCatching {
         client.post(url("/api/sessions/terminate-others")) { bearer() }.ok()
         Unit
     }
 
+    /** One page of a paged list endpoint (API standard section 9); [query] adds endpoint specific parameters. */
+    private suspend inline fun <reified T> page(
+        path: String,
+        cursor: String?,
+        limit: Int = MAX_PAGE_LIMIT,
+        crossinline extra: HttpRequestBuilder.() -> Unit = {}
+    ): PageResponse<T> = client.get(url(path)) {
+        bearer()
+        parameter("limit", limit)
+        cursor?.let { parameter("cursor", it) }
+        extra()
+    }.ok().body()
+
     suspend fun getChannels(): Result<List<Channel>> = runCatching {
-        client.get(url("/api/channels")) { bearer() }.ok().body()
+        collectAllPages { c -> page<Channel>("/api/channels", c) }
     }
 
     suspend fun createChannel(req: CreateChannelRequest): Result<Channel> = runCatching {
@@ -189,11 +217,11 @@ class ApiClient(private val prefs: PreferencesManager) {
         }.ok().body()
     }
 
+    /** A search palette never needs more than a few pages, so the walk is bounded (500 results). */
     suspend fun exploreChannels(query: String = ""): Result<List<ExploreChannel>> = runCatching {
-        client.get(url("/api/channels/explore")) {
-            bearer()
-            if (query.isNotBlank()) parameter("q", query)
-        }.ok().body()
+        collectAllPages(maxPages = 5) { c ->
+            page<ExploreChannel>("/api/channels/explore", c) { if (query.isNotBlank()) parameter("q", query) }
+        }
     }
 
     /** Joins the channel behind an invite link and returns it. */
@@ -216,30 +244,27 @@ class ApiClient(private val prefs: PreferencesManager) {
         Unit
     }
 
+    /** The server caps a user search at 50 results in total, so this is at most one page. */
     suspend fun searchUsers(query: String): Result<List<UserSummary>> = runCatching {
-        client.get(url("/api/users")) {
-            bearer()
-            parameter("q", query)
-        }.ok().body()
+        collectAllPages { c -> page<UserSummary>("/api/users", c) { parameter("q", query) } }
     }
 
-    /** Newest-first page of messages (backend order); [before] is a message-id cursor. */
-    suspend fun getMessages(channelId: String, limit: Int = 50, before: String? = null): Result<List<Message>> = runCatching {
-        client.get(url("/api/channels/$channelId/messages")) {
-            bearer()
-            parameter("limit", limit)
-            before?.let { parameter("before", it) }
-        }.ok().body()
+    /**
+     * Newest-first page of messages. [cursor] is the previous page's `nextCursor` (opaque); the answer's
+     * [PageResponse.nextCursor] leads to the next older page and is empty once the conversation start is reached.
+     */
+    suspend fun getMessages(channelId: String, limit: Int = 50, cursor: String? = null): Result<PageResponse<Message>> = runCatching {
+        page<Message>("/api/channels/$channelId/messages", cursor, limit)
     }
 
     // ── Friends ─────────────────────────────────────────────────────────────
 
     suspend fun getRelationships(): Result<List<Relationship>> = runCatching {
-        client.get(url("/api/relationships")) { bearer() }.ok().body<List<Relationship>?>() ?: emptyList()
+        collectAllPages { c -> page<Relationship>("/api/relationships", c) }
     }
 
     suspend fun getIncomingRequests(): Result<List<Relationship>> = runCatching {
-        client.get(url("/api/relationships/incoming")) { bearer() }.ok().body<List<Relationship>?>() ?: emptyList()
+        collectAllPages { c -> page<Relationship>("/api/relationships/incoming", c) }
     }
 
     /** action: request | accept | decline | cancel | remove | block | unblock */
@@ -366,7 +391,7 @@ class ApiClient(private val prefs: PreferencesManager) {
     }
 
     suspend fun adminInvites(): Result<List<Invite>> = runCatching {
-        client.get(url("/api/admin/invites")) { bearer() }.ok().body<InvitesResponse>().invites
+        collectAllPages { c -> page<Invite>("/api/admin/invites", c) }
     }
 
     suspend fun adminCreateInvite(req: CreateInviteRequest): Result<Invite> = runCatching {
@@ -383,7 +408,8 @@ class ApiClient(private val prefs: PreferencesManager) {
     }
 
     suspend fun adminAudit(): Result<List<AuditEntry>> = runCatching {
-        client.get(url("/api/admin/audit")) { bearer() }.ok().body<AuditResponse>().entries
+        // The panel shows the recent trail; the walk is bounded (500 entries) instead of paging on scroll.
+        collectAllPages(maxPages = 5) { c -> page<AuditEntry>("/api/admin/audit", c) }
     }
 
     suspend fun adminAdmins(): Result<List<AdminAccount>> = runCatching {

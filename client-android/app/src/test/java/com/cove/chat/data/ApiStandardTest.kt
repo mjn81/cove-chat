@@ -14,7 +14,7 @@ class ApiStandardTest {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
 
     @Test fun clientHeaderCarriesPlatformVersionAndApi() {
-        assertEquals("android/0.9.9 (api 1)", ApiStandard.clientHeader("0.9.9"))
+        assertEquals("android/0.9.9 (api 2)", ApiStandard.clientHeader("0.9.9"))
     }
 
     @Test fun unknownMessageTypesAreNotRenderable() {

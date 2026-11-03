@@ -173,6 +173,8 @@ fun ChatScreen(
     // Newest-first, exactly the order the API returns.
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var hasMore by remember { mutableStateOf(true) }
+    // Opaque cursor to the next older page, from the previous answer.
+    var olderCursor by remember { mutableStateOf<String?>(null) }
     var loadingMore by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var replyTo by remember { mutableStateOf<Message?>(null) }
@@ -212,8 +214,9 @@ fun ChatScreen(
     LaunchedEffect(channelId) {
         api.getChannels().onSuccess { list -> channel = list.firstOrNull { it.id == channelId } }
         api.getMessages(channelId, pageSize).onSuccess {
-            messages = it
-            hasMore = it.size >= pageSize
+            messages = it.items
+            olderCursor = it.nextCursor
+            hasMore = it.hasMore
         }
     }
     LaunchedEffect(channelId) { ws.channelsChangedFlow.collect { api.getChannels().onSuccess { l -> channel = l.firstOrNull { it.id == channelId } } } }
@@ -248,9 +251,10 @@ fun ChatScreen(
     LaunchedEffect(nearTop, messages.size) {
         if (nearTop && hasMore && !loadingMore && messages.isNotEmpty()) {
             loadingMore = true
-            api.getMessages(channelId, pageSize, before = messages.last().id).onSuccess { older ->
-                messages = messages + older.filter { o -> messages.none { it.id == o.id } }
-                hasMore = older.size >= pageSize
+            api.getMessages(channelId, pageSize, cursor = olderCursor).onSuccess { older ->
+                messages = messages + older.items.filter { o -> messages.none { it.id == o.id } }
+                olderCursor = older.nextCursor
+                hasMore = older.hasMore
             }
             loadingMore = false
         }

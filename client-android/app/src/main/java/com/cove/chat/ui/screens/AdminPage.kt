@@ -225,7 +225,7 @@ private fun JsonElement.text(): String = (this as? JsonPrimitive)?.content.orEmp
  * @param onSubmit runs the action; a failure is shown inside the dialog and keeps it open.
  */
 @Composable
-private fun StepUpDialog(
+internal fun StepUpDialog(
     title: String,
     description: String,
     confirmLabel: String,

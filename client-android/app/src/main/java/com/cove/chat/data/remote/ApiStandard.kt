@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 object ApiStandard {
     /** Integer contract version; must match the backend's `apistd.APIVersion` for this build to be current. */
-    const val API_VERSION = 1
+    const val API_VERSION = 2
 
     const val CLIENT_HEADER = "X-Cove-Client"
 
@@ -21,7 +21,7 @@ object ApiStandard {
     /** Message types this build can render; anything else is shown as a placeholder. */
     private val KNOWN_MESSAGE_TYPES = setOf("text", "file", "voice", "video", "invite")
 
-    /** `android/0.9.9 (api 1)`. */
+    /** `android/0.10.0 (api 2)`. */
     fun clientHeader(version: String): String = "android/$version (api $API_VERSION)"
 
     /** Whether [type] is a message type this build can render (unknown ones must not crash or vanish). */
