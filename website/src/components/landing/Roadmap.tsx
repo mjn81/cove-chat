@@ -87,7 +87,7 @@ export function RoadmapTimeline({ lang }: { lang: Lang }) {
                 {list.map((it) => (
                   <motion.div layout key={it.id} className="rcard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.3 }}>
                     <StatusIcon status={it.status} label={d.status[it.status]} />
-                    <div><b>{it.title}</b><p>{it.note}</p></div>
+                    <div><b>{it.title}</b><p>{it.note}</p>{it.date && <time className="rdate" dateTime={it.date}>{it.date}</time>}</div>
                     <span className="area">{areaName(it.area)}</span>
                   </motion.div>
                 ))}
