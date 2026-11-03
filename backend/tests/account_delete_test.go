@@ -9,8 +9,8 @@ import (
 
 func TestDeleteAccount_RequiresCurrentPassword(t *testing.T) {
 	srv := testServer(t)
-	registerAndLogin(t, srv, "del_founder", "password123!") // first account is the owner
-	tok := registerAndLogin(t, srv, "del_victim", "password123!")
+	registerAndLogin(t, srv, "del_founder", testPassword) // first account is the owner
+	tok := registerAndLogin(t, srv, "del_victim", testPassword)
 
 	del := func(token string, body *api.DeleteAccountRequest) *http.Response {
 		var req *http.Request
@@ -22,7 +22,7 @@ func TestDeleteAccount_RequiresCurrentPassword(t *testing.T) {
 		return mustDo(t, req)
 	}
 
-	if r := del("", &api.DeleteAccountRequest{Password: "password123!"}); r.StatusCode != http.StatusUnauthorized {
+	if r := del("", &api.DeleteAccountRequest{Password: testPassword}); r.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("unauthenticated = %d, want 401", r.StatusCode)
 	}
 	if r := del(tok, nil); r.StatusCode != http.StatusBadRequest {
@@ -46,7 +46,7 @@ func TestDeleteAccount_RequiresCurrentPassword(t *testing.T) {
 		t.Fatalf("account must survive a rejected delete, /me = %d", me.StatusCode)
 	}
 
-	if r := del(tok, &api.DeleteAccountRequest{Password: "password123!"}); r.StatusCode != http.StatusOK {
+	if r := del(tok, &api.DeleteAccountRequest{Password: testPassword}); r.StatusCode != http.StatusOK {
 		t.Fatalf("correct password = %d, want 200", r.StatusCode)
 	}
 	if me := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/me", tok, nil)); me.StatusCode != http.StatusUnauthorized {

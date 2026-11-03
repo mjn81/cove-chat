@@ -47,8 +47,8 @@ func errEnvelope(t *testing.T, resp *http.Response) (msg, code string) {
 
 func TestExplore_HidesInviteLinkAndJoinWorksByPublicID(t *testing.T) {
 	srv := testServer(t)
-	tokA := registerAndLogin(t, srv, "ex_alice", "password123!")
-	tokB := registerAndLogin(t, srv, "ex_bob", "password123!")
+	tokA := registerAndLogin(t, srv, "ex_alice", testPassword)
+	tokB := registerAndLogin(t, srv, "ex_bob", testPassword)
 
 	pub := mustDo(t, newJSONReq(t, http.MethodPost, srv.URL+"/api/channels", tokA, jsonBody(t, api.CreateChannelRequest{Name: "Open Lounge"})))
 	var pubCh map[string]any
@@ -82,8 +82,8 @@ func TestExplore_HidesInviteLinkAndJoinWorksByPublicID(t *testing.T) {
 
 func TestUpdateMember_RoleWhitelist(t *testing.T) {
 	srv := testServer(t)
-	tokO := registerAndLogin(t, srv, "um_owner", "password123!")
-	tokM := registerAndLogin(t, srv, "um_member", "password123!")
+	tokO := registerAndLogin(t, srv, "um_owner", testPassword)
+	tokM := registerAndLogin(t, srv, "um_member", testPassword)
 	memberID := meID(t, srv, tokM)
 	chID := createGroupChannel(t, srv, tokO, "roles", memberID)
 
@@ -128,7 +128,7 @@ func uploadMultipart(t *testing.T, base, token string, content []byte) *http.Res
 
 func TestUploadFile_ResponseHasNoStoragePath(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "up_user", "password123!")
+	tok := registerAndLogin(t, srv, "up_user", testPassword)
 	resp := uploadMultipart(t, srv.URL, tok, []byte("opaque-ciphertext"))
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("upload = %d", resp.StatusCode)
@@ -145,7 +145,7 @@ func TestUploadFile_ResponseHasNoStoragePath(t *testing.T) {
 
 func TestUploadFile_OversizeIs413AndOtherParseErrorsAre400(t *testing.T) {
 	srv := testServerWith(t, func(h *api.Handler) { h.MaxFileSizeMB = 1 })
-	tok := registerAndLogin(t, srv, "ov_user", "password123!")
+	tok := registerAndLogin(t, srv, "ov_user", testPassword)
 	resp := uploadMultipart(t, srv.URL, tok, bytes.Repeat([]byte("x"), 3<<20))
 	if resp.StatusCode != http.StatusRequestEntityTooLarge {
 		t.Fatalf("oversize upload = %d, want 413", resp.StatusCode)
@@ -250,7 +250,7 @@ func TestUpdate_UploadRequiresPasswordBeforeTheFile(t *testing.T) {
 
 func TestSearchUsers_MinLengthAndCap(t *testing.T) {
 	e := testServerWithStore(t)
-	tok := registerAndLogin(t, e.srv, "zz_searcher", "password123!")
+	tok := registerAndLogin(t, e.srv, "zz_searcher", testPassword)
 	for i := 0; i < 60; i++ {
 		if err := e.store.UpdateUser(&models.User{ID: fmt.Sprintf("bulk-%03d", i), Username: fmt.Sprintf("bulkuser%03d", i), Domain: "localhost"}); err != nil {
 			t.Fatal(err)
@@ -294,7 +294,7 @@ func TestCaptchaChallenge_IsRateLimited(t *testing.T) {
 
 func TestUpdateProfile_RejectsInvalidEnums(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "pe_user", "password123!")
+	tok := registerAndLogin(t, srv, "pe_user", testPassword)
 	for _, body := range []map[string]any{
 		{"status_preference": "bogus"},
 		{"allow_channel_adds": "bogus"},

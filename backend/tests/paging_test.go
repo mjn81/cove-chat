@@ -169,7 +169,7 @@ func assertBadPaging(t *testing.T, base, path, token string) {
 
 func TestListMessages_PagedNewestFirst(t *testing.T) {
 	e := testServerWithStore(t)
-	tok := registerAndLogin(t, e.srv, "pg_msg", "password123!")
+	tok := registerAndLogin(t, e.srv, "pg_msg", testPassword)
 	chID := createGroupChannel(t, e.srv, tok, "paged")
 	uid := meID(t, e.srv, tok)
 
@@ -199,7 +199,7 @@ func TestListMessages_PagedNewestFirst(t *testing.T) {
 
 func TestListMessages_CursorIsNotTransferableBetweenEndpoints(t *testing.T) {
 	e := testServerWithStore(t)
-	tok := registerAndLogin(t, e.srv, "pg_x", "password123!")
+	tok := registerAndLogin(t, e.srv, "pg_x", testPassword)
 	for i := 0; i < 3; i++ {
 		createGroupChannel(t, e.srv, tok, fmt.Sprintf("xc%d", i))
 	}
@@ -216,7 +216,7 @@ func TestListMessages_CursorIsNotTransferableBetweenEndpoints(t *testing.T) {
 
 func TestListChannels_Paged(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "pg_chan", "password123!")
+	tok := registerAndLogin(t, srv, "pg_chan", testPassword)
 	for i := 0; i < 5; i++ {
 		createGroupChannel(t, srv, tok, fmt.Sprintf("room%d", i))
 	}
@@ -230,8 +230,8 @@ func TestListChannels_Paged(t *testing.T) {
 
 func TestExplore_Paged(t *testing.T) {
 	srv := testServer(t)
-	tokA := registerAndLogin(t, srv, "pg_exa", "password123!")
-	tokB := registerAndLogin(t, srv, "pg_exb", "password123!")
+	tokA := registerAndLogin(t, srv, "pg_exa", testPassword)
+	tokB := registerAndLogin(t, srv, "pg_exb", testPassword)
 	for i := 0; i < 5; i++ {
 		createGroupChannel(t, srv, tokA, fmt.Sprintf("Public %d", i))
 	}
@@ -242,10 +242,10 @@ func TestExplore_Paged(t *testing.T) {
 
 func TestChannelMembers_Paged(t *testing.T) {
 	srv := testServer(t)
-	tokO := registerAndLogin(t, srv, "pg_mo", "password123!")
+	tokO := registerAndLogin(t, srv, "pg_mo", testPassword)
 	var ids []string
 	for i := 0; i < 4; i++ {
-		tok := registerAndLogin(t, srv, fmt.Sprintf("pg_m%d", i), "password123!")
+		tok := registerAndLogin(t, srv, fmt.Sprintf("pg_m%d", i), testPassword)
 		ids = append(ids, meID(t, srv, tok))
 	}
 	chID := createGroupChannel(t, srv, tokO, "crowd", ids...)
@@ -256,7 +256,7 @@ func TestChannelMembers_Paged(t *testing.T) {
 
 func TestSearchUsers_PagedKeepsMinLengthAndTotalCap(t *testing.T) {
 	e := testServerWithStore(t)
-	tok := registerAndLogin(t, e.srv, "zz_pgsearch", "password123!")
+	tok := registerAndLogin(t, e.srv, "zz_pgsearch", testPassword)
 	for i := 0; i < 60; i++ {
 		if err := e.store.UpdateUser(&models.User{ID: fmt.Sprintf("bulk-%03d", i), Username: fmt.Sprintf("bulkuser%03d", i), Domain: "localhost"}); err != nil {
 			t.Fatal(err)
@@ -273,11 +273,11 @@ func TestSearchUsers_PagedKeepsMinLengthAndTotalCap(t *testing.T) {
 
 func TestRelationships_Paged(t *testing.T) {
 	srv := testServer(t)
-	tokT := registerAndLogin(t, srv, "pg_target", "password123!")
+	tokT := registerAndLogin(t, srv, "pg_target", testPassword)
 	tID := meID(t, srv, tokT)
 	var senders []string
 	for i := 0; i < 3; i++ {
-		tok := registerAndLogin(t, srv, fmt.Sprintf("pg_req%d", i), "password123!")
+		tok := registerAndLogin(t, srv, fmt.Sprintf("pg_req%d", i), testPassword)
 		senders = append(senders, tok)
 		r := mustDo(t, newJSONReq(t, http.MethodPut, srv.URL+"/api/users/"+tID+"/relationship", tok, jsonBody(t, map[string]any{"action": "request"})))
 		if r.StatusCode != http.StatusOK {

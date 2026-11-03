@@ -11,7 +11,7 @@ import (
 // tells an attacker which usernames exist.
 func TestLogin_UnknownUserCostsAsMuchAsWrongPassword(t *testing.T) {
 	srv := testServer(t)
-	registerAndLogin(t, srv, "timing_user", "password123!")
+	registerAndLogin(t, srv, "timing_user", testPassword)
 
 	measure := func(user string) time.Duration {
 		var ds []time.Duration

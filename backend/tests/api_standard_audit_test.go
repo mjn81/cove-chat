@@ -95,7 +95,7 @@ func TestUpdate_UnsupportedAndDockerCarryFeatureUnsupportedCode(t *testing.T) {
 
 func TestOversizeJSONBodyIs413(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "big_json", "password123!")
+	tok := registerAndLogin(t, srv, "big_json", testPassword)
 	huge := `{"name":"` + strings.Repeat("a", 2<<20) + `"}`
 	for name, req := range map[string]*http.Request{
 		"login":          newJSONReq(t, http.MethodPost, srv.URL+"/api/login", "", bytes.NewBufferString(huge)),
@@ -114,7 +114,7 @@ func TestOversizeJSONBodyIs413(t *testing.T) {
 
 func TestChannels_InputBounds(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "bounds_owner", "password123!")
+	tok := registerAndLogin(t, srv, "bounds_owner", testPassword)
 	chID := createGroupChannel(t, srv, tok, "ok")
 
 	long := strings.Repeat("n", 101)
@@ -151,7 +151,7 @@ func uniqueIDs(base []string, n int) []string {
 
 func TestMessages_InvalidLimitIs400(t *testing.T) {
 	srv := testServer(t)
-	tok := registerAndLogin(t, srv, "lim_user", "password123!")
+	tok := registerAndLogin(t, srv, "lim_user", testPassword)
 	chID := createGroupChannel(t, srv, tok, "g")
 	for _, q := range []string{"abc", "0", "-5", "101", "500"} {
 		r := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels/"+chID+"/messages?limit="+q, tok, nil))
@@ -167,8 +167,8 @@ func TestMessages_InvalidLimitIs400(t *testing.T) {
 // A channel you are not in is indistinguishable from one that does not exist.
 func TestNonMemberAndMissingChannelAreBoth404(t *testing.T) {
 	srv := testServer(t)
-	tokA := registerAndLogin(t, srv, "nm_owner", "password123!")
-	tokE := registerAndLogin(t, srv, "nm_eve", "password123!")
+	tokA := registerAndLogin(t, srv, "nm_owner", testPassword)
+	tokE := registerAndLogin(t, srv, "nm_eve", testPassword)
 	chID := createGroupChannel(t, srv, tokA, "secret")
 
 	bodyOf := func(id string) (int, string) {
@@ -187,8 +187,8 @@ func TestNonMemberAndMissingChannelAreBoth404(t *testing.T) {
 
 func TestRelationships_ErrorHandling(t *testing.T) {
 	srv := testServer(t)
-	tokA := registerAndLogin(t, srv, "rel_a", "password123!")
-	tokB := registerAndLogin(t, srv, "rel_b", "password123!")
+	tokA := registerAndLogin(t, srv, "rel_a", testPassword)
+	tokB := registerAndLogin(t, srv, "rel_b", testPassword)
 	bID := meID(t, srv, tokB)
 
 	put := func(target, action string) *http.Response {
