@@ -6,7 +6,7 @@ import { Loader2, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ConfirmModal } from '@/components/ConfirmModal';
+import { StepUpDialog } from '@/domains/admin/components/step-up-dialog';
 import { FormField } from '@/components/form-field';
 import { ImageEditor } from '@/components/ImageEditor';
 import { ProfilePhotoViewerModal } from '@/components/ProfilePhotoViewerModal';
@@ -66,11 +66,13 @@ export const AccountTab = () => {
 		setShowColorPicker(false);
 	};
 
-	const handleDeleteAccount = async () => {
+	// StepUpDialog keeps itself open and shows the server's message when the password is wrong.
+	const handleDeleteAccount = async ({ password: currentPassword }: { password: string }) => {
 		try {
-			await deleteAccount();
+			await deleteAccount(currentPassword);
 		} catch (error) {
 			logger.error('Failed to delete account', { error: String(error) });
+			throw error;
 		}
 	};
 
@@ -255,14 +257,14 @@ export const AccountTab = () => {
 				<Button variant="destructive" className="h-9 px-6 font-bold" onClick={() => setShowDeleteConfirm(true)}>
 					{t('settings.delete_account')}
 				</Button>
-				<ConfirmModal
-					isOpen={showDeleteConfirm}
-					onClose={() => setShowDeleteConfirm(false)}
-					onConfirm={handleDeleteAccount}
+				<StepUpDialog
+					open={showDeleteConfirm}
+					onOpenChange={setShowDeleteConfirm}
 					title={t('account.delete_title')}
-					message={t('account.delete_message')}
-					confirmText={t('account.delete_title')}
-					variant="danger"
+					description={t('account.delete_message')}
+					confirmLabel={t('account.delete_title')}
+					destructive
+					onSubmit={handleDeleteAccount}
 				/>
 			</div>
 

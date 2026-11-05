@@ -2,6 +2,7 @@
 
 import type { Message } from '@/types/api';
 import { isWails } from '@/utils/wails';
+import { logger } from '@/utils/logger';
 import { getDesktopToken } from './lib/desktop-session';
 import { createSocketManager } from '@/ws/socketManager';
 
@@ -367,8 +368,13 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 		case 'call_error':
 			emit(msg.type as WSEventType, msg.payload);
 			break;
+		case 'hello':
+			// Version/capability handshake. The same data comes from GET /api/version (useServerCapabilities),
+			// so there is nothing to do here; listing it keeps it out of the "unknown" log below.
+			break;
 		default:
-			console.debug('[ws-worker] unknown message type', msg.type);
+			// Forward compatibility (docs/api-standard.md section 5): events from a newer server are ignored.
+			logger.debug('[ws-worker] ignoring unknown event type', { type: msg.type });
 	}
 }
 

@@ -46,6 +46,7 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.Icon
 import com.cove.chat.ui.components.Text
 import com.cove.chat.ui.components.mirrorInRtl
@@ -90,7 +91,8 @@ private enum class SettingsPage(val title: String, val icon: ImageVector) {
     Notifications("Notifications", Icons.Outlined.Notifications),
     Voice("Voice & Video", Icons.Outlined.GraphicEq),
     Storage("Data & Storage", Icons.Outlined.Storage),
-    Admin("Server admin", Icons.Outlined.AdminPanelSettings)
+    Admin("Server admin", Icons.Outlined.AdminPanelSettings),
+    Updates("App updates", Icons.Outlined.SystemUpdate)
 }
 
 /**
@@ -139,6 +141,8 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                 ) { Icon(Icons.Outlined.Close, "Close", tint = c.textPrimary, modifier = Modifier.size(20.dp)) }
             }
             Column(Modifier.padding(horizontal = 12.dp)) {
+                // Quiet entry, only while a newer version exists (never a dialog).
+                UpdateSettingsEntry { page = SettingsPage.Updates }
                 listOf(SettingsPage.Account, SettingsPage.Friends, SettingsPage.Privacy, SettingsPage.Devices).forEach { item ->
                     CoveListRow(
                         title = item.title,
@@ -150,7 +154,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     )
                 }
                 Text("GROUPS", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, top = 24.dp, bottom = 8.dp))
-                listOf(SettingsPage.Appearance, SettingsPage.Notifications, SettingsPage.Voice, SettingsPage.Storage).forEach { item ->
+                listOf(SettingsPage.Appearance, SettingsPage.Notifications, SettingsPage.Voice, SettingsPage.Storage).plus(if (app.updateManager.enabled) listOf(SettingsPage.Updates) else emptyList()).forEach { item ->
                     CoveListRow(
                         title = item.title,
                         selected = item == SettingsPage.Account,
@@ -204,6 +208,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     SettingsPage.Voice -> VoiceSettings()
                     SettingsPage.Storage -> StorageSettings()
                     SettingsPage.Admin -> AdminPage(onLogout = { logout() })
+                    SettingsPage.Updates -> UpdatePage()
                     else -> Text("This section isn't available on mobile yet.", color = c.textMuted, fontSize = CoveType.body.fontSize)
                 }
             }

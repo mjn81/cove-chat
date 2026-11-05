@@ -179,6 +179,7 @@ const (
 	prefixAudit             = "aud:"
 	prefixKnownDevices      = "kd:"
 	keyOwner                = "srv:owner"
+	keyUpdateNotified       = "srv:update_notified"
 	keyDEK                  = "sys:dek"
 )
 

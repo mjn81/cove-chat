@@ -1,13 +1,41 @@
 package api
 
 import (
+	"errors"
+	"net/http"
+	"strings"
+	"unicode/utf8"
+
 	"cove/backend/internal/auth"
 	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
 	"cove/backend/internal/models"
 	"cove/backend/internal/store"
-	"encoding/json"
-	"net/http"
 )
+
+const (
+	// minUserSearchRunes is the shortest search term accepted; one letter would just enumerate the user base.
+	minUserSearchRunes = 2
+	// maxUserSearchResults caps the total result of a search across all pages, so it cannot enumerate the user base.
+	maxUserSearchResults = 50
+)
+
+// Allowed values of the profile enums. Anything else is a 400, never silently ignored.
+var (
+	statusPreferences      = map[string]bool{"auto": true, "online": true, "away": true, "dnd": true, "offline": true}
+	channelAddPermissions  = map[string]bool{"everyone": true, "friends": true, "nobody": true}
+	dmPermissions          = channelAddPermissions
+	friendRequestPermitted = map[string]bool{"everyone": true, "nobody": true}
+)
+
+// userNotFoundOr writes 404 when err is a missing record and a logged 500 for any other failure.
+func userNotFoundOr(w http.ResponseWriter, op string, err error) {
+	if errors.Is(err, db.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	writeInternal(w, op, err, "could not load user")
+}
 
 // ============================
 //  User Handlers
@@ -16,16 +44,21 @@ import (
 // Me godoc
 //
 //	@Summary     Get current authenticated user
+//	@Description **Access:** Authenticated.
 //	@Tags        users
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Success     200 {object} UserResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/me [get]
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	u, err := h.Store.GetUser(session.UserID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "user not found")
+		userNotFoundOr(w, "me", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, UserResponse{
@@ -48,53 +81,98 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 // DeleteAccount godoc
 //
 //	@Summary     Delete current user account
+//	@Description Deletes the caller's account after a step-up check: the body must carry the caller's current
+//	@Description password, and repeated wrong passwords lock the check out for a while (429), like the dangerous
+//	@Description admin actions. The server owner must transfer ownership first.
+//	@Description **Access:** Authenticated (self only).
 //	@Tags        users
+//	@Accept      json
 //	@Produce     json
 //	@Security    BearerAuth
+//	@Param       body body DeleteAccountRequest true "Current password"
 //	@Success     200 {object} StatusResponse
+//	@Failure     400 {object} ErrorResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users/me [delete]
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	token, _, _ := auth.ResolveToken(r)
 
+	var body DeleteAccountRequest
+	if !decodeJSONLimit(w, r, &body, 1<<14, "invalid JSON body") {
+		return
+	}
+	if body.Password == "" {
+		writeError(w, http.StatusBadRequest, "password required")
+		return
+	}
+	me, err := h.Store.GetUser(session.UserID)
+	if err != nil {
+		userNotFoundOr(w, "delete account "+session.UserID, err)
+		return
+	}
+	// A wrong password is 403, not 401: 401 means "session invalid" and makes clients sign the user out.
+	if !h.confirmPassword(w, me, body.Password) {
+		return
+	}
+
 	// The owner cannot vanish from under the server: they must hand the role
 	// over first, otherwise nobody could ever reach the admin panel again.
-	if me, err := h.Store.GetUser(session.UserID); err == nil && me.ServerRole == models.ServerRoleOwner {
+	if me.ServerRole == models.ServerRoleOwner {
 		writeError(w, http.StatusForbidden, "admin.errors.owner_cannot_delete")
 		return
 	}
 
 	if err := h.Store.DeleteUser(session.UserID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete account")
+		writeInternal(w, "delete account "+session.UserID, err, "failed to delete account")
 		return
 	}
 
 	h.Sessions.Delete(token)
 	auth.ClearSessionCookies(w, !h.IsDev)
-	writeJSON(w, http.StatusOK, StatusResponse{Status: "account deleted"})
+	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }
 
 // UpdateProfile godoc
 //
 //	@Summary     Update current user profile
+//	@Description Partial update: only the fields present are changed. Changing the password needs `old_password` and signs
+//	@Description out every other device. Enumerated fields reject unknown values with `validation_failed`:
+//	@Description `status_preference` auto|online|away|dnd|offline, `allow_channel_adds` and `dm_permission`
+//	@Description everyone|friends|nobody, `friend_request_permission` everyone|nobody.
+//	@Description **Access:** Authenticated (self only).
 //	@Tags        users
 //	@Accept      json
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Param       body body UpdateUserRequest true "Update payload"
 //	@Success     200 {object} UserResponse
+//	@Failure     400 {object} ErrorResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     409 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users/me [patch]
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	var body UpdateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON")
+	if !decodeJSON(w, r, &body, "invalid JSON") {
+		return
+	}
+	if msg := validateProfileEnums(&body); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	u, err := h.Store.GetUser(session.UserID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "user not found")
+		userNotFoundOr(w, "update profile", err)
 		return
 	}
 	passwordChanged := false
@@ -109,7 +187,11 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Check if username is already taken by someone else
-		existing, _ := h.Store.GetUserByUsername(body.Username)
+		existing, lerr := h.Store.GetUserByUsername(body.Username)
+		if lerr != nil && !errors.Is(lerr, db.ErrNotFound) {
+			writeInternal(w, "update profile: username lookup", lerr, "failed to update profile")
+			return
+		}
 		if existing != nil && existing.ID != u.ID {
 			writeError(w, http.StatusConflict, "username already taken")
 			return
@@ -137,7 +219,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 		pwdHash, err := crypto.HashPassword(body.Password)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to hash password")
+			writeInternal(w, "update profile: hash password", err, "failed to update profile")
 			return
 		}
 		u.PwdHash = pwdHash
@@ -181,22 +263,13 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		u.CustomMsg = *body.CustomMsg
 	}
 	if body.AllowChannelAdds != nil {
-		val := *body.AllowChannelAdds
-		if val == "everyone" || val == "friends" || val == "nobody" {
-			u.AllowChannelAdds = val
-		}
+		u.AllowChannelAdds = *body.AllowChannelAdds
 	}
 	if body.DMPermission != nil {
-		val := *body.DMPermission
-		if val == "everyone" || val == "friends" || val == "nobody" {
-			u.DMPermission = val
-		}
+		u.DMPermission = *body.DMPermission
 	}
 	if body.FriendRequestPermission != nil {
-		val := *body.FriendRequestPermission
-		if val == "everyone" || val == "nobody" {
-			u.FriendRequestPermission = val
-		}
+		u.FriendRequestPermission = *body.FriendRequestPermission
 	}
 	if body.StatusPreference != nil {
 		u.StatusPreference = *body.StatusPreference
@@ -217,7 +290,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Store.UpdateUser(u); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update profile")
+		writeInternal(w, "update profile: save", err, "failed to update profile")
 		return
 	}
 	if passwordChanged {
@@ -241,28 +314,61 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// validateProfileEnums returns a message for the first enumerated field holding a value outside its whitelist, or
+// "" when all are acceptable.
+func validateProfileEnums(b *UpdateUserRequest) string {
+	switch {
+	case b.StatusPreference != nil && !statusPreferences[*b.StatusPreference]:
+		return "invalid status_preference"
+	case b.AllowChannelAdds != nil && !channelAddPermissions[*b.AllowChannelAdds]:
+		return "invalid allow_channel_adds"
+	case b.DMPermission != nil && !dmPermissions[*b.DMPermission]:
+		return "invalid dm_permission"
+	case b.FriendRequestPermission != nil && !friendRequestPermitted[*b.FriendRequestPermission]:
+		return "invalid friend_request_permission"
+	}
+	return ""
+}
+
 // SearchUsers godoc
 //
 //	@Summary     Search globally for users by username
+//	@Description Case-insensitive substring match, paged (`{items, next_cursor}`). The query must be at least 2
+//	@Description characters (shorter ones return an empty page). At most 50 users are returned in total across all
+//	@Description pages, so the endpoint cannot be used to enumerate the user base.
+//	@Description **Access:** Authenticated.
 //	@Tags        users
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       q query string false "Search query to filter by username"
-//	@Success     200 {array} UserResponse
+//	@Param       q      query string false "Search query to filter by username (min 2 characters)"
+//	@Param       limit  query int    false "Page size (1-100, default 50)"
+//	@Param       cursor query string false "Opaque cursor from the previous page's next_cursor"
+//	@Success     200 {object} UserPageResponse
+//	@Failure     400 {object} ErrorResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users [get]
 func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	if q == "" {
-		writeJSON(w, http.StatusOK, []UserResponse{})
+	limit, cursor, ok := pageParams(w, r)
+	if !ok {
+		return
+	}
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	if utf8.RuneCountInString(q) < minUserSearchRunes {
+		writeJSON(w, http.StatusOK, UserPageResponse{Items: []UserResponse{}})
 		return
 	}
 	users, err := h.Store.SearchUsers(q)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "search failed")
+		writeInternal(w, "search users", err, "search failed")
 		return
 	}
+	if len(users) > maxUserSearchResults {
+		users = users[:maxUserSearchResults]
+	}
 
-	var res []UserResponse
+	res := make([]UserResponse, 0, len(users))
 	for _, u := range users {
 		res = append(res, UserResponse{
 			ID:          u.ID,
@@ -275,26 +381,31 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 			CustomMsg:   u.CustomMsg,
 		})
 	}
-	if res == nil {
-		res = []UserResponse{}
-	}
-	writeJSON(w, http.StatusOK, res)
+	writePage(w, res, cursor, limit, func(items []UserResponse, next string) UserPageResponse {
+		return UserPageResponse{Items: items, NextCursor: next}
+	})
 }
 
 // GetUser godoc
 //
 //	@Summary     Get a user by ID
+//	@Description Public profile of any user. Privacy settings are only included for the caller's own account.
+//	@Description **Access:** Authenticated.
 //	@Tags        users
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Param       id path string true "User ID"
 //	@Success     200 {object} UserResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users/{id} [get]
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	u, err := h.Store.GetUser(id)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "user not found")
+		userNotFoundOr(w, "get user "+id, err)
 		return
 	}
 	resp := UserResponse{
@@ -324,18 +435,27 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 // GetPresence godoc
 //
 //	@Summary     Get presence status for a user
+//	@Description **Access:** Authenticated.
 //	@Tags        users
 //	@Produce     json
 //	@Security    BearerAuth
 //	@Param       id path string true "User ID"
-//	@Success     200 {object} models.Presence
+//	@Success     200 {object} PresenceResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users/{id}/presence [get]
 func (h *Handler) GetPresence(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("id")
 	p, err := h.Store.GetPresence(userID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "presence not found")
+		if errors.Is(err, db.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "presence not found")
+			return
+		}
+		writeInternal(w, "get presence "+userID, err, "could not load presence")
 		return
 	}
-	writeJSON(w, http.StatusOK, p)
+	writeJSON(w, http.StatusOK, PresenceResponse{LastSeen: p.LastSeen, CurrentStatus: p.CurrentStatus})
 }

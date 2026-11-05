@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"cove/backend/internal/models"
 )
 
 // ── Request / Response types (used in Swagger annotations) ──────────────────
@@ -95,7 +97,6 @@ type ExploreChannelResponse struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
 	AvatarID    string    `json:"avatar_id"`
-	InviteLink  string    `json:"invite_link"`
 	MemberCount int       `json:"member_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -131,8 +132,14 @@ type UpdateUserRequest struct {
 	FriendRequestPermission *string   `json:"friend_request_permission,omitempty"`
 }
 
+// ErrorResponse is the standard error envelope (docs/api-standard.md section 4).
 type ErrorResponse struct {
+	// Error is a human-readable message (or an i18n key the client translates).
 	Error string `json:"error" example:"invalid credentials"`
+	// Code is a stable machine-readable code from the registry; clients branch on it, never on Error.
+	Code string `json:"code" example:"unauthorized"`
+	// Details carries optional code-specific data, e.g. min_client_version for client_outdated.
+	Details map[string]string `json:"details,omitempty"`
 }
 
 type StatusResponse struct {
@@ -175,13 +182,40 @@ type AddMembersResponse struct {
 	Skipped []SkippedMember `json:"skipped"`
 }
 
+// UpdateMemberRequest changes a channel member's role.
+type UpdateMemberRequest struct {
+	// Role is 0 (member) or 10 (admin). Ownership cannot be granted through this endpoint.
+	Role int `json:"role" example:"10" enums:"0,10"`
+}
+
+// PresenceResponse is a user's live presence.
+type PresenceResponse struct {
+	LastSeen      time.Time `json:"last_seen"`
+	CurrentStatus string    `json:"current_status" example:"online" enums:"online,away,dnd,offline"`
+}
+
+// UploadFileResponse describes a stored upload. It mirrors the stored file record minus the server-side storage
+// path, which is never sent to clients.
 type UploadFileResponse struct {
-	FileID           string  `json:"file_id"`
-	Size             int64   `json:"size"`
-	Mime             string  `json:"mime"`
-	ProcessingStatus string  `json:"processing_status,omitempty"`
-	DurationSec      float64 `json:"duration_sec,omitempty"`
-	Uploaded         string  `json:"uploaded"`
+	ID               string    `json:"id"`
+	OwnerID          string    `json:"owner_id"`
+	ChannelID        string    `json:"channel_id"`
+	Size             int64     `json:"size"`
+	Mime             string    `json:"mime" example:"application/octet-stream"`
+	ThumbCipher      []byte    `json:"thumb_ciphertext,omitempty"`
+	ThumbNonce       []byte    `json:"thumb_nonce,omitempty"`
+	ProcessingStatus string    `json:"processing_status,omitempty" enums:"ready,processing,failed"`
+	DurationSec      float64   `json:"duration_sec,omitempty"`
+	UploadedAt       time.Time `json:"uploaded_at"`
+}
+
+// newUploadFileResponse copies the client-visible fields of a stored file.
+func newUploadFileResponse(f *models.File) UploadFileResponse {
+	return UploadFileResponse{
+		ID: f.ID, OwnerID: f.OwnerID, ChannelID: f.ChannelID, Size: f.SizeBytes, Mime: f.MIMEType,
+		ThumbCipher: f.ThumbCipher, ThumbNonce: f.ThumbNonce, ProcessingStatus: f.ProcessingStatus,
+		DurationSec: f.DurationSec, UploadedAt: f.UploadedAt,
+	}
 }
 
 // Relationship types
@@ -196,4 +230,44 @@ type RelationshipResponse struct {
 	User       *UserResponse `json:"user,omitempty"`
 	CreatedAt  time.Time     `json:"created_at,omitempty"`
 	UpdatedAt  time.Time     `json:"updated_at,omitempty"`
+}
+
+// ── Paged list envelopes (docs/api-standard.md section 9) ───────────────────
+//
+// Every unbounded list answers {"items": [...], "next_cursor": "<opaque>"}. next_cursor is empty on the last page.
+// One named type per endpoint because swaggo cannot render generics.
+
+// MessagePageResponse is one page of channel messages, newest first.
+type MessagePageResponse struct {
+	Items      []*models.Message `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+}
+
+// ChannelPageResponse is one page of the caller's channels.
+type ChannelPageResponse struct {
+	Items      []ChannelResponse `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+}
+
+// ExploreChannelPageResponse is one page of public channel search results.
+type ExploreChannelPageResponse struct {
+	Items      []ExploreChannelResponse `json:"items"`
+	NextCursor string                   `json:"next_cursor,omitempty"`
+}
+
+// UserPageResponse is one page of users (channel members, user search).
+type UserPageResponse struct {
+	Items      []UserResponse `json:"items"`
+	NextCursor string         `json:"next_cursor,omitempty"`
+}
+
+// RelationshipPageResponse is one page of relationships or incoming friend requests.
+type RelationshipPageResponse struct {
+	Items      []RelationshipResponse `json:"items"`
+	NextCursor string                 `json:"next_cursor,omitempty"`
+}
+
+// DeleteAccountRequest confirms an account deletion with the caller's current password (step-up).
+type DeleteAccountRequest struct {
+	Password string `json:"password" example:"s3cur3P@ss!"`
 }

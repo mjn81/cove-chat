@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -141,6 +142,16 @@ func main() {
 	// Buffered: the admin "delete server" action sends SIGTERM here too.
 	quit := make(chan os.Signal, 2)
 
+	// The admin panel's "Update server" button replaces the binary, then asks for this restart: the normal
+	// graceful shutdown runs first (database closed, ports freed) and the process re-executes afterwards.
+	var restartForUpdate atomic.Bool
+	updater := api.NewUpdater(version.Version, func() {
+		restartForUpdate.Store(true)
+		quit <- syscall.SIGTERM
+	})
+	updater.Client.ManifestURL = cfg.Update.ManifestURL
+	updater.Client.NoGitHubFallback = !cfg.Update.GitHubFallback
+
 	apiHandler := &api.Handler{
 		Store:               dataStore,
 		Sessions:            sessions,
@@ -154,6 +165,9 @@ func main() {
 		UDPPort:             cfg.Server.UDPPort,
 		IsDev:               cfg.Server.Dev,
 		FrontendOrigin:      cfg.Server.FrontendOrigin,
+		MinClientVersion:    cfg.Server.MinClientVersion,
+		EnforceMinClient:    cfg.Server.EnforceMinClient,
+		VoiceMode:           cfg.Voice.Mode,
 		Settings: api.NewSettings(api.SettingsInit{
 			RegistrationMode:    cfg.Registration.Mode,
 			CaptchaEnabled:      cfg.Captcha.Enabled,
@@ -169,6 +183,8 @@ func main() {
 		ServerDomain: cfg.Server.Domain,
 		StartedAt:    time.Now(),
 		Shutdown:     func() { quit <- syscall.SIGTERM },
+		Updater:      updater,
+		NotifyUpdates: cfg.Update.NotifyAdmins,
 	}
 	if _, err := dataStore.EnsureSystemUser(); err != nil {
 		logger.Warnf("could not create the Cove system account: %v", err)
@@ -183,17 +199,19 @@ func main() {
 	}
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
+	hub.SetMinClientVersion(cfg.Server.MinClientVersion)
 
 	// Sign-up proof-of-work. The service always exists; the admin panel switches enforcement on and off live.
 	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)
 
 	rootMux := http.NewServeMux()
-	rootMux.Handle("/ws", hub)
 	// Swagger UI — available at /api/docs/ only in dev mode
 	if cfg.Server.Dev {
 		rootMux.Handle("/api/docs/", httpSwagger.WrapHandler)
 	}
 	rootMux.Handle("/", api.NewRouter(apiHandler, float64(cfg.RateLimit.GlobalRPS), float64(cfg.RateLimit.AuthRPS)))
+	// Mounted after NewRouter so the upgrade shares the API's per-IP rate limiter and carries the version headers.
+	rootMux.Handle("/ws", apiHandler.WrapWS(hub))
 
 	// ── 7. HTTP server ─────────────────────────────────────────────────────
 	addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)
@@ -257,6 +275,14 @@ func main() {
 		}
 	}
 
+	// Tell the owner and admins (once per version) when a new release is out. Stopped during shutdown below.
+	notifierCtx, stopNotifier := context.WithCancel(context.Background())
+	notifierDone := make(chan struct{})
+	go func() {
+		defer close(notifierDone)
+		apiHandler.RunUpdateNotifier(notifierCtx, 2*time.Minute, 12*time.Hour)
+	}()
+
 	// ── 9. Graceful shutdown ───────────────────────────────────────────────
 	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
@@ -295,8 +321,10 @@ func main() {
 		os.Exit(1)
 	}()
 
-	// 1. Stop background GC ticker
+	// 1. Stop background GC ticker and the update notifier
 	close(stopGC)
+	stopNotifier()
+	<-notifierDone
 
 	// 2. Close UDP voice listener immediately (releases UDP port)
 	if udpConn != nil {
@@ -326,6 +354,13 @@ func main() {
 	}
 
 	logger.Info("Cove stopped.")
+
+	if restartForUpdate.Load() {
+		// Only returns on Windows (child started) or on failure; Unix replaces the process image.
+		if err := restartSelf(updater.ExePath); err != nil {
+			logger.Fatalf("Could not restart after the update: %v", err)
+		}
+	}
 }
 
 // startUDPRouter opens a raw UDP socket for desktop voice routing.

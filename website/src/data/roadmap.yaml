@@ -4,6 +4,7 @@
 #   Ship something   -> cut its block and paste it under the `shipped` phase
 #   Start something  -> move it under `now`
 #   Add an idea      -> copy any block, give it a unique `id`, a `title` and a short `note`
+#   Dates            -> every item gets `date: "YYYY-MM-DD"`: the ship date, or the target date while planned
 #
 # Status comes from the phase (shipped = done, now = in progress, others = planned).
 # Override one item with `status: done | progress | planned` if needed.
@@ -94,42 +95,62 @@ phases:
         area: chat
         title: "Multi-select message actions"
         note: "Select several messages and act on them at once, Telegram-style."
+        date: "2026-11-01"
       - id: chat-backgrounds
         area: chat
         title: "More chat backgrounds"
         note: "A wider set of SVG pattern wallpapers."
+        date: "2026-11-01"
       - id: audio-playback
         area: files
         title: "Inline audio player"
         note: "Uploaded audio plays in the chat, the same way images show."
+        date: "2026-11-01"
       - id: notif-icon
         area: clients
         title: "Custom notification icon"
         note: "Cove's own glyph in system notifications."
+        date: "2026-11-01"
       - id: invite-cards
         area: chat
         title: "Invite cards"
         note: "Share a channel as a card with a Join button, no raw links."
+        date: "2026-11-01"
       - id: profile-photos
         area: clients
         title: "Profile photo gallery"
         note: "Up to five photos, a Telegram-style cropper and a full-screen viewer."
+        date: "2026-11-01"
       - id: audio-playlist
         area: files
         title: "Audio playlist"
         note: "Switch between a chat's voice notes and audio files; the next one plays by itself."
+        date: "2026-11-01"
       - id: forward-all
         area: chat
         title: "Forward any message"
         note: "Voice notes, files, video messages and invites, several at a time."
+        date: "2026-11-01"
       - id: alerts
         area: clients
         title: "Whisper and call alerts"
         note: "Native notifications and their own sounds for Whisper requests and incoming calls."
+        date: "2026-11-01"
       - id: android-trust
         area: clients
         title: "Trusted Android builds"
         note: "Signing fixes so installs verify cleanly."
+        date: "2026-11-01"
+      - id: api-contract
+        area: platform
+        title: "Versioned API and compatibility checks"
+        note: "A written API standard, stable error codes, paged lists and capability checks so older clients degrade gracefully."
+        date: "2026-11-04"
+      - id: auto-update
+        area: platform
+        title: "Automatic updates"
+        note: "Desktop and Android check for updates and ask first; server admins update from the admin panel, or upload a release for air-gapped servers."
+        date: "2026-11-04"
 
   - id: now
     title: In progress
@@ -205,14 +226,6 @@ phases:
         area: platform
         title: "S3-compatible storage"
         note: "AWS, MinIO or DigitalOcean for large files."
-      - id: api-contract
-        area: platform
-        title: "Versioned API and compatibility checks"
-        note: "A standard API format and a clean way to handle client and server version mismatches."
-      - id: auto-update
-        area: platform
-        title: "Automatic updates"
-        note: "Desktop apps update themselves; server admins update with one button."
       - id: themes
         area: platform
         title: "Themes and custom colors"

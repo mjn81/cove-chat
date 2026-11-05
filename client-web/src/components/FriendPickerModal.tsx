@@ -15,6 +15,7 @@ import { useChannelStore } from '@/store/channels.slice';
 import { wsSendMessage } from '@/ws';
 import { encodeInvite } from '@/domains/channels/utils/invite-message';
 import { logger } from '@/utils/logger';
+import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
 
 interface FriendPickerModalProps {
 	open: boolean;
@@ -48,6 +49,9 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 	const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 	const [isSending, setIsSending] = useState(false);
 	const [sentSuccess, setSentSuccess] = useState(false);
+	// Gate on the server's advertised capability, not its version: an older server rejects `invite` messages.
+	const { supports, isLoaded } = useServerCapabilities();
+	const canInvite = supports('invite_messages');
 
 	const friends = relationships.filter((r) => r.type === 'friend');
 	const filteredFriends = friends.filter((f) =>
@@ -109,7 +113,7 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 						</Button>
 						<Button
 							type="button"
-							disabled={selectedUserIds.length === 0 || isSending || sentSuccess}
+							disabled={!canInvite || selectedUserIds.length === 0 || isSending || sentSuccess}
 							onClick={handleSendInviteLinks}
 						>
 							{sentSuccess ? (
@@ -134,6 +138,11 @@ export const FriendPickerModal: React.FC<FriendPickerModalProps> = ({
 			}
 		>
 			<div className="flex flex-col gap-3">
+				{isLoaded && !canInvite && (
+					<p role="status" className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+						{t('apiVersion.invites_unsupported')}
+					</p>
+				)}
 				<div className="relative">
 					<Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input

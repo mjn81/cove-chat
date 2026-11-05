@@ -338,16 +338,14 @@ func TestListChannels_ReturnsOnlyUserChannels(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("list status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
-	var channels []map[string]any
-	decodeJSON(t, resp, &channels)
+	channels := decodeItems[map[string]any](t, resp)
 	if len(channels) != 0 {
 		t.Errorf("B should see 0 channels, got %d", len(channels))
 	}
 
 	// A should see 1 channel
 	respA := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenA, nil))
-	var channelsA []map[string]any
-	decodeJSON(t, respA, &channelsA)
+	channelsA := decodeItems[map[string]any](t, respA)
 	if len(channelsA) != 1 {
 		t.Errorf("A should see 1 channel, got %d", len(channelsA))
 	}
@@ -375,8 +373,7 @@ func TestListMessages_EmptyChannel(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
-	var msgs []any
-	decodeJSON(t, resp, &msgs)
+	msgs := decodeItems[any](t, resp)
 	if msgs == nil {
 		t.Error("messages should be [] not null")
 	}
@@ -421,7 +418,7 @@ func TestAccountDeletion(t *testing.T) {
 	token1 := registerAndLogin(t, srv, "victor", "password123!")
 
 	// Delete
-	resp := mustDo(t, newJSONReq(t, http.MethodDelete, srv.URL+"/api/users/me", token1, nil))
+	resp := mustDo(t, newJSONReq(t, http.MethodDelete, srv.URL+"/api/users/me", token1, jsonBody(t, api.DeleteAccountRequest{Password: "password123!"})))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("delete status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
@@ -452,8 +449,7 @@ func TestExploreAndJoinChannel(t *testing.T) {
 
 	// Bob searches for Tech
 	resp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels/explore?q=Tech", tokenB, nil))
-	var explored []map[string]any
-	decodeJSON(t, resp, &explored)
+	explored := decodeItems[map[string]any](t, resp)
 	if len(explored) != 1 {
 		t.Fatalf("expected 1 public channel, got %d", len(explored))
 	}
@@ -461,11 +457,11 @@ func TestExploreAndJoinChannel(t *testing.T) {
 		t.Errorf("expected Global Tech, got %v", explored[0]["name"])
 	}
 
-	// Bob joins using invite_link
-	link := explored[0]["invite_link"].(string)
-	if link == "" {
-		t.Fatalf("Invite link is empty")
+	// Explore carries no invite link; Bob joins the public channel with its id.
+	if _, leaked := explored[0]["invite_link"]; leaked {
+		t.Fatalf("explore must not expose invite_link")
 	}
+	link := explored[0]["id"].(string)
 
 	joinResp := mustDo(t, newJSONReq(t, http.MethodPost, srv.URL+"/api/join/"+link, tokenB, nil))
 	if joinResp.StatusCode != http.StatusOK {
@@ -474,8 +470,7 @@ func TestExploreAndJoinChannel(t *testing.T) {
 
 	// Verify Bob has channel in his list
 	listResp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenB, nil))
-	var bobChannels []map[string]any
-	decodeJSON(t, listResp, &bobChannels)
+	bobChannels := decodeItems[map[string]any](t, listResp)
 	if len(bobChannels) != 1 {
 		t.Errorf("expected 1 channel, got %d", len(bobChannels))
 	}
@@ -490,8 +485,7 @@ func TestSearchUsers(t *testing.T) {
 
 	// Search
 	resp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/users?q=search", tokenA, nil))
-	var users []map[string]any
-	decodeJSON(t, resp, &users)
+	users := decodeItems[map[string]any](t, resp)
 	if len(users) != 2 {
 		t.Fatalf("expected 2 users, got %d", len(users))
 	}

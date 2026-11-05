@@ -45,7 +45,12 @@ data class UserSummary(
 )
 
 @Serializable
-data class ErrorBody(val error: String = "")
+data class ErrorBody(
+    val error: String = "",
+    /** Stable machine code (docs/api-standard.md); empty on servers that predate it. */
+    val code: String = "",
+    val details: kotlinx.serialization.json.JsonObject? = null
+)
 
 @Serializable
 data class LoginRequest(
@@ -65,7 +70,11 @@ data class RegisterRequest(
 @Serializable
 data class ServerVersion(
     val version: String,
-    @SerialName("udp_port") val udpPort: Int = 9090
+    @SerialName("udp_port") val udpPort: Int = 9090,
+    // Added by the API standard; every field defaults so an older server (which omits them) still parses.
+    @SerialName("api_version") val apiVersion: Int = 0,
+    @SerialName("min_client_version") val minClientVersion: String = "",
+    val capabilities: List<String> = emptyList()
 )
 
 /** Mirrors `ChannelResponse`. A DM is a channel with 2 members and an empty name. */

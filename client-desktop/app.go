@@ -16,6 +16,15 @@ type Config struct {
 	ServerURL string `json:"server_url"`
 	// CloseToTray keeps Cove running in the background when the window is closed. Nil means the default (on).
 	CloseToTray *bool `json:"close_to_tray,omitempty"`
+	// AutoUpdate turns the background update checks on. Nil means the default (on).
+	AutoUpdate *bool `json:"auto_update,omitempty"`
+	// UpdatePrerelease offers pre-releases. Nil means on while the app is a 0.x/pre-release build, off otherwise.
+	UpdatePrerelease *bool `json:"update_prerelease,omitempty"`
+	// AutoDownload lets the background check also download updates. Nil means off: checking is automatic,
+	// downloading and installing are the user's choice.
+	AutoDownload *bool `json:"auto_download,omitempty"`
+	// UpdateManifestURL overrides the update source (mirrors, air-gapped networks). Empty means Cove's own domain.
+	UpdateManifestURL string `json:"update_manifest_url,omitempty"`
 }
 
 // App is the Wails application struct.
@@ -26,6 +35,7 @@ type App struct {
 	secrets      secretStore
 	vault        vaultState
 	win          windowState
+	upd          updateState
 }
 
 // NewApp creates the application struct.
@@ -65,6 +75,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.startTray()
 	a.startTaskbarTheme()
+	a.startUpdater()
 }
 
 // DomReady is called after the frontend DOM is fully loaded.
@@ -73,6 +84,7 @@ func (a *App) DomReady(ctx context.Context) {
 
 // Shutdown is called when the Wails app is about to exit.
 func (a *App) Shutdown(ctx context.Context) {
+	a.stopUpdater()
 	tray.Stop()
 }
 
@@ -91,7 +103,7 @@ func (a *App) SaveServerURL(url string) {
 
 // AppVersion returns the desktop app version.
 func (a *App) AppVersion() string {
-	return "0.9.0"
+	return appVersion()
 }
 
 // ShowNotification shows a native desktop notification.

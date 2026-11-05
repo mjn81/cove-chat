@@ -7,6 +7,7 @@
 		"logout": "Log out"
 	},
 	"common": {
+		"load_more": "Load more",
 		"close": "Close",
 		"save": "Save",
 		"cancel": "Cancel",
@@ -708,7 +709,14 @@
 				},
 				"server": {
 					"reset": "reset the server",
-					"restore": "restored a backup"
+					"restore": "restored a backup",
+					"update": {
+						"start": "started a server update to",
+						"installed": "installed the server update",
+						"failed": "server update failed",
+						"check": "checked for server updates",
+							"upload": "uploaded a server update"
+					}
 				}
 			}
 		},
@@ -761,7 +769,8 @@
 				"limits": "Limits",
 				"calls": "Calls",
 				"network": "Network",
-				"security": "Security"
+				"security": "Security",
+					"updates": "Updates"
 			},
 			"keys": {
 				"server": {
@@ -790,7 +799,12 @@
 				"captcha": {
 					"enabled": "Sign-up check (proof of work)",
 					"difficulty": "Sign-up check difficulty"
-				}
+				},
+					"update": {
+						"manifest_url": "Update manifest URL",
+						"github_fallback": "Fall back to GitHub",
+						"notify_admins": "Tell admins about new versions"
+					}
 			}
 		},
 		"admins": {
@@ -871,7 +885,22 @@
 			"owner_cannot_delete": "The owner cannot delete their account. Transfer ownership first.",
 			"invalid_upload": "The upload could not be read.",
 			"backup_unreadable": "Wrong passphrase, or this is not a valid backup file.",
-			"restore_failed": "The restore failed."
+			"restore_failed": "The restore failed.",
+			"update_docker": "Docker installs cannot update themselves. Run docker compose pull && docker compose up -d.",
+			"update_unsupported": "This install cannot update itself.",
+			"update_in_progress": "An update is already running.",
+			"update_check_failed": "Could not reach GitHub to check for updates.",
+			"update_up_to_date": "The server is already up to date.",
+			"update_checksum_failed": "The download did not match its checksum, so nothing was installed.",
+			"update_no_checksums": "The release has no checksum file, so nothing was installed.",
+			"update_download_failed": "The update could not be downloaded.",
+			"update_failed": "The update could not be installed.",
+				"update_upload_too_large": "The file is larger than the allowed size.",
+				"update_upload_invalid": "This is not a valid Cove server release file.",
+				"update_upload_wrong_platform": "This file is built for a different system or architecture.",
+				"update_upload_version": "Enter the version of this release, for example 0.10.0.",
+				"update_no_upload": "Upload a release file first.",
+				"update_too_old": "This release cannot be installed directly from your version. Install an intermediate release first."
 		},
 		"notices": {
 			"title": "Server notices",
@@ -882,6 +911,50 @@
 			"confirmMessage": "This message will be delivered to every user on this server and can't be recalled.",
 			"sent": "Notice delivered to {{n}} users",
 			"failed": "{{n}} deliveries failed"
+		},
+		"update": {
+			"title": "Server update",
+			"current": "Installed version",
+			"latest": "Latest release",
+			"prerelease": "Pre-release",
+			"check_now": "Check now",
+			"up_to_date": "This server is up to date.",
+			"button": "Update server",
+			"notes": "What's new in {{version}}",
+			"view_release": "View on GitHub",
+			"owner_only": "Only the server owner can install updates.",
+			"confirm_title": "Update to {{version}}?",
+			"confirm_body": "The server downloads the release, checks its SHA-256 checksum, replaces its program file and restarts.",
+			"confirm_detail": "Everyone is disconnected for a few seconds while it restarts. The previous version is kept next to it as a .old file so you can roll back.",
+			"confirm_action": "Update and restart",
+			"stage_downloading": "Downloading and verifying the update…",
+			"stage_installing": "Installing the update…",
+			"stage_restarting": "Restarting the server…",
+			"stage_reconnecting": "Restarting, reconnecting…",
+			"done": "Server updated to {{version}}.",
+			"failed": "The update failed: {{reason}}",
+			"reason_docker": "Docker installs cannot update themselves. Use the commands above.",
+			"reason_unsupported": "This install cannot update itself (read-only folder, development build or unsupported platform). Update it manually.",
+			"docker_title": "Running in Docker",
+			"docker_body": "Update the container by pulling the new image and recreating it:",
+			"docker_watchtower": "Or let Watchtower pull the image and restart the container automatically.",
+				"source_label": "Checked via",
+				"source_manifest": "Cove release manifest",
+				"source_github": "GitHub releases",
+				"upload_title": "Manual update (no internet)",
+				"upload_body": "For installs that cannot reach GitHub or covechat.dev. On another computer download the server zip for this machine from the release page, then upload it here. This is for non-Docker installs: with Docker, pull the new image instead.",
+				"upload_confirm": "Enter your password to stage this file. Nothing is installed until you press Install.",
+				"upload_file": "Release file (.zip or server binary)",
+				"upload_version": "Version of this release",
+				"upload_sha": "SHA-256 or SHA256SUMS (optional)",
+				"upload_sha_hint": "Paste the checksum, or the whole SHA256SUMS file, to verify the upload. Without it the file is trusted as it is.",
+				"upload_button": "Upload",
+				"uploading": "Uploading…",
+				"uploaded": "Version {{version}} is staged ({{checked}}).",
+				"checked_yes": "checksum verified",
+				"checked_no": "not verified",
+				"apply": "Install uploaded version",
+				"upload_done": "Upload staged. Press Install to apply it."
 		}
 	},
 	"devices": {
@@ -970,10 +1043,69 @@
 		"banner": "Public demo · resets every night · do not share anything private",
 		"dismiss": "Dismiss"
 	},
+	"apiVersion": {
+		"unknown_message": "This message needs a newer version of {{app}}",
+		"outdated_title": "Update {{app}} to continue",
+		"outdated_body": "This server needs a newer version of {{app}}. Your version is too old to talk to it safely.",
+		"outdated_min": "Minimum supported version: {{version}}",
+		"reload": "Reload",
+		"desktop_hint": "Please update the {{app}} desktop app to the latest release, then reopen it.",
+		"soft_banner": "Your {{app}} is out of date, some features are unavailable.",
+		"dismiss": "Dismiss",
+		"invites_unsupported": "This server does not support sharing invites in chat yet."
+	},
 	"captcha": {
 		"verifying": "Checking that you are human…",
 		"verified": "You are verified",
 		"failed": "The check could not be completed.",
 		"retry": "Try again"
-	}
+	},
+		"desktopUpdate": {
+			"title": "Updates",
+			"auto": "Check for updates automatically",
+			"autoHint": "Cove looks for new versions in the background and downloads them, ready to install when you choose.",
+			"prerelease": "Include pre-releases",
+			"prereleaseHint": "Also offer early builds. Every 0.x version is published as a pre-release.",
+			"version": "Version {{version}}",
+			"checkNow": "Check now",
+			"status": {
+				"unknown": "Update status is not available yet.",
+				"checking": "Checking for updates…",
+				"downloading": "Downloading {{version}}… {{percent}}%",
+				"installing": "Installing the update…",
+				"ready": "Version {{version}} is downloaded and ready to install.",
+				"manual": "Version {{version}} is available, but this install location is read-only. Download it manually.",
+				"upToDate": "Cove is up to date. Last checked {{time}}.",
+				"notChecked": "Not checked yet.",
+					"available": "Version {{version}} is available. Nothing has been downloaded."
+			},
+			"banner": {
+				"restart": "Restart",
+				"download": "Download"
+			},
+			"confirm": {
+				"title": "Restart to update?",
+				"body": "Cove will close and reopen on version {{version}}.",
+				"call": "You are in a call. Restarting will end it.",
+				"draft": "You have unsent messages. They will be lost.",
+				"action": "Restart now"
+			},
+			"errors": {
+				"check_failed": "Could not check for updates. Check your connection and try again.",
+				"download_failed": "The update could not be downloaded.",
+				"checksum": "The downloaded update failed its integrity check, so it was discarded.",
+				"install_failed": "The update could not be installed. Your current version was kept.",
+				"unsupported": "Automatic updates are not available for this platform.",
+				"nothing_staged": "There is no downloaded update to install."
+			},
+				"autoDownload": "Download updates automatically",
+				"autoDownloadHint": "Off by default. Cove only checks for updates; turn this on to also download them in the background. Installing always needs your click.",
+				"source": "Update source",
+				"sourceHint": "Address of the release manifest. Keep the default unless you run a mirror, for example on a network without internet.",
+				"entry": {
+					"available": "Update available: Cove {{version}}",
+					"ready": "Update ready: Cove {{version}}",
+					"notes": "What's new"
+				}
+		}
 }

@@ -83,9 +83,10 @@ export function RegistrationPanel() {
 				<h3 className="text-sm font-semibold text-foreground">{t('admin.invites.title')}</h3>
 				<InviteForm />
 
-				{invites.data?.invites.length ? (
+				{invites.data?.length ? (
+					<>
 					<ul className="divide-y divide-border rounded-lg border border-border bg-card">
-						{invites.data.invites.map((inv) => {
+						{invites.data.map((inv) => {
 							const status = liveInviteStatus(inv);
 							return (
 								<li key={inv.code} className="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -142,6 +143,18 @@ export function RegistrationPanel() {
 							);
 						})}
 					</ul>
+					{invites.hasNextPage && (
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={invites.isFetchingNextPage}
+							onClick={() => void invites.fetchNextPage()}
+						>
+							{invites.isFetchingNextPage && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+							{t('common.load_more')}
+						</Button>
+					)}
+					</>
 				) : (
 					<p className="text-sm text-muted-foreground">{t('admin.invites.empty')}</p>
 				)}

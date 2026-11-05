@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"cove/backend/internal/apistd"
 	"cove/backend/internal/desktop"
 	"cove/backend/internal/logger"
 
@@ -47,7 +48,7 @@ func Recover(next http.Handler) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				logger.Errorf("panic recovered: %s %s | %v", r.Method, r.URL.Path, rec)
-				http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+				apistd.WriteError(w, http.StatusInternalServerError, apistd.CodeInternal, "internal server error", nil)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -153,7 +154,7 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := realIP(r)
 		if !rl.getLimiter(ip).Allow() {
-			http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
+			apistd.WriteError(w, http.StatusTooManyRequests, apistd.CodeRateLimited, "rate limit exceeded", nil)
 			return
 		}
 		next.ServeHTTP(w, r)

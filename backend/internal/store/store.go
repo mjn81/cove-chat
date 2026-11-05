@@ -1,6 +1,8 @@
 package store
 
 import (
+	"sort"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +13,25 @@ import (
 	"cove/backend/internal/models"
 	"github.com/google/uuid"
 )
+
+var (
+	// ErrUsernameTaken is returned by CreateUser when the name is already registered.
+	ErrUsernameTaken = errors.New("store: username already exists")
+	// ErrInvalidCredentials is returned by AuthenticateUser for an unknown user or a wrong password. Any other error
+	// from it is a real failure (database, hashing), not the caller's mistake.
+	ErrInvalidCredentials = errors.New("store: invalid credentials")
+	// ErrRule marks a request refused by a business rule (blocked, already friends, ...). Its message is written for
+	// the user, unlike other store errors which may carry internals.
+	ErrRule = errors.New("store: action not allowed")
+)
+
+// ruleError is an error whose text is safe to show to users and which matches ErrRule.
+type ruleError string
+
+func (e ruleError) Error() string        { return string(e) }
+func (e ruleError) Is(target error) bool { return target == ErrRule }
+
+func rule(msg string) error { return ruleError(msg) }
 
 // Store wraps the DB with all Cove repository logic — users, channels,
 // messages, presence, and files.
@@ -32,7 +53,7 @@ func New(database *db.DB) *Store {
 func (s *Store) CreateUser(username, password, domain string) (*models.User, error) {
 	// First check if a user with this username already exists
 	if existing, _ := s.GetUserByUsername(username); existing != nil {
-		return nil, fmt.Errorf("store: username already exists")
+		return nil, ErrUsernameTaken
 	}
 
 	id := uuid.New().String()
@@ -89,14 +110,19 @@ func (s *Store) GetUserByUsername(username string) (*models.User, error) {
 func (s *Store) AuthenticateUser(username, password string) (*models.User, error) {
 	u, err := s.GetUserByUsername(username)
 	if err != nil {
-		return nil, fmt.Errorf("store: user not found")
+		if errors.Is(err, db.ErrNotFound) {
+			// Same Argon2id cost as a wrong password, so response time does not reveal which usernames exist.
+			crypto.BurnPasswordVerify(password)
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("store: look up user: %w", err)
 	}
 	ok, err := crypto.VerifyPassword(password, u.PwdHash)
 	if err != nil {
 		return nil, fmt.Errorf("store: password verification error: %w", err)
 	}
 	if !ok {
-		return nil, fmt.Errorf("store: invalid credentials")
+		return nil, ErrInvalidCredentials
 	}
 	return u, nil
 }
@@ -324,6 +350,58 @@ func (s *Store) ListUserChannels(userID string) ([]*models.Channel, error) {
 	return visible, nil
 }
 
+// ListUserChannelsPage returns one page of the user's visible channels ordered by channel id, starting after the
+// channel id `after` ("" = first page), plus whether more exist. Only the channels of the page are enriched with the
+// last message and unread count, so a user with many channels no longer pays for all of them on every request.
+func (s *Store) ListUserChannelsPage(userID, after string, limit int) (page []*models.Channel, hasMore bool, err error) {
+	ucs, err := s.db.ListActiveMemberships(userID)
+	if err != nil {
+		return nil, false, err
+	}
+	sort.Slice(ucs, func(i, j int) bool { return ucs[i].ChannelID < ucs[j].ChannelID })
+	for _, uc := range ucs {
+		if uc.ChannelID <= after {
+			continue
+		}
+		ch, gerr := s.db.GetChannel(uc.ChannelID)
+		if gerr != nil {
+			continue // orphan membership index entry
+		}
+		s.enrichChannelForUser(ch, uc)
+		if !uc.ClearedAt.IsZero() && !ch.LastMessageAt.After(uc.ClearedAt) {
+			continue // cleared DM with nothing newer
+		}
+		if len(page) == limit {
+			return page, true, nil
+		}
+		page = append(page, ch)
+	}
+	return page, false, nil
+}
+
+// enrichChannelForUser fills the per-user derived fields (last message summary, unread count).
+func (s *Store) enrichChannelForUser(ch *models.Channel, uc *models.UserChannel) {
+	ch.LastMessageAt = ch.CreatedAt
+	if latest, err := s.db.ListMessages(ch.ID, "", 1); err == nil && len(latest) > 0 {
+		ch.LastMessageAt = latest[0].SentAt
+		ch.LastMessageCiphertext = latest[0].Ciphertext
+		ch.LastMessageNonce = latest[0].Nonce
+		ch.LastMessageType = latest[0].Type
+		ch.LastMessageSenderID = latest[0].SenderID
+		ch.LastMessageID = latest[0].ID
+	}
+	if uc.ClearedAt.IsZero() || ch.LastMessageAt.After(uc.ClearedAt) {
+		if count, err := s.db.CountUnreadMessages(uc.UserID, ch.ID); err == nil {
+			ch.UnreadCount = count
+		}
+	}
+}
+
+// CountMembersByChannel returns the active member count of every channel in a single index scan.
+func (s *Store) CountMembersByChannel() (map[string]int, error) {
+	return s.db.CountActiveMembersByChannel()
+}
+
 // ClearChannelForUser updates ClearedAt and LastReadAt timestamps for a user's channel membership.
 func (s *Store) ClearChannelForUser(userID, channelID string, clearedAt time.Time) error {
 	uc, err := s.db.GetUserChannel(userID, channelID)
@@ -488,7 +566,7 @@ func (s *Store) GetRelationship(fromID, toID string) (*models.Relationship, erro
 // BlockUser blocks targetID for actorID. Removes mutual friendships and pending requests.
 func (s *Store) BlockUser(actorID, targetID string) error {
 	if actorID == targetID {
-		return fmt.Errorf("cannot block yourself")
+		return rule("cannot block yourself")
 	}
 	now := time.Now().UTC()
 
@@ -511,7 +589,7 @@ func (s *Store) BlockUser(actorID, targetID string) error {
 func (s *Store) UnblockUser(actorID, targetID string) error {
 	rel, err := s.db.GetRelationship(actorID, targetID)
 	if err != nil || rel.Type != models.RelBlocked {
-		return fmt.Errorf("user is not blocked")
+		return rule("user is not blocked")
 	}
 	return s.db.DeleteRelationship(actorID, targetID)
 }
@@ -520,32 +598,32 @@ func (s *Store) UnblockUser(actorID, targetID string) error {
 // If targetID already sent a request to actorID, auto-accepts and establishes friendship.
 func (s *Store) SendFriendRequest(actorID, targetID string) error {
 	if actorID == targetID {
-		return fmt.Errorf("cannot friend yourself")
+		return rule("cannot friend yourself")
 	}
 	target, err := s.GetUser(targetID)
 	if err != nil {
-		return fmt.Errorf("target user not found")
+		return rule("target user not found")
 	}
 	if target.IsSystem {
-		return fmt.Errorf("this account does not accept friend requests")
+		return rule("this account does not accept friend requests")
 	}
 	if target.FriendRequestPermission == "nobody" {
-		return fmt.Errorf("user does not accept friend requests")
+		return rule("user does not accept friend requests")
 	}
 	if s.IsBlocked(targetID, actorID) {
-		return fmt.Errorf("cannot send friend request to this user")
+		return rule("cannot send friend request to this user")
 	}
 
 	existing, err := s.db.GetRelationship(actorID, targetID)
 	if err == nil {
 		if existing.Type == models.RelFriend {
-			return fmt.Errorf("already friends")
+			return rule("already friends")
 		}
 		if existing.Type == models.RelRequested {
-			return fmt.Errorf("friend request already sent")
+			return rule("friend request already sent")
 		}
 		if existing.Type == models.RelBlocked {
-			return fmt.Errorf("you have blocked this user")
+			return rule("you have blocked this user")
 		}
 	}
 
@@ -573,7 +651,7 @@ func (s *Store) SendFriendRequest(actorID, targetID string) error {
 func (s *Store) AcceptFriendRequest(actorID, targetID string) error {
 	req, err := s.db.GetRelationship(targetID, actorID)
 	if err != nil || req.Type != models.RelRequested {
-		return fmt.Errorf("no pending friend request from this user")
+		return rule("no pending friend request from this user")
 	}
 	now := time.Now().UTC()
 	rel1 := &models.Relationship{

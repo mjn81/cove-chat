@@ -32,6 +32,9 @@ func adminRoutes() []adminRoute {
 		{"POST", "/api/admin/invites", map[string]any{"max_uses": 1}, levelAdmin},
 		{"DELETE", "/api/admin/invites/NOSUCHCODE", nil, levelAdmin},
 		{"GET", "/api/admin/audit", nil, levelAdmin},
+		{"GET", "/api/admin/update", nil, levelAdmin},
+		{"POST", "/api/admin/update", nil, levelOwner},
+		{"POST", "/api/admin/update/upload", nil, levelOwner},
 		{"GET", "/api/admin/admins", nil, levelAdmin},
 		{"PUT", "/api/admin/admins/nobody-here", pw, levelOwner},
 		{"DELETE", "/api/admin/admins/nobody-here", pw, levelOwner},
@@ -176,10 +179,10 @@ func TestOwnerCannotDeleteTheirAccountButMembersCan(t *testing.T) {
 	e := newAdminEnv(t, "open")
 	owner, _, member := e.seedRoles(t)
 
-	if got := e.do(t, "DELETE", "/api/users/me", owner, nil); got.StatusCode != http.StatusForbidden {
+	if got := e.do(t, "DELETE", "/api/users/me", owner, map[string]string{"password": testPassword}); got.StatusCode != http.StatusForbidden {
 		t.Errorf("owner delete = %d, want 403 (transfer ownership first)", got.StatusCode)
 	}
-	if got := e.do(t, "DELETE", "/api/users/me", member, nil); got.StatusCode != http.StatusOK {
+	if got := e.do(t, "DELETE", "/api/users/me", member, map[string]string{"password": testPassword}); got.StatusCode != http.StatusOK {
 		t.Errorf("member delete = %d, want 200", got.StatusCode)
 	}
 }

@@ -194,11 +194,11 @@ func TestInviteLifecycleThroughTheAPI(t *testing.T) {
 	}
 
 	var list struct {
-		Invites []inviteView `json:"invites"`
+		Items []inviteView `json:"items"`
 	}
 	readJSON(t, e.do(t, "GET", "/api/admin/invites", admin, nil), &list)
 	statuses := map[string]inviteView{}
-	for _, inv := range list.Invites {
+	for _, inv := range list.Items {
 		statuses[inv.Code] = inv
 	}
 	if statuses[limited.Code].Uses != 2 || statuses[limited.Code].Status != "exhausted" {
@@ -353,16 +353,16 @@ func TestAuditLogRecordsAdminActions(t *testing.T) {
 	e.do(t, "PATCH", "/api/admin/config", admin, map[string]any{"changes": map[string]any{"registration.mode": "closed"}}).Body.Close()
 
 	var out struct {
-		Entries []struct {
+		Items []struct {
 			Action    string `json:"action"`
 			ActorName string `json:"actor_name"`
 			Target    string `json:"target"`
-		} `json:"entries"`
+		} `json:"items"`
 	}
 	readJSON(t, e.do(t, "GET", "/api/admin/audit", owner, nil), &out)
 
 	seen := map[string]bool{}
-	for _, en := range out.Entries {
+	for _, en := range out.Items {
 		seen[en.Action] = true
 		if strings.Contains(en.Target, testPassword) {
 			t.Errorf("audit entry leaks a secret: %+v", en)
@@ -370,7 +370,7 @@ func TestAuditLogRecordsAdminActions(t *testing.T) {
 	}
 	for _, want := range []string{"admin.grant", "invite.create", "config.update"} {
 		if !seen[want] {
-			t.Errorf("audit log has no %q entry: %+v", want, out.Entries)
+			t.Errorf("audit log has no %q entry: %+v", want, out.Items)
 		}
 	}
 }

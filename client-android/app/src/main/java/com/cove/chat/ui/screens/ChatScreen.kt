@@ -173,6 +173,8 @@ fun ChatScreen(
     // Newest-first, exactly the order the API returns.
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var hasMore by remember { mutableStateOf(true) }
+    // Opaque cursor to the next older page, from the previous answer.
+    var olderCursor by remember { mutableStateOf<String?>(null) }
     var loadingMore by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var replyTo by remember { mutableStateOf<Message?>(null) }
@@ -212,8 +214,9 @@ fun ChatScreen(
     LaunchedEffect(channelId) {
         api.getChannels().onSuccess { list -> channel = list.firstOrNull { it.id == channelId } }
         api.getMessages(channelId, pageSize).onSuccess {
-            messages = it
-            hasMore = it.size >= pageSize
+            messages = it.items
+            olderCursor = it.nextCursor
+            hasMore = it.hasMore
         }
     }
     LaunchedEffect(channelId) { ws.channelsChangedFlow.collect { api.getChannels().onSuccess { l -> channel = l.firstOrNull { it.id == channelId } } } }
@@ -248,9 +251,10 @@ fun ChatScreen(
     LaunchedEffect(nearTop, messages.size) {
         if (nearTop && hasMore && !loadingMore && messages.isNotEmpty()) {
             loadingMore = true
-            api.getMessages(channelId, pageSize, before = messages.last().id).onSuccess { older ->
-                messages = messages + older.filter { o -> messages.none { it.id == o.id } }
-                hasMore = older.size >= pageSize
+            api.getMessages(channelId, pageSize, cursor = olderCursor).onSuccess { older ->
+                messages = messages + older.items.filter { o -> messages.none { it.id == o.id } }
+                olderCursor = older.nextCursor
+                hasMore = older.hasMore
             }
             loadingMore = false
         }
@@ -833,6 +837,9 @@ private fun MessageRow(
                     val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
                     else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (!com.cove.chat.data.remote.ApiStandard.isKnownMessageType(m.type)) {
+                    // A type from a newer Cove: keep it in the timeline as a placeholder instead of showing raw data.
+                    Text("This message needs a newer version of Cove", color = c.textMuted, fontSize = CoveType.label.fontSize)
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
                         text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,

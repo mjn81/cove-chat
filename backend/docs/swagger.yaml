@@ -17,56 +17,6 @@ definitions:
         description: e.g. a username or invite code (never a secret)
         type: string
     type: object
-  cove_backend_internal_models.Channel:
-    properties:
-      aes_key_enc:
-        description: Channel AES-256 key encrypted with server KEK
-        items:
-          type: integer
-        type: array
-      avatar_id:
-        type: string
-      created_at:
-        type: string
-      creator_id:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      invite_link:
-        description: Unique public/private join link
-        type: string
-      is_private:
-        description: If true, hidden from public search
-        type: boolean
-      last_message_at:
-        description: 'Ephemeral: Populated in ListUserChannels'
-        type: string
-      last_message_ciphertext:
-        description: |-
-          Ephemeral, populated in ListUserChannels: the channel's most recent
-          message, still encrypted — lets the client render a sidebar preview
-          without a second round-trip. The server never sees the plaintext.
-        items:
-          type: integer
-        type: array
-      last_message_id:
-        type: string
-      last_message_nonce:
-        items:
-          type: integer
-        type: array
-      last_message_sender_id:
-        type: string
-      last_message_type:
-        $ref: '#/definitions/cove_backend_internal_models.MessageType'
-      name:
-        type: string
-      unread_count:
-        description: 'Ephemeral: Populated per-user in handlers'
-        type: integer
-    type: object
   cove_backend_internal_models.Message:
     properties:
       channel_id:
@@ -118,14 +68,6 @@ definitions:
     - MessageTypeVoice
     - MessageTypeVideo
     - MessageTypeInvite
-  cove_backend_internal_models.Presence:
-    properties:
-      current_status:
-        description: '"online" | "away" | "offline"'
-        type: string
-      last_seen:
-        type: string
-    type: object
   internal_api.AddMembersRequest:
     properties:
       user_ids:
@@ -134,6 +76,17 @@ definitions:
         - '"user-2"]'
         items:
           type: string
+        type: array
+    type: object
+  internal_api.AddMembersResponse:
+    properties:
+      added:
+        items:
+          type: string
+        type: array
+      skipped:
+        items:
+          $ref: '#/definitions/internal_api.SkippedMember'
         type: array
     type: object
   internal_api.AdminAccountResponse:
@@ -188,10 +141,12 @@ definitions:
     type: object
   internal_api.AuditListResponse:
     properties:
-      entries:
+      items:
         items:
           $ref: '#/definitions/cove_backend_internal_models.AuditEntry'
         type: array
+      next_cursor:
+        type: string
     type: object
   internal_api.BackupRequest:
     properties:
@@ -222,6 +177,15 @@ definitions:
         description: Signature is hex(HMAC-SHA256(server key, challenge)); the server
           checks it when the solution comes back.
         example: c0ffee...
+        type: string
+    type: object
+  internal_api.ChannelPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.ChannelResponse'
+        type: array
+      next_cursor:
         type: string
     type: object
   internal_api.ChannelResponse:
@@ -368,6 +332,12 @@ definitions:
         example: launch party
         type: string
     type: object
+  internal_api.DeleteAccountRequest:
+    properties:
+      password:
+        example: s3cur3P@ss!
+        type: string
+    type: object
   internal_api.DeleteServerRequest:
     properties:
       confirm:
@@ -378,8 +348,30 @@ definitions:
     type: object
   internal_api.ErrorResponse:
     properties:
+      code:
+        description: Code is a stable machine-readable code from the registry; clients
+          branch on it, never on Error.
+        example: unauthorized
+        type: string
+      details:
+        additionalProperties:
+          type: string
+        description: Details carries optional code-specific data, e.g. min_client_version
+          for client_outdated.
+        type: object
       error:
+        description: Error is a human-readable message (or an i18n key the client
+          translates).
         example: invalid credentials
+        type: string
+    type: object
+  internal_api.ExploreChannelPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.ExploreChannelResponse'
+        type: array
+      next_cursor:
         type: string
     type: object
   internal_api.ExploreChannelResponse:
@@ -392,8 +384,6 @@ definitions:
         type: string
       id:
         type: string
-      invite_link:
-        type: string
       member_count:
         type: integer
       name:
@@ -401,10 +391,12 @@ definitions:
     type: object
   internal_api.InviteListResponse:
     properties:
-      invites:
+      items:
         items:
           $ref: '#/definitions/internal_api.InviteResponse'
         type: array
+      next_cursor:
+        type: string
     type: object
   internal_api.InvitePreviewResponse:
     properties:
@@ -495,6 +487,15 @@ definitions:
         example: alice
         type: string
     type: object
+  internal_api.MessagePageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.Message'
+        type: array
+      next_cursor:
+        type: string
+    type: object
   internal_api.NoticeRequest:
     properties:
       text:
@@ -511,6 +512,19 @@ definitions:
   internal_api.PasswordRequest:
     properties:
       password:
+        type: string
+    type: object
+  internal_api.PresenceResponse:
+    properties:
+      current_status:
+        enum:
+        - online
+        - away
+        - dnd
+        - offline
+        example: online
+        type: string
+      last_seen:
         type: string
     type: object
   internal_api.RegisterRequest:
@@ -540,6 +554,38 @@ definitions:
       username:
         example: alice
         type: string
+    type: object
+  internal_api.RelationshipActionRequest:
+    properties:
+      action:
+        description: '"request" | "accept" | "decline" | "cancel" | "remove" | "block"
+          | "unblock"'
+        type: string
+    type: object
+  internal_api.RelationshipPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.RelationshipResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  internal_api.RelationshipResponse:
+    properties:
+      created_at:
+        type: string
+      from_user_id:
+        type: string
+      to_user_id:
+        type: string
+      type:
+        description: '"none" | "requested" | "friend" | "blocked"'
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/internal_api.UserResponse'
     type: object
   internal_api.ResetRequest:
     properties:
@@ -601,6 +647,13 @@ definitions:
         example: Windows
         type: string
     type: object
+  internal_api.SkippedMember:
+    properties:
+      reason:
+        type: string
+      user_id:
+        type: string
+    type: object
   internal_api.StatusResponse:
     properties:
       status:
@@ -648,6 +701,156 @@ definitions:
           type: string
         type: array
     type: object
+  internal_api.UpdateInfoResponse:
+    properties:
+      can_update:
+        description: 'CanUpdate is true only when the button may be used right now:
+          binary mode, a newer release and no job running.'
+        example: true
+        type: boolean
+      check_error:
+        description: CheckError is an i18n key set when GitHub could not be reached;
+          everything else is still filled in.
+        example: admin.errors.update_check_failed
+        type: string
+      checked_at:
+        description: RFC3339; when the release list was last fetched
+        type: string
+      current_version:
+        example: 0.9.9
+        type: string
+      error:
+        description: Error is an i18n key describing why the last update attempt failed.
+        example: admin.errors.update_checksum_failed
+        type: string
+      instructions:
+        description: Instructions is the manual command, set in docker mode.
+        example: docker compose pull && docker compose up -d
+        type: string
+      latest_version:
+        description: empty when no release could be determined
+        example: 0.10.0
+        type: string
+      mode:
+        description: Mode is "binary" (plain executable), "docker" (container, never
+          self-replaced) or "unknown".
+        enum:
+        - binary
+        - docker
+        - unknown
+        example: binary
+        type: string
+      prerelease:
+        type: boolean
+      progress_percent:
+        example: 42
+        type: integer
+      published_at:
+        description: RFC3339
+        type: string
+      reason:
+        description: 'Reason explains a false CanUpdate with an i18n key suffix: docker,
+          unsupported, up_to_date, busy.'
+        example: docker
+        type: string
+      release_notes:
+        description: GitHub release body (Markdown), truncated to 16 KiB
+        type: string
+      release_url:
+        type: string
+      source:
+        description: |-
+          State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.
+          Source is where the release list came from: "manifest" (covechat.dev or a configured mirror) or "github".
+        example: manifest
+        type: string
+      state:
+        enum:
+        - idle
+        - downloading
+        - installing
+        - restarting
+        - failed
+        example: idle
+        type: string
+      update_available:
+        example: true
+        type: boolean
+      uploaded:
+        allOf:
+        - $ref: '#/definitions/internal_api.UpdateUploadInfo'
+        description: Uploaded describes a manually uploaded release waiting to be
+          applied (air-gapped installs).
+    type: object
+  internal_api.UpdateMemberRequest:
+    properties:
+      role:
+        description: Role is 0 (member) or 10 (admin). Ownership cannot be granted
+          through this endpoint.
+        enum:
+        - 0
+        - 10
+        example: 10
+        type: integer
+    type: object
+  internal_api.UpdateStartRequest:
+    properties:
+      password:
+        description: Password is the owner's current password (step-up for replacing
+          the server binary).
+        type: string
+      source:
+        description: 'Source is "release" (default: download the latest) or "upload"
+          (install the staged manual upload).'
+        enum:
+        - release
+        - upload
+        example: upload
+        type: string
+    type: object
+  internal_api.UpdateStartResponse:
+    properties:
+      state:
+        example: downloading
+        type: string
+      status:
+        example: success
+        type: string
+      version:
+        description: the release being installed
+        example: 0.10.0
+        type: string
+    type: object
+  internal_api.UpdateUploadInfo:
+    properties:
+      kind:
+        enum:
+        - zip
+        - binary
+        example: zip
+        type: string
+      sha256:
+        example: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+        type: string
+      size_bytes:
+        example: 31457280
+        type: integer
+      verified:
+        description: Verified is true when a checksum was supplied and matched; false
+          means the owner chose to trust the file.
+        type: boolean
+      version:
+        example: 0.10.0
+        type: string
+    type: object
+  internal_api.UpdateUploadResponse:
+    properties:
+      status:
+        example: success
+        type: string
+      upload:
+        $ref: '#/definitions/internal_api.UpdateUploadInfo'
+    type: object
   internal_api.UpdateUserRequest:
     properties:
       allow_channel_adds:
@@ -673,6 +876,47 @@ definitions:
       status_preference:
         type: string
       username:
+        type: string
+    type: object
+  internal_api.UploadFileResponse:
+    properties:
+      channel_id:
+        type: string
+      duration_sec:
+        type: number
+      id:
+        type: string
+      mime:
+        example: application/octet-stream
+        type: string
+      owner_id:
+        type: string
+      processing_status:
+        enum:
+        - ready
+        - processing
+        - failed
+        type: string
+      size:
+        type: integer
+      thumb_ciphertext:
+        items:
+          type: integer
+        type: array
+      thumb_nonce:
+        items:
+          type: integer
+        type: array
+      uploaded_at:
+        type: string
+    type: object
+  internal_api.UserPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.UserResponse'
+        type: array
+      next_cursor:
         type: string
     type: object
   internal_api.UserResponse:
@@ -715,6 +959,26 @@ definitions:
     type: object
   internal_api.VersionResponse:
     properties:
+      api_version:
+        description: APIVersion is the integer client/server contract version, bumped
+          only on breaking changes.
+        example: 2
+        type: integer
+      capabilities:
+        description: Capabilities names the optional features this server supports;
+          clients gate UI on these, not on versions.
+        example:
+        - invite_messages
+        - whisper
+        - webrtc_sfu
+        items:
+          type: string
+        type: array
+      min_client_version:
+        description: MinClientVersion is the oldest client semver the admin supports;
+          empty when none is set.
+        example: 0.9.0
+        type: string
       udp_port:
         example: 9090
         type: integer
@@ -849,7 +1113,18 @@ paths:
       - admin
   /api/admin/audit:
     get:
-      description: '**Access:** Server Admin.'
+      description: |-
+        Paged (`{items, next_cursor}`), newest first. Every entry is reachable by following the cursor.
+        **Access:** Server Admin.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
@@ -857,6 +1132,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.AuditListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -867,7 +1146,7 @@ paths:
             $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Recent admin actions
+      summary: Admin audit trail
       tags:
       - admin
   /api/admin/backup:
@@ -1030,7 +1309,18 @@ paths:
       - admin
   /api/admin/invites:
     get:
-      description: '**Access:** Server Admin.'
+      description: |-
+        Paged (`{items, next_cursor}`), newest first.
+        **Access:** Server Admin.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
@@ -1038,6 +1328,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.InviteListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1193,6 +1487,14 @@ paths:
           description: Forbidden
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Server overview
@@ -1292,28 +1594,30 @@ paths:
       - multipart/form-data
       description: |-
         Replaces ALL current data with the contents of a backup made by the panel. Everyone is signed out, including the caller. Cannot be undone; take a backup first.
+        The form is read as a stream so the password is checked before the (up to 1 GiB) archive is read:
+        send `password` and `confirm` BEFORE `file`.
         **Access:** Server Owner, with their password, the archive passphrase and the phrase `RESTORE`.
       parameters:
-      - description: The .cove-backup file
+      - description: Owner password (must precede file)
         in: formData
-        name: file
+        name: password
         required: true
-        type: file
+        type: string
+      - description: Must be RESTORE (must precede file)
+        in: formData
+        name: confirm
+        required: true
+        type: string
       - description: Passphrase chosen when the backup was made
         in: formData
         name: passphrase
         required: true
         type: string
-      - description: Owner password
+      - description: The .cove-backup file (last)
         in: formData
-        name: password
+        name: file
         required: true
-        type: string
-      - description: Must be RESTORE
-        in: formData
-        name: confirm
-        required: true
-        type: string
+        type: file
       produces:
       - application/json
       responses:
@@ -1350,6 +1654,163 @@ paths:
       summary: Restore a backup
       tags:
       - admin
+  /api/admin/update:
+    get:
+      description: |-
+        Reports the running version, the newest GitHub release with its notes, how this install was deployed (`binary`, `docker` or `unknown`) and whether it can update itself. In docker mode the manual command is returned instead. `?refresh=1` bypasses the 10-minute release cache and is audited. Also reports the progress of a running update.
+        **Access:** Server Admin.
+      parameters:
+      - description: Pass 1 to re-check GitHub now
+        in: query
+        name: refresh
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Server update status
+      tags:
+      - admin
+    post:
+      description: |-
+        Downloads the newest release for this platform, verifies it against the release's SHA256SUMS, replaces the server binary (keeping the old one as `.old`) and restarts the process. Returns 202 immediately; poll `GET /api/admin/update` for progress. Refused with 409 in docker mode (use `docker compose pull && docker compose up -d`), when the install cannot be updated, when already up to date, or while another update runs. A failed checksum aborts before anything is replaced.
+        **Access:** Server Owner, with their password.
+      parameters:
+      - description: Owner password, and optionally source=upload to install the release
+          uploaded with POST /api/admin/update/upload instead of downloading
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateStartRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/internal_api.UpdateStartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update the server
+      tags:
+      - admin
+  /api/admin/update/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        For non-Docker installs without internet access (air-gapped): upload the `cove-server-<os>-<arch>.zip` from a release, or the plain binary, together with its version and optionally its SHA-256 (or the release's SHA256SUMS). The file is streamed to disk (never held in memory), must contain exactly the binary for this platform, and is checked against the checksum when one is given. Nothing is executed. Apply it afterwards with `POST /api/admin/update` and `{"source":"upload"}`. Docker installs are refused: pull the new image instead.
+        **Access:** Server Owner, with their password (sent before the file).
+      parameters:
+      - description: Owner password (must precede file)
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Version of the uploaded release, e.g. 0.10.0
+        in: formData
+        name: version
+        required: true
+        type: string
+      - description: Release zip or plain server binary
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Expected SHA-256 of the uploaded file (hex)
+        in: formData
+        name: sha256
+        type: string
+      - description: Contents of the release's SHA256SUMS file
+        in: formData
+        name: sums
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload a server release manually
+      tags:
+      - admin
   /api/captcha/challenge:
     get:
       description: |-
@@ -1382,15 +1843,42 @@ paths:
       - auth
   /api/channels:
     get:
+      description: |-
+        The caller's channels and direct messages, paged (`{items, next_cursor}`) in a stable order by
+        channel id. Clients sort by activity themselves and fetch every page for the sidebar.
+        **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/cove_backend_internal_models.Channel'
-            type: array
+            $ref: '#/definitions/internal_api.ChannelPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List channels for the current user
@@ -1399,6 +1887,11 @@ paths:
     post:
       consumes:
       - application/json
+      description: |-
+        Creates a group channel (name required) or, with exactly one other member and no name, a direct message.
+        Asking for a DM that already exists returns that conversation with **200** instead of **201**.
+        Members who block the caller or whose privacy settings forbid it are silently left out.
+        **Access:** Authenticated.
       parameters:
       - description: Channel payload
         in: body
@@ -1409,10 +1902,38 @@ paths:
       produces:
       - application/json
       responses:
+        "200":
+          description: an existing direct message with that user
+          schema:
+            $ref: '#/definitions/internal_api.ChannelResponse'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/cove_backend_internal_models.Channel'
+            $ref: '#/definitions/internal_api.ChannelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a channel or direct message
@@ -1420,6 +1941,10 @@ paths:
       - channels
   /api/channels/{id}:
     delete:
+      description: |-
+        In a group channel only the owner may delete, always for everyone. In a direct message either side may
+        clear it for themselves, or delete it for both with `for_both=true`.
+        **Access:** Channel Member (group channels: Channel Owner).
       parameters:
       - description: Channel ID
         in: path
@@ -1438,12 +1963,33 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete or clear a channel/direct message
       tags:
       - channels
     get:
+      description: '**Access:** Channel Member.'
       parameters:
       - description: Channel ID
         in: path
@@ -1456,7 +2002,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/cove_backend_internal_models.Channel'
+            $ref: '#/definitions/internal_api.ChannelResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get a channel by ID
@@ -1465,6 +2023,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: '**Access:** Channel Admin.'
       parameters:
       - description: Channel ID
         in: path
@@ -1484,6 +2043,34 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.ChannelResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update channel settings
@@ -1534,11 +2121,22 @@ paths:
       - channels
   /api/channels/{id}/members:
     get:
+      description: |-
+        Paged (`{items, next_cursor}`). Profiles are loaded only for the page that is served.
+        **Access:** Channel Member.
       parameters:
       - description: Channel ID
         in: path
         name: id
         required: true
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
         type: string
       produces:
       - application/json
@@ -1546,9 +2144,27 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.UserResponse'
-            type: array
+            $ref: '#/definitions/internal_api.UserPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List members of a channel
@@ -1557,13 +2173,16 @@ paths:
     post:
       consumes:
       - application/json
+      description: |-
+        Adds up to 200 users. Users who block the caller or whose privacy settings forbid it are reported in `skipped`.
+        **Access:** Channel Admin.
       parameters:
       - description: Channel ID
         in: path
         name: id
         required: true
         type: string
-      - description: Members to add (by username)
+      - description: Members to add (by user id)
         in: body
         name: body
         required: true
@@ -1575,14 +2194,41 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_api.StatusResponse'
+            $ref: '#/definitions/internal_api.AddMembersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Add multiple members to a channel by username
+      summary: Add multiple members to a channel by user id
       tags:
       - channels
   /api/channels/{id}/members/{uid}:
     delete:
+      description: |-
+        Any member can remove themselves (leave). Removing someone else needs an admin or owner with a strictly higher role than the target.
+        **Access:** Channel Member (self) or Channel Admin (others).
       parameters:
       - description: Channel ID
         in: path
@@ -1601,27 +2247,116 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Remove a member from a channel
       tags:
       - channels
-  /api/channels/{id}/messages:
-    get:
-      description: Returns messages newest-first. Supports cursor pagination.
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Promotes a member to admin (10) or demotes an admin to member (0). Ownership cannot be granted here and
+        the owner's own role cannot be changed; any other role value is rejected with `validation_failed`.
+        **Access:** Channel Owner.
       parameters:
       - description: Channel ID
         in: path
         name: id
         required: true
         type: string
-      - description: Max messages to return (default 250, max 500)
+      - description: Target user ID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a channel member's role
+      tags:
+      - channels
+  /api/channels/{id}/messages:
+    get:
+      description: |-
+        Paged (`{items, next_cursor}`), **newest first**: the first page is the latest messages and
+        `next_cursor` points at the next older page (it encodes the position of the oldest message returned).
+        `next_cursor` is empty when the start of the conversation was reached. A malformed `cursor` or an
+        out-of-range `limit` is rejected with 400 `validation_failed`.
+        **Access:** Channel Member.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page size (1-100, default 50)
         in: query
         name: limit
         type: integer
-      - description: KSUID string cursor for pagination
+      - description: Opaque cursor from the previous page's next_cursor
         in: query
-        name: before
+        name: cursor
         type: string
       produces:
       - application/json
@@ -1629,42 +2364,200 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/cove_backend_internal_models.Message'
-            type: array
+            $ref: '#/definitions/internal_api.MessagePageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: List recent messages for a channel
+      summary: List messages of a channel
       tags:
       - messages
   /api/channels/explore:
     get:
+      description: |-
+        Lists public (non-private) group channels whose name contains `q`, paged (`{items, next_cursor}`),
+        ordered by name. The result carries no invite link: a public channel is joined with
+        `POST /api/join/{link}` using its **id**.
+        **Access:** Authenticated.
       parameters:
       - description: Search query
         in: query
         name: q
         type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.ExploreChannelResponse'
-            type: array
+            $ref: '#/definitions/internal_api.ExploreChannelPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Search public channels
       tags:
       - channels
+  /api/files:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Multipart form: `file` (required), `channel_id` (optional; the caller must be an active member), `is_video`
+        (`true` for video messages, which are probed and transcoded in the background), `thumb_ciphertext` and
+        `thumb_nonce` (base64, optional). The stored content type is sniffed from the bytes, never taken from
+        the client. The response never contains the server-side storage path.
+        **Access:** Authenticated (channel uploads: Channel Member).
+      parameters:
+      - description: The (already encrypted) file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Channel the file belongs to
+        in: formData
+        name: channel_id
+        type: string
+      - description: Treat the upload as a video message
+        in: formData
+        name: is_video
+        type: boolean
+      - description: Base64 encrypted thumbnail
+        in: formData
+        name: thumb_ciphertext
+        type: string
+      - description: Base64 thumbnail nonce
+        in: formData
+        name: thumb_nonce
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api.UploadFileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload an encrypted file or video message
+      tags:
+      - files
+  /api/files/{id}:
+    get:
+      description: |-
+        Returns the raw (still encrypted) bytes with the stored content type, always as an attachment. Files that
+        belong to a private channel are only served to its members; files without a channel (avatars) to any
+        signed-in user.
+        **Access:** Authenticated (files of private channels: Channel Member).
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Download a stored file
+      tags:
+      - files
   /api/join/{link}:
     get:
       description: |-
         Returns public-facing details so a client can show a join card before joining. Direct messages are never previewable.
         **Access:** Authenticated.
       parameters:
-      - description: Unique Channel Invite Link
+      - description: Unique Channel Invite Link, or a public channel ID
         in: path
         name: link
         required: true
@@ -1699,10 +2592,11 @@ paths:
       - channels
     post:
       description: |-
-        Joins the channel and returns it. Members who were kicked cannot rejoin through a link; members who left can.
+        Joins the channel and returns it. `link` is the channel's invite link, or the id of a public (non-private)
+        group channel as listed by explore. Members who were kicked cannot rejoin through a link; members who left can.
         **Access:** Authenticated.
       parameters:
-      - description: Unique Channel Invite Link
+      - description: Unique Channel Invite Link, or a public channel ID
         in: path
         name: link
         required: true
@@ -1736,13 +2630,16 @@ paths:
             $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Join a channel via a unique invite link
+      summary: Join a channel via a unique invite link or a public channel's id
       tags:
       - channels
   /api/login:
     post:
       consumes:
       - application/json
+      description: |-
+        Sets the httpOnly `cove_session` and `cove_csrf` cookies for browsers and also returns the token for Bearer clients.
+        **Access:** Public.
       parameters:
       - description: Login credentials
         in: body
@@ -1765,11 +2662,24 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       summary: Log in and obtain a session token
       tags:
       - auth
   /api/logout:
     post:
+      description: '**Access:** Authenticated.'
       produces:
       - application/json
       responses:
@@ -1777,6 +2687,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Log out and invalidate session
@@ -1784,6 +2702,7 @@ paths:
       - auth
   /api/me:
     get:
+      description: '**Access:** Authenticated.'
       produces:
       - application/json
       responses:
@@ -1791,6 +2710,22 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get current authenticated user
@@ -1833,17 +2768,106 @@ paths:
           description: Conflict
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
-        "429":
-          description: too many sign-ups from this IP (demo mode)
+        "413":
+          description: Request Entity Too Large
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
-        "503":
-          description: bot-check service unreachable
+        "429":
+          description: too many requests, or too many sign-ups from this IP (demo
+            mode)
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
       summary: Register a new account
       tags:
       - auth
+  /api/relationships:
+    get:
+      description: |-
+        Friends, outgoing friend requests and blocked users. Paged (`{items, next_cursor}`).
+        **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.RelationshipPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List the caller's relationships
+      tags:
+      - relationships
+  /api/relationships/incoming:
+    get:
+      description: |-
+        Paged (`{items, next_cursor}`); each item embeds the requester's profile.
+        **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.RelationshipPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List pending incoming friend requests
+      tags:
+      - relationships
   /api/server-info:
     get:
       description: |-
@@ -1950,10 +2974,23 @@ paths:
       - sessions
   /api/users:
     get:
+      description: |-
+        Case-insensitive substring match, paged (`{items, next_cursor}`). The query must be at least 2
+        characters (shorter ones return an empty page). At most 50 users are returned in total across all
+        pages, so the endpoint cannot be used to enumerate the user base.
+        **Access:** Authenticated.
       parameters:
-      - description: Search query to filter by username
+      - description: Search query to filter by username (min 2 characters)
         in: query
         name: q
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor from the previous page's next_cursor
+        in: query
+        name: cursor
         type: string
       produces:
       - application/json
@@ -1961,9 +2998,23 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_api.UserResponse'
-            type: array
+            $ref: '#/definitions/internal_api.UserPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Search globally for users by username
@@ -1971,6 +3022,9 @@ paths:
       - users
   /api/users/{id}:
     get:
+      description: |-
+        Public profile of any user. Privacy settings are only included for the caller's own account.
+        **Access:** Authenticated.
       parameters:
       - description: User ID
         in: path
@@ -1984,6 +3038,22 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get a user by ID
@@ -1991,6 +3061,7 @@ paths:
       - users
   /api/users/{id}/presence:
     get:
+      description: '**Access:** Authenticated.'
       parameters:
       - description: User ID
         in: path
@@ -2003,14 +3074,138 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/cove_backend_internal_models.Presence'
+            $ref: '#/definitions/internal_api.PresenceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get presence status for a user
       tags:
       - users
+  /api/users/{id}/relationship:
+    get:
+      description: |-
+        Returns type `none` when there is no relationship.
+        **Access:** Authenticated.
+      parameters:
+      - description: Target user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.RelationshipResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the relationship with another user
+      tags:
+      - relationships
+    put:
+      consumes:
+      - application/json
+      description: |-
+        `action` is one of request, accept, decline, cancel, remove, block, unblock. Rule violations (already
+        friends, blocked, no pending request, ...) answer 400 with a user-facing message; the target must exist.
+        **Access:** Authenticated.
+      parameters:
+      - description: Target user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Action
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.RelationshipActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.RelationshipResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change the relationship with another user
+      tags:
+      - relationships
   /api/users/me:
     delete:
+      consumes:
+      - application/json
+      description: |-
+        Deletes the caller's account after a step-up check: the body must carry the caller's current
+        password, and repeated wrong passwords lock the check out for a while (429), like the dangerous
+        admin actions. The server owner must transfer ownership first.
+        **Access:** Authenticated (self only).
+      parameters:
+      - description: Current password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.DeleteAccountRequest'
       produces:
       - application/json
       responses:
@@ -2018,6 +3213,30 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete current user account
@@ -2026,6 +3245,12 @@ paths:
     patch:
       consumes:
       - application/json
+      description: |-
+        Partial update: only the fields present are changed. Changing the password needs `old_password` and signs
+        out every other device. Enumerated fields reject unknown values with `validation_failed`:
+        `status_preference` auto|online|away|dnd|offline, `allow_channel_adds` and `dm_permission`
+        everyone|friends|nobody, `friend_request_permission` everyone|nobody.
+        **Access:** Authenticated (self only).
       parameters:
       - description: Update payload
         in: body
@@ -2040,6 +3265,34 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/internal_api.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update current user profile
@@ -2047,7 +3300,10 @@ paths:
       - users
   /api/version:
     get:
-      description: Returns the semantic version of the Cove backend currently running.
+      description: |-
+        Returns the semantic version of the Cove backend currently running, the API version,
+        the minimum supported client version and the capabilities the server advertises.
+        **Access:** Public.
       produces:
       - application/json
       responses:

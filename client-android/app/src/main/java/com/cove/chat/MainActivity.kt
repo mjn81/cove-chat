@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.cove.chat.security.AppLock
+import com.cove.chat.ui.components.ClientOutdatedDialog
 import com.cove.chat.ui.screens.LockScreen
 import com.cove.chat.notify.NotificationHelper
 import com.cove.chat.notify.OpenChatRequest
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                 Box(Modifier.fillMaxSize()) {
                     NavGraph()
                     if (AppLock.locked) LockScreen()
+                    ClientOutdatedDialog()
                 }
             }
         }

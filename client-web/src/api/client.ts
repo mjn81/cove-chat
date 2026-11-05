@@ -7,6 +7,15 @@ import { AppVersion } from '../wailsjs/go/main/App';
 import axios, { AxiosError } from 'axios';
 import type { PublicServerInfo } from '@/domains/auth/types/auth.types';
 import type { AltchaChallenge } from '@/lib/altcha';
+import { fetchAllPages, MAX_PAGE_LIMIT, type Page } from '@/lib/paging';
+import {
+	CLIENT_HEADER,
+	CLIENT_OUTDATED_EVENT,
+	clientHeaderValue,
+	parseErrorEnvelope,
+	type ApiErrorCode,
+	type ClientOutdatedDetail,
+} from '@/lib/api-standard';
 
 // ─────────────────────────────────────────────
 // Environment
@@ -65,11 +74,14 @@ export const setApiBaseUrl = (url: string) => {
 export class APIError extends Error {
 	status: number;
 	data: unknown;
+	/** Stable machine code from the error envelope (docs/api-standard.md); undefined for old servers or unknown codes. */
+	code?: ApiErrorCode;
 
 	constructor(status: number, message: string, data?: unknown) {
 		super(message);
 		this.status = status;
 		this.data = data;
+		this.code = parseErrorEnvelope(data).code;
 	}
 }
 
@@ -110,6 +122,8 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+	// Identify this build on every request so the server can warn or refuse outdated clients (api-standard.md).
+	config.headers.set(CLIENT_HEADER, clientHeaderValue(isWails() ? 'desktop' : 'web', __APP_VERSION__));
 	if (isWails()) {
 		const token = getDesktopToken();
 		if (token) {
@@ -142,6 +156,14 @@ apiClient.interceptors.response.use(
 		const status = error.response.status;
 		const data = error.response.data as any;
 		const message = data?.error || error.message || `HTTP ${status}`;
+
+		// 426 / client_outdated: the server refuses this build. Tell the version gate instead of letting every
+		// caller surface a confusing generic failure.
+		const envelope = parseErrorEnvelope(data);
+		if ((status === 426 || envelope.code === 'client_outdated') && typeof window !== 'undefined') {
+			const detail: ClientOutdatedDetail = { minClientVersion: envelope.minClientVersion };
+			window.dispatchEvent(new CustomEvent(CLIENT_OUTDATED_EVENT, { detail }));
+		}
 
 		if (status === 401) {
 			logger.warn('Unauthorized API error', { url, data });
@@ -263,19 +285,45 @@ export async function apiUpdateProfile(data: {
 	return request<AuthUser>(apiClient.patch('/api/users/me', data));
 }
 
-export async function apiDeleteAccount() {
-	return apiClient.delete('/api/users/me');
+/**
+ * Deletes the signed-in account. The server asks for the current password (step-up) so a stolen session cannot erase it.
+ *
+ * @param password - The account's current password.
+ * @throws APIError 403 when the password is wrong, 429 after repeated failures.
+ */
+export async function apiDeleteAccount(password: string) {
+	return apiClient.delete('/api/users/me', { data: { password } });
 }
 
 // ─────────────────────────────────────────────
 // Relationships (Friends & Blocking)
 // ─────────────────────────────────────────────
+/**
+ * Fetches one page of a paged list endpoint (docs/api-standard.md section 9).
+ *
+ * @param path - Endpoint path, e.g. `/api/relationships`.
+ * @param cursor - The previous page's `next_cursor`; omit for the first page.
+ * @param query - Extra query parameters (undefined values are dropped).
+ * @param limit - Page size, 1..100.
+ */
+export function apiGetPage<T>(
+	path: string,
+	cursor?: string,
+	query: Record<string, string | undefined> = {},
+	limit = MAX_PAGE_LIMIT,
+): Promise<Page<T>> {
+	const params: Record<string, string> = { limit: String(limit) };
+	for (const [k, v] of Object.entries(query)) if (v !== undefined) params[k] = v;
+	if (cursor) params.cursor = cursor;
+	return request<Page<T>>(apiClient.get(path, { params }));
+}
+
 export async function apiGetMyRelationships() {
-	return request<RelationshipResponse[]>(apiClient.get('/api/relationships')).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<RelationshipResponse>('/api/relationships', c));
 }
 
 export async function apiGetIncomingRequests() {
-	return request<RelationshipResponse[]>(apiClient.get('/api/relationships/incoming')).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<RelationshipResponse>('/api/relationships/incoming', c));
 }
 
 export async function apiGetRelationship(userId: string) {
@@ -290,13 +338,12 @@ export async function apiRelationshipAction(userId: string, action: Relationship
 // Channels
 // ─────────────────────────────────────────────
 export async function apiListChannels() {
-	return request<Channel[]>(apiClient.get('/api/channels')).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<Channel>('/api/channels', c));
 }
 
+/** Searches public channels; a search palette never needs more than a few pages, so the walk is bounded. */
 export async function apiExploreChannels(query: string) {
-	return request<ExploreChannel[]>(
-		apiClient.get(`/api/channels/explore?q=${encodeURIComponent(query)}`),
-	).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<ExploreChannel>('/api/channels/explore', c, { q: query }), 5);
 }
 
 export async function apiCreateChannel(
@@ -371,26 +418,26 @@ export async function apiUpdateMemberRole(
 }
 
 export async function apiGetChannelMembers(channelId: string) {
-	return request<User[]>(
-		apiClient.get(`/api/channels/${channelId}/members`),
-	).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<User>(`/api/channels/${channelId}/members`, c));
 }
 
+/** The server caps a user search at 50 results in total, so this is at most one page. */
 export async function apiSearchUsers(query: string) {
-	return request<User[]>(
-		apiClient.get(`/api/users?q=${encodeURIComponent(query)}`),
-	).then((r) => r || []);
+	return fetchAllPages((c) => apiGetPage<User>('/api/users', c, { q: query }));
 }
 
 // ─────────────────────────────────────────────
 // Messages
 // ─────────────────────────────────────────────
-export async function apiListMessages(id: string, limit = 50, before?: string) {
-	const query = new URLSearchParams({ limit: limit.toString() });
-	if (before) query.append('before', before);
-	return request<Message[]>(
-		apiClient.get(`/api/channels/${id}/messages?${query.toString()}`),
-	).then((r) => r || []);
+/**
+ * Fetches one page of a channel's messages, newest first.
+ *
+ * @param id - Channel id.
+ * @param limit - Page size, 1..100.
+ * @param cursor - The previous page's `next_cursor` (opaque) to load the next older page.
+ */
+export async function apiListMessages(id: string, limit = 50, cursor?: string) {
+	return apiGetPage<Message>(`/api/channels/${id}/messages`, cursor, {}, limit);
 }
 
 // ─────────────────────────────────────────────
@@ -450,5 +497,17 @@ export async function apiGetVersion() {
 	// No extra .catch here (unlike an earlier version of this function) —
 	// the response interceptor above already logs every API error centrally,
 	// so adding one here just double-logged version-check failures.
-	return request<{ version: string }>(apiClient.get('/api/version'));
+	return request<VersionInfo>(apiClient.get('/api/version'));
+}
+
+/**
+ * GET /api/version. Everything but `version` is absent on servers that predate the API standard, so the
+ * extra fields are optional and consumers must tolerate that.
+ */
+export interface VersionInfo {
+	version: string;
+	udp_port?: number;
+	api_version?: number;
+	min_client_version?: string;
+	capabilities?: string[];
 }

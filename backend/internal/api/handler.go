@@ -48,6 +48,12 @@ type Handler struct {
 	IsDev               bool
 	FrontendOrigin      string
 
+	// API standard (docs/api-standard.md): the oldest client the admin supports, whether that is a hard 426 or only
+	// a warning, and the calling engine ("webrtc" | "raw_udp") that decides the advertised capabilities.
+	MinClientVersion string
+	EnforceMinClient bool
+	VoiceMode        string
+
 	// Admin panel and live settings. All optional: a Handler built without
 	// them behaves as an open server with no admin features configured.
 	Settings     *Settings // hot-applicable config (registration mode, upload limits)
@@ -69,6 +75,15 @@ type Handler struct {
 	signups signupLimiter
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
+
+	// globalLimiter is the per-IP limiter NewRouter builds for the API; WrapWS reuses it so the WebSocket upgrade
+	// shares the same bucket. Ephemeral by design, like every rate limiter.
+	globalLimiter *middleware.RateLimiter
+
+	// Updater powers GET/POST /api/admin/update (server self-update). Nil reports "unsupported".
+	Updater *Updater
+	// NotifyUpdates makes the update notifier message the owner and admins about each new release.
+	NotifyUpdates bool
 }
 
 // NewRouter wires the full HTTP API with rate limiting.
@@ -77,6 +92,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 
 	authLimiter := middleware.NewRateLimiter(authRPS, int(authRPS)*2)
 	globalLimiter := middleware.NewRateLimiter(globalRPS, int(globalRPS)*2)
+	h.globalLimiter = globalLimiter
 	protect := func(handler http.HandlerFunc) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(handler))
 	}
@@ -108,6 +124,9 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/admin/restore", protectOwner(h.AdminRestore))
 	mux.Handle("POST /api/admin/reset", protectOwner(h.AdminReset))
 	mux.Handle("POST /api/admin/delete", protectOwner(h.AdminDeleteServer))
+	mux.Handle("GET /api/admin/update", protectAdmin(h.AdminGetUpdate))
+	mux.Handle("POST /api/admin/update", protectOwner(h.AdminStartUpdate))
+	mux.Handle("POST /api/admin/update/upload", protectOwner(h.AdminUploadUpdate))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "admin.errors.not_found")
 	}))
@@ -118,8 +137,10 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/register", authLimiter.Limit(http.HandlerFunc(h.Register)))
 	mux.Handle("POST /api/login", authLimiter.Limit(http.HandlerFunc(h.Login)))
 	// Deliberately not behind authLimiter: a challenge is cheap to issue and worthless without a sign-up, which
-	// has its own limit. The strict sign-in limit would turn a retry, or a shared address, into a failed check.
-	mux.Handle("GET /api/captcha/challenge", http.HandlerFunc(h.GetCaptchaChallenge))
+	// has its own limit, and the strict sign-in limit would turn a retry or a shared address into a failed check.
+	// It still gets the general per-IP limit so the endpoint (which signs a fresh challenge per call) cannot be
+	// used to burn CPU or fill the one-use cache.
+	mux.Handle("GET /api/captcha/challenge", globalLimiter.Limit(http.HandlerFunc(h.GetCaptchaChallenge)))
 
 	// Protected
 	mux.Handle("POST /api/logout", protect(h.Logout))
@@ -157,5 +178,22 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/files", protect(h.UploadFile))
 	mux.Handle("GET /api/files/{id}", protect(h.DownloadFile))
 
-	return middleware.CORS(mux, h.IsDev, h.FrontendOrigin)
+	return middleware.CORS(middleware.ClientVersion(middleware.ClientVersionConfig{
+		MinClientVersion: h.MinClientVersion,
+		Enforce:          h.EnforceMinClient,
+	}, mux), h.IsDev, h.FrontendOrigin)
+}
+
+// WrapWS puts the WebSocket upgrade handler (mounted at /ws outside NewRouter) under the same API-standard
+// treatment as the REST routes: X-Cove-API-Version / X-Cove-Server-Version on the 101 (and on a 429) and the
+// same per-IP rate limit bucket. The minimum-client check never blocks it (the path is outside /api/); an outdated
+// client learns about the problem from the hello event. Call it after NewRouter so the shared limiter exists.
+func (h *Handler) WrapWS(next http.Handler) http.Handler {
+	if h.globalLimiter != nil {
+		next = h.globalLimiter.Limit(next)
+	}
+	return middleware.ClientVersion(middleware.ClientVersionConfig{
+		MinClientVersion: h.MinClientVersion,
+		Enforce:          h.EnforceMinClient,
+	}, next)
 }

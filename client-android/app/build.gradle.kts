@@ -23,6 +23,10 @@ android {
         versionCode = cove.first
         versionName = cove.second
 
+        // In-app self-update (check + download + system installer). A Play-store flavour must set this to false:
+        // the store updates the app and sideload installs are not allowed there.
+        buildConfigField("boolean", "SELF_UPDATE", "true")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -65,6 +69,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

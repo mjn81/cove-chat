@@ -6,4 +6,6 @@
     <cache-path name="video" path="video/" />
     <!-- Decrypted Whisper attachments, deleted with their message or session. -->
     <cache-path name="whisper" path="whisper/" />
+    <!-- Downloaded app updates, deleted when the next one is fetched. -->
+    <cache-path name="updates" path="updates/" />
 </paths>

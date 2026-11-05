@@ -74,6 +74,12 @@ var schema = []Setting{
 		get: func(c *Config) any { return c.Captcha.Enabled }},
 	{Key: "captcha.difficulty", Group: "security", Type: "enum", Options: []string{"low", "medium", "high"},
 		get: func(c *Config) any { return c.Captcha.Difficulty }},
+	{Key: "update.manifest_url", Group: "updates", Type: "string", OwnerOnly: true, RestartRequired: true,
+		get: func(c *Config) any { return c.Update.ManifestURL }},
+	{Key: "update.github_fallback", Group: "updates", Type: "bool", OwnerOnly: true, RestartRequired: true,
+		get: func(c *Config) any { return c.Update.GitHubFallback }},
+	{Key: "update.notify_admins", Group: "updates", Type: "bool", RestartRequired: true,
+		get: func(c *Config) any { return c.Update.NotifyAdmins }},
 	{Key: "security.token_expire_hours", Group: "security", Type: "int", Min: 1, Max: 8760, OwnerOnly: true, RestartRequired: true,
 		get: func(c *Config) any { return c.Security.TokenExpireHours }},
 }

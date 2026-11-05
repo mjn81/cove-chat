@@ -5,7 +5,7 @@ description: Safely move a Cove server to a new version.
 
 1. **Back up** `data/` and `config.toml` ([Backups and restore](../backups-restore/)).
 2. Read the [release notes](https://github.com/mjn81/cove-chat/releases) for breaking changes.
-3. Replace the server.
+3. Replace the server. A binary install can also update itself from **Admin > Overview > Server update**, see [Server updates](/docs/administration/updates/).
    - Docker: change the image tag and run `docker compose pull && docker compose up -d`.
    - Binary: stop the service, replace the executable, start it again.
 4. Update clients. The web client image and the server should be upgraded together.

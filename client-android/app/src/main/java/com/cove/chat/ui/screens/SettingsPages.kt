@@ -125,6 +125,7 @@ fun AccountSettings(onLogout: () -> Unit) {
     var cropUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     var photoMenu by remember { mutableStateOf<String?>(null) }
+    var showDeleteAccount by remember { mutableStateOf(false) }
 
     fun apply(u: AuthUser) {
         me = u
@@ -266,6 +267,25 @@ fun AccountSettings(onLogout: () -> Unit) {
                 )
             }
         })
+
+        FieldLabel("Delete account")
+        Text(
+            "Deleting your account is permanent and cannot be undone. All your data, including messages and contacts, will be anonymized or removed.",
+            color = c.textMuted, style = CoveType.label
+        )
+        CoveButton("Delete account", modifier = Modifier.fillMaxWidth(), size = ButtonSize.Lg, variant = ButtonVariant.Destructive, onClick = { showDeleteAccount = true })
+        if (showDeleteAccount) {
+            // The server re-checks the password, so a stolen session alone cannot erase the account. A wrong
+            // password (403) keeps the dialog open with the server's message.
+            StepUpDialog(
+                title = "Delete account",
+                description = "Are you absolutely sure you want to delete your account? This will permanently remove your profile, the channels you own, and all your messages. This cannot be undone.",
+                confirmLabel = "Delete account",
+                destructive = true,
+                onDismiss = { showDeleteAccount = false },
+                onSubmit = { password, _ -> api.deleteAccount(password).onSuccess { onLogout() } }
+            )
+        }
 
         Text(
             "Log Out", color = MaterialTheme.colorScheme.error, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Medium,

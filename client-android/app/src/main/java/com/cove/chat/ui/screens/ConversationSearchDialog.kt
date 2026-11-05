@@ -164,8 +164,9 @@ fun ConversationSearchDialog(
         if (joining != null) return
         joining = ch.id
         scope.launch {
-            // The explore list carries each public channel's invite link; without one it cannot be joined.
-            if (ch.inviteLink.isNotBlank()) api.joinChannel(ch.inviteLink).onSuccess { onJoined(ch.id) }
+            // Servers no longer put an invite link in explore results: a public channel is joined by its id. Older
+            // servers still send the link, which keeps working.
+            api.joinChannel(ch.inviteLink.ifBlank { ch.id }).onSuccess { onJoined(ch.id) }
             joining = null
         }
     }

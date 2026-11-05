@@ -34,15 +34,13 @@ func TestDeleteDM_ForBoth(t *testing.T) {
 
 	// Verify both users see channel in ListChannels
 	listAResp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenA, nil))
-	var listA []*models.Channel
-	decodeJSON(t, listAResp, &listA)
+	listA := decodeItems[*models.Channel](t, listAResp)
 	if len(listA) != 1 || listA[0].ID != dm.ID {
 		t.Fatalf("expected user A to see DM, got %d channels", len(listA))
 	}
 
 	listBResp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenB, nil))
-	var listB []*models.Channel
-	decodeJSON(t, listBResp, &listB)
+	listB := decodeItems[*models.Channel](t, listBResp)
 	if len(listB) != 1 || listB[0].ID != dm.ID {
 		t.Fatalf("expected user B to see DM, got %d channels", len(listB))
 	}
@@ -55,15 +53,13 @@ func TestDeleteDM_ForBoth(t *testing.T) {
 
 	// Verify neither user sees it now
 	listAResp2 := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenA, nil))
-	var listA2 []*models.Channel
-	decodeJSON(t, listAResp2, &listA2)
+	listA2 := decodeItems[*models.Channel](t, listAResp2)
 	if len(listA2) != 0 {
 		t.Fatalf("expected user A channels to be empty, got %d", len(listA2))
 	}
 
 	listBResp2 := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenB, nil))
-	var listB2 []*models.Channel
-	decodeJSON(t, listBResp2, &listB2)
+	listB2 := decodeItems[*models.Channel](t, listBResp2)
 	if len(listB2) != 0 {
 		t.Fatalf("expected user B channels to be empty, got %d", len(listB2))
 	}
@@ -102,16 +98,14 @@ func TestDeleteDM_ForMeOnly(t *testing.T) {
 
 	// User C's list should NOT contain the DM (hidden)
 	listCResp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenC, nil))
-	var listC []*models.Channel
-	decodeJSON(t, listCResp, &listC)
+	listC := decodeItems[*models.Channel](t, listCResp)
 	if len(listC) != 0 {
 		t.Fatalf("expected user C to have 0 visible channels after clearing, got %d", len(listC))
 	}
 
 	// User D's list SHOULD still contain the DM
 	listDResp := mustDo(t, newJSONReq(t, http.MethodGet, srv.URL+"/api/channels", tokenD, nil))
-	var listD []*models.Channel
-	decodeJSON(t, listDResp, &listD)
+	listD := decodeItems[*models.Channel](t, listDResp)
 	if len(listD) != 1 || listD[0].ID != dm.ID {
 		t.Fatalf("expected user D to still see DM, got %d channels", len(listD))
 	}
@@ -138,9 +132,9 @@ func TestDeleteDM_Unauthorized(t *testing.T) {
 	var dm models.Channel
 	decodeJSON(t, chResp, &dm)
 
-	// Outsider User E attempts to delete DM -> 403 Forbidden (protectMember middleware)
+	// Outsider User E attempts to delete DM -> 404, same as a missing channel (no existence oracle)
 	delResp := mustDo(t, newJSONReq(t, http.MethodDelete, srv.URL+"/api/channels/"+dm.ID, tokenE, nil))
-	if delResp.StatusCode != http.StatusForbidden {
-		t.Fatalf("expected status 403 Forbidden for outsider, got %d", delResp.StatusCode)
+	if delResp.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404 for outsider, got %d", delResp.StatusCode)
 	}
 }

@@ -199,6 +199,9 @@ fun ChannelListScreen(
             }
         }
 
+        // One-time, dismissible note when a newer version exists; never blocks the list.
+        UpdateChatCard(onOpen = onOpenSettings)
+
         // List
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (visible.isEmpty() && loaded) {

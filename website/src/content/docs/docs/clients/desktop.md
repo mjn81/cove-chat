@@ -20,3 +20,19 @@ make wails/build/windows   # or wails/build/mac, wails/build/linux
 ```
 
 `make wails/dev` runs the app with hot reload during development.
+
+## Updates
+
+The desktop app checks for new versions on its own, but it never downloads or installs anything without you.
+
+- **Checking.** A first check runs shortly after start-up and then every 6 hours. Switch it off in **Settings > Notifications > Updates**.
+- **Where it shows.** When a newer version exists, a small icon with a dot appears in the left sidebar, directly above your profile card (below the call bar while a call is on). Its popover shows the version and release notes with **Download**, then a progress bar, then **Restart to update**. **Settings > Updates** offers the same actions plus **Check now**.
+- **Opt-in download.** Downloading needs a click. **Download updates automatically** is off by default; turn it on if you want the file fetched in the background. Installing always needs a click, and the app asks first if a call is running or a chat has an unsent draft.
+- **Verification.** The download is hashed while it is written and compared with the SHA-256 in the release manifest (or `SHA256SUMS`). A mismatch deletes the file. The file is hashed again right before install, and a file that changed on disk is refused.
+- **Install and rollback.** On restart the app swaps itself in by renaming the old copy to `*.old` (`Cove.exe`, `Cove` or `Cove.app`), starts the new one, and keeps `*.old` until the new version has stayed up for 60 seconds. If the new version crashes on start twice, the next start restores the old one.
+- **Update source.** Under **Settings > Updates > Update source** you can point the app at your own manifest URL (the default is `https://covechat.dev/releases/manifest.json`, with GitHub as the fallback). See [Server updates](/docs/administration/updates/#use-your-own-mirror) for the manifest format.
+- **Read-only installs.** If the app lives somewhere it cannot replace itself, the icon links to the release page instead.
+
+:::caution
+The relaunch and swap logic is new. It is covered by tests but has not been tried on every OS, including macOS with an unsigned `Cove.app`. Try the first update on a test install, and keep the manual route in mind: download the zip, check it with `sha256sum -c --ignore-missing SHA256SUMS`, replace the app, and to undo an update rename `*.old` back while the app is closed.
+:::

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -57,6 +58,23 @@ func VerifyPassword(password string, stored []byte) (bool, error) {
 		diff |= candidate[i] ^ sh.Hash[i]
 	}
 	return diff == 0, nil
+}
+
+var (
+	dummyHashOnce sync.Once
+	dummyHash     []byte
+)
+
+// BurnPasswordVerify spends the same time a real password check would, against a throwaway hash computed once with
+// the production Argon2id parameters. Login calls it for an unknown username so that "no such user" and "wrong
+// password" are indistinguishable by response time.
+func BurnPasswordVerify(password string) {
+	dummyHashOnce.Do(func() {
+		dummyHash, _ = HashPassword("cove-dummy-password-for-timing")
+	})
+	if dummyHash != nil {
+		_, _ = VerifyPassword(password, dummyHash)
+	}
 }
 
 // DeriveKEK derives the Key Encryption Key (KEK) from the master password

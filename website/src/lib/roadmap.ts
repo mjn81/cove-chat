@@ -13,6 +13,8 @@ export interface RoadmapItem {
   area: string;
   title: string;
   note: string;
+  /** ISO date (YYYY-MM-DD): when it shipped, or the target for planned work. Optional. */
+  date?: string;
 }
 
 export interface RoadmapPhase {
@@ -24,7 +26,7 @@ export interface RoadmapPhase {
   progress: number;
 }
 
-interface RawItem { id: string; area: string; title: string; note: string; status?: RoadmapStatus }
+interface RawItem { id: string; area: string; title: string; note: string; status?: RoadmapStatus; date?: string }
 interface RawPhase { id: string; title: string; subtitle: string; status: RoadmapStatus; items: RawItem[] }
 interface Translation {
   phases?: Record<string, { title?: string; subtitle?: string }>;
@@ -51,6 +53,8 @@ export function getRoadmap(lang: Lang): RoadmapPhase[] {
       status: i.status ?? p.status,
       title: tr?.items?.[i.id]?.title ?? i.title,
       note: tr?.items?.[i.id]?.note ?? i.note,
+      // The yaml parser turns a bare 2026-11-04 into a Date; keep it a plain string.
+      date: i.date ? String(i.date).slice(0, 10) : undefined,
     }));
     const done = items.filter((i) => i.status === 'done').length;
     return {

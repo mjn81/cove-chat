@@ -2,6 +2,9 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"errors"
+	"time"
 	"cove/backend/internal/auth"
 	"cove/backend/internal/logger"
 	"cove/backend/internal/models"
@@ -63,8 +66,23 @@ func sniffUploadContentType(file io.Reader) (string, io.Reader, error) {
 	return sniffed, io.MultiReader(bytes.NewReader(head), file), nil
 }
 
+const (
+	// ffmpegTimeout bounds one transcode (and one probe): a corrupt or hostile video must not pin a CPU forever.
+	ffmpegTimeout = 10 * time.Minute
+	// ffprobeTimeout bounds the duration probe that runs inside the upload request.
+	ffprobeTimeout = 15 * time.Second
+	// maxConcurrentTranscodes limits parallel ffmpeg processes so a burst of video uploads cannot exhaust the host.
+	maxConcurrentTranscodes = 2
+)
+
+// transcodeSlots is a counting semaphore for ffmpeg. It is process-local runtime state with no persistent
+// counterpart: the pending work itself is recorded on each file (processing_status), only the throttle is in RAM.
+var transcodeSlots = make(chan struct{}, maxConcurrentTranscodes)
+
 func getVideoDuration(path string) (float64, error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path)
+	ctx, cancel := context.WithTimeout(context.Background(), ffprobeTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path)
 	out, err := cmd.Output()
 	if err != nil {
 		return 0, err
@@ -74,7 +92,31 @@ func getVideoDuration(path string) (float64, error) {
 	return d, err
 }
 
-// UploadFile handles encrypted binary uploads and video messages.
+// UploadFile godoc
+//
+//	@Summary     Upload an encrypted file or video message
+//	@Description Multipart form: `file` (required), `channel_id` (optional; the caller must be an active member), `is_video`
+//	@Description (`true` for video messages, which are probed and transcoded in the background), `thumb_ciphertext` and
+//	@Description `thumb_nonce` (base64, optional). The stored content type is sniffed from the bytes, never taken from
+//	@Description the client. The response never contains the server-side storage path.
+//	@Description **Access:** Authenticated (channel uploads: Channel Member).
+//	@Tags        files
+//	@Accept      multipart/form-data
+//	@Produce     json
+//	@Security    BearerAuth
+//	@Param       file             formData file   true  "The (already encrypted) file"
+//	@Param       channel_id       formData string false "Channel the file belongs to"
+//	@Param       is_video         formData bool   false "Treat the upload as a video message"
+//	@Param       thumb_ciphertext formData string false "Base64 encrypted thumbnail"
+//	@Param       thumb_nonce      formData string false "Base64 thumbnail nonce"
+//	@Success     201 {object} UploadFileResponse
+//	@Failure     400 {object} ErrorResponse
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     413 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
+//	@Router      /api/files [post]
 func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 
@@ -84,13 +126,20 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
-		writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large (max %dMB)", maxFileMB))
+		// Only a body over the limit is "too large"; a malformed form is the client's mistake, not a size problem.
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large (max %dMB)", maxFileMB))
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid multipart form")
 		return
 	}
 
 	channelID := r.FormValue("channel_id")
 	if channelID != "" {
-		if _, err := h.Store.GetUserChannel(session.UserID, channelID); err != nil {
+		// A kicked or departed member keeps a membership record, so the status must be checked, not just its presence.
+		if uc, err := h.Store.GetUserChannel(session.UserID, channelID); err != nil || uc.Status != models.StatusActive {
 			writeError(w, http.StatusForbidden, "not a member of this channel")
 			return
 		}
@@ -130,7 +179,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	fileID := uuid.New().String()
 	storagePath, size, err := h.Storage.Save(fileID, sniffedReader)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to save file")
+		writeInternal(w, "save upload", err, "failed to save file")
 		return
 	}
 
@@ -163,53 +212,84 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		// The blob was already written to disk; without this it's orphaned
 		// forever with no DB record pointing to it.
 		_ = h.Storage.Delete(storagePath)
-		writeError(w, http.StatusInternalServerError, "failed to register file metadata")
+		writeInternal(w, "register file", err, "failed to register file metadata")
 		return
 	}
 
 	f.DurationSec = durationSec
 	f.ProcessingStatus = processingStatus
-	_ = h.Store.UpdateFile(f)
-
-	if isVideo {
-		// Launch background transcoding
-		go func(targetFile *models.File) {
-			ffmpegBin := h.FFmpegPath
-			if ffmpegBin == "" {
-				ffmpegBin = "ffmpeg"
-			}
-			outputPath := targetFile.StoragePath + ".transcoded.mp4"
-			cmd := exec.Command(ffmpegBin, "-y", "-i", targetFile.StoragePath, "-c:v", "libx264", "-preset", "fast", "-crf", "28", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath)
-			if err := cmd.Run(); err == nil {
-				if fi, err := os.Stat(outputPath); err == nil {
-					_ = os.Rename(outputPath, targetFile.StoragePath)
-					targetFile.SizeBytes = fi.Size()
-					targetFile.MIMEType = "video/mp4"
-				} else {
-					// ffmpeg reported success but the output it should have
-					// produced isn't there — don't silently mark this "ready"
-					// as if the transcode happened (it didn't touch
-					// StoragePath), and don't leak whatever partial file may
-					// still be at outputPath.
-					logger.Warnf("ffmpeg transcode for %s: output missing after supposed success: %v (serving original)", targetFile.ID, err)
-					_ = os.Remove(outputPath)
-				}
-			} else {
-				logger.Warnf("ffmpeg transcode for %s: %v (serving original)", targetFile.ID, err)
-				_ = os.Remove(outputPath)
-			}
-			targetFile.ProcessingStatus = "ready"
-			_ = h.Store.UpdateFile(targetFile)
-			if h.Hub != nil {
-				h.Hub.BroadcastVideoReady(targetFile.ID, targetFile.ChannelID)
-			}
-		}(f)
+	if err := h.Store.UpdateFile(f); err != nil {
+		logger.Warnf("api: upload %s: could not store duration/status: %v", f.ID, err)
 	}
 
-	writeJSON(w, http.StatusCreated, f)
+	if isVideo {
+		go h.transcodeVideo(f)
+	}
+
+	writeJSON(w, http.StatusCreated, newUploadFileResponse(f))
 }
 
-// DownloadFile retrieves raw binary or encrypted bytes.
+// transcodeVideo re-encodes an uploaded video to web-friendly MP4 in the background. At most
+// maxConcurrentTranscodes run at once (the rest wait their turn, their files stay "processing"), each is killed after
+// ffmpegTimeout, and on any failure the original is served unchanged.
+func (h *Handler) transcodeVideo(targetFile *models.File) {
+	transcodeSlots <- struct{}{}
+	defer func() { <-transcodeSlots }()
+
+	ffmpegBin := h.FFmpegPath
+	if ffmpegBin == "" {
+		ffmpegBin = "ffmpeg"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), ffmpegTimeout)
+	defer cancel()
+
+	outputPath := targetFile.StoragePath + ".transcoded.mp4"
+	cmd := exec.CommandContext(ctx, ffmpegBin, "-y", "-i", targetFile.StoragePath, "-c:v", "libx264", "-preset", "fast", "-crf", "28", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath)
+	if err := cmd.Run(); err == nil {
+		if fi, err := os.Stat(outputPath); err == nil {
+			_ = os.Rename(outputPath, targetFile.StoragePath)
+			targetFile.SizeBytes = fi.Size()
+			targetFile.MIMEType = "video/mp4"
+		} else {
+			// ffmpeg reported success but the output it should have
+			// produced isn't there — don't silently mark this "ready"
+			// as if the transcode happened (it didn't touch
+			// StoragePath), and don't leak whatever partial file may
+			// still be at outputPath.
+			logger.Warnf("ffmpeg transcode for %s: output missing after supposed success: %v (serving original)", targetFile.ID, err)
+			_ = os.Remove(outputPath)
+		}
+	} else {
+		logger.Warnf("ffmpeg transcode for %s: %v (serving original)", targetFile.ID, err)
+		_ = os.Remove(outputPath)
+	}
+	targetFile.ProcessingStatus = "ready"
+	if err := h.Store.UpdateFile(targetFile); err != nil {
+		logger.Warnf("api: transcode %s: could not store final status: %v", targetFile.ID, err)
+	}
+	if h.Hub != nil {
+		h.Hub.BroadcastVideoReady(targetFile.ID, targetFile.ChannelID)
+	}
+}
+
+// DownloadFile godoc
+//
+//	@Summary     Download a stored file
+//	@Description Returns the raw (still encrypted) bytes with the stored content type, always as an attachment. Files that
+//	@Description belong to a private channel are only served to its members; files without a channel (avatars) to any
+//	@Description signed-in user.
+//	@Description **Access:** Authenticated (files of private channels: Channel Member).
+//	@Tags        files
+//	@Produce     application/octet-stream
+//	@Security    BearerAuth
+//	@Param       id path string true "File ID"
+//	@Success     200 {file} file
+//	@Failure     401 {object} ErrorResponse
+//	@Failure     403 {object} ErrorResponse
+//	@Failure     404 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse
+//	@Failure     500 {object} ErrorResponse
+//	@Router      /api/files/{id} [get]
 func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	fileID := r.PathValue("id")
@@ -232,7 +312,7 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if ch.IsPrivate {
-			if _, err := h.Store.GetUserChannel(session.UserID, f.ChannelID); err != nil {
+			if uc, err := h.Store.GetUserChannel(session.UserID, f.ChannelID); err != nil || uc.Status != models.StatusActive {
 				writeError(w, http.StatusForbidden, "not authorized to access this file")
 				return
 			}
@@ -241,7 +321,7 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 
 	rc, err := h.Storage.Open(f.StoragePath)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to open file storage")
+		writeInternal(w, "open file "+f.ID, err, "failed to open file storage")
 		return
 	}
 	defer rc.Close()

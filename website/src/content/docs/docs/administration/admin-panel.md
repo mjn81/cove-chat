@@ -20,6 +20,7 @@ Roles are checked on the server on every request. Revoking an admin takes effect
 - **Registration:** switch between open, invite-only and closed, and create invitation codes.
 - **Settings:** edit a whitelist of `config.toml` keys. Comments in the file are preserved and a `.bak` of the previous file is kept. Secrets are never shown. Network and session-security keys are owner-only.
 - **Audit log:** recent admin actions.
+- **Server update:** see when a new release is out and, as the owner, install it with one click, or upload a release file on a server without internet. Admins are also told when a release appears. See [Server updates](/docs/administration/updates/).
 - **Owner tools:** download an encrypted backup, reset data (keeps the owner account), delete the server, add or remove admins. Each asks for the owner's password again; reset and delete also require typing a confirmation.
 
 ## Recovering a lost owner login

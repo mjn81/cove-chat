@@ -22,6 +22,15 @@ max_video_duration_sec = 60
 ffmpeg_path = "ffmpeg"
 # Enable development mode (extra logging, Swagger UI at /api/docs/).
 dev = false
+# Oldest client app version (MAJOR.MINOR.PATCH) this server supports. Empty = no minimum.
+# Clients below it get an "out of date" banner (soft mode, see enforce_min_client).
+# API v2 changed every list endpoint to a paged {items, next_cursor} envelope, so at the release that ships it
+# set this to "0.10.0" so clients that predate it are told to update instead of misreading the lists.
+min_client_version = ""
+# false (default): warn only, old clients keep working as far as they can.
+# true: requests from clients below min_client_version (or sending no X-Cove-Client header) get HTTP 426 and the
+# client shows a blocking "update required" screen. /api/version, /api/server-info and /ws stay reachable.
+enforce_min_client = false
 
 [security]
 # Master password for encrypting the database DEK via Argon2id (KEK derivation).
@@ -135,3 +144,11 @@ mode = "open"
 [sessions]
 # geoip_db_path = "/etc/cove/GeoLite2-City.mmdb"
 # login_notifications = true    # send a "new login" message from the Cove account on each sign-in
+
+# Where the server looks for new releases (admin panel > Overview > Server update). The manifest is published next to
+# every release; GitHub is the fallback. Point manifest_url at your own mirror for air-gapped installs and set
+# github_fallback = false there. See docs/auto-update.md for the manifest format.
+[update]
+# manifest_url = "https://covechat.dev/releases/manifest.json"
+# github_fallback = true
+# notify_admins = true          # tell the owner and admins (once per version) when a new release is out

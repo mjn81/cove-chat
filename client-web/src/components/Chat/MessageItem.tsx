@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { wsEditMessage, wsDeleteMessage } from '@/ws';
 import { JoinPreview } from './JoinPreview';
 import { InviteMessage } from './InviteMessage';
+import { UnknownMessage } from '@/domains/messages/components/unknown-message';
+import { isKnownMessageType } from '@/domains/messages/utils/message-types';
 import { ConfirmModal } from '../ConfirmModal';
 import { useSelectionStore } from '@/domains/messages/store/selection.store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -525,6 +527,7 @@ export const MessageItem = memo(
 						</>
 					)}
 					{msg.type === 'invite' && <InviteMessage text={msg.text} />}
+					{!isKnownMessageType(msg.type) && <UnknownMessage />}
 					{(msg.type === 'file' || msg.type === 'voice') && (
 						<FileBubble msg={msg} />
 					)}

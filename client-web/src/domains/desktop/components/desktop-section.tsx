@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { SwitchRow } from '@/components/setting-row';
 import { isWails } from '@/utils/wails';
+import { UpdateSettings } from './update-settings';
 import { GetAutostart, GetCloseToTray, SetAutostart, SetCloseToTray } from '../../../wailsjs/go/main/App';
 
 /**
@@ -57,6 +58,7 @@ export function DesktopSection() {
 				checked={autostart}
 				onCheckedChange={toggleAutostart}
 			/>
+			<UpdateSettings />
 		</section>
 	);
 }

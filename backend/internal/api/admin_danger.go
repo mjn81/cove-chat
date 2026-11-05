@@ -1,11 +1,12 @@
 package api
 
 import (
+	"errors"
+	"mime/multipart"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -106,8 +107,7 @@ func backupGCM(passphrase string, salt []byte) (cipher.AEAD, error) {
 func (h *Handler) AdminBackup(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body BackupRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<12, "admin.errors.invalid_json") {
 		return
 	}
 	if !h.confirmPassword(w, actor, body.Password) {
@@ -156,8 +156,7 @@ func (h *Handler) AdminBackup(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AdminReset(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body ResetRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<12, "admin.errors.invalid_json") {
 		return
 	}
 	if !h.confirmPassword(w, actor, body.Password) {
@@ -207,8 +206,7 @@ func (h *Handler) AdminReset(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AdminDeleteServer(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	var body DeleteServerRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "admin.errors.invalid_json")
+	if !decodeJSONLimit(w, r, &body, 1<<12, "admin.errors.invalid_json") {
 		return
 	}
 	if !h.confirmPassword(w, actor, body.Password) {
@@ -245,15 +243,17 @@ const maxRestoreBytes = 1 << 30
 //
 //	@Summary     Restore a backup
 //	@Description Replaces ALL current data with the contents of a backup made by the panel. Everyone is signed out, including the caller. Cannot be undone; take a backup first.
+//	@Description The form is read as a stream so the password is checked before the (up to 1 GiB) archive is read:
+//	@Description send `password` and `confirm` BEFORE `file`.
 //	@Description **Access:** Server Owner, with their password, the archive passphrase and the phrase `RESTORE`.
 //	@Tags        admin
 //	@Accept      multipart/form-data
 //	@Produce     json
 //	@Security    BearerAuth
-//	@Param       file       formData file   true  "The .cove-backup file"
+//	@Param       password   formData string true  "Owner password (must precede file)"
+//	@Param       confirm    formData string true  "Must be RESTORE (must precede file)"
 //	@Param       passphrase formData string true  "Passphrase chosen when the backup was made"
-//	@Param       password   formData string true  "Owner password"
-//	@Param       confirm    formData string true  "Must be RESTORE"
+//	@Param       file       formData file   true  "The .cove-backup file (last)"
 //	@Success     200 {object} StatusResponse
 //	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
@@ -265,35 +265,103 @@ const maxRestoreBytes = 1 << 30
 func (h *Handler) AdminRestore(w http.ResponseWriter, r *http.Request) {
 	actor := adminActor(r)
 	r.Body = http.MaxBytesReader(w, r.Body, maxRestoreBytes)
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
-		code := http.StatusBadRequest
-		if _, tooBig := err.(*http.MaxBytesError); tooBig {
-			code = http.StatusRequestEntityTooLarge
-		}
-		writeError(w, code, "admin.errors.invalid_upload")
-		return
-	}
-	if !h.confirmPassword(w, actor, r.FormValue("password")) {
-		return
-	}
-	if r.FormValue("confirm") != "RESTORE" {
-		writeError(w, http.StatusBadRequest, "admin.errors.confirm_mismatch")
-		return
-	}
-	file, _, err := r.FormFile("file")
+	mr, err := r.MultipartReader()
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "admin.errors.invalid_upload")
 		return
 	}
-	defer file.Close()
-	sealed, err := io.ReadAll(file)
-	if err != nil {
+
+	// fail maps a read error to 413 (body over the cap) or 400 (anything else malformed).
+	fail := func(err error) {
+		code := http.StatusBadRequest
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			code = http.StatusRequestEntityTooLarge
+		}
+		writeError(w, code, "admin.errors.invalid_upload")
+	}
+	// field reads a small text part.
+	field := func(p *multipart.Part) (string, error) {
+		b, err := io.ReadAll(io.LimitReader(p, 4096))
+		return string(b), err
+	}
+
+	var (
+		passphrase string
+		confirm    string
+		sealed     []byte
+		verified   bool
+	)
+	for {
+		part, err := mr.NextPart()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			fail(err)
+			return
+		}
+		switch part.FormName() {
+		case "password":
+			pw, err := field(part)
+			if err != nil {
+				fail(err)
+				return
+			}
+			// Decide now, before any further byte of the form is read: a wrong password must not cost the server
+			// a gigabyte of upload.
+			if status, key := h.checkStepUp(actor, pw); status != 0 {
+				writeError(w, status, key)
+				return
+			}
+			verified = true
+		case "confirm":
+			if confirm, err = field(part); err != nil {
+				fail(err)
+				return
+			}
+		case "passphrase":
+			if passphrase, err = field(part); err != nil {
+				fail(err)
+				return
+			}
+		case "file":
+			if !verified {
+				// Either no password was sent, or it came after the file; both are refused without reading on.
+				if status, key := h.checkStepUp(actor, ""); status != 0 {
+					writeError(w, status, key)
+				}
+				return
+			}
+			if confirm != "RESTORE" {
+				writeError(w, http.StatusBadRequest, "admin.errors.confirm_mismatch")
+				return
+			}
+			if sealed, err = io.ReadAll(part); err != nil {
+				fail(err)
+				return
+			}
+		default:
+			_, _ = io.Copy(io.Discard, io.LimitReader(part, 4096))
+		}
+	}
+	if !verified {
+		if status, key := h.checkStepUp(actor, ""); status != 0 {
+			writeError(w, status, key)
+		}
+		return
+	}
+	if confirm != "RESTORE" {
+		writeError(w, http.StatusBadRequest, "admin.errors.confirm_mismatch")
+		return
+	}
+	if sealed == nil {
 		writeError(w, http.StatusBadRequest, "admin.errors.invalid_upload")
 		return
 	}
 	// Decrypt BEFORE touching the database: a wrong passphrase or a damaged
 	// file must leave the current data exactly as it was.
-	plain, err := DecryptBackup(sealed, r.FormValue("passphrase"))
+	plain, err := DecryptBackup(sealed, passphrase)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "admin.errors.backup_unreadable")
 		return

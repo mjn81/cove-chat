@@ -1,6 +1,9 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"context"
 	"net/http"
 	"sync"
@@ -8,6 +11,7 @@ import (
 
 	"cove/backend/internal/auth"
 	"cove/backend/internal/crypto"
+	"cove/backend/internal/db"
 	"cove/backend/internal/logger"
 	"cove/backend/internal/models"
 )
@@ -35,6 +39,11 @@ func (h *Handler) requireAdmin(ownerOnly bool, next http.HandlerFunc) http.Handl
 			return
 		}
 		u, err := h.Store.GetUser(session.UserID)
+		if err != nil && !errors.Is(err, db.ErrNotFound) {
+			// A storage failure is not proof the caller is a non-admin; do not report it as a refusal.
+			writeInternal(w, "admin guard: load user", err, "admin.errors.internal")
+			return
+		}
 		if err != nil || !models.IsServerAdmin(u.ServerRole) || (ownerOnly && u.ServerRole != models.ServerRoleOwner) {
 			writeError(w, http.StatusForbidden, "admin.errors.forbidden")
 			return
@@ -97,10 +106,19 @@ func (g *stepUpGuard) recent(userID string, now time.Time) []time.Time {
 // and writes the error response itself when it does not match. It returns
 // true when the caller may proceed.
 func (h *Handler) confirmPassword(w http.ResponseWriter, actor *models.User, password string) bool {
+	if status, key := h.checkStepUp(actor, password); status != 0 {
+		writeError(w, status, key)
+		return false
+	}
+	return true
+}
+
+// checkStepUp is confirmPassword without the response: it returns the HTTP status and error key to reject with, or
+// 0 when the password is right. Streaming handlers use it to decide before they read a large request body.
+func (h *Handler) checkStepUp(actor *models.User, password string) (int, string) {
 	now := time.Now()
 	if h.stepUp.locked(actor.ID, now) {
-		writeError(w, http.StatusTooManyRequests, "admin.errors.too_many_attempts")
-		return false
+		return http.StatusTooManyRequests, "admin.errors.too_many_attempts"
 	}
 	ok := false
 	if password != "" && actor.PwdHash != nil {
@@ -109,11 +127,18 @@ func (h *Handler) confirmPassword(w http.ResponseWriter, actor *models.User, pas
 	if !ok {
 		h.stepUp.fail(actor.ID, now)
 		logger.Warnf("admin: wrong password for step-up by user %s", actor.ID)
-		writeError(w, http.StatusForbidden, "admin.errors.password_invalid")
-		return false
+		return http.StatusForbidden, "admin.errors.password_invalid"
 	}
 	h.stepUp.reset(actor.ID)
-	return true
+	return 0, ""
+}
+
+// inviteRef is how an invite code appears in logs and the audit trail: a short digest, never the code itself. A
+// code is a sign-up credential, and both sinks outlive the invite and are readable by more people than the code is
+// meant for. The digest is enough to correlate an entry with the invite an admin is looking at.
+func inviteRef(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return "invite#" + hex.EncodeToString(sum[:4])
 }
 
 // audit records an admin action in the log and the audit trail. Targets are
