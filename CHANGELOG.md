@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.10.0](https://github.com/mjn81/cove-chat/compare/v0.9.9...v0.10.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **android:** consume the paged API (api 2) and ask for the password on account deletion
+* **web:** consume the paged API (api 2) and confirm account deletion with the password
+* **api:** DELETE /api/users/me requires the current password
+* **api:** paged list envelope, api_version 2
+
+### Features
+
+* **android:** consume the paged API (api 2) and ask for the password on account deletion ([ed108a8](https://github.com/mjn81/cove-chat/commit/ed108a85fa957b5a820e3444e562a84cf1d7f51a))
+* **android:** in-app update check, verified download and system installer hand-off ([41ca663](https://github.com/mjn81/cove-chat/commit/41ca66343865d724b65672ad8ca7c378a878a1df))
+* **android:** send X-Cove-Client, handle client_outdated and unknown message types ([d757da7](https://github.com/mjn81/cove-chat/commit/d757da79a8a6139a5ea30703ca90f502c71c0396))
+* API standard v2, auto-update, audit hardening ([5939298](https://github.com/mjn81/cove-chat/commit/59392980dd3624b9680af425cb738c5ced77a0ec))
+* **api:** add API standard, version negotiation and stable error codes ([d160098](https://github.com/mjn81/cove-chat/commit/d16009845d01c231de402e907ff0cd16657a7558))
+* **api:** add owner-triggered server self-update (GET/POST /api/admin/update) ([72b5f77](https://github.com/mjn81/cove-chat/commit/72b5f7701f63d3ede8be01d58d9eaa3bdd21065e))
+* **api:** DELETE /api/users/me requires the current password ([fc5579b](https://github.com/mjn81/cove-chat/commit/fc5579b84e50a7a3ed53a62d606cebe234675396))
+* **api:** manifest update source, admin update notices and manual upload ([a68793a](https://github.com/mjn81/cove-chat/commit/a68793ad65dc2bb03631f7c914afd6113e18af17))
+* **api:** paged list envelope, api_version 2 ([0022512](https://github.com/mjn81/cove-chat/commit/0022512032031dccbaada6f41876f4ac495f9851))
+* **desktop:** add background auto-updater with verified staging and rollback ([5f0751b](https://github.com/mjn81/cove-chat/commit/5f0751ba33eed001118d05cec96a8e04346517dd))
+* **desktop:** update source setting and opt-in downloads ([1917fe6](https://github.com/mjn81/cove-chat/commit/1917fe68ae7ac4bde8b8d0f8ad336ff9aa08d2ca))
+* **site:** publish the release manifest at /releases/manifest.json ([aa61b03](https://github.com/mjn81/cove-chat/commit/aa61b0383cd1626fe6b5877c4abdfddbc8737d40))
+* **update:** add shared self-update library (cove/update) ([33077a3](https://github.com/mjn81/cove-chat/commit/33077a3490d5be1c927f10613495846ceefea156))
+* **web:** add server update card to the admin overview ([0f38ea6](https://github.com/mjn81/cove-chat/commit/0f38ea618048308bef8dc100021b46e05638392d))
+* **web:** consume the paged API (api 2) and confirm account deletion with the password ([7908964](https://github.com/mjn81/cove-chat/commit/7908964825dd7f26bda46f4bb1900f2abb41a9c5))
+* **web:** desktop update banner, settings and restart confirmation ([e4e67f9](https://github.com/mjn81/cove-chat/commit/e4e67f96211d147ea84da6277ed1d55e33083141))
+* **web:** quiet update icon above the profile card, opt-in downloads and offline upload ([4bec7d8](https://github.com/mjn81/cove-chat/commit/4bec7d80b79d344eead21fd521432b115e29862a))
+* **web:** send X-Cove-Client, handle client_outdated and unknown message types ([965988b](https://github.com/mjn81/cove-chat/commit/965988b90d717dcb418d409c8a8ebbd3efca4de9))
+
+
+### Bug Fixes
+
+* **api:** audit hardening - explore, roles, uploads, step-up, limits, error handling ([38e9df6](https://github.com/mjn81/cove-chat/commit/38e9df6ebb56a0e631e97420770fcedf8fac4063))
+* **api:** one JSON error-envelope writer for every layer; 501 maps to feature_unsupported ([c7c3092](https://github.com/mjn81/cove-chat/commit/c7c30929e10e45f727d3e27b50c8bfebb340f6a3))
+* **backend:** audit leftovers - rtc join status, voice log, ws headers, login timing ([ea62016](https://github.com/mjn81/cove-chat/commit/ea62016f7c6f8d08cd3cf90d5a9f60ecd36409ff))
+* **server:** keep the Windows-only restart helpers in the Windows file so Linux lint passes ([47d9e4b](https://github.com/mjn81/cove-chat/commit/47d9e4bba0011656dfeae7875bfc6066ef2799b9))
+* **web:** owner password for server update, restore field order, join public channels by id ([b3d321b](https://github.com/mjn81/cove-chat/commit/b3d321b1d27336bc262478294cbfb86c61e5ef7f))
+* **ws:** enforce membership and ownership on read receipts, edits, whispers; rate-limit client events ([3ebb84a](https://github.com/mjn81/cove-chat/commit/3ebb84adc709b85b0e14614b86dab6c2205abab6))
+
 ## [0.9.9](https://github.com/mjn81/cove-chat/compare/v0.9.8...v0.9.9) (2026-11-02)
 
 
