@@ -3,6 +3,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"syscall"
 )
@@ -17,4 +18,14 @@ func relaunch(exe string, args, env []string) error {
 
 func detach(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: createNewProcessGroup}
+}
+
+// startDetached launches exe as an independent child with the same stdio. Windows has no exec, so the caller then
+// exits and leaves the child running on the freed ports.
+func startDetached(exe string, args, env []string) error {
+	cmd := exec.Command(exe, args...)
+	cmd.Env = env
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	detach(cmd)
+	return cmd.Start()
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"os"
-	"os/exec"
 
 	"cove/backend/internal/logger"
 	"cove/update"
@@ -26,14 +25,4 @@ func restartSelf(exe string) error {
 		return errors.Join(err, rerr)
 	}
 	return relaunch(exe, args, env)
-}
-
-// startDetached launches exe as an independent child with the same stdio. Used on Windows (no exec) where the
-// caller then exits, leaving the child running on the freed ports.
-func startDetached(exe string, args, env []string) error {
-	cmd := exec.Command(exe, args...)
-	cmd.Env = env
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	detach(cmd)
-	return cmd.Start()
 }
