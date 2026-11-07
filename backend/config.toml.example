@@ -44,6 +44,10 @@ token_expire_hours = 24
 [database]
 # Path where BadgerDB stores its data files.
 path = "./data/db"
+# On start-up, drop database table files that a power loss or killed process left filled with zeros, keep a copy of
+# the original, and message the admins, instead of refusing to start. Only what was stored in those files is lost.
+# Set to false to fail loudly and run "cove-server repair" yourself.
+# auto_repair = true
 
 [rate_limit]
 # Global rate limit: max requests per second per IP address.

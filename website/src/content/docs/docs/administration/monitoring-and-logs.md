@@ -16,7 +16,9 @@ Set `NO_COLOR=1` to disable ANSI colors in captured logs. Development mode (`GO_
 
 A power loss or a killed process can leave one of the database's table files (`data/db/main/*.sst`) filled with zeros. The server then refuses to start and the log says `table file 000011.sst is damaged (it contains only zeros)`.
 
-Stop the server and run one command. It drops only the damaged file, keeps a full copy of the original next to it, and leaves every other record and the encryption keys as they were:
+By default the server repairs this itself on the next start (`auto_repair = true` under `[database]`): it keeps running, and the owner and admins get a message from the Cove account saying which files were dropped and where the original copy is. Set `auto_repair = false` if you would rather it stop and let you decide.
+
+To do it by hand, stop the server and run one command. It drops only the damaged file, keeps a full copy of the original next to it, and leaves every other record and the encryption keys as they were:
 
 ```bash
 ./cove-server repair

@@ -27,6 +27,9 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Security.MasterPassword == "" {
 		t.Error("MasterPassword should be auto-generated when empty")
 	}
+	if !cfg.Database.AutoRepair {
+		t.Error("Database.AutoRepair should default to true so a damaged table does not keep the server down")
+	}
 	os.Remove(path)
 }
 

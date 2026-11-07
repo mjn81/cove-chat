@@ -147,6 +147,9 @@ type SecurityConfig struct {
 
 type DatabaseConfig struct {
 	Path string `toml:"path"`
+	// AutoRepair makes the server drop zero-filled database table files (left by a power loss or a killed process)
+	// at start-up instead of refusing to start, and tell the admins. On by default; see db.Repair.
+	AutoRepair bool `toml:"auto_repair"`
 }
 
 type StorageConfig struct {
@@ -193,7 +196,8 @@ func defaults() *Config {
 			TokenExpireHours: 24,
 		},
 		Database: DatabaseConfig{
-			Path: "./data/db",
+			Path:       "./data/db",
+			AutoRepair: true,
 		},
 		Storage: StorageConfig{
 			UploadDir: "./data/uploads",

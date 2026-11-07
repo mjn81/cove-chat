@@ -80,6 +80,17 @@ func main() {
 
 	// ── 4. Open BadgerDB ──────────────────────────────────────────────────
 	mainPath := cfg.Database.Path + "/main"
+	// A damaged table file would stop the server from starting at all, so repair it first and tell the admins once
+	// the chat is up. Anything that fails here is left for Open to report.
+	var repaired db.RepairReport
+	if cfg.Database.AutoRepair {
+		if repaired, err = db.Repair(mainPath); err != nil {
+			logger.Errorf("automatic database repair failed: %v", err)
+		} else if len(repaired.Removed) > 0 {
+			logger.Warnf("database repaired automatically: removed %s; original kept in %s",
+				strings.Join(repaired.Removed, ", "), repaired.BackupDir)
+		}
+	}
 	database, err := db.Open(mainPath, dek)
 	if err != nil {
 		logger.Fatalf("Database open failed: %v", err)
@@ -206,6 +217,9 @@ func main() {
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 	hub.SetMinClientVersion(cfg.Server.MinClientVersion)
+	if _, err := apiHandler.NotifyAdminsOfDatabaseRepair(repaired); err != nil {
+		logger.Warnf("could not tell the admins about the database repair: %v", err)
+	}
 
 	// Sign-up proof-of-work. The service always exists; the admin panel switches enforcement on and off live.
 	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)
