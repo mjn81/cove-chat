@@ -71,4 +71,11 @@ class ApiStandardTest {
         assertEquals("0.9.0", new.minClientVersion)
         assertEquals(listOf("whisper"), new.capabilities)
     }
+
+    @Test fun udpModeServersBlockCalls() {
+        assertTrue(ApiStandard.callsNeedUdpClient(listOf("whisper", "raw_udp_voice", "raw_udp_media")))
+        assertFalse(ApiStandard.callsNeedUdpClient(listOf("whisper", "webrtc_sfu")))
+        assertFalse(ApiStandard.callsNeedUdpClient(emptyList()))
+        assertFalse(ApiStandard.callsNeedUdpClient(null))
+    }
 }

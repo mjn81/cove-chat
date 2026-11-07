@@ -115,7 +115,8 @@ internal val ExtraFa: Map<String, String> = mapOf(
     "Couldn't establish the encrypted session." to "برقراری نشست رمزنگاری‌شده ممکن نشد.", "Session closed due to an error." to "نشست به‌دلیل خطا بسته شد.",
     "Tap to record" to "برای ضبط ضربه بزنید", "Recording" to "در حال ضبط", "Retake" to "ضبط دوباره", "Trim" to "برش", "Allow access" to "اجازه دسترسی",
     "Camera access denied" to "دسترسی به دوربین رد شد", "Allow camera and microphone access to record a video message." to "برای ضبط پیام ویدیویی، دسترسی به دوربین و میکروفون را مجاز کنید.",
-    "Couldn't record the video." to "ضبط ویدیو انجام نشد.", "Couldn't open the camera." to "باز کردن دوربین ممکن نشد.",
+    "This server does not support sharing invites in chat yet." to "این سرور هنوز از اشتراک‌گذاری دعوت‌نامه در گفتگو پشتیبانی نمی‌کند.", "Couldn't record the video." to "ضبط ویدیو انجام نشد.", "Couldn't open the camera." to "باز کردن دوربین ممکن نشد.",
+    "Calls on this server need the Cove native app with UDP support, which is coming to Android soon." to "تماس‌ها در این سرور به برنامه بومی Cove با پشتیبانی UDP نیاز دارند که به‌زودی برای اندروید عرضه می‌شود.",
 )
 
 /** Arabic strings added after the main table in [Translations] (chat input, backgrounds, calls, Whisper); merged into it. */
@@ -233,5 +234,6 @@ internal val ExtraAr: Map<String, String> = mapOf(
     "Couldn't establish the encrypted session." to "تعذر إنشاء الجلسة المشفرة.", "Session closed due to an error." to "أُغلقت الجلسة بسبب خطأ.",
     "Tap to record" to "اضغط للتسجيل", "Recording" to "جارٍ التسجيل", "Retake" to "إعادة التسجيل", "Trim" to "قص", "Allow access" to "السماح بالوصول",
     "Camera access denied" to "تم رفض الوصول إلى الكاميرا", "Allow camera and microphone access to record a video message." to "اسمح بالوصول إلى الكاميرا والميكروفون لتسجيل رسالة فيديو.",
-    "Couldn't record the video." to "تعذر تسجيل الفيديو.", "Couldn't open the camera." to "تعذر فتح الكاميرا.",
+    "This server does not support sharing invites in chat yet." to "هذا الخادم لا يدعم مشاركة الدعوات في المحادثة بعد.", "Couldn't record the video." to "تعذر تسجيل الفيديو.", "Couldn't open the camera." to "تعذر فتح الكاميرا.",
+    "Calls on this server need the Cove native app with UDP support, which is coming to Android soon." to "المكالمات على هذا الخادم تتطلب تطبيق Cove الأصلي بدعم UDP، وسيتوفر قريباً على أندرويد.",
 )

@@ -23,6 +23,7 @@ import androidx.core.app.NotificationCompat
 import com.cove.chat.whisper.WhisperInvite
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.cove.chat.MainActivity
@@ -51,7 +52,7 @@ class NotificationHelper(private val app: Application) {
     private val manager = NotificationManagerCompat.from(app)
 
     /** One line of a conversation notification (kept in memory only; cleared when the chat is read). */
-    private class Line(val sender: String?, val text: String, val time: Long)
+    private class Line(val sender: String?, val text: String, val time: Long, val avatar: android.graphics.Bitmap? = null)
     private class Conversation(var title: String, var isGroup: Boolean) { val lines = ArrayList<Line>(); var unread = 0 }
     private val conversations = LinkedHashMap<String, Conversation>()
 
@@ -135,12 +136,12 @@ class NotificationHelper(private val app: Application) {
      * Shows (or updates) the notification for [channelId]. [sender] is the author's display name (null for the
      * user's own lines); DMs read as a plain chat, groups get a conversation title.
      */
-    fun showMessage(channelId: String, title: String, isGroup: Boolean, sender: String, text: String, silent: Boolean = false) {
+    fun showMessage(channelId: String, title: String, isGroup: Boolean, sender: String, text: String, silent: Boolean = false, avatar: android.graphics.Bitmap? = null) {
         val prefs = (app as CoveApp).preferencesManager
         if (!prefs.notificationsEnabled || !canNotify()) return
         val convo = conversations.getOrPut(channelId) { Conversation(title, isGroup) }
         convo.title = title; convo.isGroup = isGroup
-        convo.lines.add(Line(sender, text, System.currentTimeMillis()))
+        convo.lines.add(Line(sender, text, System.currentTimeMillis(), avatar))
         convo.unread++
         while (convo.lines.size > MAX_LINES) convo.lines.removeAt(0)
         post(channelId, convo, alert = !silent && prefs.notificationSound)
@@ -159,7 +160,10 @@ class NotificationHelper(private val app: Application) {
         val style = NotificationCompat.MessagingStyle(me)
         if (convo.isGroup) style.setConversationTitle(convo.title).setGroupConversation(true)
         convo.lines.forEach { l ->
-            val person = l.sender?.let { Person.Builder().setName(it).setKey(it).build() } // null = me
+            val person = l.sender?.let { name ->
+                // The sender's profile photo shows next to their name; without one Android draws its initial-letter placeholder.
+                Person.Builder().setName(name).setKey(name).apply { l.avatar?.let { setIcon(IconCompat.createWithBitmap(circleCrop(it))) } }.build()
+            } // null = me
             style.addMessage(l.text, l.time, person)
         }
         val reply = NotificationCompat.Action.Builder(
@@ -170,11 +174,26 @@ class NotificationHelper(private val app: Application) {
             android.R.drawable.ic_menu_view, t("Mark as read"), actionIntent(ACTION_MARK_READ, channelId)
         ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).setShowsUserInterface(false).build()
 
+        // A long-lived conversation shortcut with the sender's photo is what makes Android 11+ draw that photo in the
+        // collapsed notification header and the conversation section, instead of the app icon.
+        val peer = convo.lines.lastOrNull { it.sender != null }
+        runCatching {
+            val shortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(app, channelId)
+                .setShortLabel(convo.title).setLongLived(true).setIsConversation()
+                .setIntent(Intent(app, MainActivity::class.java).setAction(Intent.ACTION_VIEW).putExtra(EXTRA_CHANNEL_ID, channelId).putExtra(EXTRA_CHANNEL_NAME, convo.title))
+                .apply {
+                    peer?.sender?.let { name -> setPerson(Person.Builder().setName(name).setKey(name).apply { peer.avatar?.let { setIcon(IconCompat.createWithBitmap(circleCrop(it))) } }.build()) }
+                    peer?.avatar?.let { setIcon(IconCompat.createWithBitmap(circleCrop(it))) }
+                }.build()
+            androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(app, shortcut)
+        }
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
+            .setShortcutId(channelId)
             .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setStyle(style)
             .setContentTitle(convo.title)
+            .setLargeIcon(convo.lines.lastOrNull { it.avatar != null }?.avatar?.let { circleCrop(it) })
             .setContentText(convo.lines.lastOrNull()?.text)
             .setContentIntent(openChatIntent(channelId, convo.title, channelId.hashCode()))
             .setDeleteIntent(actionIntent(ACTION_DISMISSED, channelId))
@@ -191,6 +210,18 @@ class NotificationHelper(private val app: Application) {
             .build()
         manager.notify(channelId.hashCode(), n)
         postSummary()
+    }
+
+    /** Square-crops [src] to its centre and masks it round, so a photo reads as a profile picture in the large-icon slot. */
+    private fun circleCrop(src: android.graphics.Bitmap): android.graphics.Bitmap {
+        val size = minOf(src.width, src.height)
+        val out = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(src, -(src.width - size) / 2f, -(src.height - size) / 2f, paint)
+        return out
     }
 
     /** Group summary so several conversations collapse into one expandable stack. */
