@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"cove/desktop/internal/popup"
 	"cove/desktop/internal/updater"
@@ -37,6 +39,13 @@ func main() {
 		updater.WaitForExit(pid, 15*time.Second)
 	}
 	app := NewApp()
+	// Calls on air-gapped servers: events need the Wails context, which only exists after startup.
+	var mediaCtx context.Context
+	mediaBridge := NewMediaBridge(func(event string, data ...any) {
+		if mediaCtx != nil {
+			wailsruntime.EventsEmit(mediaCtx, event, data...)
+		}
+	})
 
 	err := wails.Run(&options.App{
 		Title:            "Cove",
@@ -51,7 +60,7 @@ func main() {
 		},
 
 		// Lifecycle hooks
-		OnStartup:  app.Startup,
+		OnStartup:  func(ctx context.Context) { mediaCtx = ctx; app.Startup(ctx) },
 		OnShutdown: app.Shutdown,
 
 		// Closing hides to the tray (see window.go); only the tray's Quit really exits.
@@ -65,7 +74,7 @@ func main() {
 		Menu:       app.appMenu(),
 
 		// Expose App struct methods to the frontend via window.go.*
-		Bind: []any{app, &PopupApp{}},
+		Bind: []any{app, &PopupApp{}, mediaBridge},
 
 		// The web UI draws its own title bar (see DesktopTitleBar) so the window reads as one surface, like
 		// Telegram. Windows and Linux therefore run frameless; macOS keeps its native traffic lights inset into

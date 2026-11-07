@@ -26,3 +26,10 @@ describe('callsNeedNativeClient', () => {
 		expect(callsNeedNativeClient(['whisper'])).toBe(false);
 	});
 });
+
+describe('useUdpMediaTransport', () => {
+	it('is false in a browser even on raw_udp servers', async () => {
+		const { useUdpMediaTransport } = await import('@/lib/call-support');
+		expect(useUdpMediaTransport(['raw_udp_media', 'raw_udp_voice'])).toBe(false);
+	});
+});

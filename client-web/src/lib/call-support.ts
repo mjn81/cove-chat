@@ -1,12 +1,20 @@
 import { hasCapability } from '@/lib/api-standard';
+import { isWails } from '@/utils/wails';
+import { hasMediaBridge } from '@/rtc/udp-bridge';
 
 /**
  * Whether this build can place calls through the encrypted UDP media path used in air-gapped mode
- * (docs/udp-media.md). Browsers cannot open raw UDP sockets, and the desktop shell does not expose its media
- * bindings to the web layer yet, so this is false everywhere today; native clients implement the protocol directly.
+ * (docs/udp-media.md). Browsers cannot open raw UDP sockets; the desktop app can, through the Go MediaBridge
+ * binding, so this is true only inside Wails when that binding exists.
  */
 export function hasNativeMediaTransport(): boolean {
-	return false;
+	return isWails() && hasMediaBridge();
+}
+
+/** Whether calls on a server with these capabilities must use the UDP media manager (desktop on raw_udp). */
+export function useUdpMediaTransport(capabilities: readonly string[] | undefined): boolean {
+	if (!capabilities || !hasNativeMediaTransport()) return false;
+	return !hasCapability(capabilities, 'webrtc_sfu') && hasCapability(capabilities, 'raw_udp_media');
 }
 
 /**

@@ -67,6 +67,7 @@ export type WSEventType =
 	| 'call_participant_left'
 	| 'call_track_state'
 	| 'call_error'
+	| 'call_ended'
 	| 'open'
 	| 'close';
 
@@ -80,6 +81,24 @@ export interface ParticipantInfo {
 	user_id: string;
 	username: string;
 	track_states: Record<string, boolean>;
+	/** Source id on forwarded UDP media; only present in raw_udp mode. */
+	media_id?: number;
+}
+
+/** The "media" object of call_join in raw_udp mode (docs/udp-media.md section 2). */
+export interface CallMediaJoinRequest {
+	client_pub: string;
+	client_nonce: string;
+}
+
+/** The "media" object of call_joined in raw_udp mode. */
+export interface CallMediaJoinResponse {
+	session_id: string;
+	server_pub: string;
+	server_nonce: string;
+	media_id: number;
+	max_packet: number;
+	epoch: number;
 }
 
 export interface CallJoinedPayload {
@@ -87,6 +106,7 @@ export interface CallJoinedPayload {
 	self_id: string;
 	ice_servers: ICEServerInfo[];
 	participants: ParticipantInfo[];
+	media?: CallMediaJoinResponse;
 }
 
 export interface CallSDPPayload {
@@ -115,6 +135,8 @@ export interface CallParticipantEventPayload {
 export interface CallErrorPayload {
 	channel_id?: string;
 	error: string;
+	/** call_ended only: why the server closed the session (kicked, removed, timeout). */
+	reason?: string;
 }
 
 export type WSListener = (payload: unknown) => void;
@@ -366,6 +388,7 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 		case 'call_participant_left':
 		case 'call_track_state':
 		case 'call_error':
+		case 'call_ended':
 			emit(msg.type as WSEventType, msg.payload);
 			break;
 		case 'hello':
@@ -574,10 +597,10 @@ export function wsDeleteMessage(channelId: string, messageId: string): boolean {
 }
 
 // ── WebRTC Calling Outbound Helpers ─────────────────────────────────────
-export function wsSendCallJoin(channelId: string): boolean {
+export function wsSendCallJoin(channelId: string, media?: CallMediaJoinRequest): boolean {
 	return wsSend({
 		type: 'call_join',
-		payload: { channel_id: channelId },
+		payload: media ? { channel_id: channelId, media } : { channel_id: channelId },
 	});
 }
 

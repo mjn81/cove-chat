@@ -645,6 +645,7 @@
 	},
 	"calls": {
 		"nativeRequired": "Calls on this server need a native Cove app. Use the Cove desktop or Android app to join or start calls.",
+		"codecsMissing": "This app's webview cannot encode call audio (WebCodecs Opus is missing), so calls are unavailable on this server.",
 		"nativeRequiredTitle": "Calls need a native app"
 	},
 	"voice": {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Maximize2, MicOff, Monitor, Ratio } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useAuthStore, getChannelDisplayName } from '@/store/store';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { callManager } from '@/rtc/call-manager';
 import { useElementSize } from '@/hooks/use-element-size';
 import type { Channel } from '@/types/api';
 import { ScreenContextMenu, StreamVideo, type ScreenShareItem } from './call-media';
@@ -94,7 +94,7 @@ export const VoiceCallStage: React.FC<VoiceCallStageProps> = ({ channel }) => {
 	// Remote screens need a keyframe as soon as they appear or decoding stalls on a black frame.
 	useEffect(() => {
 		for (const share of allScreenShares) {
-			if (!share.isLocal) webRTCManager.requestKeyframe(share.userId);
+			if (!share.isLocal) callManager.requestKeyframe(share.userId);
 		}
 	}, [allScreenShares]);
 

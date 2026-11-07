@@ -11,7 +11,7 @@ import {
 } from '../ui/context-menu';
 import { Slider } from '../ui/slider';
 import { useVoiceStore } from '@/store/voiceStore';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { callManager } from '@/rtc/call-manager';
 
 /** A shared screen (local preview or a remote presenter) that can be spotlighted in the call stage. */
 export interface ScreenShareItem {
@@ -132,13 +132,13 @@ export const ScreenContextMenu: React.FC<{
 								max={200}
 								step={1}
 								onValueChange={(vals) =>
-									webRTCManager.setScreenShareVolume(screen.userId, vals[0] / 100)
+									callManager.setScreenShareVolume(screen.userId, vals[0] / 100)
 								}
 								className="my-1"
 							/>
 						</div>
 						<ContextMenuItem
-							onClick={() => webRTCManager.toggleScreenShareMute(screen.userId)}
+							onClick={() => callManager.toggleScreenShareMute(screen.userId)}
 							className={`cursor-pointer px-2 py-1.5 rounded-md text-xs font-medium ${
 								isMuted ? 'text-success hover:bg-success/15' : 'text-destructive hover:bg-destructive/15'
 							}`}

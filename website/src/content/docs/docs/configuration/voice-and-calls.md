@@ -35,7 +35,7 @@ Browsers only allow microphone, camera and screen capture on HTTPS (or localhost
 mode = "raw_udp"
 ```
 
-Audio flows over UDP port `server.udp_port` (default 9090) with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. The desktop client supports it; calls have no video or screen sharing.
+Audio flows over UDP port `server.udp_port` (default 9090) with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. The Windows desktop app can place and join these calls (audio, camera and screen share; it needs the webview's WebCodecs support, which is still being tested on real hardware). The browser cannot.
 
 ## Troubleshooting
 
