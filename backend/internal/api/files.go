@@ -299,23 +299,16 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Files with no channel (e.g. user avatars) are visible to any authenticated user.
-	// For channel-scoped attachments: if channel is private, verify membership.
-	// Fails CLOSED — if the channel lookup errors (e.g. the channel was
-	// deleted but its file records weren't purged), we must not skip the
-	// membership check, since that would let anyone with the file's UUID
-	// read a formerly-private attachment.
-	if f.ChannelID != "" && f.OwnerID != session.UserID {
-		ch, err := h.Store.GetChannel(f.ChannelID)
-		if err != nil {
+	// Files with no channel (e.g. user avatars) are visible to any authenticated user. A file attached to a channel is
+	// served to that channel's active members only, public channels included: a public channel is listed in explore,
+	// but its messages (and so its attachments) are unreadable until the caller joins. This also applies to the
+	// uploader, so someone who was kicked or left cannot keep pulling files from the channel.
+	// Fails CLOSED: if the channel or membership lookup errors (e.g. the channel was deleted but its file records
+	// weren't purged), access is denied.
+	if f.ChannelID != "" {
+		if uc, err := h.Store.GetUserChannel(session.UserID, f.ChannelID); err != nil || uc.Status != models.StatusActive {
 			writeError(w, http.StatusForbidden, "not authorized to access this file")
 			return
-		}
-		if ch.IsPrivate {
-			if uc, err := h.Store.GetUserChannel(session.UserID, f.ChannelID); err != nil || uc.Status != models.StatusActive {
-				writeError(w, http.StatusForbidden, "not authorized to access this file")
-				return
-			}
 		}
 	}
 
