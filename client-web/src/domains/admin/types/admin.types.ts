@@ -117,6 +117,8 @@ export interface ServerUpdateInfo {
 	reason?: 'docker' | 'unsupported' | 'up_to_date' | 'busy';
 	/** Manual command, set in docker mode. */
 	instructions?: string;
+	/** True when POST /api/admin/restart can restart this install (not Docker, not unsupported). */
+	can_restart: boolean;
 	/** Where the release list came from: the Cove manifest or GitHub. */
 	source?: 'manifest' | 'github';
 	uploaded?: ServerUploadInfo;

@@ -11,6 +11,7 @@ import {
 	adminRevokeAdmin,
 	adminRevokeInvite,
 	adminSendNotice,
+	adminRestartServer,
 	adminStartUpdate,
 	adminTransferOwner,
 	adminUpdateConfig,
@@ -161,4 +162,9 @@ export function useUploadServerUpdate() {
 		mutationFn: adminUploadUpdate,
 		onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.update() }),
 	});
+}
+
+/** Owner only: asks the server to restart. Use {@link adminOverview} polling to detect when it is back. */
+export function useRestartServer() {
+	return useMutation({ mutationFn: (password: string) => adminRestartServer(password) });
 }

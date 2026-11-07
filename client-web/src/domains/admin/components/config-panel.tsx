@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/store';
 import { useAdminConfig, useUpdateAdminConfig } from '../api/use-admin';
 import { adminErrorMessage } from '../utils/admin-errors';
 import type { ConfigSetting, ConfigValue } from '../types/admin.types';
+import { ServerRestartControl } from './server-restart-control';
 import { StepUpDialog } from './step-up-dialog';
 
 type Draft = Record<string, ConfigValue>;
@@ -140,6 +141,7 @@ export function ConfigPanel() {
 								</SettingRow>
 							))}
 					</div>
+					{group === 'calls' && <ServerRestartControl variant="inline" />}
 				</section>
 			))}
 

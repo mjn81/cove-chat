@@ -123,3 +123,10 @@ export const adminUploadUpdate = (input: {
 	form.append('file', input.file);
 	return request<{ status: string; upload: ServerUploadInfo }>(apiClient.post('/api/admin/update/upload', form));
 };
+
+/**
+ * Owner only: gracefully restarts the server process (for example to apply settings that need a restart). The
+ * server answers first and goes down a moment later; the owner's password is required like for an update.
+ */
+export const adminRestartServer = (password: string) =>
+	request<{ status: string }>(apiClient.post('/api/admin/restart', { password }));
