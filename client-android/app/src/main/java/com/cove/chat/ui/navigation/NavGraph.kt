@@ -1,6 +1,10 @@
 package com.cove.chat.ui.navigation
 
 import androidx.compose.runtime.Composable
+import android.widget.Toast
+import com.cove.chat.data.remote.ApiStandard
+import com.cove.chat.ui.components.I18nToast
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +34,19 @@ import com.cove.chat.ui.screens.SettingsScreen
 fun NavGraph() {
     val navController = rememberNavController()
     val prefs = CoveApp.instance.preferencesManager
+    val callScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    // Calls on a raw_udp server need the UDP-capable native client, which Android does not have yet: say so instead of failing silently.
+    fun openCall(route: String, singleTop: Boolean = false) {
+        callScope.launch {
+            val caps = CoveApp.instance.apiClient.getVersion().getOrNull()?.capabilities
+            if (ApiStandard.callsNeedUdpClient(caps)) {
+                I18nToast.make(CoveApp.instance, "Calls on this server need the Cove native app with UDP support, which is coming to Android soon.", Toast.LENGTH_LONG).show()
+            } else {
+                navController.navigate(route) { launchSingleTop = singleTop }
+            }
+        }
+    }
 
     val startDestination = when {
         !prefs.authToken.isNullOrBlank() -> "channels"
@@ -72,7 +89,7 @@ fun NavGraph() {
         CallCoordinator.pendingAnswer = null
         if (!prefs.authToken.isNullOrBlank()) {
             val name = java.net.URLEncoder.encode(call.callerName, "UTF-8")
-            navController.navigate("call/${call.channelId}/$name/false") { launchSingleTop = true }
+            openCall("call/${call.channelId}/$name/false", singleTop = true)
         }
     }
 
@@ -194,11 +211,11 @@ fun NavGraph() {
                 },
                 onStartCall = { withVideo ->
                     val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
-                    navController.navigate("call/$channelId/$encodedName/$withVideo")
+                    openCall("call/$channelId/$encodedName/$withVideo")
                 },
                 onCallIn = { id, name, withVideo ->
                     val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-                    navController.navigate("call/$id/$encodedName/$withVideo")
+                    openCall("call/$id/$encodedName/$withVideo")
                 }
             )
         }
