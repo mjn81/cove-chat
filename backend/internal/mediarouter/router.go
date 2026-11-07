@@ -183,7 +183,16 @@ func (r *Router) Stats() Stats {
 // Serve reads packets from conn until it is closed or Stop is called. It also runs the timeout and membership sweeper.
 func (r *Router) Serve(conn *net.UDPConn) {
 	r.conn.Store(conn)
+	// Add under the same lock Stop takes, so a Stop that races a just-starting Serve never Waits while we Add.
+	r.mu.Lock()
+	select {
+	case <-r.stop:
+		r.mu.Unlock()
+		return
+	default:
+	}
 	r.wg.Add(1)
+	r.mu.Unlock()
 	go r.sweepLoop()
 	buf := make([]byte, udpmedia.MaxPacket+1) // +1 so oversize datagrams are detectable
 	for {
@@ -214,8 +223,8 @@ func isClosed(err error) bool {
 // Stop ends Serve's sweeper, drops every session and refuses further joins. It does not close the socket.
 func (r *Router) Stop() {
 	r.once.Do(func() {
-		close(r.stop)
 		r.mu.Lock()
+		close(r.stop)
 		r.rooms = make(map[string]*room)
 		r.byUser = make(map[string]*session)
 		r.bySID = make(map[[udpmedia.SessionIDLen]byte]*session)
