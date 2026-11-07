@@ -24,6 +24,9 @@ type windowState struct {
 	trayOK   atomic.Bool // the tray icon exists and can bring the window back
 }
 
+// windowVisibilityEvent tells the web UI when the window is hidden to, or restored from, the tray.
+const windowVisibilityEvent = "window:visibility"
+
 // startedHidden reports whether the app was launched with --hidden (autostart): minimised to the tray.
 func startedHidden() bool { return slices.Contains(os.Args[1:], autostart.HiddenFlag) }
 
@@ -45,6 +48,8 @@ func (a *App) hideWindow() {
 	if _, enabled := loadLock(); enabled {
 		a.Lock()
 	}
+	// Tell the web UI first: while the window is hidden the open chat must not suppress notifications.
+	wruntime.EventsEmit(a.ctx, windowVisibilityEvent, map[string]bool{"visible": false})
 	if runtime.GOOS == "darwin" {
 		wruntime.Hide(a.ctx) // hides the whole app; a Dock click brings it back
 		return
@@ -57,6 +62,7 @@ func (a *App) showWindow() {
 	wruntime.WindowUnminimise(a.ctx)
 	wruntime.Show(a.ctx)
 	wruntime.WindowShow(a.ctx)
+	wruntime.EventsEmit(a.ctx, windowVisibilityEvent, map[string]bool{"visible": true})
 }
 
 // beforeClose runs when the OS asks the window to close (Alt+F4, the macOS red button, the taskbar). Returning

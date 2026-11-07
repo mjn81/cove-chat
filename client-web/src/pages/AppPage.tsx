@@ -9,6 +9,7 @@ import LeftSidebar from '@/domains/channels/components/left-sidebar';
 import { MacDragStrip } from '@/domains/desktop/components/mac-drag-region';
 import { useAppShellChrome } from '@/domains/desktop/hooks/use-app-shell-chrome';
 import { useNotificationOpen } from '@/domains/desktop/hooks/use-notification-open';
+import { useWindowVisibility } from '@/domains/desktop/hooks/use-window-visibility';
 import RightSidebar from '@/components/Layout/RightSidebar';
 import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
@@ -42,6 +43,8 @@ export default function AppPage() {
 	useAppShellChrome(!isMobile);
 	// Clicking a desktop notification popup opens its chat.
 	useNotificationOpen();
+	// While the window is hidden in the tray the open chat no longer suppresses notifications.
+	useWindowVisibility();
 	const {
 		isRightSidebarOpen,
 		setLeftSidebarOpen,
