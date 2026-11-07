@@ -54,6 +54,7 @@ class H264Publisher(
 
     // Touched on the encoder thread only (plus the volatile request flag).
     private var encoder: VideoEncoder? = null
+    private var fallback: AvcByteBufferEncoder? = null // plain MediaCodec, used when libwebrtc rejects every codec
     private var width = 0
     private var height = 0
     private var bitrateBps = 1_000_000
@@ -91,13 +92,19 @@ class H264Publisher(
         try {
             val w = upright.buffer.width
             val h = upright.buffer.height
-            if (encoder == null || w != width || h != height) {
+            if ((encoder == null && fallback == null) || w != width || h != height) {
                 if (!initEncoder(w, h)) { stopped = true; return }
             }
             val now = SystemClock.elapsedRealtime()
             val key = wantKey || now - lastKeyAtMs >= KEYFRAME_INTERVAL_MS
             if (key) { wantKey = false; lastKeyAtMs = now }
             val type = if (key) EncodedImage.FrameType.VideoFrameKey else EncodedImage.FrameType.VideoFrameDelta
+            val sw = fallback
+            if (sw != null) {
+                val i420 = upright.buffer.toI420() ?: return
+                try { sw.encode(i420, upright.timestampNs / 1000, key) } finally { i420.release() }
+                return
+            }
             val status = encoder?.encode(upright, VideoEncoder.EncodeInfo(arrayOf(type)))
             if (status != null && status != VideoCodecStatus.OK && status != VideoCodecStatus.NO_OUTPUT) {
                 Log.w(TAG, "$tag encode status $status")
@@ -146,7 +153,14 @@ class H264Publisher(
 
     private fun initEncoder(w: Int, h: Int): Boolean {
         releaseEncoder()
-        val enc = createEncoder() ?: run { onError("This device has no H.264 encoder."); return false }
+        val enc = createEncoder()
+        if (enc == null) {
+            val sw = AvcByteBufferEncoder { key, ts, data -> emit(key, ts, data) }
+            if (!sw.start(w, h, bitrateBps, fps)) { onError("This device has no H.264 encoder."); return false }
+            fallback = sw; width = w; height = h
+            wantKey = true
+            return true
+        }
         val settings = VideoEncoder.Settings(1, w, h, bitrateBps / 1000, fps, 1, false, VideoEncoder.Capabilities(false))
         val status = enc.initEncode(settings, VideoEncoder.Callback { image, _ -> deliver(image) })
         if (status != VideoCodecStatus.OK) { onError("Couldn't start the video encoder ($status)."); enc.release(); return false }
@@ -158,6 +172,7 @@ class H264Publisher(
     }
 
     private fun applyRate() {
+        fallback?.setBitrate(bitrateBps)
         encoder?.setRateAllocation(VideoEncoder.BitrateAllocation(arrayOf(intArrayOf(bitrateBps))), fps)
     }
 
@@ -165,15 +180,20 @@ class H264Publisher(
         val buf: ByteBuffer = image.buffer
         val data = ByteArray(buf.remaining())
         buf.duplicate().get(data)
-        val key = image.frameType == EncodedImage.FrameType.VideoFrameKey
+        emit(image.frameType == EncodedImage.FrameType.VideoFrameKey, image.captureTimeMs, data)
+    }
+
+    private fun emit(key: Boolean, tsMs: Long, data: ByteArray) {
         // A keyframe the receiver cannot start from (no SPS) is useless; ask for another instead of sending it.
         if (key && H264Sps.size(data) == null) { wantKey = true; return }
-        if (!send(key, image.captureTimeMs, data)) { wantKey = true; onOversize() }
+        if (!send(key, tsMs, data)) { wantKey = true; onOversize() }
     }
 
     private fun releaseEncoder() {
         runCatching { encoder?.release() }
         encoder = null
+        fallback?.release()
+        fallback = null
     }
 
     /** Stops encoding and frees the codec; the publisher cannot be reused. */
