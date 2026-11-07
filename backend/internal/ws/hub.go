@@ -51,6 +51,7 @@ type voiceUserRemover interface {
 type RTCSignalHandler interface {
 	HandleSignal(userID, username, msgType string, payload json.RawMessage) error
 	RemoveUser(userID string)
+	RemoveUserFromChannel(userID, channelID string)
 	ActiveRooms() map[string][]string
 }
 
@@ -611,6 +612,10 @@ func (h *Hub) BroadcastMemberJoined(channelID string, userID string) {
 
 // BroadcastMemberLeft notifies channel members that a user has left or been kicked.
 func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
+	// Someone who left or was kicked must not stay in the channel's call.
+	if h.rtc != nil {
+		h.rtc.RemoveUserFromChannel(userID, channelID)
+	}
 	payload, _ := json.Marshal(map[string]any{
 		"channel_id": channelID,
 		"user_id":    userID,
