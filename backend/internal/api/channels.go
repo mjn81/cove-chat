@@ -58,27 +58,27 @@ func validChannelText(s string, max int) (string, bool) {
 func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	var body CreateChannelRequest
-	if !decodeJSON(w, r, &body, "invalid JSON body") {
+	if !decodeJSON(w, r, &body, "apiErrors.invalid_json") {
 		return
 	}
 	var ok bool
 	if body.Name, ok = validChannelText(body.Name, maxChannelNameRunes); !ok {
-		writeError(w, http.StatusBadRequest, "channel name is too long")
+		writeError(w, http.StatusBadRequest, "apiErrors.channel_name_too_long")
 		return
 	}
 	if body.Description, ok = validChannelText(body.Description, maxChannelDescRunes); !ok {
-		writeError(w, http.StatusBadRequest, "channel description is too long")
+		writeError(w, http.StatusBadRequest, "apiErrors.channel_description_too_long")
 		return
 	}
 	if len(body.Members) > maxMembersPerCall {
-		writeError(w, http.StatusBadRequest, "too many members")
+		writeError(w, http.StatusBadRequest, "apiErrors.too_many_members")
 		return
 	}
 
 	memberSet := uniqueStrings(append(body.Members, session.UserID))
 	for _, id := range memberSet {
 		if id == models.SystemUserID {
-			writeError(w, http.StatusForbidden, "this account cannot be added to chats")
+			writeError(w, http.StatusForbidden, "apiErrors.account_not_addable")
 			return
 		}
 	}
@@ -132,7 +132,7 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 
 	ch, err := h.Store.CreateChannel(body.Name, session.UserID, body.IsPrivate, memberSet, h.KEK)
 	if err != nil {
-		writeInternal(w, "create channel", err, "channel creation failed")
+		writeInternal(w, "create channel", err, "apiErrors.channel_create_failed")
 		return
 	}
 	if body.Description != "" || body.AvatarID != "" {
@@ -195,7 +195,7 @@ func (h *Handler) ListChannels(w http.ResponseWriter, r *http.Request) {
 
 	channels, hasMore, err := h.Store.ListUserChannelsPage(session.UserID, after, limit)
 	if err != nil {
-		writeInternal(w, "list channels", err, "could not list channels")
+		writeInternal(w, "list channels", err, "apiErrors.channels_list_failed")
 		return
 	}
 
@@ -237,7 +237,7 @@ func (h *Handler) ExploreChannels(w http.ResponseWriter, r *http.Request) {
 	searchQuery := strings.ToLower(r.URL.Query().Get("q"))
 	allChannels, err := h.Store.ListAllChannels()
 	if err != nil {
-		writeInternal(w, "explore channels", err, "could not list all channels")
+		writeInternal(w, "explore channels", err, "apiErrors.channels_list_failed")
 		return
 	}
 
@@ -327,23 +327,23 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 	// Permission check: Admin or Owner
 	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil || uc.Role < models.RoleAdmin {
-		writeError(w, http.StatusForbidden, "insufficient permissions")
+		writeError(w, http.StatusForbidden, "apiErrors.insufficient_permissions")
 		return
 	}
 
 	var body UpdateChannelRequest
-	if !decodeJSON(w, r, &body, "invalid JSON body") {
+	if !decodeJSON(w, r, &body, "apiErrors.invalid_json") {
 		return
 	}
 
 	if body.Name != nil {
 		newName, ok := validChannelText(*body.Name, maxChannelNameRunes)
 		if newName == "" {
-			writeError(w, http.StatusBadRequest, "channel name cannot be empty")
+			writeError(w, http.StatusBadRequest, "apiErrors.channel_name_required")
 			return
 		}
 		if !ok {
-			writeError(w, http.StatusBadRequest, "channel name is too long")
+			writeError(w, http.StatusBadRequest, "apiErrors.channel_name_too_long")
 			return
 		}
 		ch.Name = newName
@@ -351,7 +351,7 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 	if body.Description != nil {
 		desc, ok := validChannelText(*body.Description, maxChannelDescRunes)
 		if !ok {
-			writeError(w, http.StatusBadRequest, "channel description is too long")
+			writeError(w, http.StatusBadRequest, "apiErrors.channel_description_too_long")
 			return
 		}
 		ch.Description = desc
@@ -364,7 +364,7 @@ func (h *Handler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Store.UpdateChannel(ch); err != nil {
-		writeInternal(w, "update channel "+ch.ID, err, "failed to update channel")
+		writeInternal(w, "update channel "+ch.ID, err, "apiErrors.channel_update_failed")
 		return
 	}
 
@@ -400,13 +400,13 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 	// Fetch members before deletion for permission checks and WS broadcast
 	members, err := h.Store.GetChannelMembers(ch.ID)
 	if err != nil {
-		writeInternal(w, "delete channel "+ch.ID+": members", err, "failed to get channel members")
+		writeInternal(w, "delete channel "+ch.ID+": members", err, "apiErrors.members_load_failed")
 		return
 	}
 
 	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil || uc.Status != models.StatusActive {
-		writeError(w, http.StatusForbidden, "not an active member of this channel")
+		writeError(w, http.StatusForbidden, "apiErrors.not_channel_member")
 		return
 	}
 
@@ -416,7 +416,7 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 	if !isDM {
 		// Group channels can only be deleted by the owner, and are always deleted for everyone
 		if uc.Role < models.RoleOwner {
-			writeError(w, http.StatusForbidden, "only the owner can delete the channel")
+			writeError(w, http.StatusForbidden, "apiErrors.owner_only_delete_channel")
 			return
 		}
 		forBoth = true
@@ -429,7 +429,7 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := h.Store.DeleteChannel(ch.ID); err != nil {
-			writeInternal(w, "delete channel "+ch.ID, err, "failed to delete channel")
+			writeInternal(w, "delete channel "+ch.ID, err, "apiErrors.channel_delete_failed")
 			return
 		}
 
@@ -444,7 +444,7 @@ func (h *Handler) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 	// Delete only for the requesting user (DM only)
 	now := time.Now().UTC()
 	if err := h.Store.ClearChannelForUser(session.UserID, ch.ID, now); err != nil {
-		writeInternal(w, "clear channel "+ch.ID, err, "failed to clear channel")
+		writeInternal(w, "clear channel "+ch.ID, err, "apiErrors.channel_clear_failed")
 		return
 	}
 
@@ -489,12 +489,12 @@ func (h *Handler) JoinChannel(w http.ResponseWriter, r *http.Request) {
 	}
 	// A kick is an admin decision: the public link must not undo it (an admin can still re-add the user).
 	if err == nil && uc.Status == models.StatusKicked {
-		writeError(w, http.StatusForbidden, "you were removed from this channel and cannot rejoin with its link")
+		writeError(w, http.StatusForbidden, "apiErrors.kicked_cannot_rejoin")
 		return
 	}
 
 	if err := h.Store.AddMemberToChannel(ch.ID, session.UserID, models.RoleMember); err != nil {
-		writeInternal(w, "join channel "+ch.ID, err, "failed to join channel")
+		writeInternal(w, "join channel "+ch.ID, err, "apiErrors.channel_join_failed")
 		return
 	}
 
@@ -514,23 +514,23 @@ func (h *Handler) groupByInviteLink(w http.ResponseWriter, link string) (*models
 	ch, err := h.Store.GetChannelByInviteLink(link)
 	if err != nil {
 		if !errors.Is(err, db.ErrNotFound) {
-			writeInternal(w, "invite link lookup", err, "could not load channel")
+			writeInternal(w, "invite link lookup", err, "apiErrors.channel_load_failed")
 			return nil, 0, false
 		}
 		byID, idErr := h.Store.GetChannel(link)
 		if idErr != nil || byID.IsPrivate {
-			writeError(w, http.StatusNotFound, "channel not found")
+			writeError(w, http.StatusNotFound, "apiErrors.channel_not_found")
 			return nil, 0, false
 		}
 		ch = byID
 	}
 	members, err := h.Store.GetChannelMembers(ch.ID)
 	if err != nil {
-		writeInternal(w, "invite link: list members of channel "+ch.ID, err, "could not load channel")
+		writeInternal(w, "invite link: list members of channel "+ch.ID, err, "apiErrors.channel_load_failed")
 		return nil, 0, false
 	}
 	if ch.IsDM(len(members)) {
-		writeError(w, http.StatusNotFound, "channel not found")
+		writeError(w, http.StatusNotFound, "apiErrors.channel_not_found")
 		return nil, 0, false
 	}
 	return ch, len(members), true
@@ -592,11 +592,11 @@ func (h *Handler) RegenerateInvite(w http.ResponseWriter, r *http.Request) {
 
 	uc, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil || uc.Role < models.RoleAdmin {
-		writeError(w, http.StatusForbidden, "insufficient permissions")
+		writeError(w, http.StatusForbidden, "apiErrors.insufficient_permissions")
 		return
 	}
 	if err := h.Store.RegenerateInviteLink(ch); err != nil {
-		writeInternal(w, "regenerate invite for channel "+ch.ID, err, "failed to regenerate invite link")
+		writeInternal(w, "regenerate invite for channel "+ch.ID, err, "apiErrors.invite_regenerate_failed")
 		return
 	}
 	if h.Hub != nil {
@@ -631,7 +631,7 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 	}
 	memberList, err := h.Store.GetChannelMembers(ch.ID)
 	if err != nil {
-		writeInternal(w, "list members of channel "+ch.ID, err, "could not list members")
+		writeInternal(w, "list members of channel "+ch.ID, err, "apiErrors.members_load_failed")
 		return
 	}
 	sort.Slice(memberList, func(i, j int) bool { return memberList[i].UserID < memberList[j].UserID })
@@ -684,20 +684,20 @@ func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
 
 	actorUC, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil || actorUC.Role < models.RoleAdmin {
-		writeError(w, http.StatusForbidden, "insufficient permissions to add members")
+		writeError(w, http.StatusForbidden, "apiErrors.cannot_add_members")
 		return
 	}
 
 	var body AddMembersRequest
-	if !decodeJSON(w, r, &body, "invalid JSON body") {
+	if !decodeJSON(w, r, &body, "apiErrors.invalid_json") {
 		return
 	}
 	if len(body.UserIDs) == 0 {
-		writeError(w, http.StatusBadRequest, "user_ids required")
+		writeError(w, http.StatusBadRequest, "apiErrors.user_ids_required")
 		return
 	}
 	if len(body.UserIDs) > maxMembersPerCall {
-		writeError(w, http.StatusBadRequest, "too many user_ids")
+		writeError(w, http.StatusBadRequest, "apiErrors.too_many_user_ids")
 		return
 	}
 
@@ -748,13 +748,13 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	// Get actor's role
 	actorUC, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil {
-		writeError(w, http.StatusForbidden, "membership error")
+		writeError(w, http.StatusForbidden, "apiErrors.not_channel_member")
 		return
 	}
 
 	if session.UserID == targetUID {
 		if err := h.Store.RemoveMemberFromChannel(ch.ID, targetUID, models.StatusLeft); err != nil {
-			writeInternal(w, "leave channel "+ch.ID, err, "failed to leave channel")
+			writeInternal(w, "leave channel "+ch.ID, err, "apiErrors.channel_leave_failed")
 			return
 		}
 		if h.Hub != nil {
@@ -766,7 +766,7 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 
 	// Case 2: Kick-out (Requires Admin/Owner)
 	if actorUC.Role < models.RoleAdmin {
-		writeError(w, http.StatusForbidden, "insufficient permissions to kick")
+		writeError(w, http.StatusForbidden, "apiErrors.cannot_kick_members")
 		return
 	}
 
@@ -774,19 +774,19 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	targetUC, err := h.Store.GetUserChannel(targetUID, ch.ID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "member not found")
+			writeError(w, http.StatusNotFound, "apiErrors.member_not_found")
 		} else {
-			writeInternal(w, "kick: load member "+targetUID, err, "failed to remove member")
+			writeInternal(w, "kick: load member "+targetUID, err, "apiErrors.member_remove_failed")
 		}
 		return
 	}
 	if targetUC.Role >= actorUC.Role {
-		writeError(w, http.StatusForbidden, "cannot kick user with equal or higher role")
+		writeError(w, http.StatusForbidden, "apiErrors.cannot_kick_higher_role")
 		return
 	}
 
 	if err := h.Store.RemoveMemberFromChannel(ch.ID, targetUID, models.StatusKicked); err != nil {
-		writeInternal(w, "kick member from channel "+ch.ID, err, "failed to remove member")
+		writeInternal(w, "kick member from channel "+ch.ID, err, "apiErrors.member_remove_failed")
 		return
 	}
 	if h.Hub != nil {
@@ -825,32 +825,32 @@ func (h *Handler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 	// Only Owner can change roles
 	actorUC, err := h.Store.GetUserChannel(session.UserID, ch.ID)
 	if err != nil || actorUC.Role < models.RoleOwner {
-		writeError(w, http.StatusForbidden, "only owners can manage roles")
+		writeError(w, http.StatusForbidden, "apiErrors.owner_only_manage_roles")
 		return
 	}
 
 	var req UpdateMemberRequest
-	if !decodeJSON(w, r, &req, "invalid request body") {
+	if !decodeJSON(w, r, &req, "apiErrors.invalid_json") {
 		return
 	}
 	if req.Role != models.RoleMember && req.Role != models.RoleAdmin {
-		writeError(w, http.StatusBadRequest, "role must be 0 (member) or 10 (admin)")
+		writeError(w, http.StatusBadRequest, "apiErrors.invalid_role")
 		return
 	}
 
 	// Cannot change owner's role
 	targetUC, err := h.Store.GetUserChannel(targetUID, ch.ID)
 	if err != nil || targetUC.Status != models.StatusActive {
-		writeError(w, http.StatusNotFound, "member not found")
+		writeError(w, http.StatusNotFound, "apiErrors.member_not_found")
 		return
 	}
 	if targetUC.Role >= models.RoleOwner {
-		writeError(w, http.StatusForbidden, "cannot change owner's role")
+		writeError(w, http.StatusForbidden, "apiErrors.cannot_change_owner_role")
 		return
 	}
 
 	if err := h.Store.UpdateMemberRole(ch.ID, targetUID, req.Role); err != nil {
-		writeInternal(w, "update role in channel "+ch.ID, err, "failed to update role")
+		writeInternal(w, "update role in channel "+ch.ID, err, "apiErrors.role_update_failed")
 		return
 	}
 
@@ -874,19 +874,19 @@ func (h *Handler) RequireMember(next http.HandlerFunc) http.HandlerFunc {
 		session := auth.SessionFromContext(r.Context())
 		channelID := r.PathValue("id")
 		if channelID == "" {
-			writeError(w, http.StatusBadRequest, "missing channel id")
+			writeError(w, http.StatusBadRequest, "apiErrors.channel_id_required")
 			return
 		}
 
 		ch, err := h.Store.GetChannel(channelID)
 		if err != nil {
-			writeError(w, http.StatusNotFound, "channel not found")
+			writeError(w, http.StatusNotFound, "apiErrors.channel_not_found")
 			return
 		}
 
 		uc, err := h.Store.GetUserChannel(session.UserID, channelID)
 		if err != nil || uc.Status != models.StatusActive {
-			writeError(w, http.StatusNotFound, "channel not found")
+			writeError(w, http.StatusNotFound, "apiErrors.channel_not_found")
 			return
 		}
 

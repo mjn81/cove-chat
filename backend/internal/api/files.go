@@ -129,10 +129,10 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		// Only a body over the limit is "too large"; a malformed form is the client's mistake, not a size problem.
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large (max %dMB)", maxFileMB))
+			writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("apiErrors.file_too_large: %d", maxFileMB))
 			return
 		}
-		writeError(w, http.StatusBadRequest, "invalid multipart form")
+		writeError(w, http.StatusBadRequest, "apiErrors.invalid_upload_form")
 		return
 	}
 
@@ -140,14 +140,14 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	if channelID != "" {
 		// A kicked or departed member keeps a membership record, so the status must be checked, not just its presence.
 		if uc, err := h.Store.GetUserChannel(session.UserID, channelID); err != nil || uc.Status != models.StatusActive {
-			writeError(w, http.StatusForbidden, "not a member of this channel")
+			writeError(w, http.StatusForbidden, "apiErrors.not_channel_member")
 			return
 		}
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "missing file in multipart form")
+		writeError(w, http.StatusBadRequest, "apiErrors.file_missing")
 		return
 	}
 	defer file.Close()
@@ -162,7 +162,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	maxVideoBytes := int64(maxVideoSize) << 20
 	if isVideo && header.Size > maxVideoBytes {
-		writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("video message exceeds maximum allowed size of %dMB", maxVideoSize))
+		writeError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("apiErrors.video_too_large: %d", maxVideoSize))
 		return
 	}
 
@@ -172,14 +172,14 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	// on download.
 	contentType, sniffedReader, err := sniffUploadContentType(file)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "failed to read uploaded file")
+		writeError(w, http.StatusBadRequest, "apiErrors.upload_read_failed")
 		return
 	}
 
 	fileID := uuid.New().String()
 	storagePath, size, err := h.Storage.Save(fileID, sniffedReader)
 	if err != nil {
-		writeInternal(w, "save upload", err, "failed to save file")
+		writeInternal(w, "save upload", err, "apiErrors.upload_save_failed")
 		return
 	}
 
@@ -197,7 +197,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 			durationSec = d
 			if d > float64(maxDuration) {
 				_ = os.Remove(storagePath)
-				writeError(w, http.StatusBadRequest, fmt.Sprintf("video message duration (%.1fs) exceeds limit of %d seconds", d, maxDuration))
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("apiErrors.video_too_long: %d", maxDuration))
 				return
 			}
 		}
@@ -212,7 +212,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		// The blob was already written to disk; without this it's orphaned
 		// forever with no DB record pointing to it.
 		_ = h.Storage.Delete(storagePath)
-		writeInternal(w, "register file", err, "failed to register file metadata")
+		writeInternal(w, "register file", err, "apiErrors.upload_save_failed")
 		return
 	}
 
@@ -295,7 +295,7 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	fileID := r.PathValue("id")
 	f, err := h.Store.GetFile(fileID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "file not found")
+		writeError(w, http.StatusNotFound, "apiErrors.file_not_found")
 		return
 	}
 
@@ -307,14 +307,14 @@ func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	// weren't purged), access is denied.
 	if f.ChannelID != "" {
 		if uc, err := h.Store.GetUserChannel(session.UserID, f.ChannelID); err != nil || uc.Status != models.StatusActive {
-			writeError(w, http.StatusForbidden, "not authorized to access this file")
+			writeError(w, http.StatusForbidden, "apiErrors.file_forbidden")
 			return
 		}
 	}
 
 	rc, err := h.Storage.Open(f.StoragePath)
 	if err != nil {
-		writeInternal(w, "open file "+f.ID, err, "failed to open file storage")
+		writeInternal(w, "open file "+f.ID, err, "apiErrors.file_open_failed")
 		return
 	}
 	defer rc.Close()

@@ -2,6 +2,7 @@ package com.cove.chat.data.remote
 
 import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.model.AuthUser
+import com.cove.chat.ui.components.t
 import com.cove.chat.data.model.AdminAccount
 import com.cove.chat.data.model.AdminOverview
 import com.cove.chat.data.model.AdminsResponse
@@ -121,7 +122,8 @@ class ApiClient(private val prefs: PreferencesManager) {
         if (status.isSuccess()) return this
         val text = runCatching { bodyAsText() }.getOrDefault("")
         val body = runCatching { json.decodeFromString<ErrorBody>(text) }.getOrNull()
-        val msg = body?.error?.takeIf { it.isNotBlank() } ?: "Request failed (${status.value})"
+        // The backend sends i18n keys for its user-facing errors; show them in the app language.
+        val msg = body?.error?.takeIf { it.isNotBlank() }?.let { ApiErrors.localize(it, ::t) } ?: "Request failed (${status.value})"
         val code = body?.code?.takeIf { it.isNotBlank() }
         // 426 / client_outdated: tell the root UI to explain it instead of leaving every screen with a vague failure.
         if (ApiStandard.isClientOutdated(status.value, code)) ClientOutdatedState.report(ApiStandard.minClientVersion(body?.details))

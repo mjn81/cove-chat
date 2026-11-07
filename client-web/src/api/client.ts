@@ -1,6 +1,8 @@
 // client.ts — Fully improved API client
 
 import { logger } from '@/utils/logger';
+import i18n from '@/i18n';
+import { localizeApiErrorMessage } from '@/lib/api-error-message';
 import { isWails } from '@/utils/wails';
 import { getDesktopToken } from '@/lib/desktop-session';
 import { AppVersion } from '../wailsjs/go/main/App';
@@ -155,7 +157,10 @@ apiClient.interceptors.response.use(
 		const url = error.config?.url || '';
 		const status = error.response.status;
 		const data = error.response.data as any;
-		const message = data?.error || error.message || `HTTP ${status}`;
+		// Server messages for user-facing handlers are i18n keys; show them in the user's language everywhere.
+		const message = localizeApiErrorMessage(data?.error || error.message || `HTTP ${status}`, (key, opts) =>
+			i18n.t(key, opts),
+		);
 
 		// 426 / client_outdated: the server refuses this build. Tell the version gate instead of letting every
 		// caller surface a confusing generic failure.
