@@ -43,11 +43,7 @@ export function usePasswordChange() {
 		} catch (err) {
 			logger.error('Password update failed', { error: String(err) });
 			const message = err instanceof Error ? err.message : '';
-			setError(
-				message === 'invalid current password'
-					? t('account.wrong_current_password')
-					: message || t('account.password_failed'),
-			);
+			setError(message || t('account.password_failed'));
 		} finally {
 			setIsUpdating(false);
 		}

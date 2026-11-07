@@ -3801,6 +3801,88 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.ConfigChanges": {
+            "type": "object",
+            "properties": {
+                "captcha.difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                    ]
+                },
+                "captcha.enabled": {
+                    "type": "boolean"
+                },
+                "rate_limit.auth_rps": {
+                    "type": "integer"
+                },
+                "rate_limit.global_rps": {
+                    "type": "integer"
+                },
+                "registration.mode": {
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "invite_only",
+                        "closed"
+                    ]
+                },
+                "security.token_expire_hours": {
+                    "type": "integer"
+                },
+                "server.dev": {
+                    "type": "boolean"
+                },
+                "server.domain": {
+                    "type": "string"
+                },
+                "server.frontend_origin": {
+                    "type": "string"
+                },
+                "server.http_port": {
+                    "type": "integer"
+                },
+                "server.max_file_size_mb": {
+                    "type": "integer"
+                },
+                "server.max_video_duration_sec": {
+                    "type": "integer"
+                },
+                "server.max_video_size_mb": {
+                    "type": "integer"
+                },
+                "server.trust_proxy_headers": {
+                    "type": "boolean"
+                },
+                "update.github_fallback": {
+                    "type": "boolean"
+                },
+                "update.manifest_url": {
+                    "type": "string"
+                },
+                "update.notify_admins": {
+                    "type": "boolean"
+                },
+                "voice.embedded_turn_enabled": {
+                    "type": "boolean"
+                },
+                "voice.max_participants_per_call": {
+                    "type": "integer"
+                },
+                "voice.mode": {
+                    "type": "string",
+                    "enum": [
+                        "webrtc",
+                        "raw_udp"
+                    ]
+                },
+                "voice.public_ip": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.ConfigSettingResponse": {
             "type": "object",
             "properties": {
@@ -4402,8 +4484,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "changes": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "$ref": "#/definitions/internal_api.ConfigChanges"
                 },
                 "password": {
                     "type": "string"

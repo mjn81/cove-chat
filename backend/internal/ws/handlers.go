@@ -41,6 +41,12 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 		return fmt.Errorf("not an active member of channel: %s", body.ChannelID)
 	}
 
+	if body.Type == models.MessageTypeInvite {
+		if rej := c.validateInviteMessage(body.ChannelID, body.Compression, body.Nonce, body.Ciphertext); rej != nil {
+			return c.rejectMessage(body.ChannelID, rej)
+		}
+	}
+
 	// For DMs, check blocking and DM privacy permission
 	ch, chErr := c.hub.store.GetChannel(body.ChannelID)
 	if chErr == nil {

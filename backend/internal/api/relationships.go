@@ -63,7 +63,7 @@ func (h *Handler) ListRelationships(w http.ResponseWriter, r *http.Request) {
 	}
 	rels, err := h.Store.ListRelationships(session.UserID)
 	if err != nil {
-		writeInternal(w, "list relationships", err, "failed to list relationships")
+		writeInternal(w, "list relationships", err, "apiErrors.relationships_load_failed")
 		return
 	}
 	// The index is keyed by the other user's id, so the scan order is already stable for offset paging. Profiles
@@ -105,7 +105,7 @@ func (h *Handler) ListIncomingRequests(w http.ResponseWriter, r *http.Request) {
 	}
 	reqs, err := h.Store.ListIncomingRequests(session.UserID)
 	if err != nil {
-		writeInternal(w, "list incoming requests", err, "failed to list incoming requests")
+		writeInternal(w, "list incoming requests", err, "apiErrors.relationships_load_failed")
 		return
 	}
 	page, next, perr := apistd.Paginate(reqs, cursor, limit)
@@ -140,13 +140,13 @@ func (h *Handler) GetRelationship(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	targetID := r.PathValue("id")
 	if targetID == "" {
-		writeError(w, http.StatusBadRequest, "target user id required")
+		writeError(w, http.StatusBadRequest, "apiErrors.target_user_required")
 		return
 	}
 
 	rel, err := h.Store.GetRelationship(session.UserID, targetID)
 	if err != nil {
-		writeInternal(w, "get relationship", err, "failed to get relationship")
+		writeInternal(w, "get relationship", err, "apiErrors.relationship_load_failed")
 		return
 	}
 	u, _ := h.Store.GetUser(targetID)
@@ -182,11 +182,11 @@ func (h *Handler) HandleRelationshipAction(w http.ResponseWriter, r *http.Reques
 	session := auth.SessionFromContext(r.Context())
 	targetID := r.PathValue("id")
 	if targetID == "" {
-		writeError(w, http.StatusBadRequest, "target user id required")
+		writeError(w, http.StatusBadRequest, "apiErrors.target_user_required")
 		return
 	}
 	if targetID == session.UserID {
-		writeError(w, http.StatusBadRequest, "cannot perform relationship action on yourself")
+		writeError(w, http.StatusBadRequest, "apiErrors.relationship_self")
 		return
 	}
 
@@ -197,12 +197,12 @@ func (h *Handler) HandleRelationshipAction(w http.ResponseWriter, r *http.Reques
 	}
 
 	var body RelationshipActionRequest
-	if !decodeJSON(w, r, &body, "invalid request body") {
+	if !decodeJSON(w, r, &body, "apiErrors.invalid_json") {
 		return
 	}
 	if !relationshipActions[body.Action] {
 		// The unknown value is deliberately not echoed back.
-		writeError(w, http.StatusBadRequest, "unknown action")
+		writeError(w, http.StatusBadRequest, "apiErrors.relationship_action_unknown")
 		return
 	}
 
@@ -211,13 +211,13 @@ func (h *Handler) HandleRelationshipAction(w http.ResponseWriter, r *http.Reques
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		writeInternal(w, "relationship "+body.Action, err, "failed to update relationship")
+		writeInternal(w, "relationship "+body.Action, err, "apiErrors.relationship_update_failed")
 		return
 	}
 
 	rel, err := h.Store.GetRelationship(session.UserID, targetID)
 	if err != nil {
-		writeInternal(w, "relationship: reload", err, "failed to get relationship")
+		writeInternal(w, "relationship: reload", err, "apiErrors.relationship_load_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, relationshipResponse(rel, targetUser))

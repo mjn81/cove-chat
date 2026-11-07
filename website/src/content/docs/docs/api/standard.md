@@ -49,6 +49,7 @@ Every non-2xx JSON response has this shape:
 ```
 
 - `error` is for people and can change between releases. Clients MAY show it and MUST NOT branch on it.
+- For the user-facing handlers `error` is an i18n key `apiErrors.<name>`, optionally followed by `: detail` (for example `apiErrors.file_too_large: 10`). Clients translate it and show any other text as-is.
 - `code` is for programs and is stable. A client that sees a code it does not know falls back to the HTTP status.
 - `details` is optional and specific to the code (for example `min_client_version`).
 - When a handler gives no specific code, the server derives one from the status.
@@ -67,6 +68,7 @@ Every non-2xx JSON response has this shape:
 | `payload_too_large` | 413 | Body or file over a limit |
 | `method_not_allowed` | 405 | Wrong HTTP method |
 | `service_unavailable` | 503 | Temporarily down |
+| `invite_not_allowed` | WebSocket | An `invite` message pointed at a channel the sender may not invite to |
 | `internal` | 5xx | Server fault. Details are logged, never returned |
 
 New codes are additive. A code is never reused for another meaning.
@@ -116,6 +118,8 @@ The first frame on every WebSocket connection is a `hello` event:
 ```
 
 It carries the same block as `/api/version`, so a client can skip the extra request. Clients that predate it ignore it, as the rules above require.
+
+When the server refuses a chat message it tells the sender with a `message_error` event (`channel_id`, `code`, `error`); older clients ignore it. An `invite` message must carry a `code` for a group channel in which the sender is an active member, and an invite link can only be shared by an admin or the owner. A malformed or unknown invite is `validation_failed`, a channel the sender may not invite to is `invite_not_allowed`, and nothing is stored.
 
 ## Pagination
 

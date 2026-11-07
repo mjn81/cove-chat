@@ -258,6 +258,62 @@ definitions:
         description: 0=Member, 10=Admin, 20=Owner
         type: integer
     type: object
+  internal_api.ConfigChanges:
+    properties:
+      captcha.difficulty:
+        enum:
+        - low
+        - medium
+        - high
+        type: string
+      captcha.enabled:
+        type: boolean
+      rate_limit.auth_rps:
+        type: integer
+      rate_limit.global_rps:
+        type: integer
+      registration.mode:
+        enum:
+        - open
+        - invite_only
+        - closed
+        type: string
+      security.token_expire_hours:
+        type: integer
+      server.dev:
+        type: boolean
+      server.domain:
+        type: string
+      server.frontend_origin:
+        type: string
+      server.http_port:
+        type: integer
+      server.max_file_size_mb:
+        type: integer
+      server.max_video_duration_sec:
+        type: integer
+      server.max_video_size_mb:
+        type: integer
+      server.trust_proxy_headers:
+        type: boolean
+      update.github_fallback:
+        type: boolean
+      update.manifest_url:
+        type: string
+      update.notify_admins:
+        type: boolean
+      voice.embedded_turn_enabled:
+        type: boolean
+      voice.max_participants_per_call:
+        type: integer
+      voice.mode:
+        enum:
+        - webrtc
+        - raw_udp
+        type: string
+      voice.public_ip:
+        type: string
+    type: object
   internal_api.ConfigSettingResponse:
     properties:
       group:
@@ -685,8 +741,7 @@ definitions:
   internal_api.UpdateConfigRequest:
     properties:
       changes:
-        additionalProperties: {}
-        type: object
+        $ref: '#/definitions/internal_api.ConfigChanges'
       password:
         type: string
     type: object

@@ -40,6 +40,8 @@ const (
 	CodeInternal           = "internal"
 	CodeMethodNotAllowed   = "method_not_allowed"
 	CodeUnavailable        = "service_unavailable"
+	// CodeInviteNotAllowed means the sender may not invite people to the channel an invite message points at.
+	CodeInviteNotAllowed = "invite_not_allowed"
 )
 
 // Capability names advertised in GET /api/version and the WebSocket hello event.
