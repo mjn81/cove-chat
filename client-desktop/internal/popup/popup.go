@@ -37,8 +37,8 @@ const (
 	// HeaderMinCards cards up.
 	HeaderHeight   = 32
 	HeaderMinCards = 2
-	Padding    = 0
-	EdgeMargin = 12
+	Padding        = 0
+	EdgeMargin     = 12
 	// MaxVisible is how many popups stack before the oldest is dropped.
 	MaxVisible = 3
 )
@@ -54,7 +54,16 @@ const (
 const (
 	MaxTitleRunes = 120
 	MaxBodyRunes  = 300
+	// MaxSubtitleRunes bounds the secondary line (the channel).
+	MaxSubtitleRunes = 120
+	// MaxAvatarBytes bounds the sender's avatar data URL; the web client sends a ~64 px thumbnail.
+	MaxAvatarBytes = 48 * 1024
+	// Tones is the number of letter-avatar colours the popup page defines.
+	Tones = 5
 )
+
+// avatarPrefixes are the only data URLs accepted as an avatar: raster images, never SVG or anything scriptable.
+var avatarPrefixes = []string{"data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,"}
 
 // Rect is a rectangle in screen pixels.
 type Rect struct{ X, Y, W, H int }
@@ -82,8 +91,16 @@ func ParseCorner(s string) Corner {
 // Request is what the web client sends: the text to show plus the context needed to render and route it.
 // It carries only what the system notification would have shown.
 type Request struct {
-	Title     string `json:"title"`
-	Body      string `json:"body"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
+	// Subtitle is secondary context shown after the title, such as "#channel".
+	Subtitle string `json:"subtitle"`
+	// Avatar is the sender's photo as a small image data URL. Without one the popup draws Initial on a Tone
+	// colour; with neither (or System) it shows the Cove icon, which is reserved for Cove's own notices.
+	Avatar    string `json:"avatar"`
+	Initial   string `json:"initial"`
+	Tone      int    `json:"tone"`
+	System    bool   `json:"system"`
 	Kind      string `json:"kind"`
 	ChannelID string `json:"channel_id"`
 	// Tag makes a newer popup replace an older one (e.g. several messages from one chat).
@@ -100,6 +117,11 @@ type Item struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
 	Body      string `json:"body"`
+	Subtitle  string `json:"subtitle,omitempty"`
+	Avatar    string `json:"avatar,omitempty"`
+	Initial   string `json:"initial,omitempty"`
+	Tone      int    `json:"tone"`
+	System    bool   `json:"system,omitempty"`
 	Kind      string `json:"kind"`
 	ChannelID string `json:"channel_id,omitempty"`
 	Tag       string `json:"tag,omitempty"`
@@ -123,12 +145,19 @@ func Sanitize(r Request) Item {
 	it := Item{
 		Title:     truncate(r.Title, MaxTitleRunes),
 		Body:      truncate(r.Body, MaxBodyRunes),
+		Subtitle:  truncate(r.Subtitle, MaxSubtitleRunes),
+		Initial:   truncate(r.Initial, 1),
+		System:    r.System,
+		Avatar:    validAvatar(r.Avatar),
 		Kind:      r.Kind,
 		ChannelID: truncate(r.ChannelID, 64),
 		Tag:       truncate(r.Tag, 96),
 		Theme:     "dark",
 		Lang:      "en",
 		Dir:       "ltr",
+	}
+	if r.Tone > 0 && r.Tone < Tones {
+		it.Tone = r.Tone
 	}
 	switch it.Kind {
 	case KindMessage, KindCall, KindWhisper:
@@ -157,6 +186,19 @@ func Sanitize(r Request) Item {
 	}
 	it.TTLMs = ttl.Milliseconds()
 	return it
+}
+
+// validAvatar returns the avatar data URL if it is a small raster image, otherwise "".
+func validAvatar(s string) string {
+	if len(s) > MaxAvatarBytes {
+		return ""
+	}
+	for _, p := range avatarPrefixes {
+		if strings.HasPrefix(s, p) {
+			return s
+		}
+	}
+	return ""
 }
 
 // Stack is the ordered set of visible popups, oldest first.

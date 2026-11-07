@@ -9,6 +9,33 @@ import { EventsOn } from '@/wailsjs/runtime/runtime';
 import type { popup } from '@/wailsjs/go/models';
 import { PauseTimer } from '../utils/pause-timer';
 
+/** Letter-avatar colours by tone (theme tokens only); the order matches `avatarTone`'s slots. */
+const TONE_CLASSES = [
+	'bg-primary text-primary-foreground',
+	'bg-success text-success-foreground',
+	'bg-warning text-warning-foreground',
+	'bg-destructive text-destructive-foreground',
+	'bg-secondary text-secondary-foreground',
+];
+
+/** The sender's photo, or their letter on a tone colour; the Cove icon only for Cove's own notices. */
+function PopupAvatar({ item }: { item: popup.Item }) {
+	if (item.avatar) {
+		return <img src={item.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" draggable={false} />;
+	}
+	if (item.initial && !item.system) {
+		return (
+			<div
+				aria-hidden
+				className={`flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${TONE_CLASSES[item.tone] ?? TONE_CLASSES[0]}`}
+			>
+				{item.initial}
+			</div>
+		);
+	}
+	return <img src="/cove-icon.svg" alt={APP_NAME} className="size-10 shrink-0 rounded-md" draggable={false} />;
+}
+
 /** Height of one card in px; the desktop app sizes the window as a multiple of it (popup.CardHeight in Go). */
 const CARD_HEIGHT = 76;
 /** Height of the full-width "Close all" button, followed by one gap, shown from two popups up (popup.HeaderHeight in Go). */
@@ -59,10 +86,11 @@ function PopupCard({ item, onOpen, onClose }: PopupCardProps) {
 				if (e.key === 'Enter' || e.key === ' ') onOpen(item.id);
 			}}
 		>
-			<img src="/cove-icon.svg" alt={APP_NAME} className="size-10 shrink-0 rounded-md" draggable={false} />
+			<PopupAvatar item={item} />
 			<div className="min-w-0 flex-1">
-				<p dir="auto" className="truncate text-sm font-semibold">
-					{item.title}
+				<p dir="auto" className="flex items-baseline gap-1.5 text-sm">
+					<span className="truncate font-semibold">{item.title}</span>
+					{item.subtitle && <span className="shrink-0 truncate text-xs text-muted-foreground">{item.subtitle}</span>}
 				</p>
 				<p dir="auto" className="line-clamp-2 break-words text-sm text-muted-foreground">
 					{item.body}

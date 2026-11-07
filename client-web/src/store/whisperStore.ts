@@ -25,6 +25,7 @@ import {
 	wsSendWhisperClose,
 } from '@/ws';
 import { useAuthStore } from './auth.slice';
+import { senderFrom } from '@/domains/desktop/utils/sender-avatar';
 import { playNotificationSound, showBrowserNotification } from '@/utils/notifications';
 import i18n from '@/i18n';
 import { useChannelStore } from './channels.slice';
@@ -737,6 +738,15 @@ export const useWhisperStore = create<WhisperState>((set, get) => {
 });
 
 // Attach global WebSocket event listeners
+/** The avatar id of a user as shown in any shared channel, for notifications (a Whisper invite carries none). */
+function findMemberAvatar(userId: string): string | undefined {
+	for (const c of useChannelStore.getState().channels) {
+		const id = c.member_avatars?.[userId];
+		if (id) return id;
+	}
+	return undefined;
+}
+
 export function initWhisperListeners() {
 	if (wsListenersAttached || typeof window === 'undefined') return;
 	wsListenersAttached = true;
@@ -763,6 +773,7 @@ export function initWhisperListeners() {
 		showBrowserNotification(i18n.t('chat.notify_whisper_title'), i18n.t('chat.notify_whisper_body', { name: initiatorUsername }), {
 			tag: `cove-whisper-${raw.session_id}`,
 			kind: 'whisper',
+			sender: senderFrom(raw.initiator_id, initiatorUsername, findMemberAvatar(raw.initiator_id)),
 		});
 	});
 

@@ -1,6 +1,8 @@
 import { useAppStore } from '@/store/store';
 import i18n from '@/i18n';
 import { buildDesktopNotification, type DesktopNotificationOptions } from '@/domains/desktop/utils/desktop-notification';
+import { avatarThumbnail } from '@/lib/avatar-thumbnail';
+import { SYSTEM_AVATAR_ID } from '@/domains/desktop/utils/sender-avatar';
 import { ShowDesktopNotification } from '@/wailsjs/go/main/App';
 import { isWails } from './wails';
 
@@ -61,13 +63,19 @@ export function showBrowserNotification(title: string, body: string, options: Br
 
   if (isWails()) {
     // The desktop app shows its own popup (or the system notification, depending on the user's choice there).
-    const request = buildDesktopNotification(
-      title,
-      body,
-      { ...options, ttlMs: options.ttlMs ?? (options.requireInteraction ? 30_000 : 0) },
-      { dark: document.documentElement.classList.contains('dark'), lang: i18n.language || 'en' },
-    );
-    void ShowDesktopNotification(request).catch(() => {});
+    const appearance = { dark: document.documentElement.classList.contains('dark'), lang: i18n.language || 'en' };
+    // With a known sender the popup is titled with their name; the original title becomes the secondary text.
+    const popupTitle = options.sender ? options.sender.name : title;
+    const opts = { ...options, subtitle: options.subtitle ?? (options.sender ? title : undefined), ttlMs: options.ttlMs ?? (options.requireInteraction ? 30_000 : 0) };
+    // The popup runs in another process with no session, so the sender's photo travels as a small thumbnail. It
+    // is fetched with a short cap so a slow download never delays the notification itself.
+    const thumb =
+      options.sender?.avatarId && options.sender.avatarId !== SYSTEM_AVATAR_ID
+        ? Promise.race([avatarThumbnail(options.sender.avatarId), new Promise<null>((r) => setTimeout(() => r(null), 1500))])
+        : Promise.resolve(null);
+    void thumb
+      .then((avatar) => ShowDesktopNotification(buildDesktopNotification(popupTitle, body, opts, appearance, avatar)))
+      .catch(() => {});
     return;
   }
 

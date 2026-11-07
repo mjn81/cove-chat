@@ -8,6 +8,27 @@ import (
 	"time"
 )
 
+func TestSanitizeAvatarAndLetterFallback(t *testing.T) {
+	ok := "data:image/jpeg;base64,/9j/4AAQ"
+	it := Sanitize(Request{Avatar: ok, Initial: "Zed", Tone: 3, Subtitle: "#general"})
+	if it.Avatar != ok || it.Initial != "Z" || it.Tone != 3 || it.Subtitle != "#general" {
+		t.Fatalf("item = %+v", it)
+	}
+	for _, bad := range []string{
+		"data:image/svg+xml;base64,PHN2Zz4=",
+		"https://example.com/a.png",
+		"javascript:alert(1)",
+		ok + strings.Repeat("A", MaxAvatarBytes),
+	} {
+		if Sanitize(Request{Avatar: bad}).Avatar != "" {
+			t.Fatalf("avatar %.30q must be rejected", bad)
+		}
+	}
+	if Sanitize(Request{Tone: 99}).Tone != 0 || Sanitize(Request{Tone: -2}).Tone != 0 {
+		t.Fatal("out-of-range tones fall back to 0")
+	}
+}
+
 func TestStackReplacesSameTagAndCapsSize(t *testing.T) {
 	s := NewStack(3)
 	s.Push(Item{ID: "1", Tag: "a", Title: "old"})
@@ -138,9 +159,18 @@ type fakeTransport struct {
 	closed bool
 }
 
-func (f *fakeTransport) Send(m Msg) error { f.mu.Lock(); defer f.mu.Unlock(); f.msgs = append(f.msgs, m); return nil }
-func (f *fakeTransport) Close()           { f.mu.Lock(); f.closed = true; f.mu.Unlock() }
-func (f *fakeTransport) sent() []Msg      { f.mu.Lock(); defer f.mu.Unlock(); return append([]Msg(nil), f.msgs...) }
+func (f *fakeTransport) Send(m Msg) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.msgs = append(f.msgs, m)
+	return nil
+}
+func (f *fakeTransport) Close() { f.mu.Lock(); f.closed = true; f.mu.Unlock() }
+func (f *fakeTransport) sent() []Msg {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]Msg(nil), f.msgs...)
+}
 
 type harness struct {
 	m        *Manager
@@ -168,8 +198,8 @@ func newHarness(t *testing.T, readyTimeout, idle time.Duration) *harness {
 			h.emit = emit
 			return h.tr, nil
 		},
-		Fallback: func(title, body string) { h.mu.Lock(); h.fallback = append(h.fallback, title+"|"+body); h.mu.Unlock() },
-		OnClick:  func(it Item) { h.mu.Lock(); h.clicks = append(h.clicks, it); h.mu.Unlock() },
+		Fallback:     func(title, body string) { h.mu.Lock(); h.fallback = append(h.fallback, title+"|"+body); h.mu.Unlock() },
+		OnClick:      func(it Item) { h.mu.Lock(); h.clicks = append(h.clicks, it); h.mu.Unlock() },
 		ReadyTimeout: readyTimeout,
 		IdleTimeout:  idle,
 	})

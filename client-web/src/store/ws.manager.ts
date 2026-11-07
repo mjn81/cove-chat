@@ -1,6 +1,7 @@
 // ws.manager.ts
 import { wsConnect, wsDisconnect, onWS, wsSendReadReceipt, decryptMessage } from '@/ws';
 import { useChannelStore, useAuthStore, getChannelDisplayName } from './store';
+import { senderFrom } from '@/domains/desktop/utils/sender-avatar';
 import { CALL_RING_PATH, playNotificationSound, showBrowserNotification } from '@/utils/notifications';
 import { callRinger } from '@/lib/ringtone';
 import i18n from '@/i18n';
@@ -152,6 +153,8 @@ export function initWebSocket() {
 					showBrowserNotification(`${senderName} (#${channelName})`, text, {
 						kind: 'message',
 						channelId: msg.channel_id,
+						subtitle: `#${channelName}`,
+						sender: senderFrom(msg.sender_id, senderName, channel.member_avatars?.[msg.sender_id]),
 					});
 				}
 			}
@@ -316,6 +319,7 @@ export function checkIncomingCall(channelId: string, users: string[]) {
 				tag: 'cove-call',
 				kind: 'call',
 				channelId: channel.id,
+				sender: senderFrom(callerId, callerName, callerAvatar),
 				requireInteraction: true,
 			});
 			if (useAppStore.getState().enableNotificationSounds) callRinger.start(CALL_RING_PATH);

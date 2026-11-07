@@ -5,6 +5,11 @@ export namespace popup {
 		id: string;
 		title: string;
 		body: string;
+		subtitle?: string;
+		avatar?: string;
+		initial?: string;
+		tone: number;
+		system?: boolean;
 		kind: string;
 		channel_id?: string;
 		tag?: string;
@@ -16,6 +21,11 @@ export namespace popup {
 	export interface Request {
 		title: string;
 		body: string;
+		subtitle: string;
+		avatar: string;
+		initial: string;
+		tone: number;
+		system: boolean;
 		kind: string;
 		channel_id: string;
 		tag: string;

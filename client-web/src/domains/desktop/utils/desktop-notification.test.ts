@@ -8,6 +8,11 @@ describe('buildDesktopNotification', () => {
 		expect(req).toEqual({
 			title: 'Sam (#general)',
 			body: 'hi',
+			subtitle: '',
+			avatar: '',
+			initial: '',
+			tone: 0,
+			system: false,
 			kind: 'message',
 			channel_id: 'c1',
 			tag: 't',
@@ -23,6 +28,19 @@ describe('buildDesktopNotification', () => {
 		expect(req.channel_id).toBe('');
 		expect(req.theme).toBe('dark');
 		expect(req.lang).toBe('en');
+	});
+
+	it('adds the sender avatar fields and subtitle', () => {
+		const req = buildDesktopNotification(
+			'Sam',
+			'hi',
+			{ subtitle: '#general', sender: { id: 'u1', name: 'Sam' } },
+			{ dark: true, lang: 'en' },
+			'data:image/jpeg;base64,AAAA',
+		);
+		expect(req.subtitle).toBe('#general');
+		expect(req.avatar).toBe('data:image/jpeg;base64,AAAA');
+		expect(req.initial).toBe('S');
 	});
 
 	it('lets a call stay until the popup default for calls applies', () => {
