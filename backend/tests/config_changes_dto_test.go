@@ -25,7 +25,7 @@ func TestConfigChangesDTO_MatchesSchema(t *testing.T) {
 			t.Errorf("setting %s has no field in api.ConfigChanges", s.Key)
 			continue
 		}
-		if ft.Kind() != reflect.Ptr || ft.Elem().Kind() != want[s.Type] {
+		if ft.Kind() != reflect.Pointer || ft.Elem().Kind() != want[s.Type] {
 			t.Errorf("setting %s (%s): field type %v, want *%v", s.Key, s.Type, ft, want[s.Type])
 		}
 		delete(fields, s.Key)

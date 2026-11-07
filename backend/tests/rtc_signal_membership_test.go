@@ -1,6 +1,11 @@
 package tests
 
 import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/coder/websocket"
 	"encoding/json"
 	"errors"
 	"sync"
@@ -146,5 +151,21 @@ func TestRTCRemoveUserFromChannel_EvictsOnlyThatChannel(t *testing.T) {
 	mgr.RemoveUserFromChannel("alice", "c1")
 	if inCall(mgr, "alice") || !inCall(mgr, "bob") {
 		t.Errorf("after eviction: alice in call=%v, bob in call=%v", inCall(mgr, "alice"), inCall(mgr, "bob"))
+	}
+}
+
+// Call signaling rides the authenticated WebSocket: an unauthenticated upgrade is refused, so no call_* frame can be sent.
+func TestRTCSignals_UnauthenticatedWebSocketIsRefused(t *testing.T) {
+	srv, _, cleanup := setupWhisperTestServer(t)
+	defer cleanup()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	conn, resp, err := websocket.Dial(ctx, "ws"+srv.URL[4:]+"/ws", nil)
+	if err == nil {
+		conn.Close(websocket.StatusNormalClosure, "")
+		t.Fatal("unauthenticated WebSocket upgrade was accepted")
+	}
+	if resp == nil || resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status = %v, want 401", resp)
 	}
 }
