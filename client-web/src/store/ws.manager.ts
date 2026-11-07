@@ -1,6 +1,8 @@
 // ws.manager.ts
 import { wsConnect, wsDisconnect, onWS, wsSendReadReceipt, decryptMessage } from '@/ws';
 import { useChannelStore, useAuthStore, getChannelDisplayName } from './store';
+import { planMessageNotification } from '@/domains/desktop/utils/notify-decision';
+import { useWindowVisibilityStore } from '@/domains/desktop/store/window-visibility.store';
 import { senderFrom } from '@/domains/desktop/utils/sender-avatar';
 import { CALL_RING_PATH, playNotificationSound, showBrowserNotification } from '@/utils/notifications';
 import { callRinger } from '@/lib/ringtone';
@@ -135,7 +137,14 @@ export function initWebSocket() {
 		if (currentUserId && msg.sender_id === currentUserId) return;
 
 		// 2. If viewing the channel, send read receipt. Otherwise, increment unread.
-		if (activeChannel?.id === msg.channel_id) {
+		const plan = planMessageNotification({
+			activeChannelId: activeChannel?.id,
+			messageChannelId: msg.channel_id,
+			windowHidden: useWindowVisibilityStore.getState().hidden,
+			pageVisible: document.visibilityState === 'visible',
+			pageFocused: document.hasFocus(),
+		});
+		if (plan.viewing) {
 			wsSendReadReceipt(msg.channel_id);
 		} else {
 			incrementUnread(msg.channel_id);
@@ -143,8 +152,8 @@ export function initWebSocket() {
 			// Play sound
 			playNotificationSound('message');
 			
-			// Show browser notification if tab is hidden/unfocused
-			if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+			// Show browser notification if tab is hidden/unfocused (or the window is hidden in the tray)
+			if (plan.showPopup) {
 				const channel = channels.find(c => c.id === msg.channel_id);
 				if (channel && currentUserId) {
 					const senderName = channel.member_names?.[msg.sender_id] || 'Someone';
