@@ -47,7 +47,15 @@ func (p *PopupApp) PopupItems() []popup.Item {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.stack.Items()
+	return p.withCorner(p.stack.Items())
+}
+
+// withCorner stamps the stack's corner on each item for the page's slide-in direction.
+func (p *PopupApp) withCorner(items []popup.Item) []popup.Item {
+	for i := range items {
+		items[i].Corner = string(p.corner)
+	}
+	return items
 }
 
 // PopupDismiss removes a popup (its timer ran out or the user closed it).
@@ -97,7 +105,7 @@ func (p *PopupApp) apply() {
 	items := p.stack.Items()
 	p.mu.Unlock()
 
-	wruntime.EventsEmit(p.ctx, popupItemsEvent, items)
+	wruntime.EventsEmit(p.ctx, popupItemsEvent, p.withCorner(items))
 	if len(items) == 0 {
 		hidePopupWindow(p.ctx)
 		return

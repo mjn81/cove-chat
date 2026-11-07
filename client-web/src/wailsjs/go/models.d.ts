@@ -16,6 +16,7 @@ export namespace popup {
 		theme: string;
 		lang: string;
 		dir: string;
+		corner?: string;
 		ttl_ms: number;
 	}
 	export interface Request {

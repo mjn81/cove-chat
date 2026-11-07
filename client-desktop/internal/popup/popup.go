@@ -128,8 +128,10 @@ type Item struct {
 	Theme     string `json:"theme"`
 	Lang      string `json:"lang"`
 	// Dir is the text direction of the popup's chrome: "rtl" for Arabic.
-	Dir   string `json:"dir"`
-	TTLMs int64  `json:"ttl_ms"`
+	Dir string `json:"dir"`
+	// Corner is the screen corner the stack sits in; the popup page slides cards in from that side.
+	Corner string `json:"corner,omitempty"`
+	TTLMs  int64  `json:"ttl_ms"`
 }
 
 func truncate(s string, max int) string {
