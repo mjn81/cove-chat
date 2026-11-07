@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	cove/udpmedia v0.0.0
 	cove/update v0.0.0
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -36,7 +37,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/oschwald/geoip2-golang v1.11.0 // indirect
+	github.com/oschwald/geoip2-golang v1.11.0
 	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
 	github.com/pion/datachannel v1.6.2 // indirect
 	github.com/pion/dtls/v2 v2.2.7 // indirect
@@ -69,3 +70,5 @@ require (
 )
 
 replace cove/update => ./pkg/update
+
+replace cove/udpmedia => ./pkg/udpmedia

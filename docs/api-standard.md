@@ -84,7 +84,7 @@ New codes are additive. Never reuse or repurpose a code.
 
 The server advertises `capabilities: string[]` in `/api/version` and in the WebSocket `hello` event. Clients gate UI on `capabilities.includes("x")`, never on version comparisons. A client MUST treat a missing `capabilities` field (old server) as "none of the optional features", and unknown capability names as irrelevant.
 
-Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (audio-only UDP calls, air-gapped mode).
+Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (UDP calls, air-gapped mode), `raw_udp_media` (air-gapped calls use the encrypted UDP media protocol of `docs/udp-media.md`: audio, video and screen share, native clients only; web clients must disable call buttons). In `raw_udp` mode the server reports `raw_udp_voice` and `raw_udp_media` and not `webrtc_sfu`.
 
 ## 7. Minimum client version
 

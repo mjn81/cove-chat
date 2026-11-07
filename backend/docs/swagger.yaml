@@ -3303,6 +3303,8 @@ paths:
       description: |-
         Returns the semantic version of the Cove backend currently running, the API version,
         the minimum supported client version and the capabilities the server advertises.
+        In `voice.mode = "raw_udp"` the capabilities include `raw_udp_voice` and `raw_udp_media` (calls over the encrypted
+        UDP media protocol, native clients only; see docs/udp-media.md) and omit `webrtc_sfu`.
         **Access:** Public.
       produces:
       - application/json

@@ -42,7 +42,7 @@ backend/
 - A large self-contained subsystem (like `rtc`) gets its own `internal/<feature>/` package.
 - **Calling Architecture**:
   - `internal/rtc`: In-process WebRTC SFU (Pion) with DTLS-SRTP and embedded STUN/TURN for group video/audio and screen sharing. **This is the default (`voice.mode = "webrtc"`)**.
-  - `internal/voice`: Raw UDP audio-only router on port `9090` without video or encryption. **Used exclusively for air-gapped/isolated setups (`voice.mode = "raw_udp"`)**.
+  - `internal/mediarouter` (+ shared protocol module `pkg/udpmedia`): encrypted UDP media router on port `9090` for audio, video and screen share, **used exclusively for air-gapped/isolated setups (`voice.mode = "raw_udp"`)**. `internal/voice` is the legacy unencrypted audio-only router and now only runs in `webrtc` mode.
 - Handlers stay thin: decode → validate → authorize → call store/service → respond. Business rules that are reused go in the store/service layer, not copy-pasted between handlers.
 
 ## 3. Logging

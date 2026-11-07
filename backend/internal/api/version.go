@@ -24,6 +24,8 @@ type VersionResponse struct {
 //	@Summary     Get the current server build version
 //	@Description Returns the semantic version of the Cove backend currently running, the API version,
 //	@Description the minimum supported client version and the capabilities the server advertises.
+//	@Description In `voice.mode = "raw_udp"` the capabilities include `raw_udp_voice` and `raw_udp_media` (calls over the encrypted
+//	@Description UDP media protocol, native clients only; see docs/udp-media.md) and omit `webrtc_sfu`.
 //	@Description **Access:** Public.
 //	@Tags        system
 //	@Produce     json
@@ -35,6 +37,6 @@ func (h *Handler) GetVersion(w http.ResponseWriter, r *http.Request) {
 		UDPPort:          h.UDPPort,
 		APIVersion:       apistd.APIVersion,
 		MinClientVersion: h.MinClientVersion,
-		Capabilities:     apistd.Capabilities(h.VoiceMode != "raw_udp"),
+		Capabilities:     apistd.CapabilitiesForMode(h.VoiceMode),
 	})
 }

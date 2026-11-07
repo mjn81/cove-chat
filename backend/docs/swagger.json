@@ -3401,7 +3401,7 @@
         },
         "/api/version": {
             "get": {
-                "description": "Returns the semantic version of the Cove backend currently running, the API version,\nthe minimum supported client version and the capabilities the server advertises.\n**Access:** Public.",
+                "description": "Returns the semantic version of the Cove backend currently running, the API version,\nthe minimum supported client version and the capabilities the server advertises.\nIn `voice.mode = \"raw_udp\"` the capabilities include `raw_udp_voice` and `raw_udp_media` (calls over the encrypted\nUDP media protocol, native clients only; see docs/udp-media.md) and omit `webrtc_sfu`.\n**Access:** Public.",
                 "produces": [
                     "application/json"
                 ],

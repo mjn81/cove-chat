@@ -62,10 +62,12 @@ type AdminConfig struct {
 // (internal/rtc) using DTLS-SRTP encrypted media, with an embedded STUN/TURN
 // server for NAT traversal — no external signaling/media services involved.
 //
-// Mode "raw_udp" keeps the original unencrypted, audio-only UDP packet
-// router (internal/voice) for isolated/LAN deployments where every client
-// can already reach the server directly and the DTLS/ICE overhead of
-// WebRTC isn't wanted. It has no video/screen-share support by design.
+// Mode "raw_udp" runs the encrypted UDP media router (internal/mediarouter,
+// docs/udp-media.md) for isolated/LAN deployments where every client can
+// already reach the server directly and ICE/STUN/TURN isn't available. It
+// carries audio, video and screen share with per-session AES-256-GCM, but
+// only native clients can speak it: browsers cannot open raw UDP sockets,
+// so the web client disables its call buttons in this mode.
 type VoiceConfig struct {
 	Mode string `toml:"mode"` // "webrtc" (default) | "raw_udp"
 
@@ -85,7 +87,7 @@ type VoiceConfig struct {
 	// and the default — for it to assume outbound internet access is
 	// available. A deployment with no internet egress at all (genuinely
 	// isolated/air-gapped) should set Mode to "raw_udp" instead
-	// (internal/voice's plain UDP router), not run "webrtc" with this unset.
+	// (internal/mediarouter's encrypted UDP router), not run "webrtc" with this unset.
 	//
 	//   "auto"    - (default) discover it via a one-time STUN query at
 	//             startup (see internal/rtc/discover.go). A public IP can

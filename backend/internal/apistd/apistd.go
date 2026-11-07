@@ -48,6 +48,9 @@ const (
 	CapWhisper        = "whisper"
 	CapWebRTCSFU      = "webrtc_sfu"
 	CapRawUDPVoice    = "raw_udp_voice"
+	// CapRawUDPMedia means calls (audio, video, screen share) run over the encrypted UDP media protocol, which only
+	// native clients can speak (docs/udp-media.md). Web clients must disable their call buttons when it is present.
+	CapRawUDPMedia = "raw_udp_media"
 )
 
 // CodeForStatus maps an HTTP status to the generic error code used when a handler did not pick a specific one.
@@ -90,6 +93,15 @@ func Capabilities(webrtc bool) []string {
 		caps = append(caps, CapRawUDPVoice)
 	}
 	return caps
+}
+
+// CapabilitiesForMode lists capabilities for a configured voice mode ("webrtc" or "raw_udp"). In raw_udp mode the
+// encrypted UDP media router is the calling engine, so raw_udp_media is advertised next to raw_udp_voice.
+func CapabilitiesForMode(mode string) []string {
+	if mode == "raw_udp" {
+		return append(Capabilities(false), CapRawUDPMedia)
+	}
+	return Capabilities(true)
 }
 
 // Client is what a request's X-Cove-Client header says about the caller.

@@ -9,9 +9,10 @@ ARG VERSION=0.9.0
 WORKDIR /app
 
 
-# Copy go.mod and go.sum first for better caching. cove/update is a local module (replace => ./pkg/update),
-# so its go.mod must be present before `go mod download`.
+# Copy go.mod and go.sum first for better caching. cove/update and cove/udpmedia are local modules (replace => ./pkg/...),
+# so their go.mod files must be present before `go mod download`.
 COPY pkg/update/go.mod ./pkg/update/go.mod
+COPY pkg/udpmedia/go.mod ./pkg/udpmedia/go.mod
 COPY go.mod go.sum ./
 RUN go mod download
 
