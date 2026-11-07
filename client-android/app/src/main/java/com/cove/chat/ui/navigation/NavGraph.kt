@@ -36,12 +36,12 @@ fun NavGraph() {
     val prefs = CoveApp.instance.preferencesManager
     val callScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    // Calls on a raw_udp server need the UDP-capable native client, which Android does not have yet: say so instead of failing silently.
+    // A server whose only call engine is one this client cannot speak (the removed unencrypted UDP audio format): say so instead of failing silently.
     fun openCall(route: String, singleTop: Boolean = false) {
         callScope.launch {
             val caps = CoveApp.instance.apiClient.getVersion().getOrNull()?.capabilities
             if (ApiStandard.callsNeedUdpClient(caps)) {
-                I18nToast.make(CoveApp.instance, "Calls on this server need the Cove native app with UDP support, which is coming to Android soon.", Toast.LENGTH_LONG).show()
+                I18nToast.make(CoveApp.instance, "This server uses an old call format that this version of Cove cannot join. Ask the server admin to update the server.", Toast.LENGTH_LONG).show()
             } else {
                 navController.navigate(route) { launchSingleTop = singleTop }
             }
