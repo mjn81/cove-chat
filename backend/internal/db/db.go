@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"cove/backend/internal/crypto"
@@ -32,11 +35,65 @@ func Open(path string, dek []byte) (*DB, error) {
 		WithEncryptionKey(dek).
 		WithIndexCacheSize(64 << 20) // 64MB index cache
 
+	// Badger reads every table index in its own goroutines while opening, so a damaged file panics the whole
+	// process there and cannot be recovered from here. Catch the one failure we know how to recognise up front.
+	if err := checkTablesIntact(path); err != nil {
+		return nil, err
+	}
+
 	bdb, err := badger.Open(opts)
 	if err != nil {
 		return nil, fmt.Errorf("db: failed to open BadgerDB at %s: %w", path, err)
 	}
 	return &DB{bdb: bdb}, nil
+}
+
+// checkTablesIntact rejects a database directory that holds a table (.sst) file that is empty or filled with zeros.
+// That is what NTFS leaves behind when the machine loses power or the process is killed after a file's size was
+// committed but before its data reached the disk. Reading such a table makes Badger panic with
+// "slice bounds out of range", so report it as an ordinary error that says how to recover instead.
+func checkTablesIntact(dir string) error {
+	tables, err := filepath.Glob(filepath.Join(dir, "*.sst"))
+	if err != nil {
+		return fmt.Errorf("db: list tables in %s: %w", dir, err)
+	}
+	for _, name := range tables {
+		zero, err := isAllZero(name)
+		if err != nil {
+			return fmt.Errorf("db: inspect table %s: %w", name, err)
+		}
+		if zero {
+			return fmt.Errorf("db: table file %s is damaged (it contains only zeros), which usually follows a power loss or a killed process; "+
+				"run \"cove-server repair\" to drop it and keep the rest, restore a backup (\"cove-server restore <file>\"), or move %s aside to start empty",
+				filepath.Base(name), dir)
+		}
+	}
+	return nil
+}
+
+// isAllZero reports whether the file is empty or every byte is zero. It stops at the first non-zero byte, so a
+// healthy table costs a single small read.
+func isAllZero(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = f.Close() }()
+	buf := make([]byte, 64<<10)
+	for {
+		n, err := f.Read(buf)
+		for _, b := range buf[:n] {
+			if b != 0 {
+				return false, nil
+			}
+		}
+		if errors.Is(err, io.EOF) {
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+	}
 }
 
 // Close cleanly shuts down BadgerDB, flushing pending writes.

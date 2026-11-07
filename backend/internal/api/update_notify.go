@@ -38,6 +38,27 @@ func (h *Handler) formatUpdateNotice(info UpdateInfoResponse) string {
 	return b.String()
 }
 
+// notifyAdmins messages every active owner and admin from the Cove account and returns how many were reached. One
+// failed delivery is logged and skipped so it cannot stop the others; regular users are never contacted.
+func (h *Handler) notifyAdmins(text string) (int, error) {
+	admins, err := h.Store.ListAdmins()
+	if err != nil {
+		return 0, fmt.Errorf("list admins: %w", err)
+	}
+	sent := 0
+	for _, a := range admins {
+		if a.Status == "deleted" || !models.IsServerAdmin(a.ServerRole) {
+			continue
+		}
+		if err := h.notifyUser(a.ID, text); err != nil {
+			logger.Warnf("admin: notice to user %s: %v", a.ID, err)
+			continue
+		}
+		sent++
+	}
+	return sent, nil
+}
+
 // NotifyAdminsOfUpdate checks for a newer release and, if the owner and admins have not been told about that
 // version yet, messages each of them from the Cove account. Regular users are never contacted. The last announced
 // version is stored in the database, so a restart or a second server process does not repeat the message.
@@ -60,21 +81,9 @@ func (h *Handler) NotifyAdminsOfUpdate(ctx context.Context) (int, error) {
 			return 0, nil
 		}
 	}
-	admins, err := h.Store.ListAdmins()
+	sent, err := h.notifyAdmins(h.formatUpdateNotice(info))
 	if err != nil {
-		return 0, fmt.Errorf("list admins: %w", err)
-	}
-	text := h.formatUpdateNotice(info)
-	sent := 0
-	for _, a := range admins {
-		if a.Status == "deleted" || !models.IsServerAdmin(a.ServerRole) {
-			continue
-		}
-		if err := h.notifyUser(a.ID, text); err != nil {
-			logger.Warnf("admin: update notice to user %s: %v", a.ID, err)
-			continue
-		}
-		sent++
+		return 0, err
 	}
 	if sent > 0 {
 		if err := h.Store.SetLastNotifiedUpdate(info.LatestVersion); err != nil {
