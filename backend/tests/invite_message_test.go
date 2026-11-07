@@ -69,9 +69,10 @@ func TestInviteMessage_IsStoredWithItsType(t *testing.T) {
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
-	cipher := []byte("invite-ciphertext")
+	ch, _ := dataStore.GetChannel(chID)
+	nonce, cipher := sealForChannel(t, dataStore, chID, `{"code":"`+ch.InviteLink+`"}`)
 	sendWS(t, ctx, conn, "message", map[string]any{
-		"channel_id": chID, "type": "invite", "ciphertext": cipher, "nonce": []byte("n"),
+		"channel_id": chID, "type": "invite", "ciphertext": cipher, "nonce": nonce,
 	})
 
 	msg := waitForMessage(t, dataStore, chID, cipher)
@@ -128,8 +129,9 @@ func TestInviteMessage_CannotBeEdited(t *testing.T) {
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
-	original := []byte("original-invite")
-	sendWS(t, ctx, conn, "message", map[string]any{"channel_id": chID, "type": "invite", "ciphertext": original, "nonce": []byte("n")})
+	ch, _ := dataStore.GetChannel(chID)
+	nonce, original := sealForChannel(t, dataStore, chID, `{"code":"`+ch.InviteLink+`"}`)
+	sendWS(t, ctx, conn, "message", map[string]any{"channel_id": chID, "type": "invite", "ciphertext": original, "nonce": nonce})
 	msg := waitForMessage(t, dataStore, chID, original)
 	if msg == nil {
 		t.Fatal("invite message was not stored")

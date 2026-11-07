@@ -128,6 +128,14 @@ func SealGCM(key, plaintext []byte) (nonce, ciphertext []byte, err error) {
 	return out[:nonceLen], out[nonceLen:], nil
 }
 
+// OpenGCM decrypts a message sealed by a client or by SealGCM, where nonce and ciphertext+tag are separate fields.
+func OpenGCM(key, nonce, ciphertext []byte) ([]byte, error) {
+	if len(nonce) != nonceLen {
+		return nil, errors.New("crypto: bad nonce length")
+	}
+	return DecryptAES256GCM(key, append(append(make([]byte, 0, len(nonce)+len(ciphertext)), nonce...), ciphertext...))
+}
+
 // DecryptAES256GCM decrypts data encrypted by EncryptAES256GCM.
 // Expects the format: [nonce(12) | ciphertext | tag(16)].
 func DecryptAES256GCM(key, data []byte) ([]byte, error) {
