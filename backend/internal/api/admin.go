@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -48,8 +51,64 @@ type AdminConfigResponse struct {
 // UpdateConfigRequest edits one or more settings. `password` is only needed
 // when a change touches an owner-only setting.
 type UpdateConfigRequest struct {
-	Changes  map[string]any `json:"changes"`
-	Password string         `json:"password,omitempty"`
+	Changes  ConfigChanges `json:"changes"`
+	Password string        `json:"password,omitempty"`
+}
+
+// ConfigChanges holds the settings a PATCH may change; only the fields present in the body are applied. The field
+// names are the dotted "section.key" names of internal/config/schema.go (a test keeps the two in step) and ranges,
+// enum values and owner-only rules are still enforced from that schema. Unknown keys and values of the wrong type
+// fail to decode, so the request is rejected as a whole.
+type ConfigChanges struct {
+	RegistrationMode       *string `json:"registration.mode,omitempty" enums:"open,invite_only,closed"`
+	ServerMaxFileSizeMB    *int    `json:"server.max_file_size_mb,omitempty"`
+	ServerMaxVideoSizeMB   *int    `json:"server.max_video_size_mb,omitempty"`
+	ServerMaxVideoDuration *int    `json:"server.max_video_duration_sec,omitempty"`
+	RateLimitGlobalRPS     *int    `json:"rate_limit.global_rps,omitempty"`
+	RateLimitAuthRPS       *int    `json:"rate_limit.auth_rps,omitempty"`
+	VoiceMode              *string `json:"voice.mode,omitempty" enums:"webrtc,raw_udp"`
+	VoiceMaxParticipants   *int    `json:"voice.max_participants_per_call,omitempty"`
+	VoicePublicIP          *string `json:"voice.public_ip,omitempty"`
+	VoiceEmbeddedTURN      *bool   `json:"voice.embedded_turn_enabled,omitempty"`
+	ServerDomain           *string `json:"server.domain,omitempty"`
+	ServerFrontendOrigin   *string `json:"server.frontend_origin,omitempty"`
+	ServerTrustProxy       *bool   `json:"server.trust_proxy_headers,omitempty"`
+	ServerHTTPPort         *int    `json:"server.http_port,omitempty"`
+	ServerDev              *bool   `json:"server.dev,omitempty"`
+	CaptchaEnabled         *bool   `json:"captcha.enabled,omitempty"`
+	CaptchaDifficulty      *string `json:"captcha.difficulty,omitempty" enums:"low,medium,high"`
+	UpdateManifestURL      *string `json:"update.manifest_url,omitempty"`
+	UpdateGitHubFallback   *bool   `json:"update.github_fallback,omitempty"`
+	UpdateNotifyAdmins     *bool   `json:"update.notify_admins,omitempty"`
+	SecurityTokenExpire    *int    `json:"security.token_expire_hours,omitempty"`
+}
+
+// UnmarshalJSON decodes strictly: a key that is not an editable setting, or a value of the wrong type, is an error.
+func (c *ConfigChanges) UnmarshalJSON(data []byte) error {
+	type plain ConfigChanges // no methods, so decoding does not recurse
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	return dec.Decode((*plain)(c))
+}
+
+// Map returns the set fields keyed by their "section.key" name, with numbers as float64 like decoded JSON, which is
+// the shape config.ValidateChanges takes.
+func (c ConfigChanges) Map() map[string]any {
+	out := map[string]any{}
+	v, t := reflect.ValueOf(c), reflect.TypeOf(c)
+	for i := 0; i < t.NumField(); i++ {
+		if v.Field(i).IsNil() {
+			continue
+		}
+		val := v.Field(i).Elem()
+		key := strings.Split(t.Field(i).Tag.Get("json"), ",")[0]
+		if val.Kind() == reflect.Int {
+			out[key] = float64(val.Int())
+		} else {
+			out[key] = val.Interface()
+		}
+	}
+	return out
 }
 
 // UpdateConfigResponse tells the panel what took effect immediately.
@@ -242,7 +301,7 @@ func (h *Handler) AdminUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSONLimit(w, r, &body, 1<<16, "admin.errors.invalid_json") {
 		return
 	}
-	changes, err := config.ValidateChanges(body.Changes)
+	changes, err := config.ValidateChanges(body.Changes.Map())
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "admin.errors.invalid_setting: "+err.Error())
 		return
