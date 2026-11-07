@@ -43,10 +43,12 @@ bottom).
 
 ## Not verified
 
-Nothing was run on a device. Verified with `make android/test` (compiles and runs the JVM unit tests) only.
-The following need a manual check on a phone: the new Notices, server update, upload and Restart controls
-against a real server (including a Docker install and a `raw_udp` server), the sender photo in notifications,
-and the call message on a `raw_udp` server.
+Checked on an emulator against a temporary backend (`webrtc` and `raw_udp`): login, chat list, admin Overview with
+the update card and Restart card, Notices, notifications with the sender photo (expanded and collapsed), selection
+and forward, Appearance, Arabic RTL, dark theme, and the call message on a `raw_udp` server.
+
+Not checked: a real server update install, the offline upload, an actual restart, invite cards, the photo gallery
+and cropper, Farsi screens, and anything needing a camera, microphone or real push.
 
 ## Also fixed
 
