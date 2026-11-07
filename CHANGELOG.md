@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.11.0](https://github.com/mjn81/cove-chat/compare/v0.10.0...v0.11.0) (2026-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **clients:** desktop and Android lose their (unused) raw UDP audio path.
+* **server:** the legacy UDP packet format (Register/Audio/Join/Leave on server.udp_port) is no longer served. Air-gapped calls use the encrypted media router (docs/udp-media.md); native clients for it are not built yet.
+* **files:** serve channel files to active channel members only
+
+### Features
+
+* **android:** admin notices, server update (online and offline) and owner restart button ([d3cfaee](https://github.com/mjn81/cove-chat/commit/d3cfaee3e6fa969ea0fc550e994ab896fe1825d7))
+* **android:** encrypted UDP call engine selected per call from server capabilities ([ba4387f](https://github.com/mjn81/cove-chat/commit/ba4387f4c69f2af0974f4d335fb5c4b1fbfea1da))
+* **android:** encrypted UDP media protocol layer with Go-vector tests ([3775b50](https://github.com/mjn81/cove-chat/commit/3775b50c4c992b4a844d7c475d6402429b9daea3))
+* **android:** explain that calls on raw_udp servers need the UDP client ([b51f7ad](https://github.com/mjn81/cove-chat/commit/b51f7ad61f5af4e0e75a55cdc80c68974aa76120))
+* **android:** gate invite sharing on the invite_messages capability ([b062998](https://github.com/mjn81/cove-chat/commit/b0629987cfd31d58b25c01d29cebe07d48868c67))
+* **android:** show the sender's profile photo in message notifications ([627b728](https://github.com/mjn81/cove-chat/commit/627b728a5c10deb1b23922c88aafbf27df046662))
+* **android:** UDP call building blocks (signals, Opus, jitter buffer, SPS, policies, engine interface) ([5bc8674](https://github.com/mjn81/cove-chat/commit/5bc8674fcc321a065e4f2e8e11d27185a08a00b1))
+* **api:** i18n keys for user-facing error messages; docs and invite/WS notes ([3121f78](https://github.com/mjn81/cove-chat/commit/3121f783f3ec82011cd2550e6f4f3010da527832))
+* **calls:** encrypted UDP media router for air-gapped mode ([7760dab](https://github.com/mjn81/cove-chat/commit/7760dab6fb06e944076c1c0ea678ddd47ea6e116))
+* database repair, notification popups, encrypted UDP calls, Android parity and more ([e3e5469](https://github.com/mjn81/cove-chat/commit/e3e5469184624285195f1213e7e88e0670c3608c))
+* **desktop:** animate notification popups ([9437d92](https://github.com/mjn81/cove-chat/commit/9437d9265d27d28c95a1a5fd767ba599add3d622))
+* **desktop:** media call core on the shared udpmedia client ([40f0f7d](https://github.com/mjn81/cove-chat/commit/40f0f7d8480686847e1dd2456ea7916b96445f2e))
+* **desktop:** replace popup dismiss-all cross with a full-width "Close all" button ([20da515](https://github.com/mjn81/cove-chat/commit/20da515ce4453462e90c8569facc193eb32f6b6d))
+* **desktop:** show the sender's avatar and name in notification popups ([8002502](https://github.com/mjn81/cove-chat/commit/8002502b4b3c389b0c2613afb79c8e654e760632))
+* **desktop:** stack up to three popups, add dismiss-all, flatten cards ([9f0c384](https://github.com/mjn81/cove-chat/commit/9f0c38471778569edcce3ff4c0de9c4e2ce1313a))
+* **desktop:** swipe popups away and tidy their layout ([19b9874](https://github.com/mjn81/cove-chat/commit/19b987458a1da0c74bdc1c4d3b3248c87a247591))
+* **desktop:** Telegram-style notification popups on Windows and Linux ([817cdb4](https://github.com/mjn81/cove-chat/commit/817cdb40e67097c007643b9c4a813811e0878e34))
+* **desktop:** Wails media bridge with batched frame transport for UDP calls ([3861019](https://github.com/mjn81/cove-chat/commit/3861019248800f477e19b832cb60a65ef58fc6c5))
+* **server:** add owner-only POST /api/admin/restart ([002b820](https://github.com/mjn81/cove-chat/commit/002b8202aa283c2d8a43c2ebff44a124f989ffb3))
+* **server:** cove-server repair drops a damaged database table and keeps the rest ([5810c59](https://github.com/mjn81/cove-chat/commit/5810c598d29d11d7af8d958717e5f378df94a3e2))
+* **server:** repair a damaged database on start-up and tell the admins ([9357849](https://github.com/mjn81/cove-chat/commit/9357849a662523a9209c4e0f28eb31665ab69bfb))
+* **web:** add Restart server button to the admin panel ([8af43c4](https://github.com/mjn81/cove-chat/commit/8af43c4e8cc27bb3e08c9c0807d98cd79bbf6277))
+* **web:** disable calls on air-gapped servers and point users to native apps ([6c5c655](https://github.com/mjn81/cove-chat/commit/6c5c655b5161e7c5d113dd692e643c5a1abc53a2))
+* **web:** enable UDP-mode calls in the desktop app ([2df0397](https://github.com/mjn81/cove-chat/commit/2df0397ee6fb7bab03f8f57febc72ba5ea553c0f))
+* **web:** pure helpers for the UDP media path (batch codec, codec detection, playout) ([78e3c42](https://github.com/mjn81/cove-chat/commit/78e3c4232bc905c6585987a9b76b0dad8731eb3c))
+* **web:** UdpMediaManager for calls over the encrypted UDP media path ([2b5a849](https://github.com/mjn81/cove-chat/commit/2b5a8499d7fbbece74314f20e9b3050c8112b178))
+
+
+### Bug Fixes
+
+* **android:** do not block calls on UDP servers now that the UDP engine exists ([b50fa80](https://github.com/mjn81/cove-chat/commit/b50fa803093b0d49d2ea134e2b656bc9e2c0b322))
+* **android:** fall back to a plain MediaCodec H.264 encoder when libwebrtc rejects the device's codecs ([8e27c7a](https://github.com/mjn81/cove-chat/commit/8e27c7a227022854ae8ed73b55343ea26c7d4b3e))
+* **android:** keep UDP socket I/O off the main thread, route audio on the network thread, isolate engines ([fe4b0e5](https://github.com/mjn81/cove-chat/commit/fe4b0e514c9baae72bb8d29eacb6ea33768cf962))
+* **android:** publish a conversation shortcut so notifications show the sender photo when collapsed ([a932a23](https://github.com/mjn81/cove-chat/commit/a932a23b15d15b41e183bb7f1c15a6149b097a88))
+* **android:** remove duplicated 'private set' that broke compilation ([eca93c6](https://github.com/mjn81/cove-chat/commit/eca93c61c235b38a078a9b7530185e7cb1952725))
+* **android:** remove stray duplicate setter that broke compilation ([5cf23a5](https://github.com/mjn81/cove-chat/commit/5cf23a5010b508c51f2bbfc3579025913fe4f06f))
+* **android:** translate remaining English-only UI strings into fa and ar ([5cccb94](https://github.com/mjn81/cove-chat/commit/5cccb94291c1ecd77337f25d64ae61d8be7475ed))
+* **backend:** report a zero-filled database table as an error instead of panicking ([fe73fcc](https://github.com/mjn81/cove-chat/commit/fe73fcc2e6d00f54a1ef46dc9889575622757199))
+* **calls:** close a Stop/Serve WaitGroup race in the media router ([a7890ab](https://github.com/mjn81/cove-chat/commit/a7890abb6936b50b8bc266e6e49a4cf6a76ba707))
+* **desktop:** hidden window no longer suppresses notifications for the open chat ([779fef4](https://github.com/mjn81/cove-chat/commit/779fef42d9b43a02265f904f46749ddce3ab9edd))
+* **files:** serve channel files to active channel members only ([8031356](https://github.com/mjn81/cove-chat/commit/803135692a442ecc4b4d72e42f31f5a8c169eb82))
+* **rtc:** re-check channel membership on every call signal and evict on kick ([4934f6f](https://github.com/mjn81/cove-chat/commit/4934f6f5b4b6555504a6d9b1151b8aef9e4fe30f))
+* **web:** selection highlight fills the whole message row ([886a802](https://github.com/mjn81/cove-chat/commit/886a802d9befdf709720b6a1dad97df815e69382))
+* **ws:** validate invite messages against the sender's right to invite ([ba6497d](https://github.com/mjn81/cove-chat/commit/ba6497d5865dfbf6ee202c97e1e65b51bd67d636))
+
+
+### Code Refactoring
+
+* **clients:** remove dead legacy raw UDP voice clients ([97563d9](https://github.com/mjn81/cove-chat/commit/97563d955bc11034b2c229f0ff6eb0f1b16c50ef))
+* **server:** remove the unencrypted audio-only UDP voice router ([e713dfb](https://github.com/mjn81/cove-chat/commit/e713dfb6e8410eafb5091cbe4ed4d97c2faf1db5))
+
 ## [0.10.0](https://github.com/mjn81/cove-chat/compare/v0.9.9...v0.10.0) (2026-11-05)
 
 
