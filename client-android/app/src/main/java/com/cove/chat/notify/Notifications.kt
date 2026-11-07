@@ -174,7 +174,21 @@ class NotificationHelper(private val app: Application) {
             android.R.drawable.ic_menu_view, t("Mark as read"), actionIntent(ACTION_MARK_READ, channelId)
         ).setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ).setShowsUserInterface(false).build()
 
+        // A long-lived conversation shortcut with the sender's photo is what makes Android 11+ draw that photo in the
+        // collapsed notification header and the conversation section, instead of the app icon.
+        val peer = convo.lines.lastOrNull { it.sender != null }
+        runCatching {
+            val shortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(app, channelId)
+                .setShortLabel(convo.title).setLongLived(true).setIsConversation()
+                .setIntent(Intent(app, MainActivity::class.java).setAction(Intent.ACTION_VIEW).putExtra(EXTRA_CHANNEL_ID, channelId).putExtra(EXTRA_CHANNEL_NAME, convo.title))
+                .apply {
+                    peer?.sender?.let { name -> setPerson(Person.Builder().setName(name).setKey(name).apply { peer.avatar?.let { setIcon(IconCompat.createWithBitmap(circleCrop(it))) } }.build()) }
+                    peer?.avatar?.let { setIcon(IconCompat.createWithBitmap(circleCrop(it))) }
+                }.build()
+            androidx.core.content.pm.ShortcutManagerCompat.pushDynamicShortcut(app, shortcut)
+        }
         val n = NotificationCompat.Builder(app, CHANNEL_MESSAGES)
+            .setShortcutId(channelId)
             .setSmallIcon(com.cove.chat.R.drawable.ic_notification)
             .setColor(0xFFC4624A.toInt())
             .setStyle(style)
