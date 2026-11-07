@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { PopupClick, PopupDismiss, PopupDismissAll, PopupItems } from '@/wailsjs
 import { EventsOn } from '@/wailsjs/runtime/runtime';
 import type { popup } from '@/wailsjs/go/models';
 import { PauseTimer } from '../utils/pause-timer';
+import { dragOpacity, isDrag, swipeOutcome } from '../utils/swipe';
 import { EXIT_MS, cardMotion, nextLeaving, slotMotion, type MotionPhase } from '../utils/popup-motion';
 
 /** Letter-avatar colours by tone (theme tokens only); the order matches `avatarTone`'s slots. */
@@ -82,48 +83,117 @@ function PopupCard({ item, first, leaving, reducedMotion, onOpen, onClose }: Pop
 
 	const phase: MotionPhase = leaving ? 'leaving' : entered ? 'shown' : 'entering';
 
+	// Swipe to dismiss: horizontal pointer drags move the card; a click without a drag still opens the chat.
+	const [dx, setDx] = useState(0);
+	const [dragging, setDragging] = useState(false);
+	const [swiped, setSwiped] = useState(false);
+	const [dragWidth, setDragWidth] = useState(360);
+	const press = useRef<{ x: number; at: number; width: number } | null>(null);
+	const dragged = useRef(false);
+	const hovering = useRef(false);
+
+	const endPress = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+		const p = press.current;
+		press.current = null;
+		if (!p) return;
+		if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+		setDragging(false);
+		if (!dragged.current) return;
+		if (!cancelled && swipeOutcome(dx, p.width, Date.now() - p.at) === 'dismiss') {
+			setSwiped(true);
+			onClose(item.id);
+			return;
+		}
+		setDx(0);
+		if (!hovering.current) timer.start();
+	};
+
+	const motion = cardMotion(phase, item.corner, reducedMotion);
+	const style: CSSProperties = {
+		height: CARD_HEIGHT,
+		touchAction: 'pan-y',
+		...motion,
+		...(dragging || swiped || dx !== 0
+			? {
+					transform: `translateX(${dx}px)`,
+					opacity: leaving ? 0 : dragOpacity(dx, dragWidth),
+					transition: dragging ? 'none' : motion.transition,
+				}
+			: null),
+	};
+
 	return (
 		<div style={slotMotion(phase, CARD_HEIGHT, CARD_GAP, first, reducedMotion)}>
-		<div
-			role="button"
-			tabIndex={0}
-			style={{ height: CARD_HEIGHT, ...cardMotion(phase, item.corner, reducedMotion) }}
-			className="flex w-full shrink-0 cursor-pointer items-center gap-3 bg-card px-3 text-start text-card-foreground hover:bg-accent"
-			onMouseEnter={() => {
-				if (leaving) return;
-				timer.pause();
-			}}
-			onMouseLeave={() => {
-				if (!leaving) timer.start();
-			}}
-			onClick={() => onOpen(item.id)}
-			onKeyDown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') onOpen(item.id);
-			}}
-		>
-			<PopupAvatar item={item} />
-			<div className="min-w-0 flex-1">
-				<p dir="auto" className="flex items-baseline gap-1.5 text-sm">
-					<span className="truncate font-semibold">{item.title}</span>
-					{item.subtitle && <span className="shrink-0 truncate text-xs text-muted-foreground">{item.subtitle}</span>}
-				</p>
-				<p dir="auto" className="line-clamp-2 break-words text-sm text-muted-foreground">
-					{item.body}
-				</p>
-			</div>
-			<Button
-				variant="ghost"
-				size="icon"
-				className="size-7 shrink-0 self-start text-muted-foreground"
-				aria-label={t('notificationPopup.close')}
-				onClick={(e) => {
-					e.stopPropagation();
-					onClose(item.id);
+			<div
+				role="button"
+				tabIndex={0}
+				style={style}
+				className="relative flex w-full shrink-0 cursor-pointer select-none items-center gap-3 bg-card ps-3 pe-9 text-start text-card-foreground hover:bg-accent"
+				onMouseEnter={() => {
+					hovering.current = true;
+					if (!leaving) timer.pause();
+				}}
+				onMouseLeave={() => {
+					hovering.current = false;
+					if (!leaving && !press.current) timer.start();
+				}}
+				onPointerDown={(e) => {
+					if (leaving || e.button !== 0) return;
+					press.current = { x: e.clientX, at: Date.now(), width: e.currentTarget.offsetWidth };
+					dragged.current = false;
+				}}
+				onPointerMove={(e) => {
+					const p = press.current;
+					if (!p) return;
+					const delta = e.clientX - p.x;
+					if (!dragged.current) {
+						if (!isDrag(delta)) return;
+						dragged.current = true;
+						e.currentTarget.setPointerCapture(e.pointerId);
+						timer.pause();
+						setDragWidth(p.width);
+						setDragging(true);
+					}
+					setDx(delta);
+				}}
+				onPointerUp={(e) => endPress(e, false)}
+				onPointerCancel={(e) => endPress(e, true)}
+				onClick={() => {
+					// A drag ends with a click event too; it must not open the chat.
+					if (dragged.current) {
+						dragged.current = false;
+						return;
+					}
+					onOpen(item.id);
+				}}
+				onKeyDown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') onOpen(item.id);
 				}}
 			>
-				<X className="size-4" />
-			</Button>
-		</div>
+				<PopupAvatar item={item} />
+				<div className="min-w-0 flex-1 space-y-0.5">
+					<p dir="auto" className="flex items-baseline gap-1.5 leading-tight">
+						<span className="truncate text-sm font-semibold">{item.title}</span>
+						{item.subtitle && <span className="shrink-0 truncate text-xs text-muted-foreground">{item.subtitle}</span>}
+					</p>
+					<p dir="auto" className="line-clamp-2 break-words text-sm leading-snug text-muted-foreground">
+						{item.body}
+					</p>
+				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="absolute end-1 top-1 size-7 rounded-md p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+					aria-label={t('notificationPopup.close')}
+					onPointerDown={(e) => e.stopPropagation()}
+					onClick={(e) => {
+						e.stopPropagation();
+						onClose(item.id);
+					}}
+				>
+					<X className="size-4" />
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -188,7 +258,7 @@ export function NotificationPopup() {
 			{showHeader && (
 				<Button
 					variant="ghost"
-					className="w-full shrink-0 rounded-none bg-card text-sm font-medium text-card-foreground hover:bg-accent"
+					className="h-8 w-full shrink-0 rounded-none bg-card py-0 text-sm font-medium leading-none text-card-foreground hover:bg-accent"
 					style={{ height: HEADER_HEIGHT }}
 					onClick={closeAll}
 				>
