@@ -26,8 +26,9 @@ class ReceivedFrame(val src: Int, val frame: Frame)
  * keepalive, sends frames, reassembles incoming ones and issues NACKs and keyframe requests. Create it after the
  * WebSocket `call_join` / `call_joined` exchange produced a [Keyring]. Port of Go `udpmedia.Client`.
  *
- * The socket is `connect`ed to the server, so the OS drops datagrams from any other address; the server learns our
- * address only from an authenticated HELLO, and a later HELLO from a new source address (Wi-Fi to cellular) moves it.
+ * Datagrams from any address other than the server are dropped; the server learns our address only from an
+ * authenticated HELLO, and a later HELLO from a new source address (Wi-Fi to cellular) moves it ([probe] sends one
+ * right away after a network change).
  */
 class UdpMediaClient(
     private val server: InetSocketAddress,
@@ -36,7 +37,10 @@ class UdpMediaClient(
     private val clock: () -> Long = System::currentTimeMillis,
     private val socketFactory: () -> DatagramSocket = { DatagramSocket() },
 ) {
-    private val socket: DatagramSocket = socketFactory().also { it.connect(server) }
+    // Deliberately NOT connect()ed: on Android a connected UDP socket keeps the route it had at connect time, so after a
+    // Wi-Fi/cellular hand-over it would keep sending into the dead interface. An unconnected socket routes every send
+    // afresh; replies are filtered by source address in the read loop instead.
+    private val socket: DatagramSocket = socketFactory()
     private val acked = CompletableDeferred<Unit>()
     private val frameIds = Array(4) { AtomicLong(0) }
     private val streams = HashMap<Pair<Int, Kind>, Reassembler>()
@@ -86,6 +90,9 @@ class UdpMediaClient(
         }
     }
 
+    /** Sends a HELLO now so the server learns a new source address quickly after a network change. */
+    fun probe() = sendHello()
+
     private fun sendHello() {
         val pt = ByteArray(Wire.HELLO_PLAINTEXT_LEN)
         val ms = clock()
@@ -97,7 +104,7 @@ class UdpMediaClient(
         if (closed) return
         val pkt = ring.seal(type, pt)
         try {
-            socket.send(DatagramPacket(pkt, pkt.size))
+            socket.send(DatagramPacket(pkt, pkt.size, server))
         } catch (_: java.io.IOException) {
             // Transient (network switch, ENETUNREACH): the next keepalive/HELLO retries; media is loss-tolerant.
         }
@@ -140,6 +147,7 @@ class UdpMediaClient(
                 if (closed) return
                 continue
             }
+            if (dp.port != server.port || dp.address != server.address) continue // not from the server
             val h: PacketHeader
             val pt: ByteArray
             try {

@@ -171,8 +171,8 @@ class UdpMediaClientTest {
         attacker.send(DatagramPacket(sealed, sealed.size, InetAddress.getByName("127.0.0.1"), target))
         attacker.send(DatagramPacket(sealed, sealed.size, InetAddress.getByName("127.0.0.1"), target)) // replay
         attacker.close()
-        // Note: the client socket is connected to the server, so the OS may already drop these; either way exactly
-        // zero frames may result from forged/replayed input.
+        // These come from a foreign port, so the source filter drops them before any crypto; forged and replayed
+        // copies would also fail authentication / the replay window. Exactly zero frames may result.
         val got = kotlinx.coroutines.withTimeoutOrNull(400) { client.frames.receive() }
         assertEquals(null, got)
     }
