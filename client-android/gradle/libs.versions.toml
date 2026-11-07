@@ -15,6 +15,7 @@ securityCrypto = "1.1.0-alpha06"
 coil = "2.7.0"
 media3 = "1.5.1"
 camerax = "1.4.1"
+concentus = "1.0.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +56,9 @@ camerax-camera2 = { group = "androidx.camera", name = "camera-camera2", version.
 camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 camerax-video = { group = "androidx.camera", name = "camera-video", version.ref = "camerax" }
 camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+
+# Opus (pure Java; MediaCodec has no Opus encoder before Android 10 and none we can tune for FEC/DTX)
+concentus = { group = "io.github.jaredmdobson", name = "concentus", version.ref = "concentus" }
 
 # Image Loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }

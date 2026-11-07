@@ -351,6 +351,8 @@ class WebRTCManager(
     }
 
     private suspend fun onSignal(type: String, p: JsonObject) {
+        // Both call engines hear every call_* event; this one must stay out of calls that run on the UDP engine.
+        if (!_inCall.value) return
         when (type) {
             "call_joined" -> onJoined(p)
             "call_publish_answer" -> {

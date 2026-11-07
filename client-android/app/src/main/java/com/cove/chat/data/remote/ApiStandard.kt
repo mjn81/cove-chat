@@ -52,13 +52,14 @@ object ApiStandard {
     fun hasCapability(capabilities: List<String>?, name: String): Boolean = capabilities?.contains(name) == true
 
     /**
-     * True when the server runs its calls on the encrypted UDP media router (`raw_udp` mode) instead of the WebRTC SFU.
-     * The Android client only speaks WebRTC for now, so such a server cannot be called from here. An old server that
-     * advertises nothing is assumed to be a normal WebRTC one.
+     * True when no call engine of this client can serve the server: it has no WebRTC SFU and no encrypted UDP media
+     * router (`raw_udp_media`), only the removed unencrypted audio format (`raw_udp_voice`). Android speaks both the
+     * WebRTC and the encrypted UDP engines, so a normal server is never blocked. An old server that advertises
+     * nothing is assumed to be a normal WebRTC one.
      */
     fun callsNeedUdpClient(capabilities: List<String>?): Boolean =
         !capabilities.isNullOrEmpty() && !hasCapability(capabilities, "webrtc_sfu") &&
-            (hasCapability(capabilities, "raw_udp_media") || hasCapability(capabilities, "raw_udp_voice"))
+            !hasCapability(capabilities, "raw_udp_media") && hasCapability(capabilities, "raw_udp_voice")
 
     private fun parse(v: String): IntArray? {
         val core = v.trim().removePrefix("v").removePrefix("V").split('-', '+').first()

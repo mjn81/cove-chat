@@ -37,7 +37,7 @@ mode = "raw_udp"
 
 Calls run on the encrypted UDP media router (audio, video and screen share, AES-256-GCM per session; see `docs/udp-media.md`) on UDP port `server.udp_port` (default 9090), with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. In `webrtc` mode nothing listens on `server.udp_port`.
 
-Only native clients can speak it. The Windows desktop app can place and join these calls (audio, camera and screen share; it needs the webview's WebCodecs support, which is still being tested on real hardware). The Android client for this protocol is not built yet, and the web client disables its call buttons because a browser cannot do raw UDP. The older unencrypted, audio-only UDP format has been removed.
+Only native clients can speak it. The Windows desktop app can place and join these calls (audio, camera and screen share; it needs the webview's WebCodecs support, which is still being tested on real hardware). The Android app can too (audio, camera and screen share; tested on an emulator against a test client, not yet on real phones). The web client disables its call buttons because a browser cannot do raw UDP. The older unencrypted, audio-only UDP format has been removed.
 
 ## Troubleshooting
 
