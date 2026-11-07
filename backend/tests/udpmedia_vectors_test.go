@@ -133,3 +133,20 @@ func TestUDPMediaVectors_X25519RFC7748(t *testing.T) {
 		t.Fatalf("shared mismatch: %x %v", s, err)
 	}
 }
+
+// TestUDPMediaVectors_ControlPlaintexts pins the media header, NACK and KEYFRAME_REQ layouts that the Kotlin port tests
+// against the same hex strings (client-android WireTest).
+func TestUDPMediaVectors_ControlPlaintexts(t *testing.T) {
+	h := udpmedia.MediaHeader{Src: 0x0102, Kind: udpmedia.KindVideo, Codec: udpmedia.CodecH264, Flags: udpmedia.FlagKeyframe,
+		FrameID: 0xAABBCCDD, FragIdx: 2, FragCnt: 5, TS: 0x01020304}
+	if got := hex.EncodeToString(udpmedia.AppendMedia(nil, h, []byte{9, 8, 7})); got != "010202030100aabbccdd0002000501020304090807" {
+		t.Errorf("media = %s", got)
+	}
+	nack := udpmedia.AppendNack(nil, 7, udpmedia.KindScreen, []udpmedia.NackItem{{FrameID: 5, Frag: 0}, {FrameID: 0xFFFFFFFF, Frag: udpmedia.AllFragments}})
+	if got := hex.EncodeToString(nack); got != "00070302"+"000000050000"+"ffffffffffff" {
+		t.Errorf("nack = %s", got)
+	}
+	if got := hex.EncodeToString(udpmedia.AppendKeyframeReq(nil, 0x1234, udpmedia.KindVideo)); got != "123402" {
+		t.Errorf("keyframe req = %s", got)
+	}
+}
