@@ -15,7 +15,7 @@ import (
 )
 
 // MembershipChecker verifies a user belongs to a channel before letting them
-// join its call — the same gate internal/voice's UDP router uses, applied
+// join its call — the same gate internal/mediarouter's UDP router uses, applied
 // here to prevent the exact class of IDOR that was found and fixed there
 // (joining/eavesdropping on a call for a channel you're not a member of).
 type MembershipChecker interface {

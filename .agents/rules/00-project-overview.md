@@ -46,10 +46,9 @@ Related rule files (read the ones relevant to your task):
   - Media is encrypted via DTLS-SRTP, with NAT traversal using embedded STUN/TURN.
   - Signaling runs over the authenticated WebSocket hub (`internal/ws`).
   - Frontend uses `client-web/src/rtc/WebRTCManager.ts` with dual PeerConnections (publish + subscribe).
-- **Air-Gapped / Isolated = Raw UDP (`backend/internal/voice`)**:
-  - Reserved for air-gapped or restricted LAN deployments (`voice.mode = "raw_udp"`).
-  - Encrypted UDP media router (`internal/mediarouter`, protocol in `docs/udp-media.md`) on port `9090` without ICE/STUN/TURN: audio, video and screen share, per-session AES-256-GCM, signaling over the same `call_*` WebSocket events. Native clients only; the web client disables its call buttons in this mode.
-  - No video or screen sharing is supported in this mode.
+- **Air-Gapped / Isolated = encrypted UDP media router (`backend/internal/mediarouter`)**:
+  - Reserved for air-gapped or restricted LAN deployments (`voice.mode = "raw_udp"`). It is the only UDP call path: the old unencrypted audio-only router (`internal/voice`) was removed, and in `webrtc` mode nothing listens on `server.udp_port`.
+  - Protocol in `docs/udp-media.md`, port `server.udp_port` (default `9090`), no ICE/STUN/TURN: audio, video and screen share, per-session AES-256-GCM, signaling over the same `call_*` WebSocket events. Native clients only; the web client disables its call buttons in this mode. The desktop and Android encrypted clients are not built yet, so calls on `raw_udp` servers are unavailable until they are.
 
 
 ## Branding

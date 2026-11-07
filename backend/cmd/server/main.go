@@ -25,7 +25,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -51,7 +50,6 @@ import (
 	"cove/backend/internal/storage"
 	"cove/backend/internal/store"
 	"cove/backend/internal/version"
-	"cove/backend/internal/voice"
 	"cove/backend/internal/ws"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -244,35 +242,17 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// ── 8. UDP voice router ────────────────────────────────────────────────
-	// Independent of Voice.Mode: this is the legacy audio-only fallback,
-	// left running whenever a UDP port is configured regardless of which
-	// engine group calls use, since desktop clients may still target it.
-	var udpConn *net.UDPConn
-	var mediaRouter *mediarouter.Router
+	// ── 8. Encrypted UDP media router (air-gapped mode only) ───────────────
+	// docs/udp-media.md. In the default "webrtc" mode nothing listens on server.udp_port; there is no other UDP voice
+	// path (the unencrypted audio-only router was removed).
 	hub.SetVoiceMode(cfg.Voice.Mode)
-	if cfg.Voice.Mode == "raw_udp" {
-		// Air-gapped mode: the encrypted UDP media router (docs/udp-media.md) replaces the old unencrypted audio-only
-		// format on this port, and handles the call_* WebSocket events itself, so no legacy router and no SFU run.
-		mediaRouter = mediarouter.New(mediarouter.Config{MaxParticipantsPerCall: cfg.Voice.MaxParticipantsPerCall}, dataStore, hub)
+	mediaRouter, udpConn, err := mediarouter.Start(cfg.Voice.Mode, cfg.Server.UDPPort,
+		mediarouter.Config{MaxParticipantsPerCall: cfg.Voice.MaxParticipantsPerCall}, dataStore, hub)
+	if err != nil {
+		logger.Warnf("UDP media router failed to start: %v", err)
+	}
+	if mediaRouter != nil {
 		hub.SetRTCManager(mediaRouter)
-		if cfg.Server.UDPPort > 0 {
-			var err error
-			udpConn, err = startMediaRouter(cfg.Server.UDPPort, mediaRouter)
-			if err != nil {
-				logger.Warnf("UDP media router failed to start: %v", err)
-			}
-		} else {
-			logger.Warn("voice.mode = raw_udp but server.udp_port is 0: calls are unavailable")
-		}
-	} else if cfg.Server.UDPPort > 0 {
-		voiceRouter := voice.NewRouter(sessions, hub, dataStore)
-		hub.SetVoiceRouter(voiceRouter)
-		var err error
-		udpConn, err = startUDPRouter(cfg.Server.UDPPort, voiceRouter)
-		if err != nil {
-			logger.Warnf("UDP voice router failed to start: %v", err)
-		}
 	}
 
 	// ── 8b. WebRTC group calling (SFU) ─────────────────────────────────────
@@ -401,36 +381,6 @@ func main() {
 			logger.Fatalf("Could not restart after the update: %v", err)
 		}
 	}
-}
-
-// startUDPRouter opens a raw UDP socket for desktop voice routing.
-// The server routes opaque audio packets — it never decodes them.
-func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
-	addr := &net.UDPAddr{Port: port}
-	conn, err := net.ListenUDP("udp", addr)
-	if err != nil {
-		logger.Warnf("UDP router failed on port %d: %v", port, err)
-		return nil, err
-	}
-	logger.Infof("UDP voice router on :%d", port)
-
-	go func() {
-		defer func() { _ = conn.Close() }()
-		router.HandleConn(conn)
-	}()
-
-	return conn, nil
-}
-
-// startMediaRouter opens the UDP socket for the encrypted media router and serves it in the background.
-func startMediaRouter(port int, router *mediarouter.Router) (*net.UDPConn, error) {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: port})
-	if err != nil {
-		return nil, err
-	}
-	logger.Infof("encrypted UDP media router on :%d", port)
-	go router.Serve(conn)
-	return conn, nil
 }
 
 // runRestore implements the restore subcommand and returns the exit code.

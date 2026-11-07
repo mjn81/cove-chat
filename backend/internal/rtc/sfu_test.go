@@ -14,7 +14,7 @@ import (
 )
 
 // fakeMembership allows any (user, channel) pair explicitly listed, mirroring
-// the membership gate used by internal/voice's UDP router — this test exists
+// the membership gate used by internal/mediarouter's UDP router — this test exists
 // specifically to prove the SAME class of IDOR fixed there can't creep back
 // in here, plus that the core SFU forwarding actually works end-to-end over
 // real (loopback) ICE/DTLS-SRTP.
@@ -444,7 +444,7 @@ func TestSFU_ForwardsPublishedTrackToExistingAndLateSubscribers(t *testing.T) {
 }
 
 // TestSFU_JoinRejectedForNonMember guards the same IDOR class already fixed
-// for internal/voice's UDP router: joining a call for a channel you aren't
+// for internal/mediarouter's UDP router: joining a call for a channel you aren't
 // a member of must be rejected before any PeerConnection/room state for you
 // is created.
 func TestSFU_JoinRejectedForNonMember(t *testing.T) {
