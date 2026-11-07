@@ -106,3 +106,53 @@ data class BackupRequest(val password: String, val passphrase: String)
 
 @Serializable
 data class ConfirmRequest(val password: String, val confirm: String)
+
+/** `POST /api/admin/notices` result: how many users got the server notice and how many deliveries failed. */
+@Serializable
+data class NoticeResult(val recipients: Int = 0, val failed: Int = 0)
+
+/** A release file the owner uploaded for an offline install. */
+@Serializable
+data class ServerUploadInfo(
+    val version: String = "",
+    val verified: Boolean = false,
+    val sha256: String = "",
+    val kind: String = "zip",
+    @SerialName("size_bytes") val sizeBytes: Long = 0
+)
+
+/** `GET /api/admin/update`: installed vs latest release, how this server can update, and the running job. */
+@Serializable
+data class ServerUpdateInfo(
+    @SerialName("current_version") val currentVersion: String = "",
+    @SerialName("latest_version") val latestVersion: String = "",
+    @SerialName("update_available") val updateAvailable: Boolean = false,
+    @SerialName("release_notes") val releaseNotes: String = "",
+    @SerialName("release_url") val releaseUrl: String? = null,
+    val prerelease: Boolean = false,
+    @SerialName("check_error") val checkError: String? = null,
+    /** `binary`, `docker` or `unknown`. */
+    val mode: String = "unknown",
+    @SerialName("can_update") val canUpdate: Boolean = false,
+    /** Why [canUpdate] is false: docker, unsupported, up_to_date or busy. */
+    val reason: String? = null,
+    val instructions: String? = null,
+    @SerialName("can_restart") val canRestart: Boolean = false,
+    /** `manifest` or `github`. */
+    val source: String? = null,
+    val uploaded: ServerUploadInfo? = null,
+    /** idle, downloading, installing, restarting or failed. */
+    val state: String = "idle",
+    @SerialName("progress_percent") val progressPercent: Int = 0,
+    val error: String? = null
+)
+
+@Serializable
+data class ServerUpdateStarted(val status: String = "", val version: String = "", val state: String = "")
+
+@Serializable
+data class NoticeRequest(val text: String)
+
+
+@Serializable
+data class StartUpdateRequest(val source: String, val password: String)

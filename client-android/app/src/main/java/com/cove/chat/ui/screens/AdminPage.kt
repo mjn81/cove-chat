@@ -106,6 +106,7 @@ private enum class AdminTab(val labelKey: String) {
     Registration("admin.tabs.registration"),
     Config("admin.tabs.config"),
     Admins("admin.tabs.admins"),
+    Notices("admin.tabs.notices"),
     Data("admin.tabs.data")
 }
 
@@ -125,30 +126,31 @@ fun AdminPage(onLogout: () -> Unit) {
 
     LaunchedEffect(Unit) { app.apiClient.getMe().onSuccess { role = app.preferencesManager.serverRole } }
     // Losing the owner role (ownership transfer) removes the Data tab, so never stay on it.
-    if (tab == AdminTab.Data && !isOwner) tab = AdminTab.Overview
+    if ((tab == AdminTab.Data || tab == AdminTab.Notices) && !isOwner) tab = AdminTab.Overview
     if (!isServerAdmin(role)) return
 
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        AdminTab.entries.filter { it != AdminTab.Data || isOwner }.forEach {
+        AdminTab.entries.filter { (it != AdminTab.Data && it != AdminTab.Notices) || isOwner }.forEach {
             CoveChip(adm(it.labelKey), selected = tab == it, onClick = { tab = it })
         }
     }
     Spacer(Modifier.height(Spacing.xl))
     when (tab) {
-        AdminTab.Overview -> OverviewPanel()
+        AdminTab.Overview -> OverviewPanel(isOwner)
         AdminTab.Registration -> RegistrationPanel()
         AdminTab.Config -> ConfigPanel(isOwner)
         AdminTab.Admins -> AdminsPanel(isOwner, onRoleChanged = { role = app.preferencesManager.serverRole })
+        AdminTab.Notices -> NoticePanel()
         AdminTab.Data -> DataPanel(onLogout)
     }
 }
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
-private fun toast(context: Context, text: String) = I18nToast.make(context, text, Toast.LENGTH_SHORT).show()
+internal fun toast(context: Context, text: String) = I18nToast.make(context, text, Toast.LENGTH_SHORT).show()
 
 /** Fetch-on-open state holder: [data] is null until the first answer, [error] is display text. */
-private class Loader<T>(private val scope: CoroutineScope, private val fetch: suspend () -> Result<T>) {
+internal class Loader<T>(private val scope: CoroutineScope, private val fetch: suspend () -> Result<T>) {
     var data by mutableStateOf<T?>(null)
     var error by mutableStateOf<String?>(null)
     var loading by mutableStateOf(true)
@@ -163,7 +165,7 @@ private class Loader<T>(private val scope: CoroutineScope, private val fetch: su
 }
 
 @Composable
-private fun <T> rememberLoader(fetch: suspend () -> Result<T>): Loader<T> {
+internal fun <T> rememberLoader(fetch: suspend () -> Result<T>): Loader<T> {
     val scope = rememberCoroutineScope()
     val loader = remember { Loader(scope, fetch) }
     LaunchedEffect(Unit) { loader.reload() }
@@ -171,19 +173,19 @@ private fun <T> rememberLoader(fetch: suspend () -> Result<T>): Loader<T> {
 }
 
 @Composable
-private fun Loading() {
+internal fun Loading() {
     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
 }
 
 @Composable
-private fun <T> Loader<T>.Await(content: @Composable (T) -> Unit) {
+internal fun <T> Loader<T>.Await(content: @Composable (T) -> Unit) {
     val value = data
     error?.let { ErrorBanner(it); Spacer(Modifier.height(Spacing.md)) }
     if (value != null) content(value) else if (loading) Loading()
 }
 
 @Composable
-private fun AdminCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun AdminCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val c = CoveTheme.extendedColors
     Column(modifier.fillMaxWidth().clip(CoveShapes.md).border(1.dp, c.border, CoveShapes.md).background(c.card).padding(Spacing.md)) { content() }
 }
@@ -289,7 +291,7 @@ internal fun StepUpDialog(
 // ── Overview ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun OverviewPanel() {
+private fun OverviewPanel(isOwner: Boolean) {
     val api = CoveApp.instance.apiClient
     val c = CoveTheme.extendedColors
     val overview = rememberLoader { api.adminOverview() }
@@ -318,6 +320,9 @@ private fun OverviewPanel() {
         }
     }
 
+    Spacer(Modifier.height(Spacing.xl))
+    ServerUpdateCard(isOwner)
+    if (isOwner) ServerRestartControl()
     Spacer(Modifier.height(Spacing.xl))
     SectionHeader(adm("admin.audit.title"), Modifier.padding(horizontal = 0.dp))
     audit.Await { entries ->
@@ -574,6 +579,7 @@ private fun ConfigPanel(isOwner: Boolean) {
                 SettingEditor(s, draft[s.key] ?: s.value.text(), enabled = !s.ownerOnly || isOwner) { draft[s.key] = it }
                 Spacer(Modifier.height(Spacing.md))
             }
+            if (group == "calls" && isOwner) ServerRestartControl(card = false)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
