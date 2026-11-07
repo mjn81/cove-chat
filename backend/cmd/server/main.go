@@ -44,6 +44,7 @@ import (
 	"cove/backend/internal/db"
 	"cove/backend/internal/geoip"
 	"cove/backend/internal/logger"
+	"cove/backend/internal/mediarouter"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
 	"cove/backend/internal/rtc"
@@ -248,7 +249,23 @@ func main() {
 	// left running whenever a UDP port is configured regardless of which
 	// engine group calls use, since desktop clients may still target it.
 	var udpConn *net.UDPConn
-	if cfg.Server.UDPPort > 0 {
+	var mediaRouter *mediarouter.Router
+	hub.SetVoiceMode(cfg.Voice.Mode)
+	if cfg.Voice.Mode == "raw_udp" {
+		// Air-gapped mode: the encrypted UDP media router (docs/udp-media.md) replaces the old unencrypted audio-only
+		// format on this port, and handles the call_* WebSocket events itself, so no legacy router and no SFU run.
+		mediaRouter = mediarouter.New(mediarouter.Config{MaxParticipantsPerCall: cfg.Voice.MaxParticipantsPerCall}, dataStore, hub)
+		hub.SetRTCManager(mediaRouter)
+		if cfg.Server.UDPPort > 0 {
+			var err error
+			udpConn, err = startMediaRouter(cfg.Server.UDPPort, mediaRouter)
+			if err != nil {
+				logger.Warnf("UDP media router failed to start: %v", err)
+			}
+		} else {
+			logger.Warn("voice.mode = raw_udp but server.udp_port is 0: calls are unavailable")
+		}
+	} else if cfg.Server.UDPPort > 0 {
 		voiceRouter := voice.NewRouter(sessions, hub, dataStore)
 		hub.SetVoiceRouter(voiceRouter)
 		var err error
@@ -350,6 +367,9 @@ func main() {
 	if udpConn != nil {
 		_ = udpConn.Close()
 	}
+	if mediaRouter != nil {
+		mediaRouter.Stop()
+	}
 
 	// 2b. Tear down all active WebRTC calls and the embedded TURN server
 	if rtcManager != nil {
@@ -399,6 +419,17 @@ func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
 		router.HandleConn(conn)
 	}()
 
+	return conn, nil
+}
+
+// startMediaRouter opens the UDP socket for the encrypted media router and serves it in the background.
+func startMediaRouter(port int, router *mediarouter.Router) (*net.UDPConn, error) {
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: port})
+	if err != nil {
+		return nil, err
+	}
+	logger.Infof("encrypted UDP media router on :%d", port)
+	go router.Serve(conn)
 	return conn, nil
 }
 

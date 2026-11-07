@@ -40,10 +40,12 @@ run: dev-back ## Run standalone backend (alias for dev-back)
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
 	cd backend/pkg/update && $(GO) vet ./...
+	cd backend/pkg/udpmedia && $(GO) vet ./...
 
 lint: ## Run golangci-lint (via go run, no install needed)
 	cd backend && $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
 	cd backend/pkg/update && $(GO) vet ./...
+	cd backend/pkg/udpmedia && $(GO) vet ./...
 
 swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
 	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
@@ -96,6 +98,13 @@ site/lint: ## Run ESLint on the website
 
 site/test: ## Run the website unit tests (Vitest)
 	$(PNPM) -C website test
+
+## ── Desktop shell (Go, no Wails build) ───────────────────────────────────────
+desktop/test: ## Run the desktop shell's Go tests
+	cd client-desktop && $(GO) test ./... -count=1
+
+desktop/vet: ## go vet the desktop shell
+	cd client-desktop && $(GO) vet ./...
 
 ## ── Android ─────────────────────────────────────────────────────────────────
 # Gradle 8.11 cannot start on JDK 24+ (Android Studio now bundles JDK 25), so builds are pinned to a JDK 17-23.

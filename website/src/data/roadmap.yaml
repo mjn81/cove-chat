@@ -178,6 +178,16 @@ phases:
         title: "Connection quality indicator"
         note: "Signal bars for WebSocket and calls."
         status: planned
+      - id: udp-media
+        area: calls
+        title: "UDP video and screen sharing"
+        note: "Server router and encrypted protocol are built and tested; native client capture and rendering are still to do."
+        date: "2026-12-31"
+      - id: secure-udp
+        area: calls
+        title: "Encrypted UDP for closed networks"
+        note: "AES-256-GCM sessions with replay protection and key rotation are built and tested; waiting on native clients."
+        date: "2026-12-31"
 
   - id: next
     title: Next
@@ -242,14 +252,6 @@ phases:
         area: chat
         title: "Advanced markdown"
         note: "Telegram-style formatting."
-      - id: udp-media
-        area: calls
-        title: "UDP video and screen sharing"
-        note: "A UDP router for video and screen share."
-      - id: secure-udp
-        area: calls
-        title: "Encrypted UDP for closed networks"
-        note: "Encryption for the air-gapped voice and media path."
       - id: in-app-calls
         area: calls
         title: "In-app and server-wide calls"

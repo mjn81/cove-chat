@@ -13,7 +13,7 @@ The first account registered on a fresh server becomes the owner.
 
 ## Can I run Cove without internet access?
 
-Yes. Use `voice.mode = "raw_udp"` for audio calls on an isolated LAN.
+Yes. Use `voice.mode = "raw_udp"` for encrypted calls on an isolated LAN. Calls in that mode need a native client (desktop or Android), not the browser.
 
 ## How do I change the port?
 

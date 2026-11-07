@@ -133,10 +133,11 @@ Group audio/video calling + screen share engine.
     "webrtc"  - production, internet-capable: a self-hosted SFU (see
     internal/rtc) with encrypted media (DTLS-SRTP) and NAT
     traversal via ICE/STUN/TURN. Supports video + screen share.
-    "raw_udp" - the original unencrypted, audio-only UDP packet router
-    (internal/voice), for isolated/LAN deployments where every
-    client can already reach the server directly and the
-    DTLS/ICE overhead isn't wanted. No video/screen-share.
+    "raw_udp" - the encrypted UDP media router (internal/mediarouter,
+    docs/udp-media.md) for isolated/LAN deployments where every
+    client can already reach the server directly. Audio, video
+    and screen share over AES-256-GCM; native clients only (the
+    web client's call buttons are disabled in this mode).
 
 ### `voice.max_participants_per_call`
 

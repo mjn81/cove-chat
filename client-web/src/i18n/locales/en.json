@@ -643,6 +643,10 @@
 		"hint_close": "close",
 		"shortcut": "Shortcut:"
 	},
+	"calls": {
+		"nativeRequired": "Calls on this server need a native Cove app. Use the Cove desktop or Android app to join or start calls.",
+		"nativeRequiredTitle": "Calls need a native app"
+	},
 	"voice": {
 		"pause": "Pause",
 		"play_preview": "Play preview",

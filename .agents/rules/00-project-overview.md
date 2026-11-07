@@ -48,7 +48,7 @@ Related rule files (read the ones relevant to your task):
   - Frontend uses `client-web/src/rtc/WebRTCManager.ts` with dual PeerConnections (publish + subscribe).
 - **Air-Gapped / Isolated = Raw UDP (`backend/internal/voice`)**:
   - Reserved for air-gapped or restricted LAN deployments (`voice.mode = "raw_udp"`).
-  - Audio-only, unencrypted UDP packet router on port `9090` without ICE/STUN/TURN overhead.
+  - Encrypted UDP media router (`internal/mediarouter`, protocol in `docs/udp-media.md`) on port `9090` without ICE/STUN/TURN: audio, video and screen share, per-session AES-256-GCM, signaling over the same `call_*` WebSocket events. Native clients only; the web client disables its call buttons in this mode.
   - No video or screen sharing is supported in this mode.
 
 

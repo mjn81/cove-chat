@@ -33,7 +33,7 @@ export const API_ERROR_CODES = [
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
 /** Optional server features advertised in `capabilities`. Unknown names from newer servers are tolerated. */
-export type Capability = 'invite_messages' | 'whisper' | 'webrtc_sfu' | 'raw_udp_voice';
+export type Capability = 'invite_messages' | 'whisper' | 'webrtc_sfu' | 'raw_udp_voice' | 'raw_udp_media';
 
 /** Payload of {@link CLIENT_OUTDATED_EVENT}. */
 export interface ClientOutdatedDetail {

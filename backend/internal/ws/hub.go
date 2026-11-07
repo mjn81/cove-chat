@@ -69,6 +69,9 @@ type Hub struct {
 
 	voiceRouter voiceUserRemover
 	rtc         RTCSignalHandler
+	// voiceMode is the configured calling engine; "raw_udp" makes the hello event advertise the encrypted UDP media
+	// capability instead of inferring the engine from whether rtc is set (the UDP router is also an RTCSignalHandler).
+	voiceMode string
 
 	// background counts connection work that still reads the store (the handler goroutine and the channel-key
 	// push). Close waits for it, so shutting down never closes the database underneath a live connection.
@@ -137,7 +140,7 @@ func (h *Hub) helloMessage() *models.WSMessage {
 		Version:          version.Version,
 		APIVersion:       apistd.APIVersion,
 		MinClientVersion: h.minClientVersion,
-		Capabilities:     apistd.Capabilities(h.rtc != nil),
+		Capabilities:     h.capabilities(),
 	})
 	return &models.WSMessage{Type: "hello", Payload: payload}
 }
@@ -148,6 +151,19 @@ func (h *Hub) helloMessage() *models.WSMessage {
 // their voice-call state — see unregister() in client.go.
 func (h *Hub) SetVoiceRouter(r voiceUserRemover) {
 	h.voiceRouter = r
+}
+
+// capabilities lists what the hello event advertises for the configured calling engine.
+func (h *Hub) capabilities() []string {
+	if h.voiceMode == "raw_udp" {
+		return apistd.CapabilitiesForMode(h.voiceMode)
+	}
+	return apistd.Capabilities(h.rtc != nil)
+}
+
+// SetVoiceMode records the configured voice.mode so the hello event matches GET /api/version. Call before serving.
+func (h *Hub) SetVoiceMode(mode string) {
+	h.voiceMode = mode
 }
 
 // SetRTCManager wires the WebRTC group-calling SFU in after construction.
@@ -612,7 +628,7 @@ func (h *Hub) BroadcastMemberJoined(channelID string, userID string) {
 
 // BroadcastMemberLeft notifies channel members that a user has left or been kicked.
 func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
-	// Someone who left or was kicked must not stay in the channel's call.
+	// Someone who left or was kicked must not stay in the channel's call (both call engines implement this).
 	if h.rtc != nil {
 		h.rtc.RemoveUserFromChannel(userID, channelID)
 	}

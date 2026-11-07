@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	cove/udpmedia v0.0.0
 	cove/update v0.0.0
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -69,3 +70,5 @@ require (
 )
 
 replace cove/update => ./pkg/update
+
+replace cove/udpmedia => ./pkg/udpmedia
