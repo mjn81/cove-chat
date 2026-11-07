@@ -64,7 +64,7 @@ func checkTablesIntact(dir string) error {
 		}
 		if zero {
 			return fmt.Errorf("db: table file %s is damaged (it contains only zeros), which usually follows a power loss or a killed process; "+
-				"restore the database from a backup (\"server restore <file>\") or move %s aside to start with an empty database",
+				"run \"cove-server repair\" to drop it and keep the rest, restore a backup (\"cove-server restore <file>\"), or move %s aside to start empty",
 				filepath.Base(name), dir)
 		}
 	}

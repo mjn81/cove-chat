@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -61,6 +62,11 @@ func main() {
 		logger.Fatalf("Config load failed: %v", err)
 	}
 	middleware.TrustProxyHeaders = cfg.Server.TrustProxyHeaders
+
+	// "cove-server repair" must run before the database is opened, because a damaged table makes opening it fail.
+	if len(os.Args) >= 2 && os.Args[1] == "repair" {
+		os.Exit(runRepair(cfg.Database.Path + "/main"))
+	}
 
 	// ── 2. Derive KEK ─────────────────────────────────────────────────────
 	kek := crypto.DeriveKEK(cfg.Security.MasterPassword)
@@ -408,5 +414,25 @@ func runRestore(dataStore *store.Store, path string, force bool) int {
 		return 1
 	}
 	logger.Info("restore complete - start the server normally")
+	return 0
+}
+
+// runRepair implements "cove-server repair": it drops database table files that were left as zeros by a power loss
+// or a killed process, keeps a copy of the original, and leaves every other record intact. It exits non-zero only
+// when the repair itself failed; a healthy database is reported and left alone.
+func runRepair(mainPath string) int {
+	report, err := db.Repair(mainPath)
+	if err != nil {
+		logger.Errorf("repair failed: %v", err)
+		return 1
+	}
+	if len(report.Removed) == 0 {
+		logger.Info("repair: no damaged table files found, nothing was changed")
+		return 0
+	}
+	logger.Warnf("repair: removed %d damaged table file(s): %s", len(report.Removed), strings.Join(report.Removed, ", "))
+	logger.Warn("repair: records that only existed in those files, usually the most recent changes, are lost")
+	logger.Infof("repair: the original database was copied to %s", report.BackupDir)
+	logger.Info("repair complete - start the server normally")
 	return 0
 }
