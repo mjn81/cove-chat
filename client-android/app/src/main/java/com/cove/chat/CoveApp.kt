@@ -29,7 +29,6 @@ class CoveApp : Application() {
         private set
     lateinit var webRTCManager: WebRTCManager
         private set
-        private set
     lateinit var notificationHelper: NotificationHelper
         private set
     lateinit var updateManager: com.cove.chat.data.update.UpdateManager
