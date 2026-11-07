@@ -33,8 +33,9 @@ const (
 	Width      = 360
 	CardHeight = 76
 	Gap        = 4
-	// HeaderHeight is the strip with the dismiss-all button above the cards, shown from HeaderMinCards cards up.
-	HeaderHeight   = 28
+	// HeaderHeight is the full-width "Close all" button above the cards (followed by one Gap), shown from
+	// HeaderMinCards cards up.
+	HeaderHeight   = 32
 	HeaderMinCards = 2
 	Padding    = 0
 	EdgeMargin = 12
@@ -221,7 +222,7 @@ func Layout(work Rect, n int, corner Corner, scale float64) Rect {
 	w := px(Width)
 	h := px(2*Padding) + n*px(CardHeight) + (n-1)*px(Gap)
 	if n >= HeaderMinCards {
-		h += px(HeaderHeight)
+		h += px(HeaderHeight) + px(Gap)
 	}
 	margin := px(EdgeMargin)
 	if w > work.W {

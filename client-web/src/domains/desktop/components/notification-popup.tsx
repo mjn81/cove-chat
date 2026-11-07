@@ -11,8 +11,8 @@ import { PauseTimer } from '../utils/pause-timer';
 
 /** Height of one card in px; the desktop app sizes the window as a multiple of it (popup.CardHeight in Go). */
 const CARD_HEIGHT = 76;
-/** Height of the strip holding the dismiss-all button, shown from two popups up (popup.HeaderHeight in Go). */
-const HEADER_HEIGHT = 28;
+/** Height of the full-width "Close all" button, followed by one gap, shown from two popups up (popup.HeaderHeight in Go). */
+const HEADER_HEIGHT = 32;
 /** The gap between cards in px (popup.Gap in Go). */
 const CARD_GAP = 4;
 /** Fade-out time in ms before a timed-out popup is removed. */
@@ -112,18 +112,14 @@ export function NotificationPopup() {
 	return (
 		<div className="flex flex-col bg-background" style={{ gap: CARD_GAP }}>
 			{items.length >= 2 && (
-				<div className="flex shrink-0 items-center justify-end px-1" style={{ height: HEADER_HEIGHT }}>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="size-6 text-muted-foreground"
-						aria-label={t('notificationPopup.dismissAll')}
-						title={t('notificationPopup.dismissAll')}
-						onClick={() => void PopupDismissAll()}
-					>
-						<X className="size-4" />
-					</Button>
-				</div>
+				<Button
+					variant="ghost"
+					className="w-full shrink-0 rounded-none bg-card text-sm font-medium text-card-foreground hover:bg-accent"
+					style={{ height: HEADER_HEIGHT }}
+					onClick={() => void PopupDismissAll()}
+				>
+					{t('notificationPopup.dismissAll')}
+				</Button>
 			)}
 			{items.map((item) => (
 				<PopupCard

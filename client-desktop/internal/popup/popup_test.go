@@ -39,7 +39,7 @@ func TestStackRemove(t *testing.T) {
 func TestLayoutBottomRightDefault(t *testing.T) {
 	work := Rect{X: 0, Y: 0, W: 1920, H: 1040}
 	r := Layout(work, 2, BottomRight, 1)
-	wantH := 2*CardHeight + Gap + 2*Padding + HeaderHeight
+	wantH := 2*CardHeight + Gap + 2*Padding + HeaderHeight + Gap
 	if r.W != Width || r.H != wantH {
 		t.Fatalf("size = %dx%d, want %dx%d", r.W, r.H, Width, wantH)
 	}
@@ -55,7 +55,7 @@ func TestLayoutFitsEveryVisibleCard(t *testing.T) {
 		t.Fatalf("one card has no header, height = %d", one.H)
 	}
 	three := Layout(work, MaxVisible, BottomRight, 1)
-	want := 3*CardHeight + 2*Gap + HeaderHeight + 2*Padding
+	want := 3*CardHeight + 2*Gap + HeaderHeight + Gap + 2*Padding
 	if MaxVisible != 3 || three.H != want {
 		t.Fatalf("three cards need %d px, got %d (max %d)", want, three.H, MaxVisible)
 	}

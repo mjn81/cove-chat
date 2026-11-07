@@ -1020,7 +1020,7 @@
 	},
 	"notificationPopup": {
 		"close": "Close",
-		"dismissAll": "Dismiss all"
+		"dismissAll": "Close all"
 	},
 	"desktopSettings": {
 		"title": "Desktop app",
