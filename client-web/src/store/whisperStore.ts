@@ -762,6 +762,7 @@ export function initWhisperListeners() {
 		playNotificationSound('whisper');
 		showBrowserNotification(i18n.t('chat.notify_whisper_title'), i18n.t('chat.notify_whisper_body', { name: initiatorUsername }), {
 			tag: `cove-whisper-${raw.session_id}`,
+			kind: 'whisper',
 		});
 	});
 

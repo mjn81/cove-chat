@@ -361,6 +361,8 @@
     "notifications_desktop_desc": "هنگام غیرفعال بودن تب، برای پیام‌های جدید اعلان مرورگر دریافت کنید.",
     "notifications_sounds": "فعال‌سازی صدای اعلان‌ها",
     "notifications_sounds_desc": "برای هر پیام ورودی یک صدای ملایم پخش شود.",
+    "notifications_custom": "استفاده از پنجره‌های اعلان کاو",
+    "notifications_custom_desc": "اعلان‌ها به‌جای اعلان‌های سیستم، به‌صورت پنجره‌های کوچک کاو در گوشهٔ صفحه نمایش داده می‌شوند.",
     "default_device": "پیش‌فرض",
     "microphone_n": "میکروفون {{id}}"
   },
@@ -1015,6 +1017,9 @@
       "m15": "پس از ۱۵ دقیقه",
       "m60": "پس از ۱ ساعت"
     }
+  },
+  "notificationPopup": {
+  	"close": "بستن"
   },
   "desktopSettings": {
     "title": "برنامه دسکتاپ",

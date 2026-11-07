@@ -1,4 +1,7 @@
 import { useAppStore } from '@/store/store';
+import i18n from '@/i18n';
+import { buildDesktopNotification, type DesktopNotificationOptions } from '@/domains/desktop/utils/desktop-notification';
+import { ShowDesktopNotification } from '@/wailsjs/go/main/App';
 import { isWails } from './wails';
 
 /**
@@ -43,7 +46,7 @@ export async function requestNotificationPermission() {
   return await Notification.requestPermission();
 }
 
-interface BrowserNotificationOptions {
+interface BrowserNotificationOptions extends DesktopNotificationOptions {
   icon?: string;
   /** Notifications with the same tag replace each other; messages, calls and whispers use different ones. */
   tag?: string;
@@ -57,11 +60,14 @@ export function showBrowserNotification(title: string, body: string, options: Br
   if (!enableDesktopNotifications) return;
 
   if (isWails()) {
-    // Call Wails native notification
-    const wails = (window as any).go?.main?.App;
-    if (wails?.ShowNotification) {
-      wails.ShowNotification(title, body);
-    }
+    // The desktop app shows its own popup (or the system notification, depending on the user's choice there).
+    const request = buildDesktopNotification(
+      title,
+      body,
+      { ...options, ttlMs: options.ttlMs ?? (options.requireInteraction ? 30_000 : 0) },
+      { dark: document.documentElement.classList.contains('dark'), lang: i18n.language || 'en' },
+    );
+    void ShowDesktopNotification(request).catch(() => {});
     return;
   }
 
