@@ -112,6 +112,9 @@ dependencies {
     // WebRTC SFU Client (Group Video, Voice, Screen share)
     implementation(libs.stream.webrtc)
 
+    // Opus codec for the encrypted UDP call path (air-gapped servers)
+    implementation(libs.concentus)
+
     // Zstandard Compression (Matches Web Client WASM)
     // The Android AAR carries the per-ABI native libs; the plain JVM jar fails to load on devices.
     implementation("${libs.zstd.jni.get()}@aar")

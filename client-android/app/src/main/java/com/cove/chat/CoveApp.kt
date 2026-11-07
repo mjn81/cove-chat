@@ -27,7 +27,11 @@ class CoveApp : Application() {
         private set
     lateinit var webSocketManager: WebSocketManager
         private set
-    lateinit var webRTCManager: WebRTCManager
+    /**
+     * The call engine every screen uses. The name is historical: it is a [CallRouter] that picks the WebRTC SFU or the
+     * encrypted UDP engine per call from the server's capabilities.
+     */
+    lateinit var webRTCManager: com.cove.chat.rtc.CallEngine
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
@@ -70,7 +74,7 @@ class CoveApp : Application() {
         preferencesManager = PreferencesManager(this)
         apiClient = ApiClient(preferencesManager)
         webSocketManager = WebSocketManager(preferencesManager)
-        webRTCManager = WebRTCManager(this, webSocketManager)
+        webRTCManager = com.cove.chat.rtc.CallRouter(this, webSocketManager, preferencesManager, apiClient, WebRTCManager(this, webSocketManager))
 
         notificationHelper = NotificationHelper(this)
         updateManager = com.cove.chat.data.update.UpdateManager(this, preferencesManager)
