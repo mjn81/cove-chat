@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAdminAudit, useAdminOverview } from '../api/use-admin';
 import { formatBytes, formatUptime } from '../utils/admin-format';
 import { ServerUpdatePanel } from './server-update-panel';
+import { ServerRestartControl } from './server-restart-control';
 
 function Stat({ label, value }: { label: string; value: string | number }) {
 	return (
@@ -37,6 +38,7 @@ export function OverviewPanel() {
 			</div>
 
 			<ServerUpdatePanel />
+			<ServerRestartControl />
 
 			<section>
 				<h3 className="mb-2 text-sm font-semibold text-foreground">

@@ -651,6 +651,12 @@ definitions:
       password:
         type: string
     type: object
+  internal_api.RestartRequest:
+    properties:
+      password:
+        description: Password is the owner's current password.
+        type: string
+    type: object
   internal_api.ServerInfoResponse:
     properties:
       captcha_required:
@@ -758,6 +764,11 @@ definitions:
     type: object
   internal_api.UpdateInfoResponse:
     properties:
+      can_restart:
+        description: CanRestart is true when POST /api/admin/restart can restart this
+          install (binary mode with a restart hook).
+        example: true
+        type: boolean
       can_update:
         description: 'CanUpdate is true only when the button may be used right now:
           binary mode, a newer release and no job running.'
@@ -1641,6 +1652,56 @@ paths:
       security:
       - BearerAuth: []
       summary: Reset server data
+      tags:
+      - admin
+  /api/admin/restart:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Gracefully shuts the server down and starts it again, for example to apply settings flagged as needing a restart. Answers 202 first, then restarts after a short delay; everyone is disconnected for a few seconds. Refused with 409 in docker mode (restart the container) or when the install cannot restart itself.
+        **Access:** Server Owner, with their password.
+      parameters:
+      - description: Owner password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.RestartRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Restart the server
       tags:
       - admin
   /api/admin/restore:

@@ -710,6 +710,7 @@
 					"download": "downloaded a backup"
 				},
 				"server": {
+					"restart": "restarted the server",
 					"reset": "reset the server",
 					"restore": "restored a backup",
 					"update": {
@@ -890,6 +891,8 @@
 			"restore_failed": "The restore failed.",
 			"update_docker": "Docker installs cannot update themselves. Run docker compose pull && docker compose up -d.",
 			"update_unsupported": "This install cannot update itself.",
+			"restart_docker": "Docker installs cannot restart themselves. Restart the container, for example docker compose restart.",
+			"restart_unsupported": "This install cannot restart itself. Restart it with your service manager.",
 			"update_in_progress": "An update is already running.",
 			"update_check_failed": "Could not reach GitHub to check for updates.",
 			"update_up_to_date": "The server is already up to date.",
@@ -913,6 +916,19 @@
 			"confirmMessage": "This message will be delivered to every user on this server and can't be recalled.",
 			"sent": "Notice delivered to {{n}} users",
 			"failed": "{{n}} deliveries failed"
+		},
+		"restart": {
+			"title": "Restart server",
+			"button": "Restart server",
+			"hint": "Restart to apply settings that need it, such as the call mode.",
+			"reason_docker": "Docker installs cannot restart themselves. Restart the container instead.",
+			"reason_unsupported": "This install cannot restart itself. Use your service manager.",
+			"confirm_title": "Restart the server?",
+			"confirm_body": "Everyone will be disconnected for a few seconds while the server restarts. Enter your password to continue.",
+			"confirm_action": "Restart",
+			"waiting": "Restarting, reconnecting...",
+			"done": "The server is back online.",
+			"timeout": "The server did not come back in time. Check that it is running."
 		},
 		"update": {
 			"title": "Server update",

@@ -911,6 +911,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/admin/restart": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gracefully shuts the server down and starts it again, for example to apply settings flagged as needing a restart. Answers 202 first, then restarts after a short delay; everyone is disconnected for a few seconds. Refused with 409 in docker mode (restart the container) or when the install cannot restart itself.\n**Access:** Server Owner, with their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Restart the server",
+                "parameters": [
+                    {
+                        "description": "Owner password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.RestartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/restore": {
             "post": {
                 "security": [
@@ -4361,6 +4436,15 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api.RestartRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "Password is the owner's current password.",
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.ServerInfoResponse": {
             "type": "object",
             "properties": {
@@ -4511,6 +4595,11 @@ const docTemplate = `{
         "internal_api.UpdateInfoResponse": {
             "type": "object",
             "properties": {
+                "can_restart": {
+                    "description": "CanRestart is true when POST /api/admin/restart can restart this install (binary mode with a restart hook).",
+                    "type": "boolean",
+                    "example": true
+                },
                 "can_update": {
                     "description": "CanUpdate is true only when the button may be used right now: binary mode, a newer release and no job running.",
                     "type": "boolean",

@@ -115,7 +115,7 @@ func (u *Updater) listReleases(ctx context.Context, force bool) ([]update.Releas
 }
 
 func (u *Updater) info(ctx context.Context, force bool) UpdateInfoResponse {
-	resp := UpdateInfoResponse{CurrentVersion: u.Current, Mode: string(u.Mode), State: UpdateStateIdle}
+	resp := UpdateInfoResponse{CurrentVersion: u.Current, Mode: string(u.Mode), State: UpdateStateIdle, CanRestart: u.restartRefusal() == ""}
 	_, _, require, platformOK := u.requiredAssets()
 
 	rels, at, err := u.listReleases(ctx, force)

@@ -33,6 +33,8 @@ type UpdateInfoResponse struct {
 	Reason string `json:"reason,omitempty" example:"docker"`
 	// Instructions is the manual command, set in docker mode.
 	Instructions string `json:"instructions,omitempty" example:"docker compose pull && docker compose up -d"`
+	// CanRestart is true when POST /api/admin/restart can restart this install (binary mode with a restart hook).
+	CanRestart bool `json:"can_restart" example:"true"`
 
 	// State is the progress of an update started with POST: idle, downloading, installing, restarting or failed.
 	// Source is where the release list came from: "manifest" (covechat.dev or a configured mirror) or "github".
@@ -67,6 +69,12 @@ type UpdateStartRequest struct {
 type UpdateUploadResponse struct {
 	Status string           `json:"status" example:"success"`
 	Upload UpdateUploadInfo `json:"upload"`
+}
+
+// RestartRequest is the step-up body for POST /api/admin/restart.
+type RestartRequest struct {
+	// Password is the owner's current password.
+	Password string `json:"password"`
 }
 
 // UpdateStartResponse acknowledges that an update job was accepted; poll GET /api/admin/update for progress.

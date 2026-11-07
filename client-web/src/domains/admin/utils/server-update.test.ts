@@ -11,6 +11,7 @@ const info = (over: Partial<ServerUpdateInfo> = {}): ServerUpdateInfo => ({
 	prerelease: false,
 	mode: 'binary',
 	can_update: true,
+	can_restart: true,
 	state: 'idle',
 	progress_percent: 0,
 	...over,
