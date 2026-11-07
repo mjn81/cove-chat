@@ -4,7 +4,7 @@ import { PhoneOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/icon-button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { callManager } from '@/rtc/call-manager';
 import { cn } from '@/lib/utils';
 import { PingSignal } from './ping-signal';
 import { formatPing, pingLevel } from '../utils/ping';
@@ -68,7 +68,7 @@ export const VoiceConnectedBar = ({ ping, channelName }: VoiceConnectedProps) =>
 			<IconButton
 				label={t('sidebar.disconnect')}
 				tone="destructive"
-				onClick={() => webRTCManager.leave()}
+				onClick={() => callManager.leave()}
 				className="h-7 w-7"
 			>
 				<PhoneOff size={14} />
@@ -89,7 +89,7 @@ export const CollapsedVoiceButton = ({ ping, channelName }: VoiceConnectedProps)
 						variant="ghost"
 						size="icon"
 						className="h-8 w-8 rounded-md p-0 hover:bg-destructive/10"
-						onClick={() => webRTCManager.leave()}
+						onClick={() => callManager.leave()}
 						aria-label={t('sidebar.disconnect')}
 					>
 						<PingSignal ping={ping} size={16} className="pointer-events-none" />

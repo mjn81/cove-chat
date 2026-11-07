@@ -1,6 +1,6 @@
 # Encrypted UDP media (air-gapped call mode)
 
-Status: **v1, backend + Go client library implemented; native capture/encode/render not yet built** (see
+Status: **v1, backend + Go client library implemented; desktop client code written and unit tested, not yet verified with real devices** (see
 [Implementation status](#implementation-status)).
 
 This document specifies the call media path used when the server runs with `voice.mode = "raw_udp"`
@@ -206,5 +206,5 @@ Not defended:
 | Server router `internal/mediarouter` (WS signalling, handshake, forwarding, NACK cache, keyframe relay, rate limits, kick/eviction, membership sweep) | Implemented, tested including a multi-participant forwarding test with Go test clients |
 | Capability advertisement, Swagger/docs | Implemented |
 | Web client gating | Implemented (buttons disabled with explanation) |
-| Desktop (Wails) | Not wired. The Go client library is importable by the shell; audio/video capture, Opus/H.264 encode/decode, rendering and the Wails bindings are **not** built. |
+| Desktop (Wails) | **Implemented, untested on real devices.** Go side: `client-desktop/media_bridge.go` (Wails binding `MediaBridge`, batched frame events) on top of `media_call.go`. Web side: `client-web/src/rtc/UdpMediaManager.ts` (WebCodecs Opus + H.264 Annex-B capture/encode/decode, canvas rendering into the existing tiles), selected only inside Wails on a `raw_udp_media` server. Covered by unit tests with a fake bridge and a loopback echo test; mic, camera, screen share and playback have **not** been run against a real server and devices. Screen-share audio is not sent. Needs a webview with WebCodecs encoders: WebView2 (Windows) is expected to work; WebKitGTK and WKWebView likely lack them (a Go-side codec would be the fallback, not built). |
 | Android | Not started. Remaining work: port the packet/crypto layer (about 600 lines; the test vectors in `backend/tests/udpmedia_vectors_test.go` pin the exact bytes), `MediaCodec` H.264 and Opus encode/decode, `Camera2`/`MediaProjection` capture, `SurfaceView` rendering, jitter buffer using the reassembler rules in section 7, and the `call_*` WS flow of section 2. |

@@ -12,7 +12,7 @@ import {
 } from '../ui/context-menu';
 import { Slider } from '../ui/slider';
 import { StreamVideo } from './call-media';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { callManager } from '@/rtc/call-manager';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useAuthStore } from '@/store/store';
 import type { Channel } from '@/types/api';
@@ -117,12 +117,12 @@ export const CallTile: React.FC<CallTileProps> = ({
 						min={0}
 						max={200}
 						step={1}
-						onValueChange={(vals) => webRTCManager.setParticipantVolume(userId, vals[0] / 100)}
+						onValueChange={(vals) => callManager.setParticipantVolume(userId, vals[0] / 100)}
 					/>
 				</div>
 				<ContextMenuSeparator className="bg-border" />
 				<ContextMenuItem
-					onClick={() => webRTCManager.toggleParticipantMute(userId)}
+					onClick={() => callManager.toggleParticipantMute(userId)}
 					className={`cursor-pointer ${isLocallyMuted ? 'text-foreground' : 'text-destructive'}`}
 				>
 					{isLocallyMuted ? <Volume2 className="me-2 h-4 w-4" /> : <VolumeX className="me-2 h-4 w-4" />}

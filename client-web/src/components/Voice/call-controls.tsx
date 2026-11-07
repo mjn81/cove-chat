@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Switch } from '../ui/switch';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { callManager } from '@/rtc/call-manager';
 import { useVoiceStore } from '@/store/voiceStore';
 import { STREAM_PRESETS, matchStreamPreset, type StreamPresetId } from './call-layout';
 
@@ -46,7 +46,7 @@ const StreamSettings: React.FC = () => {
 						<button
 							key={id}
 							type="button"
-							onClick={() => void webRTCManager.applyScreenShareConstraints(STREAM_PRESETS[id])}
+							onClick={() => void callManager.applyScreenShareConstraints(STREAM_PRESETS[id])}
 							className={`flex flex-col items-center rounded-lg border px-1 py-2 text-xs transition-colors cursor-pointer ${
 								active === id
 									? 'border-primary bg-primary/10 text-foreground'
@@ -105,7 +105,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 		<div className="flex flex-wrap items-center justify-center gap-2 py-1">
 			<button
 				type="button"
-				onClick={() => void webRTCManager.toggleMute()}
+				onClick={() => void callManager.toggleMute()}
 				className={`${BUTTON} ${isMuted ? DANGER : NEUTRAL}${wait}`}
 				title={isMuted ? t('call.unmute') : t('call.mute')}
 				aria-label={isMuted ? t('call.unmute') : t('call.mute')}
@@ -116,7 +116,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 
 			<button
 				type="button"
-				onClick={() => void webRTCManager.toggleVideo()}
+				onClick={() => void callManager.toggleVideo()}
 				className={`${BUTTON} ${isVideoEnabled ? NEUTRAL : DANGER}${wait}`}
 				title={isVideoEnabled ? t('call.cameraOff') : t('call.cameraOn')}
 				aria-label={isVideoEnabled ? t('call.cameraOff') : t('call.cameraOn')}
@@ -128,7 +128,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 			<div className={`flex items-center${wait}`}>
 				<button
 					type="button"
-					onClick={() => void webRTCManager.toggleScreenShare()}
+					onClick={() => void callManager.toggleScreenShare()}
 					className={`h-11 ps-3.5 pe-2.5 rounded-s-full flex items-center gap-1.5 text-sm font-medium transition-colors cursor-pointer ${
 						isScreenSharing ? 'bg-primary text-primary-foreground hover:bg-primary/90' : NEUTRAL
 					}`}
@@ -159,7 +159,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 
 			<button
 				type="button"
-				onClick={() => webRTCManager.toggleDeafen()}
+				onClick={() => callManager.toggleDeafen()}
 				className={`${BUTTON} ${isDeafened ? DANGER : NEUTRAL}`}
 				title={isDeafened ? t('call.undeafen') : t('call.deafen')}
 				aria-label={isDeafened ? t('call.undeafen') : t('call.deafen')}
@@ -193,7 +193,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 
 			<button
 				type="button"
-				onClick={() => void webRTCManager.leave()}
+				onClick={() => void callManager.leave()}
 				className={`h-11 px-5 rounded-full flex items-center justify-center transition-colors cursor-pointer ${DANGER}`}
 				title={t('call.leave')}
 				aria-label={t('call.leave')}
