@@ -98,7 +98,8 @@ class CoveApp : Application() {
                 val channel = apiClient.getChannels().getOrNull()?.firstOrNull { it.id == m.channelId }
                 val title = channel?.displayName(me) ?: "Cove"
                 val sender = channel?.memberNames?.get(m.senderId) ?: title
-                notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText())
+                val photo = channel?.memberAvatars?.get(m.senderId)?.let { id -> kotlinx.coroutines.withTimeoutOrNull(3000) { com.cove.chat.data.remote.AvatarCache.load(id) } }
+                notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText(), avatar = photo)
             }
         }
         appScope.launch {
