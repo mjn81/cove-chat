@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cove.chat.CoveApp
+import com.cove.chat.data.remote.ApiStandard
 import com.cove.chat.data.model.CreateChannelRequest
 import com.cove.chat.data.model.InvitePreview
 import com.cove.chat.data.model.UserSummary
@@ -148,7 +149,12 @@ fun FriendPickerDialog(inviteBody: String, onDismiss: () -> Unit) {
     var friends by remember { mutableStateOf<List<UserSummary>?>(null) }
     val picked = remember { mutableStateListOf<String>() }
     var sending by remember { mutableStateOf(false) }
+    // Gate on the advertised capability, not the version: an older server rejects `invite` messages (docs/api-standard.md).
+    var canInvite by remember { mutableStateOf<Boolean?>(null) }
 
+    LaunchedEffect(Unit) {
+        api.getVersion().onSuccess { canInvite = ApiStandard.hasCapability(it.capabilities, "invite_messages") }
+    }
     LaunchedEffect(Unit) {
         api.getRelationships().fold(
             onSuccess = { list -> friends = list.filter { it.type == "friend" }.mapNotNull { it.user } },
@@ -167,6 +173,7 @@ fun FriendPickerDialog(inviteBody: String, onDismiss: () -> Unit) {
 
     CoveDialog(onDismiss, title = "Send to friends") {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            if (canInvite == false) Text("This server does not support sharing invites in chat yet.", color = c.textMuted, fontSize = CoveType.caption.fontSize)
             when (val list = friends) {
                 null -> CircularProgressIndicator(strokeWidth = 2.dp)
                 else -> if (list.isEmpty()) {
@@ -184,7 +191,7 @@ fun FriendPickerDialog(inviteBody: String, onDismiss: () -> Unit) {
                 }
             }
             CoveButton(
-                "Send", modifier = Modifier.fillMaxWidth(), loading = sending, enabled = picked.isNotEmpty(),
+                "Send", modifier = Modifier.fillMaxWidth(), loading = sending, enabled = picked.isNotEmpty() && canInvite != false,
                 onClick = {
                     sending = true
                     val targets = picked.toList()
