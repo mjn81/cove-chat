@@ -98,7 +98,7 @@ Settings are managed via `backend/config.toml`.
 | Section | Key | Description |
 |---|---|---|
 | `server` | `http_port` | API & WebSocket port (default 8080) |
-| `server` | `udp_port` | Voice Chat port (default 9090) |
+| `server` | `udp_port` | Encrypted UDP media port, used only when `voice.mode = "raw_udp"` (default 9090) |
 | `security` | `master_password` | Master key for all encryption |
 | `database` | `path` | Path to BadgerDB storage |
 
@@ -127,7 +127,7 @@ STRESS_CONCURRENCY=20 STRESS_REQUESTS=100 go test -v ./tests -run TestStressBack
 
 | Phase | Milestone | Status |
 |---|---|---|
-| 5 | Wails Desktop, Raw UDP Voice Router | ✅ Completed |
+| 5 | Wails Desktop, UDP Voice Router (since replaced by the encrypted UDP media router) | ✅ Completed |
 | 6 | inter-node Federation | 🔜 Planned |
 | 7 | Production hardening: mTLS, audit logs | 🔜 In Progress |
 

@@ -209,7 +209,7 @@ phases:
       - id: opus-vad
         area: calls
         title: "Opus and voice activity detection"
-        note: "Lower bandwidth for raw UDP voice."
+        note: "Lower bandwidth for voice and air-gapped UDP calls."
       - id: video-player
         area: chat
         title: "Native video player"

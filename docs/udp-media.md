@@ -4,8 +4,9 @@ Status: **v1, backend + Go client library implemented; native capture/encode/ren
 [Implementation status](#implementation-status)).
 
 This document specifies the call media path used when the server runs with `voice.mode = "raw_udp"`
-(air-gapped or isolated LANs with no ICE, STUN or TURN). It replaces the old unencrypted, audio-only packet
-format on the UDP port (default `9090`). The user-visible behaviour matches `voice.mode = "webrtc"`: members-only
+(air-gapped or isolated LANs with no ICE, STUN or TURN). It is the only UDP call path and uses the UDP port
+(default `9090`); the older unencrypted, audio-only router was removed (migration note: its packets are no longer
+answered, and there is no opt-in to bring it back). The user-visible behaviour matches `voice.mode = "webrtc"`: members-only
 rooms, audio, camera video, screen share, mute/camera/share state, join/leave and kick handling. Only the
 transport differs, and only native clients can speak it, because a browser cannot open raw UDP sockets.
 
@@ -204,6 +205,7 @@ Not defended:
 |---|---|
 | Protocol library `pkg/udpmedia` (packets, AEAD, key schedule, rotation, replay window, fragmentation, reassembler with NACK/keyframe logic, UDP client) | Implemented, unit and loopback tested |
 | Server router `internal/mediarouter` (WS signalling, handshake, forwarding, NACK cache, keyframe relay, rate limits, kick/eviction, membership sweep) | Implemented, tested including a multi-participant forwarding test with Go test clients |
+| Removal of the old unencrypted audio-only router (`internal/voice`) | Done. Nothing listens on `server.udp_port` in `webrtc` mode, and legacy-format datagrams get no reply in `raw_udp` mode. The old desktop (`voice.go`) and Android (`RawUdpVoiceManager`) clients were deleted with it. |
 | Capability advertisement, Swagger/docs | Implemented |
 | Web client gating | Implemented (buttons disabled with explanation) |
 | Desktop (Wails) | Not wired. The Go client library is importable by the shell; audio/video capture, Opus/H.264 encode/decode, rendering and the Wails bindings are **not** built. |

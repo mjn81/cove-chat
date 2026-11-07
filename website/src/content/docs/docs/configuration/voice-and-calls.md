@@ -1,6 +1,6 @@
 ---
 title: Voice and calls
-description: WebRTC SFU versus raw UDP, TURN, public IP and firewall setup for calls.
+description: WebRTC SFU versus the encrypted UDP media router, TURN, public IP and firewall setup for calls.
 ---
 
 Cove has two call engines, selected by `voice.mode`.
@@ -35,7 +35,9 @@ Browsers only allow microphone, camera and screen capture on HTTPS (or localhost
 mode = "raw_udp"
 ```
 
-Audio flows over UDP port `server.udp_port` (default 9090) with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. The desktop client supports it; calls have no video or screen sharing.
+Calls run on the encrypted UDP media router (audio, video and screen share, AES-256-GCM per session; see `docs/udp-media.md`) on UDP port `server.udp_port` (default 9090), with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. In `webrtc` mode nothing listens on `server.udp_port`.
+
+Only native clients can speak it. The desktop and Android clients for this protocol are not built yet, so on a `raw_udp` server calls are unavailable until they ship; the web client disables its call buttons. The older unencrypted, audio-only UDP format has been removed.
 
 ## Troubleshooting
 

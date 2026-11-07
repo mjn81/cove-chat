@@ -29,7 +29,7 @@ Clients encrypt messages with the channel key (AES-256-GCM) before sending. The 
 
 ## Calls
 
-WebRTC media is encrypted hop by hop with DTLS-SRTP between each client and the SFU. The SFU forwards media, so it is not end-to-end encrypted. Raw UDP mode is not encrypted at all and is meant for trusted LANs.
+WebRTC media is encrypted hop by hop with DTLS-SRTP between each client and the SFU. The SFU forwards media, so it is not end-to-end encrypted. Air-gapped (`raw_udp`) mode uses its own AES-256-GCM session between each native client and the server, so it is encrypted too, but the server still sees the media (it is not end-to-end encrypted).
 
 ## When you need more
 
