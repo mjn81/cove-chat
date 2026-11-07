@@ -128,12 +128,6 @@ android/install: ## Build and install the debug APK on the connected device/emul
 	cd client-android && JAVA_HOME="$(ANDROID_JDK)" ./gradlew :app:installDebug
 
 ## ── Wails Desktop (PRIMARY build target) ────────────────────────────────────
-desktop/test: ## Run the desktop shell's Go tests
-	cd client-desktop && $(GO) test ./...
-
-desktop/vet: ## Vet the desktop shell (current platform)
-	cd client-desktop && $(GO) vet ./...
-
 wails/dev: build front/build ## Run Wails in dev mode (always embeds a fresh web build, then hot-reloads the shell)
 	rm -rf client-desktop/frontend/dist
 	mkdir -p client-desktop/frontend/dist
