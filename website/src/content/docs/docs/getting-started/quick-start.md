@@ -36,7 +36,7 @@ docker compose up -d
 | `4000/tcp` | API and WebSocket |
 | `3478/udp` | Embedded STUN/TURN for calls |
 | `50000-50100/udp` | WebRTC media |
-| `9090/udp` | Raw UDP voice (only for `voice.mode = "raw_udp"`) |
+| `9090/udp` | Encrypted UDP media (only for `voice.mode = "raw_udp"`) |
 
 ## 4. Create the owner account
 

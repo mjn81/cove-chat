@@ -1,6 +1,9 @@
 // ws.manager.ts
 import { wsConnect, wsDisconnect, onWS, wsSendReadReceipt, decryptMessage } from '@/ws';
 import { useChannelStore, useAuthStore, getChannelDisplayName } from './store';
+import { planMessageNotification } from '@/domains/desktop/utils/notify-decision';
+import { useWindowVisibilityStore } from '@/domains/desktop/store/window-visibility.store';
+import { senderFrom } from '@/domains/desktop/utils/sender-avatar';
 import { CALL_RING_PATH, playNotificationSound, showBrowserNotification } from '@/utils/notifications';
 import { callRinger } from '@/lib/ringtone';
 import i18n from '@/i18n';
@@ -134,7 +137,14 @@ export function initWebSocket() {
 		if (currentUserId && msg.sender_id === currentUserId) return;
 
 		// 2. If viewing the channel, send read receipt. Otherwise, increment unread.
-		if (activeChannel?.id === msg.channel_id) {
+		const plan = planMessageNotification({
+			activeChannelId: activeChannel?.id,
+			messageChannelId: msg.channel_id,
+			windowHidden: useWindowVisibilityStore.getState().hidden,
+			pageVisible: document.visibilityState === 'visible',
+			pageFocused: document.hasFocus(),
+		});
+		if (plan.viewing) {
 			wsSendReadReceipt(msg.channel_id);
 		} else {
 			incrementUnread(msg.channel_id);
@@ -142,14 +152,19 @@ export function initWebSocket() {
 			// Play sound
 			playNotificationSound('message');
 			
-			// Show browser notification if tab is hidden/unfocused
-			if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+			// Show browser notification if tab is hidden/unfocused (or the window is hidden in the tray)
+			if (plan.showPopup) {
 				const channel = channels.find(c => c.id === msg.channel_id);
 				if (channel && currentUserId) {
 					const senderName = channel.member_names?.[msg.sender_id] || 'Someone';
 					const channelName = getChannelDisplayName(channel, currentUserId);
 					const text = msg.type === 'text' ? await decryptMessage(msg) : `Sent a ${msg.type}`;
-					showBrowserNotification(`${senderName} (#${channelName})`, text);
+					showBrowserNotification(`${senderName} (#${channelName})`, text, {
+						kind: 'message',
+						channelId: msg.channel_id,
+						subtitle: `#${channelName}`,
+						sender: senderFrom(msg.sender_id, senderName, channel.member_avatars?.[msg.sender_id]),
+					});
 				}
 			}
 		}
@@ -311,6 +326,9 @@ export function checkIncomingCall(channelId: string, users: string[]) {
 			// Native notification (stays until acted on) plus a looping ring; both stop with the on-screen call card.
 			showBrowserNotification(i18n.t('chat.notify_call_title'), i18n.t('chat.notify_call_body', { name: callerName }), {
 				tag: 'cove-call',
+				kind: 'call',
+				channelId: channel.id,
+				sender: senderFrom(callerId, callerName, callerAvatar),
 				requireInteraction: true,
 			});
 			if (useAppStore.getState().enableNotificationSounds) callRinger.start(CALL_RING_PATH);

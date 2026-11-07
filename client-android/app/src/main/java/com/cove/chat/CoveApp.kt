@@ -5,7 +5,6 @@ import com.cove.chat.data.local.LocalData
 import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.remote.ApiClient
 import com.cove.chat.data.remote.WebSocketManager
-import com.cove.chat.rtc.RawUdpVoiceManager
 import com.cove.chat.data.model.previewText
 import com.cove.chat.notify.ActiveChat
 import com.cove.chat.notify.CallCoordinator
@@ -28,9 +27,11 @@ class CoveApp : Application() {
         private set
     lateinit var webSocketManager: WebSocketManager
         private set
-    lateinit var webRTCManager: WebRTCManager
-        private set
-    lateinit var rawUdpVoiceManager: RawUdpVoiceManager
+    /**
+     * The call engine every screen uses. The name is historical: it is a [CallRouter] that picks the WebRTC SFU or the
+     * encrypted UDP engine per call from the server's capabilities.
+     */
+    lateinit var webRTCManager: com.cove.chat.rtc.CallEngine
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
@@ -73,8 +74,7 @@ class CoveApp : Application() {
         preferencesManager = PreferencesManager(this)
         apiClient = ApiClient(preferencesManager)
         webSocketManager = WebSocketManager(preferencesManager)
-        webRTCManager = WebRTCManager(this, webSocketManager)
-        rawUdpVoiceManager = RawUdpVoiceManager()
+        webRTCManager = com.cove.chat.rtc.CallRouter(this, webSocketManager, preferencesManager, apiClient, WebRTCManager(this, webSocketManager))
 
         notificationHelper = NotificationHelper(this)
         updateManager = com.cove.chat.data.update.UpdateManager(this, preferencesManager)
@@ -102,7 +102,8 @@ class CoveApp : Application() {
                 val channel = apiClient.getChannels().getOrNull()?.firstOrNull { it.id == m.channelId }
                 val title = channel?.displayName(me) ?: "Cove"
                 val sender = channel?.memberNames?.get(m.senderId) ?: title
-                notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText())
+                val photo = channel?.memberAvatars?.get(m.senderId)?.let { id -> kotlinx.coroutines.withTimeoutOrNull(3000) { com.cove.chat.data.remote.AvatarCache.load(id) } }
+                notificationHelper.showMessage(m.channelId, title, channel?.isDirectMessage == false, sender, m.previewText(), avatar = photo)
             }
         }
         appScope.launch {

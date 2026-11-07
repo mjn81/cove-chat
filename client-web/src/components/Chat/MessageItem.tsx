@@ -243,7 +243,9 @@ export const MessageItem = memo(
 				className={`group flex mb-0.5 -mx-4 px-4 py-0.5 transition-colors relative select-none cursor-default ${
 					!grouped ? (isMobile ? 'mt-2' : 'mt-4') : ''
 				} ${
-					isMentioned
+					selected
+						? 'bg-primary/10 border-s-2 border-transparent'
+						: isMentioned
 						? 'bg-mention border-s-2 border-mention-border hover:opacity-90'
 						: showMobileMenu && isMobile
 							? 'bg-primary/5 border-s-2 border-primary/30'
@@ -293,7 +295,7 @@ export const MessageItem = memo(
 					</span>
 				)}
 				<div 
-					className={`flex flex-1 min-w-0 transition-transform duration-75 ease-out relative z-10 ${selected ? 'bg-primary/10' : ''}`}
+					className={`flex flex-1 min-w-0 transition-transform duration-75 ease-out relative z-10`}
 					style={{ transform: `translateX(${dragX}px)` }}
 				>
 					{/* Action Menu */}

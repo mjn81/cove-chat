@@ -17,6 +17,7 @@ export function useServerCapabilities() {
 	const capabilities = query.data?.capabilities;
 	return {
 		capabilities: capabilities ?? [],
+		udpPort: query.data?.udp_port,
 		minClientVersion: query.data?.min_client_version,
 		isLoaded: query.isSuccess,
 		supports: (name: Capability) => hasCapability(capabilities, name),

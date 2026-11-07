@@ -51,6 +51,16 @@ object ApiStandard {
     /** Whether a server advertises [name]. A missing list (old server) means no optional features. */
     fun hasCapability(capabilities: List<String>?, name: String): Boolean = capabilities?.contains(name) == true
 
+    /**
+     * True when no call engine of this client can serve the server: it has no WebRTC SFU and no encrypted UDP media
+     * router (`raw_udp_media`), only the removed unencrypted audio format (`raw_udp_voice`). Android speaks both the
+     * WebRTC and the encrypted UDP engines, so a normal server is never blocked. An old server that advertises
+     * nothing is assumed to be a normal WebRTC one.
+     */
+    fun callsNeedUdpClient(capabilities: List<String>?): Boolean =
+        !capabilities.isNullOrEmpty() && !hasCapability(capabilities, "webrtc_sfu") &&
+            !hasCapability(capabilities, "raw_udp_media") && hasCapability(capabilities, "raw_udp_voice")
+
     private fun parse(v: String): IntArray? {
         val core = v.trim().removePrefix("v").removePrefix("V").split('-', '+').first()
         if (!Regex("""\d+(\.\d+){0,2}""").matches(core)) return null

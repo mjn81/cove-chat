@@ -166,7 +166,7 @@ export const en = {
     items: [
       { q: 'Is Cove end-to-end encrypted?', a: 'Messages are encrypted in the client and stored encrypted, but the server you run manages channel keys, so it sits inside the trust boundary. Whisper chats are true zero-persistence end-to-end encrypted rooms.' },
       { q: 'What do I need to run it?', a: 'Any machine that runs Docker, or a single Go binary. A small VM is enough for a community. ffmpeg is optional and only used for video messages.' },
-      { q: 'Does it work on an isolated network?', a: 'Yes. Set voice.mode to raw_udp for audio-only calls on an air-gapped LAN, with no STUN, TURN or internet access required.' },
+      { q: 'Does it work on an isolated network?', a: 'Yes. Set voice.mode to raw_udp for encrypted audio, video and screen-share calls on an air-gapped LAN, with no STUN, TURN or internet access required. It needs a native client, so the web app cannot join those calls.' },
       { q: 'What if I lose the master password?', a: 'The database cannot be recovered without it. Back it up with your data. It is generated on first start and written to config.toml.' },
       { q: 'Can servers talk to each other?', a: 'Not yet. Federation is on the long-term roadmap.' },
       { q: 'What does it cost?', a: 'Nothing. Cove is MIT licensed. You pay only for the hardware you run it on.' },

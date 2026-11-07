@@ -905,6 +905,81 @@
                 }
             }
         },
+        "/api/admin/restart": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gracefully shuts the server down and starts it again, for example to apply settings flagged as needing a restart. Answers 202 first, then restarts after a short delay; everyone is disconnected for a few seconds. Refused with 409 in docker mode (restart the container) or when the install cannot restart itself.\n**Access:** Server Owner, with their password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Restart the server",
+                "parameters": [
+                    {
+                        "description": "Owner password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.RestartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/restore": {
             "post": {
                 "security": [
@@ -3401,7 +3476,7 @@
         },
         "/api/version": {
             "get": {
-                "description": "Returns the semantic version of the Cove backend currently running, the API version,\nthe minimum supported client version and the capabilities the server advertises.\n**Access:** Public.",
+                "description": "Returns the semantic version of the Cove backend currently running, the API version,\nthe minimum supported client version and the capabilities the server advertises.\nIn `voice.mode = \"raw_udp\"` the capabilities include `raw_udp_voice` and `raw_udp_media` (calls over the encrypted\nUDP media protocol, native clients only; see docs/udp-media.md) and omit `webrtc_sfu`.\n**Access:** Public.",
                 "produces": [
                     "application/json"
                 ],
@@ -3792,6 +3867,88 @@
                 "user_role": {
                     "description": "0=Member, 10=Admin, 20=Owner",
                     "type": "integer"
+                }
+            }
+        },
+        "internal_api.ConfigChanges": {
+            "type": "object",
+            "properties": {
+                "captcha.difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                    ]
+                },
+                "captcha.enabled": {
+                    "type": "boolean"
+                },
+                "rate_limit.auth_rps": {
+                    "type": "integer"
+                },
+                "rate_limit.global_rps": {
+                    "type": "integer"
+                },
+                "registration.mode": {
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "invite_only",
+                        "closed"
+                    ]
+                },
+                "security.token_expire_hours": {
+                    "type": "integer"
+                },
+                "server.dev": {
+                    "type": "boolean"
+                },
+                "server.domain": {
+                    "type": "string"
+                },
+                "server.frontend_origin": {
+                    "type": "string"
+                },
+                "server.http_port": {
+                    "type": "integer"
+                },
+                "server.max_file_size_mb": {
+                    "type": "integer"
+                },
+                "server.max_video_duration_sec": {
+                    "type": "integer"
+                },
+                "server.max_video_size_mb": {
+                    "type": "integer"
+                },
+                "server.trust_proxy_headers": {
+                    "type": "boolean"
+                },
+                "update.github_fallback": {
+                    "type": "boolean"
+                },
+                "update.manifest_url": {
+                    "type": "string"
+                },
+                "update.notify_admins": {
+                    "type": "boolean"
+                },
+                "voice.embedded_turn_enabled": {
+                    "type": "boolean"
+                },
+                "voice.max_participants_per_call": {
+                    "type": "integer"
+                },
+                "voice.mode": {
+                    "type": "string",
+                    "enum": [
+                        "webrtc",
+                        "raw_udp"
+                    ]
+                },
+                "voice.public_ip": {
+                    "type": "string"
                 }
             }
         },
@@ -4273,6 +4430,15 @@
                 }
             }
         },
+        "internal_api.RestartRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "Password is the owner's current password.",
+                    "type": "string"
+                }
+            }
+        },
         "internal_api.ServerInfoResponse": {
             "type": "object",
             "properties": {
@@ -4396,8 +4562,7 @@
             "type": "object",
             "properties": {
                 "changes": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "$ref": "#/definitions/internal_api.ConfigChanges"
                 },
                 "password": {
                     "type": "string"
@@ -4424,6 +4589,11 @@
         "internal_api.UpdateInfoResponse": {
             "type": "object",
             "properties": {
+                "can_restart": {
+                    "description": "CanRestart is true when POST /api/admin/restart can restart this install (binary mode with a restart hook).",
+                    "type": "boolean",
+                    "example": true
+                },
                 "can_update": {
                     "description": "CanUpdate is true only when the button may be used right now: binary mode, a newer release and no job running.",
                     "type": "boolean",

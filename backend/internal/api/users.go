@@ -31,10 +31,10 @@ var (
 // userNotFoundOr writes 404 when err is a missing record and a logged 500 for any other failure.
 func userNotFoundOr(w http.ResponseWriter, op string, err error) {
 	if errors.Is(err, db.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "user not found")
+		writeError(w, http.StatusNotFound, "apiErrors.user_not_found")
 		return
 	}
-	writeInternal(w, op, err, "could not load user")
+	writeInternal(w, op, err, "apiErrors.user_load_failed")
 }
 
 // ============================
@@ -103,11 +103,11 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	token, _, _ := auth.ResolveToken(r)
 
 	var body DeleteAccountRequest
-	if !decodeJSONLimit(w, r, &body, 1<<14, "invalid JSON body") {
+	if !decodeJSONLimit(w, r, &body, 1<<14, "apiErrors.invalid_json") {
 		return
 	}
 	if body.Password == "" {
-		writeError(w, http.StatusBadRequest, "password required")
+		writeError(w, http.StatusBadRequest, "apiErrors.password_required")
 		return
 	}
 	me, err := h.Store.GetUser(session.UserID)
@@ -128,7 +128,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Store.DeleteUser(session.UserID); err != nil {
-		writeInternal(w, "delete account "+session.UserID, err, "failed to delete account")
+		writeInternal(w, "delete account "+session.UserID, err, "apiErrors.account_delete_failed")
 		return
 	}
 
@@ -162,7 +162,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	session := auth.SessionFromContext(r.Context())
 	var body UpdateUserRequest
-	if !decodeJSON(w, r, &body, "invalid JSON") {
+	if !decodeJSON(w, r, &body, "apiErrors.invalid_json") {
 		return
 	}
 	if msg := validateProfileEnums(&body); msg != "" {
@@ -179,11 +179,11 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	if body.Username != "" && body.Username != u.Username {
 		if len(body.Username) < 3 {
-			writeError(w, http.StatusBadRequest, "username too short")
+			writeError(w, http.StatusBadRequest, "apiErrors.username_too_short")
 			return
 		}
 		if store.IsReservedUsername(body.Username) {
-			writeError(w, http.StatusBadRequest, "username is reserved")
+			writeError(w, http.StatusBadRequest, "apiErrors.username_reserved")
 			return
 		}
 		// Check if username is already taken by someone else
@@ -193,7 +193,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if existing != nil && existing.ID != u.ID {
-			writeError(w, http.StatusConflict, "username already taken")
+			writeError(w, http.StatusConflict, "apiErrors.username_taken")
 			return
 		}
 		u.Username = body.Username
@@ -207,19 +207,19 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	if body.Password != "" {
 		if len(body.Password) < 8 {
-			writeError(w, http.StatusBadRequest, "password too short")
+			writeError(w, http.StatusBadRequest, "apiErrors.password_too_short")
 			return
 		}
 		// Verify old password
 		valid, err := crypto.VerifyPassword(body.OldPassword, u.PwdHash)
 		if err != nil || !valid {
-			writeError(w, http.StatusBadRequest, "invalid current password")
+			writeError(w, http.StatusBadRequest, "apiErrors.current_password_invalid")
 			return
 		}
 
 		pwdHash, err := crypto.HashPassword(body.Password)
 		if err != nil {
-			writeInternal(w, "update profile: hash password", err, "failed to update profile")
+			writeInternal(w, "update profile: hash password", err, "apiErrors.profile_update_failed")
 			return
 		}
 		u.PwdHash = pwdHash
@@ -290,7 +290,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Store.UpdateUser(u); err != nil {
-		writeInternal(w, "update profile: save", err, "failed to update profile")
+		writeInternal(w, "update profile: save", err, "apiErrors.profile_update_failed")
 		return
 	}
 	if passwordChanged {
@@ -361,7 +361,7 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	users, err := h.Store.SearchUsers(q)
 	if err != nil {
-		writeInternal(w, "search users", err, "search failed")
+		writeInternal(w, "search users", err, "apiErrors.search_failed")
 		return
 	}
 	if len(users) > maxUserSearchResults {
@@ -451,10 +451,10 @@ func (h *Handler) GetPresence(w http.ResponseWriter, r *http.Request) {
 	p, err := h.Store.GetPresence(userID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "presence not found")
+			writeError(w, http.StatusNotFound, "apiErrors.presence_not_found")
 			return
 		}
-		writeInternal(w, "get presence "+userID, err, "could not load presence")
+		writeInternal(w, "get presence "+userID, err, "apiErrors.presence_load_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, PresenceResponse{LastSeen: p.LastSeen, CurrentStatus: p.CurrentStatus})

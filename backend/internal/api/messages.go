@@ -52,7 +52,7 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	// One extra row tells us whether an older page exists without a second query.
 	msgs, err := h.Store.ListMessages(ch.ID, before, limit+1)
 	if err != nil {
-		writeInternal(w, "list messages of channel "+ch.ID, err, "could not fetch messages")
+		writeInternal(w, "list messages of channel "+ch.ID, err, "apiErrors.messages_load_failed")
 		return
 	}
 	hasMore := len(msgs) > limit

@@ -35,22 +35,15 @@ type WhisperSession struct {
 	Pending           bool      `json:"pending"`
 }
 
-// voiceUserRemover is the subset of *voice.Router the Hub needs to purge a
-// user's voice-call state on disconnect. Declared here (rather than
-// importing the voice package's concrete type) to keep ws decoupled from
-// voice; wired up via SetVoiceRouter once both are constructed in main.go.
-type voiceUserRemover interface {
-	RemoveUser(userID string)
-}
-
 // RTCSignalHandler is the subset of *rtc.Manager the Hub needs: dispatching
 // inbound "call_*" signaling messages, and cleaning up a user's active call
 // state on disconnect. Declared here (rather than importing internal/rtc's
-// concrete type) for the same reason as voiceUserRemover above — wired up
+// concrete type) to keep ws decoupled from the call engines — wired up
 // via SetRTCManager once both are constructed in main.go.
 type RTCSignalHandler interface {
 	HandleSignal(userID, username, msgType string, payload json.RawMessage) error
 	RemoveUser(userID string)
+	RemoveUserFromChannel(userID, channelID string)
 	ActiveRooms() map[string][]string
 }
 
@@ -66,8 +59,10 @@ type Hub struct {
 	sessions *auth.SessionStore
 	kek      []byte
 
-	voiceRouter voiceUserRemover
 	rtc         RTCSignalHandler
+	// voiceMode is the configured calling engine; "raw_udp" makes the hello event advertise the encrypted UDP media
+	// capability instead of inferring the engine from whether rtc is set (the UDP media router is also an RTCSignalHandler).
+	voiceMode string
 
 	// background counts connection work that still reads the store (the handler goroutine and the channel-key
 	// push). Close waits for it, so shutting down never closes the database underneath a live connection.
@@ -136,17 +131,22 @@ func (h *Hub) helloMessage() *models.WSMessage {
 		Version:          version.Version,
 		APIVersion:       apistd.APIVersion,
 		MinClientVersion: h.minClientVersion,
-		Capabilities:     apistd.Capabilities(h.rtc != nil),
+		Capabilities:     h.capabilities(),
 	})
 	return &models.WSMessage{Type: "hello", Payload: payload}
 }
 
-// SetVoiceRouter wires the voice router in after construction (NewRouter
-// itself takes the Hub as its VoiceStateNotifier, so the two can't be built
-// in one step). Once set, a user's last WS connection dropping also purges
-// their voice-call state — see unregister() in client.go.
-func (h *Hub) SetVoiceRouter(r voiceUserRemover) {
-	h.voiceRouter = r
+// capabilities lists what the hello event advertises for the configured calling engine.
+func (h *Hub) capabilities() []string {
+	if h.voiceMode == "raw_udp" {
+		return apistd.CapabilitiesForMode(h.voiceMode)
+	}
+	return apistd.Capabilities(h.rtc != nil)
+}
+
+// SetVoiceMode records the configured voice.mode so the hello event matches GET /api/version. Call before serving.
+func (h *Hub) SetVoiceMode(mode string) {
+	h.voiceMode = mode
 }
 
 // SetRTCManager wires the WebRTC group-calling SFU in after construction.
@@ -611,6 +611,10 @@ func (h *Hub) BroadcastMemberJoined(channelID string, userID string) {
 
 // BroadcastMemberLeft notifies channel members that a user has left or been kicked.
 func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
+	// Someone who left or was kicked must not stay in the channel's call (both call engines implement this).
+	if h.rtc != nil {
+		h.rtc.RemoveUserFromChannel(userID, channelID)
+	}
 	payload, _ := json.Marshal(map[string]any{
 		"channel_id": channelID,
 		"user_id":    userID,

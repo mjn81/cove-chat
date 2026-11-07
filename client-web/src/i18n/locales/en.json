@@ -361,6 +361,8 @@
 		"notifications_desktop_desc": "Receive browser alerts for new messages while the tab is inactive.",
 		"notifications_sounds": "Enable notification sounds",
 		"notifications_sounds_desc": "Play a subtle sound for every incoming message.",
+		"notifications_custom": "Use Cove notification popups",
+		"notifications_custom_desc": "Show notifications as small Cove popups in the screen corner instead of system notifications.",
 		"default_device": "Default",
 		"microphone_n": "Microphone {{id}}"
 	},
@@ -641,6 +643,11 @@
 		"hint_close": "close",
 		"shortcut": "Shortcut:"
 	},
+	"calls": {
+		"nativeRequired": "Calls on this server need a native Cove app. Use the Cove desktop or Android app to join or start calls.",
+		"codecsMissing": "This app's webview cannot encode call audio (WebCodecs Opus is missing), so calls are unavailable on this server.",
+		"nativeRequiredTitle": "Calls need a native app"
+	},
 	"voice": {
 		"pause": "Pause",
 		"play_preview": "Play preview",
@@ -708,6 +715,7 @@
 					"download": "downloaded a backup"
 				},
 				"server": {
+					"restart": "restarted the server",
 					"reset": "reset the server",
 					"restore": "restored a backup",
 					"update": {
@@ -888,6 +896,8 @@
 			"restore_failed": "The restore failed.",
 			"update_docker": "Docker installs cannot update themselves. Run docker compose pull && docker compose up -d.",
 			"update_unsupported": "This install cannot update itself.",
+			"restart_docker": "Docker installs cannot restart themselves. Restart the container, for example docker compose restart.",
+			"restart_unsupported": "This install cannot restart itself. Restart it with your service manager.",
 			"update_in_progress": "An update is already running.",
 			"update_check_failed": "Could not reach GitHub to check for updates.",
 			"update_up_to_date": "The server is already up to date.",
@@ -911,6 +921,19 @@
 			"confirmMessage": "This message will be delivered to every user on this server and can't be recalled.",
 			"sent": "Notice delivered to {{n}} users",
 			"failed": "{{n}} deliveries failed"
+		},
+		"restart": {
+			"title": "Restart server",
+			"button": "Restart server",
+			"hint": "Restart to apply settings that need it, such as the call mode.",
+			"reason_docker": "Docker installs cannot restart themselves. Restart the container instead.",
+			"reason_unsupported": "This install cannot restart itself. Use your service manager.",
+			"confirm_title": "Restart the server?",
+			"confirm_body": "Everyone will be disconnected for a few seconds while the server restarts. Enter your password to continue.",
+			"confirm_action": "Restart",
+			"waiting": "Restarting, reconnecting...",
+			"done": "The server is back online.",
+			"timeout": "The server did not come back in time. Check that it is running."
 		},
 		"update": {
 			"title": "Server update",
@@ -1016,6 +1039,10 @@
 			"m60": "After 1 hour"
 		}
 	},
+	"notificationPopup": {
+		"close": "Close",
+		"dismissAll": "Close all"
+	},
 	"desktopSettings": {
 		"title": "Desktop app",
 		"closeToTray": "Keep running in the tray",
@@ -1107,5 +1134,70 @@
 					"ready": "Update ready: Cove {{version}}",
 					"notes": "What's new"
 				}
-		}
+		},
+	"apiErrors": {
+		"account_delete_failed": "Couldn't delete the account.",
+		"account_not_addable": "This account can't be added to chats.",
+		"cannot_add_members": "You don't have permission to add members.",
+		"cannot_change_owner_role": "The owner's role can't be changed.",
+		"cannot_kick_higher_role": "You can't remove someone with an equal or higher role.",
+		"cannot_kick_members": "You don't have permission to remove members.",
+		"channel_clear_failed": "Couldn't clear the channel.",
+		"channel_create_failed": "Couldn't create the channel.",
+		"channel_delete_failed": "Couldn't delete the channel.",
+		"channel_description_too_long": "Channel description is too long.",
+		"channel_id_required": "Channel ID is required.",
+		"channel_join_failed": "Couldn't join the channel.",
+		"channel_leave_failed": "Couldn't leave the channel.",
+		"channel_load_failed": "Couldn't load the channel.",
+		"channel_name_required": "Channel name can't be empty.",
+		"channel_name_too_long": "Channel name is too long.",
+		"channel_not_found": "Channel not found.",
+		"channel_update_failed": "Couldn't update the channel.",
+		"channels_list_failed": "Couldn't load channels.",
+		"current_password_invalid": "The current password is incorrect.",
+		"file_forbidden": "You don't have access to this file.",
+		"file_missing": "No file was included in the upload.",
+		"file_not_found": "File not found.",
+		"file_open_failed": "Couldn't open the file.",
+		"file_too_large": "File is too large (max {{detail}} MB).",
+		"insufficient_permissions": "You don't have permission to do that.",
+		"invalid_json": "The request was not understood.",
+		"invalid_role": "Role must be member or admin.",
+		"invalid_upload_form": "The upload request is malformed.",
+		"invite_regenerate_failed": "Couldn't create a new invite link.",
+		"kicked_cannot_rejoin": "You were removed from this channel and can't rejoin with its link.",
+		"member_not_found": "Member not found.",
+		"member_remove_failed": "Couldn't remove the member.",
+		"members_load_failed": "Couldn't load the members.",
+		"messages_load_failed": "Couldn't load messages.",
+		"not_channel_member": "You're not a member of this channel.",
+		"owner_only_delete_channel": "Only the owner can delete the channel.",
+		"owner_only_manage_roles": "Only the owner can manage roles.",
+		"password_required": "Enter your password to continue.",
+		"password_too_short": "Password is too short.",
+		"presence_load_failed": "Couldn't load the status.",
+		"presence_not_found": "Status not found.",
+		"profile_update_failed": "Couldn't update the profile.",
+		"relationship_action_unknown": "Unknown action.",
+		"relationship_load_failed": "Couldn't load the relationship.",
+		"relationship_self": "You can't do that with yourself.",
+		"relationship_update_failed": "Couldn't update the relationship.",
+		"relationships_load_failed": "Couldn't load your contacts.",
+		"role_update_failed": "Couldn't update the role.",
+		"search_failed": "Search failed.",
+		"target_user_required": "Choose a user.",
+		"too_many_members": "Too many members.",
+		"too_many_user_ids": "Too many users selected.",
+		"upload_read_failed": "Couldn't read the uploaded file.",
+		"upload_save_failed": "Couldn't save the file.",
+		"user_ids_required": "Choose at least one user.",
+		"user_load_failed": "Couldn't load the user.",
+		"user_not_found": "User not found.",
+		"username_reserved": "That username is reserved.",
+		"username_taken": "That username is already taken.",
+		"username_too_short": "Username is too short.",
+		"video_too_large": "The video exceeds the maximum size of {{detail}} MB.",
+		"video_too_long": "Video messages can't exceed {{detail}} seconds."
+	}
 }

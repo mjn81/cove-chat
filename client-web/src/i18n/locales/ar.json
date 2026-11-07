@@ -361,6 +361,8 @@
     "notifications_desktop_desc": "استلم تنبيهات المتصفح للرسائل الجديدة عندما يكون التبويب غير نشط.",
     "notifications_sounds": "تفعيل أصوات الإشعارات",
     "notifications_sounds_desc": "تشغيل صوت خفيف لكل رسالة واردة.",
+    "notifications_custom": "استخدام نوافذ إشعارات كوف",
+    "notifications_custom_desc": "عرض الإشعارات كنوافذ صغيرة من كوف في زاوية الشاشة بدل إشعارات النظام.",
     "default_device": "الافتراضي",
     "microphone_n": "الميكروفون {{id}}"
   },
@@ -641,6 +643,11 @@
     "hint_close": "إغلاق",
     "shortcut": "الاختصار:"
   },
+  "calls": {
+    "nativeRequired": "المكالمات على هذا الخادم تتطلب تطبيق Cove الأصلي. استخدم تطبيق Cove لسطح المكتب أو أندرويد لبدء المكالمات أو الانضمام إليها.",
+    "codecsMissing": "لا تستطيع واجهة الويب في هذا التطبيق ترميز صوت المكالمة (WebCodecs Opus غير متوفر)، لذا لا تتوفر المكالمات على هذا الخادم.",
+    "nativeRequiredTitle": "المكالمات تتطلب تطبيقًا أصليًا"
+  },
   "voice": {
     "pause": "إيقاف مؤقت",
     "play_preview": "تشغيل المعاينة",
@@ -708,6 +715,7 @@
           "download": "نزّل نسخة احتياطية"
         },
         "server": {
+          "restart": "أعاد تشغيل الخادم",
           "reset": "أعاد ضبط الخادم",
           "restore": "استعاد نسخة احتياطية",
             "update": {
@@ -888,6 +896,8 @@
       "restore_failed": "فشلت الاستعادة.",
         "update_docker": "لا تستطيع تثبيتات Docker تحديث نفسها. شغّل docker compose pull && docker compose up -d.",
         "update_unsupported": "لا يمكن لهذا التثبيت تحديث نفسه.",
+        "restart_docker": "لا تستطيع تثبيتات Docker إعادة تشغيل نفسها. أعد تشغيل الحاوية، مثلاً docker compose restart.",
+        "restart_unsupported": "لا يمكن لهذا التثبيت إعادة تشغيل نفسه. أعد تشغيله عبر مدير الخدمات لديك.",
         "update_in_progress": "هناك تحديث قيد التنفيذ بالفعل.",
         "update_check_failed": "تعذّر الوصول إلى GitHub للتحقق من التحديثات.",
         "update_up_to_date": "الخادم محدَّث بالفعل.",
@@ -912,6 +922,19 @@
       "sent": "تم تسليم الإشعار إلى {{n}} مستخدم",
       "failed": "فشل التسليم إلى {{n}} مستخدم"
     },
+      "restart": {
+        "title": "إعادة تشغيل الخادم",
+        "button": "إعادة تشغيل الخادم",
+        "hint": "أعد التشغيل لتطبيق الإعدادات التي تتطلب ذلك، مثل وضع المكالمات.",
+        "reason_docker": "لا تستطيع تثبيتات Docker إعادة تشغيل نفسها. أعد تشغيل الحاوية بدلاً من ذلك.",
+        "reason_unsupported": "لا يمكن لهذا التثبيت إعادة تشغيل نفسه. استخدم مدير الخدمات لديك.",
+        "confirm_title": "إعادة تشغيل الخادم؟",
+        "confirm_body": "سيُقطع اتصال الجميع لبضع ثوانٍ أثناء إعادة تشغيل الخادم. أدخل كلمة المرور للمتابعة.",
+        "confirm_action": "إعادة التشغيل",
+        "waiting": "جارٍ إعادة التشغيل، وإعادة الاتصال...",
+        "done": "عاد الخادم إلى العمل.",
+        "timeout": "لم يعد الخادم في الوقت المناسب. تحقق من أنه يعمل."
+      },
       "update": {
         "title": "تحديث الخادم",
         "current": "الإصدار المثبّت",
@@ -1016,6 +1039,10 @@
       "m60": "بعد ساعة"
     }
   },
+  "notificationPopup": {
+  	"close": "إغلاق",
+  	"dismissAll": "إغلاق الكل"
+  },
   "desktopSettings": {
     "title": "تطبيق سطح المكتب",
     "closeToTray": "الاستمرار في علبة النظام",
@@ -1107,5 +1134,70 @@
           "ready": "التحديث جاهز: Cove {{version}}",
           "notes": "الجديد"
         }
-    }
+    },
+	"apiErrors": {
+		"account_delete_failed": "تعذر حذف الحساب.",
+		"account_not_addable": "لا يمكن إضافة هذا الحساب إلى المحادثات.",
+		"cannot_add_members": "ليس لديك صلاحية لإضافة أعضاء.",
+		"cannot_change_owner_role": "لا يمكن تغيير دور المالك.",
+		"cannot_kick_higher_role": "لا يمكنك إزالة شخص بدور مساوٍ أو أعلى.",
+		"cannot_kick_members": "ليس لديك صلاحية لإزالة الأعضاء.",
+		"channel_clear_failed": "تعذر مسح القناة.",
+		"channel_create_failed": "تعذر إنشاء القناة.",
+		"channel_delete_failed": "تعذر حذف القناة.",
+		"channel_description_too_long": "وصف القناة طويل جداً.",
+		"channel_id_required": "معرّف القناة مطلوب.",
+		"channel_join_failed": "تعذر الانضمام إلى القناة.",
+		"channel_leave_failed": "تعذرت مغادرة القناة.",
+		"channel_load_failed": "تعذر تحميل القناة.",
+		"channel_name_required": "لا يمكن ترك اسم القناة فارغاً.",
+		"channel_name_too_long": "اسم القناة طويل جداً.",
+		"channel_not_found": "لم يتم العثور على القناة.",
+		"channel_update_failed": "تعذر تحديث القناة.",
+		"channels_list_failed": "تعذر تحميل القنوات.",
+		"current_password_invalid": "كلمة المرور الحالية غير صحيحة.",
+		"file_forbidden": "ليس لديك صلاحية الوصول إلى هذا الملف.",
+		"file_missing": "لم يتم إرفاق أي ملف.",
+		"file_not_found": "لم يتم العثور على الملف.",
+		"file_open_failed": "تعذر فتح الملف.",
+		"file_too_large": "الملف كبير جداً (الحد الأقصى {{detail}} ميغابايت).",
+		"insufficient_permissions": "ليس لديك صلاحية للقيام بذلك.",
+		"invalid_json": "لم يتم فهم الطلب.",
+		"invalid_role": "يجب أن يكون الدور عضواً أو مشرفاً.",
+		"invalid_upload_form": "طلب الرفع غير صالح.",
+		"invite_regenerate_failed": "تعذر إنشاء رابط دعوة جديد.",
+		"kicked_cannot_rejoin": "تمت إزالتك من هذه القناة ولا يمكنك الانضمام إليها بالرابط.",
+		"member_not_found": "لم يتم العثور على العضو.",
+		"member_remove_failed": "تعذرت إزالة العضو.",
+		"members_load_failed": "تعذر تحميل الأعضاء.",
+		"messages_load_failed": "تعذر تحميل الرسائل.",
+		"not_channel_member": "لست عضواً في هذه القناة.",
+		"owner_only_delete_channel": "المالك فقط يمكنه حذف القناة.",
+		"owner_only_manage_roles": "المالك فقط يمكنه إدارة الأدوار.",
+		"password_required": "أدخل كلمة المرور للمتابعة.",
+		"password_too_short": "كلمة المرور قصيرة جداً.",
+		"presence_load_failed": "تعذر تحميل الحالة.",
+		"presence_not_found": "لم يتم العثور على الحالة.",
+		"profile_update_failed": "تعذر تحديث الملف الشخصي.",
+		"relationship_action_unknown": "إجراء غير معروف.",
+		"relationship_load_failed": "تعذر تحميل العلاقة.",
+		"relationship_self": "لا يمكنك القيام بذلك مع نفسك.",
+		"relationship_update_failed": "تعذر تحديث العلاقة.",
+		"relationships_load_failed": "تعذر تحميل جهات الاتصال.",
+		"role_update_failed": "تعذر تحديث الدور.",
+		"search_failed": "فشل البحث.",
+		"target_user_required": "اختر مستخدماً.",
+		"too_many_members": "عدد الأعضاء أكبر من المسموح.",
+		"too_many_user_ids": "عدد المستخدمين المحددين أكبر من المسموح.",
+		"upload_read_failed": "تعذرت قراءة الملف المرفوع.",
+		"upload_save_failed": "تعذر حفظ الملف.",
+		"user_ids_required": "اختر مستخدماً واحداً على الأقل.",
+		"user_load_failed": "تعذر تحميل المستخدم.",
+		"user_not_found": "لم يتم العثور على المستخدم.",
+		"username_reserved": "اسم المستخدم هذا محجوز.",
+		"username_taken": "اسم المستخدم هذا مستخدم بالفعل.",
+		"username_too_short": "اسم المستخدم قصير جداً.",
+		"video_too_large": "الفيديو يتجاوز الحد الأقصى للحجم وهو {{detail}} ميغابايت.",
+		"video_too_long": "لا يمكن أن تتجاوز رسائل الفيديو {{detail}} ثانية."
+	}
 }

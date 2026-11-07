@@ -25,10 +25,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -43,13 +43,13 @@ import (
 	"cove/backend/internal/db"
 	"cove/backend/internal/geoip"
 	"cove/backend/internal/logger"
+	"cove/backend/internal/mediarouter"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
 	"cove/backend/internal/rtc"
 	"cove/backend/internal/storage"
 	"cove/backend/internal/store"
 	"cove/backend/internal/version"
-	"cove/backend/internal/voice"
 	"cove/backend/internal/ws"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -61,6 +61,11 @@ func main() {
 		logger.Fatalf("Config load failed: %v", err)
 	}
 	middleware.TrustProxyHeaders = cfg.Server.TrustProxyHeaders
+
+	// "cove-server repair" must run before the database is opened, because a damaged table makes opening it fail.
+	if len(os.Args) >= 2 && os.Args[1] == "repair" {
+		os.Exit(runRepair(cfg.Database.Path + "/main"))
+	}
 
 	// ── 2. Derive KEK ─────────────────────────────────────────────────────
 	kek := crypto.DeriveKEK(cfg.Security.MasterPassword)
@@ -74,6 +79,17 @@ func main() {
 
 	// ── 4. Open BadgerDB ──────────────────────────────────────────────────
 	mainPath := cfg.Database.Path + "/main"
+	// A damaged table file would stop the server from starting at all, so repair it first and tell the admins once
+	// the chat is up. Anything that fails here is left for Open to report.
+	var repaired db.RepairReport
+	if cfg.Database.AutoRepair {
+		if repaired, err = db.Repair(mainPath); err != nil {
+			logger.Errorf("automatic database repair failed: %v", err)
+		} else if len(repaired.Removed) > 0 {
+			logger.Warnf("database repaired automatically: removed %s; original kept in %s",
+				strings.Join(repaired.Removed, ", "), repaired.BackupDir)
+		}
+	}
 	database, err := db.Open(mainPath, dek)
 	if err != nil {
 		logger.Fatalf("Database open failed: %v", err)
@@ -200,6 +216,9 @@ func main() {
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 	hub.SetMinClientVersion(cfg.Server.MinClientVersion)
+	if _, err := apiHandler.NotifyAdminsOfDatabaseRepair(repaired); err != nil {
+		logger.Warnf("could not tell the admins about the database repair: %v", err)
+	}
 
 	// Sign-up proof-of-work. The service always exists; the admin panel switches enforcement on and off live.
 	apiHandler.Captcha = captcha.New(nil, 5*time.Minute)
@@ -223,19 +242,17 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// ── 8. UDP voice router ────────────────────────────────────────────────
-	// Independent of Voice.Mode: this is the legacy audio-only fallback,
-	// left running whenever a UDP port is configured regardless of which
-	// engine group calls use, since desktop clients may still target it.
-	var udpConn *net.UDPConn
-	if cfg.Server.UDPPort > 0 {
-		voiceRouter := voice.NewRouter(sessions, hub, dataStore)
-		hub.SetVoiceRouter(voiceRouter)
-		var err error
-		udpConn, err = startUDPRouter(cfg.Server.UDPPort, voiceRouter)
-		if err != nil {
-			logger.Warnf("UDP voice router failed to start: %v", err)
-		}
+	// ── 8. Encrypted UDP media router (air-gapped mode only) ───────────────
+	// docs/udp-media.md. In the default "webrtc" mode nothing listens on server.udp_port; there is no other UDP voice
+	// path (the unencrypted audio-only router was removed).
+	hub.SetVoiceMode(cfg.Voice.Mode)
+	mediaRouter, udpConn, err := mediarouter.Start(cfg.Voice.Mode, cfg.Server.UDPPort,
+		mediarouter.Config{MaxParticipantsPerCall: cfg.Voice.MaxParticipantsPerCall}, dataStore, hub)
+	if err != nil {
+		logger.Warnf("UDP media router failed to start: %v", err)
+	}
+	if mediaRouter != nil {
+		hub.SetRTCManager(mediaRouter)
 	}
 
 	// ── 8b. WebRTC group calling (SFU) ─────────────────────────────────────
@@ -330,6 +347,9 @@ func main() {
 	if udpConn != nil {
 		_ = udpConn.Close()
 	}
+	if mediaRouter != nil {
+		mediaRouter.Stop()
+	}
 
 	// 2b. Tear down all active WebRTC calls and the embedded TURN server
 	if rtcManager != nil {
@@ -363,25 +383,6 @@ func main() {
 	}
 }
 
-// startUDPRouter opens a raw UDP socket for desktop voice routing.
-// The server routes opaque audio packets — it never decodes them.
-func startUDPRouter(port int, router *voice.Router) (*net.UDPConn, error) {
-	addr := &net.UDPAddr{Port: port}
-	conn, err := net.ListenUDP("udp", addr)
-	if err != nil {
-		logger.Warnf("UDP router failed on port %d: %v", port, err)
-		return nil, err
-	}
-	logger.Infof("UDP voice router on :%d", port)
-
-	go func() {
-		defer func() { _ = conn.Close() }()
-		router.HandleConn(conn)
-	}()
-
-	return conn, nil
-}
-
 // runRestore implements the restore subcommand and returns the exit code.
 func runRestore(dataStore *store.Store, path string, force bool) int {
 	pass := os.Getenv("COVE_BACKUP_PASSPHRASE")
@@ -408,5 +409,25 @@ func runRestore(dataStore *store.Store, path string, force bool) int {
 		return 1
 	}
 	logger.Info("restore complete - start the server normally")
+	return 0
+}
+
+// runRepair implements "cove-server repair": it drops database table files that were left as zeros by a power loss
+// or a killed process, keeps a copy of the original, and leaves every other record intact. It exits non-zero only
+// when the repair itself failed; a healthy database is reported and left alone.
+func runRepair(mainPath string) int {
+	report, err := db.Repair(mainPath)
+	if err != nil {
+		logger.Errorf("repair failed: %v", err)
+		return 1
+	}
+	if len(report.Removed) == 0 {
+		logger.Info("repair: no damaged table files found, nothing was changed")
+		return 0
+	}
+	logger.Warnf("repair: removed %d damaged table file(s): %s", len(report.Removed), strings.Join(report.Removed, ", "))
+	logger.Warn("repair: records that only existed in those files, usually the most recent changes, are lost")
+	logger.Infof("repair: the original database was copied to %s", report.BackupDir)
+	logger.Info("repair complete - start the server normally")
 	return 0
 }

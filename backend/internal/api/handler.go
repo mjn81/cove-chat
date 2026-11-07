@@ -127,6 +127,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("GET /api/admin/update", protectAdmin(h.AdminGetUpdate))
 	mux.Handle("POST /api/admin/update", protectOwner(h.AdminStartUpdate))
 	mux.Handle("POST /api/admin/update/upload", protectOwner(h.AdminUploadUpdate))
+	mux.Handle("POST /api/admin/restart", protectOwner(h.AdminRestart))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "admin.errors.not_found")
 	}))

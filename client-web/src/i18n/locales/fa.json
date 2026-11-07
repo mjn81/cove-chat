@@ -361,6 +361,8 @@
     "notifications_desktop_desc": "هنگام غیرفعال بودن تب، برای پیام‌های جدید اعلان مرورگر دریافت کنید.",
     "notifications_sounds": "فعال‌سازی صدای اعلان‌ها",
     "notifications_sounds_desc": "برای هر پیام ورودی یک صدای ملایم پخش شود.",
+    "notifications_custom": "استفاده از پنجره‌های اعلان کاو",
+    "notifications_custom_desc": "اعلان‌ها به‌جای اعلان‌های سیستم، به‌صورت پنجره‌های کوچک کاو در گوشهٔ صفحه نمایش داده می‌شوند.",
     "default_device": "پیش‌فرض",
     "microphone_n": "میکروفون {{id}}"
   },
@@ -641,6 +643,11 @@
     "hint_close": "بستن",
     "shortcut": "میانبر:"
   },
+  "calls": {
+    "nativeRequired": "تماس‌ها در این سرور به برنامه بومی Cove نیاز دارند. برای شروع یا پیوستن به تماس از برنامه دسکتاپ یا اندروید Cove استفاده کنید.",
+    "codecsMissing": "وب‌ویوی این برنامه نمی‌تواند صدای تماس را رمزگذاری کند (WebCodecs Opus در دسترس نیست)، بنابراین تماس در این سرور ممکن نیست.",
+    "nativeRequiredTitle": "تماس به برنامه بومی نیاز دارد"
+  },
   "voice": {
     "pause": "توقف",
     "play_preview": "پخش پیش‌نمایش",
@@ -708,6 +715,7 @@
           "download": "پشتیبان دریافت کرد"
         },
         "server": {
+          "restart": "سرور را راه‌اندازی مجدد کرد",
           "reset": "سرور را بازنشانی کرد",
           "restore": "پشتیبان را بازیابی کرد",
             "update": {
@@ -888,6 +896,8 @@
       "restore_failed": "بازیابی ناموفق بود.",
         "update_docker": "نصب‌های داکر نمی‌توانند خودشان را به‌روز کنند. دستور docker compose pull && docker compose up -d را اجرا کنید.",
         "update_unsupported": "این نصب نمی‌تواند خودش را به‌روز کند.",
+        "restart_docker": "نصب‌های Docker نمی‌توانند خودشان را راه‌اندازی مجدد کنند. کانتینر را راه‌اندازی مجدد کنید، مثلاً docker compose restart.",
+        "restart_unsupported": "این نصب نمی‌تواند خودش را راه‌اندازی مجدد کند. آن را با مدیر سرویس راه‌اندازی مجدد کنید.",
         "update_in_progress": "یک به‌روزرسانی از قبل در حال اجراست.",
         "update_check_failed": "اتصال به گیت‌هاب برای بررسی به‌روزرسانی ممکن نشد.",
         "update_up_to_date": "سرور از قبل به‌روز است.",
@@ -912,6 +922,19 @@
       "sent": "اعلان به {{n}} کاربر ارسال شد",
       "failed": "ارسال به {{n}} کاربر ناموفق بود"
     },
+      "restart": {
+        "title": "راه‌اندازی مجدد سرور",
+        "button": "راه‌اندازی مجدد سرور",
+        "hint": "برای اعمال تنظیماتی که به آن نیاز دارند، مانند حالت تماس، راه‌اندازی مجدد کنید.",
+        "reason_docker": "نصب‌های Docker نمی‌توانند خودشان را راه‌اندازی مجدد کنند. به‌جای آن کانتینر را راه‌اندازی مجدد کنید.",
+        "reason_unsupported": "این نصب نمی‌تواند خودش را راه‌اندازی مجدد کند. از مدیر سرویس خود استفاده کنید.",
+        "confirm_title": "سرور راه‌اندازی مجدد شود؟",
+        "confirm_body": "در طول راه‌اندازی مجدد سرور، اتصال همه برای چند ثانیه قطع می‌شود. برای ادامه رمز عبور خود را وارد کنید.",
+        "confirm_action": "راه‌اندازی مجدد",
+        "waiting": "در حال راه‌اندازی مجدد، اتصال دوباره...",
+        "done": "سرور دوباره آنلاین شد.",
+        "timeout": "سرور به‌موقع بازنگشت. بررسی کنید که در حال اجرا باشد."
+      },
       "update": {
         "title": "به‌روزرسانی سرور",
         "current": "نسخه نصب‌شده",
@@ -1016,6 +1039,10 @@
       "m60": "پس از ۱ ساعت"
     }
   },
+  "notificationPopup": {
+  	"close": "بستن",
+  	"dismissAll": "بستن همه"
+  },
   "desktopSettings": {
     "title": "برنامه دسکتاپ",
     "closeToTray": "ادامه اجرا در سینی سیستم",
@@ -1107,5 +1134,70 @@
           "ready": "به‌روزرسانی آماده است: Cove {{version}}",
           "notes": "تازه‌ها"
         }
-    }
+    },
+	"apiErrors": {
+		"account_delete_failed": "حذف حساب انجام نشد.",
+		"account_not_addable": "این حساب را نمی‌توان به گفتگو اضافه کرد.",
+		"cannot_add_members": "شما اجازه افزودن عضو را ندارید.",
+		"cannot_change_owner_role": "نقش مالک قابل تغییر نیست.",
+		"cannot_kick_higher_role": "نمی‌توانید کسی را که نقش برابر یا بالاتر دارد حذف کنید.",
+		"cannot_kick_members": "شما اجازه حذف عضو را ندارید.",
+		"channel_clear_failed": "پاک‌سازی کانال انجام نشد.",
+		"channel_create_failed": "ساخت کانال انجام نشد.",
+		"channel_delete_failed": "حذف کانال انجام نشد.",
+		"channel_description_too_long": "توضیحات کانال بیش از حد طولانی است.",
+		"channel_id_required": "شناسه کانال لازم است.",
+		"channel_join_failed": "پیوستن به کانال انجام نشد.",
+		"channel_leave_failed": "ترک کانال انجام نشد.",
+		"channel_load_failed": "بارگذاری کانال انجام نشد.",
+		"channel_name_required": "نام کانال نمی‌تواند خالی باشد.",
+		"channel_name_too_long": "نام کانال بیش از حد طولانی است.",
+		"channel_not_found": "کانال پیدا نشد.",
+		"channel_update_failed": "به‌روزرسانی کانال انجام نشد.",
+		"channels_list_failed": "بارگذاری کانال‌ها انجام نشد.",
+		"current_password_invalid": "رمز عبور فعلی نادرست است.",
+		"file_forbidden": "شما به این فایل دسترسی ندارید.",
+		"file_missing": "هیچ فایلی همراه بارگذاری نبود.",
+		"file_not_found": "فایل پیدا نشد.",
+		"file_open_failed": "باز کردن فایل انجام نشد.",
+		"file_too_large": "حجم فایل بیش از حد مجاز است (حداکثر {{detail}} مگابایت).",
+		"insufficient_permissions": "شما اجازه انجام این کار را ندارید.",
+		"invalid_json": "درخواست قابل فهم نبود.",
+		"invalid_role": "نقش باید عضو یا مدیر باشد.",
+		"invalid_upload_form": "درخواست بارگذاری نامعتبر است.",
+		"invite_regenerate_failed": "ساخت پیوند دعوت جدید انجام نشد.",
+		"kicked_cannot_rejoin": "شما از این کانال حذف شده‌اید و نمی‌توانید با پیوند آن دوباره بپیوندید.",
+		"member_not_found": "عضو پیدا نشد.",
+		"member_remove_failed": "حذف عضو انجام نشد.",
+		"members_load_failed": "بارگذاری اعضا انجام نشد.",
+		"messages_load_failed": "بارگذاری پیام‌ها انجام نشد.",
+		"not_channel_member": "شما عضو این کانال نیستید.",
+		"owner_only_delete_channel": "فقط مالک می‌تواند کانال را حذف کند.",
+		"owner_only_manage_roles": "فقط مالک می‌تواند نقش‌ها را مدیریت کند.",
+		"password_required": "برای ادامه رمز عبور خود را وارد کنید.",
+		"password_too_short": "رمز عبور بیش از حد کوتاه است.",
+		"presence_load_failed": "بارگذاری وضعیت انجام نشد.",
+		"presence_not_found": "وضعیت پیدا نشد.",
+		"profile_update_failed": "به‌روزرسانی نمایه انجام نشد.",
+		"relationship_action_unknown": "عملیات ناشناخته است.",
+		"relationship_load_failed": "بارگذاری رابطه انجام نشد.",
+		"relationship_self": "نمی‌توانید این کار را روی خودتان انجام دهید.",
+		"relationship_update_failed": "به‌روزرسانی رابطه انجام نشد.",
+		"relationships_load_failed": "بارگذاری مخاطبان انجام نشد.",
+		"role_update_failed": "به‌روزرسانی نقش انجام نشد.",
+		"search_failed": "جستجو انجام نشد.",
+		"target_user_required": "یک کاربر را انتخاب کنید.",
+		"too_many_members": "تعداد اعضا بیش از حد مجاز است.",
+		"too_many_user_ids": "تعداد کاربران انتخاب‌شده بیش از حد مجاز است.",
+		"upload_read_failed": "خواندن فایل بارگذاری‌شده انجام نشد.",
+		"upload_save_failed": "ذخیره فایل انجام نشد.",
+		"user_ids_required": "حداقل یک کاربر را انتخاب کنید.",
+		"user_load_failed": "بارگذاری کاربر انجام نشد.",
+		"user_not_found": "کاربر پیدا نشد.",
+		"username_reserved": "این نام کاربری رزرو شده است.",
+		"username_taken": "این نام کاربری قبلاً گرفته شده است.",
+		"username_too_short": "نام کاربری بیش از حد کوتاه است.",
+		"video_too_large": "حجم ویدیو از حداکثر {{detail}} مگابایت بیشتر است.",
+		"video_too_long": "پیام ویدیویی نمی‌تواند از {{detail}} ثانیه بیشتر باشد."
+	}
 }

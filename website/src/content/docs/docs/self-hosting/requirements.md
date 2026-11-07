@@ -32,7 +32,7 @@ Without it everything else works. Videos are stored and served as uploaded, so t
 | 4000 | TCP | API and WebSocket | `server.http_port` |
 | 3478 | UDP | Embedded STUN/TURN | `voice.embedded_turn_port` |
 | 50000-50100 | UDP | WebRTC media | `voice.webrtc_port_min` / `voice.webrtc_port_max` |
-| 9090 | UDP | Raw UDP voice (air-gapped mode only) | `server.udp_port` |
+| 9090 | UDP | Encrypted UDP media (air-gapped `raw_udp` mode only) | `server.udp_port` |
 | 3000 | TCP | Web client container | compose file |
 
 Open the UDP ports on your firewall and forward them if the server is behind NAT. See [Voice and calls](../../configuration/voice-and-calls/).

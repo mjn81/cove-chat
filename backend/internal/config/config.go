@@ -62,10 +62,12 @@ type AdminConfig struct {
 // (internal/rtc) using DTLS-SRTP encrypted media, with an embedded STUN/TURN
 // server for NAT traversal — no external signaling/media services involved.
 //
-// Mode "raw_udp" keeps the original unencrypted, audio-only UDP packet
-// router (internal/voice) for isolated/LAN deployments where every client
-// can already reach the server directly and the DTLS/ICE overhead of
-// WebRTC isn't wanted. It has no video/screen-share support by design.
+// Mode "raw_udp" runs the encrypted UDP media router (internal/mediarouter,
+// docs/udp-media.md) for isolated/LAN deployments where every client can
+// already reach the server directly and ICE/STUN/TURN isn't available. It
+// carries audio, video and screen share with per-session AES-256-GCM, but
+// only native clients can speak it: browsers cannot open raw UDP sockets,
+// so the web client disables its call buttons in this mode.
 type VoiceConfig struct {
 	Mode string `toml:"mode"` // "webrtc" (default) | "raw_udp"
 
@@ -85,7 +87,7 @@ type VoiceConfig struct {
 	// and the default — for it to assume outbound internet access is
 	// available. A deployment with no internet egress at all (genuinely
 	// isolated/air-gapped) should set Mode to "raw_udp" instead
-	// (internal/voice's plain UDP router), not run "webrtc" with this unset.
+	// (internal/mediarouter's encrypted UDP router), not run "webrtc" with this unset.
 	//
 	//   "auto"    - (default) discover it via a one-time STUN query at
 	//             startup (see internal/rtc/discover.go). A public IP can
@@ -120,6 +122,8 @@ type VoiceConfig struct {
 type ServerConfig struct {
 	Domain              string `toml:"domain"`
 	HTTPPort            int    `toml:"http_port"`
+	// UDPPort is the encrypted UDP media router port; it is used only when voice.mode = "raw_udp" (otherwise nothing
+	// listens on it). Old config files that still carry the key keep loading.
 	UDPPort             int    `toml:"udp_port"`
 	MaxFileSizeMB       int    `toml:"max_file_size_mb"`
 	MaxVideoSizeMB      int    `toml:"max_video_size_mb"`
@@ -147,6 +151,9 @@ type SecurityConfig struct {
 
 type DatabaseConfig struct {
 	Path string `toml:"path"`
+	// AutoRepair makes the server drop zero-filled database table files (left by a power loss or a killed process)
+	// at start-up instead of refusing to start, and tell the admins. On by default; see db.Repair.
+	AutoRepair bool `toml:"auto_repair"`
 }
 
 type StorageConfig struct {
@@ -193,7 +200,8 @@ func defaults() *Config {
 			TokenExpireHours: 24,
 		},
 		Database: DatabaseConfig{
-			Path: "./data/db",
+			Path:       "./data/db",
+			AutoRepair: true,
 		},
 		Storage: StorageConfig{
 			UploadDir: "./data/uploads",
@@ -213,7 +221,7 @@ func defaults() *Config {
 			WebRTCPortMax:          50100,
 			// "webrtc" mode is the internet-capable path — a deployment
 			// that genuinely has no internet egress (air-gapped/isolated)
-			// should use Mode "raw_udp" instead (internal/voice), not
+			// should use Mode "raw_udp" instead (internal/mediarouter), not
 			// "webrtc" with this left empty. So it's safe, and more useful
 			// out of the box, to default to auto-detecting the public IP
 			// via STUN here rather than requiring every operator to set it

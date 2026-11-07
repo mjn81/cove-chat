@@ -1,6 +1,6 @@
 ---
 title: Voice and calls
-description: WebRTC SFU versus raw UDP, TURN, public IP and firewall setup for calls.
+description: WebRTC SFU versus the encrypted UDP media router, TURN, public IP and firewall setup for calls.
 ---
 
 Cove has two call engines, selected by `voice.mode`.
@@ -8,8 +8,9 @@ Cove has two call engines, selected by `voice.mode`.
 | | `webrtc` (default) | `raw_udp` |
 |---|---|---|
 | Audio | Yes | Yes |
-| Video and screen share | Yes | No |
-| Encryption | DTLS-SRTP | None |
+| Video and screen share | Yes | Yes (native clients only) |
+| Encryption | DTLS-SRTP | AES-256-GCM per session (docs/udp-media.md) |
+| Web client | Yes | No: call buttons are disabled; use the desktop or Android app |
 | NAT traversal | ICE, STUN and embedded TURN | None; clients must reach the server directly |
 | Best for | Internet-facing servers | Air-gapped or trusted LANs |
 
@@ -34,7 +35,9 @@ Browsers only allow microphone, camera and screen capture on HTTPS (or localhost
 mode = "raw_udp"
 ```
 
-Audio flows over UDP port `server.udp_port` (default 9090) with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. The desktop client supports it; calls have no video or screen sharing.
+Calls run on the encrypted UDP media router (audio, video and screen share, AES-256-GCM per session; see `docs/udp-media.md`) on UDP port `server.udp_port` (default 9090), with no ICE, STUN or TURN. Use it on isolated networks with no internet egress. In `webrtc` mode nothing listens on `server.udp_port`.
+
+Only native clients can speak it. The Windows desktop app can place and join these calls (audio, camera and screen share; it needs the webview's WebCodecs support, which is still being tested on real hardware). The Android app can too (audio, camera and screen share; tested on an emulator against a test client, not yet on real phones). The web client disables its call buttons because a browser cannot do raw UDP. The older unencrypted, audio-only UDP format has been removed.
 
 ## Troubleshooting
 

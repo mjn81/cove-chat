@@ -48,6 +48,7 @@ Every non-2xx JSON response MUST be:
 - `error` is for people; clients MAY show it. It can change between releases. Clients MUST NOT branch on it.
 - `code` is for programs; it is stable. Clients branch on it. A client that sees an unknown code MUST fall back to the HTTP status.
 - `details` is optional and code-specific (for example `min_client_version`).
+- For the user-facing handlers (channels, files, users, relationships, messages) `error` is an i18n key `apiErrors.<name>`, optionally followed by `: detail` (a limit, for example `apiErrors.file_too_large: 10`). Clients translate it from the `apiErrors` locale object and show any other text as-is. Older servers send plain English; the same rule covers them.
 - When a handler gives no code, the server derives one from the status (501 maps to `feature_unsupported`, 413 to `payload_too_large`).
 - Every layer (handlers, auth, rate limiting, client-version check, WebSocket upgrade) writes the envelope through the same helper (`apistd.WriteError`), always as `application/json`. JSON request bodies are size-capped; an oversize body is a 413 `payload_too_large`, never silently truncated.
 
@@ -67,6 +68,7 @@ Registry (`backend/internal/apistd`):
 | `payload_too_large` | 413 | Body or file over a limit. |
 | `method_not_allowed` | 405 | Wrong HTTP method. |
 | `service_unavailable` | 503 | Temporarily down. |
+| `invite_not_allowed` | WebSocket | An `invite` message pointed at a channel the sender may not invite to (see section 8). |
 | `internal` | 5xx | Server fault; details are logged, never returned. |
 
 New codes are additive. Never reuse or repurpose a code.
@@ -78,13 +80,13 @@ New codes are additive. Never reuse or repurpose a code.
 - Clients MUST ignore unknown WebSocket event types (no crash, no disconnect).
 - Clients MUST render an unknown message type as a placeholder card ("This message needs a newer version of Cove") instead of failing; the message keeps its place in the timeline.
 - Servers MUST accept requests with missing optional fields and ignore unknown ones, and MUST ignore unknown WebSocket event types from clients (logged at Debug; the connection stays open).
-- A change that cannot satisfy these rules is breaking: bump `api_version` and follow section 8.
+- A change that cannot satisfy these rules is breaking: bump `api_version` and follow the deprecation policy (section 10).
 
 ## 6. Capabilities
 
 The server advertises `capabilities: string[]` in `/api/version` and in the WebSocket `hello` event. Clients gate UI on `capabilities.includes("x")`, never on version comparisons. A client MUST treat a missing `capabilities` field (old server) as "none of the optional features", and unknown capability names as irrelevant.
 
-Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (audio-only UDP calls, air-gapped mode).
+Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (UDP calls, air-gapped mode), `raw_udp_media` (air-gapped calls use the encrypted UDP media protocol of `docs/udp-media.md`: audio, video and screen share, native clients only; web clients must disable call buttons). In `raw_udp` mode the server reports `raw_udp_voice` and `raw_udp_media` and not `webrtc_sfu`.
 
 ## 7. Minimum client version
 
@@ -97,6 +99,8 @@ Server config (`[server]`): `min_client_version` (empty = no minimum) and `enfor
 ## 8. WebSocket handshake
 
 The first frame on every connection is `hello`: `{ "type": "hello", "payload": { "version", "api_version", "min_client_version", "capabilities" } }`, the same block as `/api/version`. Clients MAY use it instead of an extra request. Clients that predate it ignore it (section 5).
+
+When the server refuses a chat message it tells the sender with `{ "type": "message_error", "payload": { "channel_id", "code", "error" } }` (additive; older clients ignore it). `invite` messages are validated: the body must hold a `code` that resolves to a group channel in which the sender is an active member, and an invite link (as opposed to a public channel's id) can only be shared by an admin or the owner. A malformed or unknown invite is `validation_failed`, a channel the sender may not invite to is `invite_not_allowed`, and nothing is stored in either case.
 
 ## 9. Pagination
 

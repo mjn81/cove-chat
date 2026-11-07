@@ -5,8 +5,10 @@ import { Avatar as RadixAvatar, AvatarFallback, AvatarImage } from '@/components
 import { useCachedAvatar } from '@/lib/avatarCache';
 import { getFileUrl } from '@/api/client';
 
+import { SYSTEM_AVATAR_ID } from '@/domains/desktop/utils/sender-avatar';
+
 /** Sentinel avatar id the server gives its built-in Cove account; rendered from the bundled icon. */
-export const SYSTEM_AVATAR_ID = 'system:cove';
+export { SYSTEM_AVATAR_ID };
 
 interface AvatarProps {
   userId: string;

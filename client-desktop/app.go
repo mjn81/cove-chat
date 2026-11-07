@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 
-	"github.com/gen2brain/beeep"
-
+	"cove/desktop/internal/popup"
 	"cove/desktop/internal/tray"
 )
 
@@ -25,17 +25,22 @@ type Config struct {
 	AutoDownload *bool `json:"auto_download,omitempty"`
 	// UpdateManifestURL overrides the update source (mirrors, air-gapped networks). Empty means Cove's own domain.
 	UpdateManifestURL string `json:"update_manifest_url,omitempty"`
+	// CustomNotifications shows Cove's own popups instead of system notifications (Windows and Linux). Nil means on.
+	CustomNotifications *bool `json:"custom_notifications,omitempty"`
+	// NotificationCorner is the screen corner popups stack from; empty means bottom-right.
+	NotificationCorner string `json:"notification_corner,omitempty"`
 }
 
 // App is the Wails application struct.
 type App struct {
-	ctx          context.Context
-	config       Config
-	voiceManager *VoiceManager
-	secrets      secretStore
-	vault        vaultState
-	win          windowState
-	upd          updateState
+	ctx       context.Context
+	config    Config
+	secrets   secretStore
+	vault     vaultState
+	win       windowState
+	upd       updateState
+	popupOnce sync.Once
+	popups    *popup.Manager
 }
 
 // NewApp creates the application struct.
@@ -85,6 +90,7 @@ func (a *App) DomReady(ctx context.Context) {
 // Shutdown is called when the Wails app is about to exit.
 func (a *App) Shutdown(ctx context.Context) {
 	a.stopUpdater()
+	a.notifier().Close()
 	tray.Stop()
 }
 
@@ -104,10 +110,4 @@ func (a *App) SaveServerURL(url string) {
 // AppVersion returns the desktop app version.
 func (a *App) AppVersion() string {
 	return appVersion()
-}
-
-// ShowNotification shows a native desktop notification.
-func (a *App) ShowNotification(title, message string) {
-	// beeep.Notify is cross-platform.
-	_ = beeep.Notify(title, message, "")
 }

@@ -1,4 +1,4 @@
-.PHONY: patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck desktop/test desktop/vet wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -40,10 +40,12 @@ run: dev-back ## Run standalone backend (alias for dev-back)
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1
 	cd backend/pkg/update && $(GO) vet ./...
+	cd backend/pkg/udpmedia && $(GO) vet ./...
 
 lint: ## Run golangci-lint (via go run, no install needed)
 	cd backend && $(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
 	cd backend/pkg/update && $(GO) vet ./...
+	cd backend/pkg/udpmedia && $(GO) vet ./...
 
 swagger: ## Regenerate Swagger docs (runs swag via go run, no install needed)
 	cd backend && $(GO) run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g cmd/server/main.go --output docs --parseDependency
@@ -96,6 +98,13 @@ site/lint: ## Run ESLint on the website
 
 site/test: ## Run the website unit tests (Vitest)
 	$(PNPM) -C website test
+
+## ── Desktop shell (Go, no Wails build) ───────────────────────────────────────
+desktop/test: ## Run the desktop shell's Go tests
+	cd client-desktop && $(GO) test ./... -count=1
+
+desktop/vet: ## go vet the desktop shell
+	cd client-desktop && $(GO) vet ./...
 
 ## ── Android ─────────────────────────────────────────────────────────────────
 # Gradle 8.11 cannot start on JDK 24+ (Android Studio now bundles JDK 25), so builds are pinned to a JDK 17-23.

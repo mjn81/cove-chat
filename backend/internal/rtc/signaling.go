@@ -149,14 +149,9 @@ func (m *Manager) handleLeave(userID, channelID string) {
 }
 
 func (m *Manager) handlePublishOffer(userID, channelID string, sdp webrtc.SessionDescription) error {
-	room, ok := m.getRoom(channelID)
+	_, participant, ok := m.activeParticipant(userID, channelID)
 	if !ok {
 		m.sendError(userID, channelID, "not in a call")
-		return nil
-	}
-	participant, err := room.getParticipant(userID)
-	if err != nil {
-		m.sendError(userID, channelID, "not in this call")
 		return nil
 	}
 
@@ -172,12 +167,8 @@ func (m *Manager) handlePublishOffer(userID, channelID string, sdp webrtc.Sessio
 }
 
 func (m *Manager) handleSubscribeAnswer(userID, channelID string, sdp webrtc.SessionDescription) error {
-	room, ok := m.getRoom(channelID)
+	_, participant, ok := m.activeParticipant(userID, channelID)
 	if !ok {
-		return nil
-	}
-	participant, err := room.getParticipant(userID)
-	if err != nil {
 		return nil
 	}
 	if err := participant.onSubscribeAnswer(sdp); err != nil {
@@ -187,24 +178,16 @@ func (m *Manager) handleSubscribeAnswer(userID, channelID string, sdp webrtc.Ses
 }
 
 func (m *Manager) handleICECandidate(userID, channelID string, target PCTarget, candidate webrtc.ICECandidateInit) error {
-	room, ok := m.getRoom(channelID)
+	_, participant, ok := m.activeParticipant(userID, channelID)
 	if !ok {
-		return nil
-	}
-	participant, err := room.getParticipant(userID)
-	if err != nil {
 		return nil
 	}
 	return participant.addICECandidate(target, candidate)
 }
 
 func (m *Manager) handleTrackState(userID, channelID, kind string, enabled bool, trackID, streamID string) error {
-	room, ok := m.getRoom(channelID)
+	room, participant, ok := m.activeParticipant(userID, channelID)
 	if !ok {
-		return nil
-	}
-	participant, err := room.getParticipant(userID)
-	if err != nil {
 		return nil
 	}
 	participant.setTrackState(trackKind(kind), enabled, trackID, streamID)
@@ -213,12 +196,45 @@ func (m *Manager) handleTrackState(userID, channelID, kind string, enabled bool,
 }
 
 func (m *Manager) handleKeyframeRequest(requesterID, channelID, targetUserID string) error {
-	room, ok := m.getRoom(channelID)
+	// Only someone in the call may ask for keyframes of it.
+	room, _, ok := m.activeParticipant(requesterID, channelID)
 	if !ok {
 		return nil
 	}
 	room.requestKeyframes(targetUserID)
 	return nil
+}
+
+// activeParticipant returns the room and participant for a signal sent after joining. The sender must be in the call
+// AND still an active member of the channel: a member who was kicked, banned or left while connected keeps their
+// PeerConnection, so membership is re-checked here (the same rule as the REST routes) and a stale participant is
+// evicted instead of being allowed to keep signalling or listening in.
+func (m *Manager) activeParticipant(userID, channelID string) (*Room, *Participant, bool) {
+	room, ok := m.getRoom(channelID)
+	if !ok {
+		return nil, nil, false
+	}
+	participant, err := room.getParticipant(userID)
+	if err != nil {
+		return nil, nil, false
+	}
+	if uc, err := m.membership.GetUserChannel(userID, channelID); err != nil || uc == nil || uc.Status != models.StatusActive {
+		m.RemoveUserFromChannel(userID, channelID)
+		m.sendError(userID, channelID, "not a member of this channel")
+		return nil, nil, false
+	}
+	return room, participant, true
+}
+
+// RemoveUserFromChannel ends the user's call in channelID, if they are in it. The Hub calls it when a member is
+// kicked or leaves the channel, so they stop receiving media right away instead of at their next signal.
+func (m *Manager) RemoveUserFromChannel(userID, channelID string) {
+	m.mu.Lock()
+	inThatCall := m.userRooms[userID] == channelID
+	m.mu.Unlock()
+	if inThatCall {
+		m.handleLeave(userID, channelID)
+	}
 }
 
 // RemoveUser is called from ws.Hub's disconnect path (the same place that

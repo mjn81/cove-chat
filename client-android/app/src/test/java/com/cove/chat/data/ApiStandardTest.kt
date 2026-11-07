@@ -71,4 +71,14 @@ class ApiStandardTest {
         assertEquals("0.9.0", new.minClientVersion)
         assertEquals(listOf("whisper"), new.capabilities)
     }
+
+    @Test fun callsAreBlockedOnlyWhenNoEngineCanServeTheServer() {
+        // The encrypted UDP engine exists now, so a server that advertises raw_udp_media can be called from Android.
+        assertFalse(ApiStandard.callsNeedUdpClient(listOf("whisper", "raw_udp_voice", "raw_udp_media")))
+        // A server that only speaks the removed unencrypted audio format cannot be reached by any engine.
+        assertTrue(ApiStandard.callsNeedUdpClient(listOf("whisper", "raw_udp_voice")))
+        assertFalse(ApiStandard.callsNeedUdpClient(listOf("whisper", "webrtc_sfu")))
+        assertFalse(ApiStandard.callsNeedUdpClient(emptyList()))
+        assertFalse(ApiStandard.callsNeedUdpClient(null))
+    }
 }

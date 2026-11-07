@@ -14,6 +14,7 @@ require (
 
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
+	cove/udpmedia v0.0.0
 	cove/update v0.0.0
 	git.sr.ht/~jackmordaunt/go-toast v1.1.2 // indirect
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
@@ -51,3 +52,5 @@ require (
 )
 
 replace cove/update => ../backend/pkg/update
+
+replace cove/udpmedia => ../backend/pkg/udpmedia

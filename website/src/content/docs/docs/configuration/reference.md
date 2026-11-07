@@ -27,7 +27,8 @@ HTTP API and WebSocket port.
 
 Default: `9090`
 
-Raw UDP port for voice routing (Wails desktop client only).
+UDP port of the encrypted media router. Only used when [voice] mode = "raw_udp"
+(air-gapped/LAN calls, native clients); nothing listens on it in the default "webrtc" mode.
 
 ### `server.frontend_origin`
 
@@ -109,6 +110,14 @@ Default: `"./data/db"`
 
 Path where BadgerDB stores its data files.
 
+### `database.auto_repair`
+
+Default: `true` (commented out in the example; optional)
+
+On start-up, drop database table files that a power loss or killed process left filled with zeros, keep a copy of
+the original, and message the admins, instead of refusing to start. Only what was stored in those files is lost.
+Set to false to fail loudly and run "cove-server repair" yourself.
+
 ## `[rate_limit]`
 
 ### `rate_limit.global_rps`
@@ -133,10 +142,11 @@ Group audio/video calling + screen share engine.
     "webrtc"  - production, internet-capable: a self-hosted SFU (see
     internal/rtc) with encrypted media (DTLS-SRTP) and NAT
     traversal via ICE/STUN/TURN. Supports video + screen share.
-    "raw_udp" - the original unencrypted, audio-only UDP packet router
-    (internal/voice), for isolated/LAN deployments where every
-    client can already reach the server directly and the
-    DTLS/ICE overhead isn't wanted. No video/screen-share.
+    "raw_udp" - the encrypted UDP media router (internal/mediarouter,
+    docs/udp-media.md) for isolated/LAN deployments where every
+    client can already reach the server directly. Audio, video
+    and screen share over AES-256-GCM; native clients only (the
+    web client's call buttons are disabled in this mode).
 
 ### `voice.max_participants_per_call`
 

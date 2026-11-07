@@ -2,6 +2,7 @@ package com.cove.chat.data.remote
 
 import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.model.AuthUser
+import com.cove.chat.ui.components.t
 import com.cove.chat.data.model.AdminAccount
 import com.cove.chat.data.model.AdminOverview
 import com.cove.chat.data.model.AdminsResponse
@@ -16,7 +17,13 @@ import com.cove.chat.data.model.ConfigSetting
 import com.cove.chat.data.model.ConfirmRequest
 import com.cove.chat.data.model.CreateInviteRequest
 import com.cove.chat.data.model.Invite
+import com.cove.chat.data.model.NoticeRequest
+import com.cove.chat.data.model.NoticeResult
 import com.cove.chat.data.model.PasswordRequest
+import com.cove.chat.data.model.ServerUpdateInfo
+import com.cove.chat.data.model.ServerUpdateStarted
+import com.cove.chat.data.model.ServerUploadInfo
+import com.cove.chat.data.model.StartUpdateRequest
 import com.cove.chat.data.CaptchaChallenge
 import com.cove.chat.data.model.ServerInfo
 import com.cove.chat.data.model.TransferOwnerRequest
@@ -121,7 +128,8 @@ class ApiClient(private val prefs: PreferencesManager) {
         if (status.isSuccess()) return this
         val text = runCatching { bodyAsText() }.getOrDefault("")
         val body = runCatching { json.decodeFromString<ErrorBody>(text) }.getOrNull()
-        val msg = body?.error?.takeIf { it.isNotBlank() } ?: "Request failed (${status.value})"
+        // The backend sends i18n keys for its user-facing errors; show them in the app language.
+        val msg = body?.error?.takeIf { it.isNotBlank() }?.let { ApiErrors.localize(it, ::t) } ?: "Request failed (${status.value})"
         val code = body?.code?.takeIf { it.isNotBlank() }
         // 426 / client_outdated: tell the root UI to explain it instead of leaving every screen with a vague failure.
         if (ApiStandard.isClientOutdated(status.value, code)) ClientOutdatedState.report(ApiStandard.minClientVersion(body?.details))
@@ -486,4 +494,63 @@ class ApiClient(private val prefs: PreferencesManager) {
         }.ok()
         Unit
     }
+
+    /** Owner only: delivers [text] from the server's Cove account to every user's Cove chat. */
+    suspend fun adminSendNotice(text: String): Result<NoticeResult> = runCatching {
+        client.post(url("/api/admin/notices")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(NoticeRequest(text))
+        }.ok().body()
+    }
+
+    /** Installed vs latest server release; [refresh] bypasses the server's 10-minute release cache. */
+    suspend fun adminUpdateInfo(refresh: Boolean = false): Result<ServerUpdateInfo> = runCatching {
+        client.get(url("/api/admin/update")) {
+            bearer()
+            if (refresh) parameter("refresh", 1)
+        }.ok().body()
+    }
+
+    /** Owner only: [source] is `release` or `upload`; the password is required because the program file is replaced. */
+    suspend fun adminStartUpdate(source: String, password: String): Result<ServerUpdateStarted> = runCatching {
+        client.post(url("/api/admin/update")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(StartUpdateRequest(source, password))
+        }.ok().body()
+    }
+
+    /** Owner only, non-Docker installs: stages a release zip or binary for an offline update; nothing is applied yet. */
+    suspend fun adminUploadUpdate(
+        file: ByteArray, version: String, password: String, sha256: String?, sums: String?
+    ): Result<ServerUploadInfo> = runCatching {
+        client.post(url("/api/admin/update/upload")) {
+            bearer()
+            // The server checks the password before reading the file, so the small fields go first and the file last.
+            setBody(MultiPartFormDataContent(formData {
+                append("password", password)
+                append("version", version)
+                sha256?.let { append("sha256", it) }
+                sums?.let { append("sums", it) }
+                append("file", file, Headers.build {
+                    append(HttpHeaders.ContentType, "application/octet-stream")
+                    append(HttpHeaders.ContentDisposition, "filename=\"update.bin\"")
+                })
+            }))
+        }.ok().body<UploadResponse>().upload
+    }
+
+    /** Owner only: gracefully restarts the server process; it answers first and goes down a moment later. */
+    suspend fun adminRestartServer(password: String): Result<Unit> = runCatching {
+        client.post(url("/api/admin/restart")) {
+            contentType(ContentType.Application.Json)
+            bearer()
+            setBody(PasswordRequest(password))
+        }.ok()
+        Unit
+    }
 }
+
+@kotlinx.serialization.Serializable
+private data class UploadResponse(val status: String = "", val upload: ServerUploadInfo)
