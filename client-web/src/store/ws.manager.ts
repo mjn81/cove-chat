@@ -1,6 +1,7 @@
 // ws.manager.ts
 import { wsConnect, wsDisconnect, onWS, wsSendReadReceipt, decryptMessage } from '@/ws';
 import { useChannelStore, useAuthStore, getChannelDisplayName } from './store';
+import { senderFrom } from '@/domains/desktop/utils/sender-avatar';
 import { CALL_RING_PATH, playNotificationSound, showBrowserNotification } from '@/utils/notifications';
 import { callRinger } from '@/lib/ringtone';
 import i18n from '@/i18n';
@@ -149,7 +150,12 @@ export function initWebSocket() {
 					const senderName = channel.member_names?.[msg.sender_id] || 'Someone';
 					const channelName = getChannelDisplayName(channel, currentUserId);
 					const text = msg.type === 'text' ? await decryptMessage(msg) : `Sent a ${msg.type}`;
-					showBrowserNotification(`${senderName} (#${channelName})`, text);
+					showBrowserNotification(`${senderName} (#${channelName})`, text, {
+						kind: 'message',
+						channelId: msg.channel_id,
+						subtitle: `#${channelName}`,
+						sender: senderFrom(msg.sender_id, senderName, channel.member_avatars?.[msg.sender_id]),
+					});
 				}
 			}
 		}
@@ -311,6 +317,9 @@ export function checkIncomingCall(channelId: string, users: string[]) {
 			// Native notification (stays until acted on) plus a looping ring; both stop with the on-screen call card.
 			showBrowserNotification(i18n.t('chat.notify_call_title'), i18n.t('chat.notify_call_body', { name: callerName }), {
 				tag: 'cove-call',
+				kind: 'call',
+				channelId: channel.id,
+				sender: senderFrom(callerId, callerName, callerAvatar),
 				requireInteraction: true,
 			});
 			if (useAppStore.getState().enableNotificationSounds) callRinger.start(CALL_RING_PATH);

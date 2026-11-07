@@ -361,6 +361,8 @@
     "notifications_desktop_desc": "استلم تنبيهات المتصفح للرسائل الجديدة عندما يكون التبويب غير نشط.",
     "notifications_sounds": "تفعيل أصوات الإشعارات",
     "notifications_sounds_desc": "تشغيل صوت خفيف لكل رسالة واردة.",
+    "notifications_custom": "استخدام نوافذ إشعارات كوف",
+    "notifications_custom_desc": "عرض الإشعارات كنوافذ صغيرة من كوف في زاوية الشاشة بدل إشعارات النظام.",
     "default_device": "الافتراضي",
     "microphone_n": "الميكروفون {{id}}"
   },
@@ -1015,6 +1017,10 @@
       "m15": "بعد 15 دقيقة",
       "m60": "بعد ساعة"
     }
+  },
+  "notificationPopup": {
+  	"close": "إغلاق",
+  	"dismissAll": "إغلاق الكل"
   },
   "desktopSettings": {
     "title": "تطبيق سطح المكتب",

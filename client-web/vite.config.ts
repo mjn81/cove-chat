@@ -35,6 +35,15 @@ const appVersion = (JSON.parse(readFileSync(path.resolve(__dirname, 'package.jso
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(appVersion) },
   plugins: [react(), cspPlugin()],
+  build: {
+    // popup.html is the page of the desktop app's notification popup window (client-desktop).
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        popup: path.resolve(__dirname, 'popup.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

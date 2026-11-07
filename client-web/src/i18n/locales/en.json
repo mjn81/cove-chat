@@ -361,6 +361,8 @@
 		"notifications_desktop_desc": "Receive browser alerts for new messages while the tab is inactive.",
 		"notifications_sounds": "Enable notification sounds",
 		"notifications_sounds_desc": "Play a subtle sound for every incoming message.",
+		"notifications_custom": "Use Cove notification popups",
+		"notifications_custom_desc": "Show notifications as small Cove popups in the screen corner instead of system notifications.",
 		"default_device": "Default",
 		"microphone_n": "Microphone {{id}}"
 	},
@@ -1015,6 +1017,10 @@
 			"m15": "After 15 minutes",
 			"m60": "After 1 hour"
 		}
+	},
+	"notificationPopup": {
+		"close": "Close",
+		"dismissAll": "Close all"
 	},
 	"desktopSettings": {
 		"title": "Desktop app",

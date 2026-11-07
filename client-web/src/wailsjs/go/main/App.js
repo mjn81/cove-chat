@@ -18,6 +18,10 @@ export function CloseWindow() {
   return window['go']['main']['App']['CloseWindow']();
 }
 
+export function CustomNotificationsAvailable() {
+  return window['go']['main']['App']['CustomNotificationsAvailable']();
+}
+
 export function DownloadUpdate() {
   return window['go']['main']['App']['DownloadUpdate']();
 }
@@ -32,6 +36,10 @@ export function GetCacheKey() {
 
 export function GetCloseToTray() {
   return window['go']['main']['App']['GetCloseToTray']();
+}
+
+export function GetCustomNotifications() {
+  return window['go']['main']['App']['GetCustomNotifications']();
 }
 
 export function GetLockStatus() {
@@ -118,12 +126,20 @@ export function SetCloseToTray(arg1) {
   return window['go']['main']['App']['SetCloseToTray'](arg1);
 }
 
-export function SetUpdateSettings(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2, arg3, arg4);
+export function SetCustomNotifications(arg1) {
+  return window['go']['main']['App']['SetCustomNotifications'](arg1);
 }
 
 export function SetPasscode(arg1, arg2) {
   return window['go']['main']['App']['SetPasscode'](arg1, arg2);
+}
+
+export function SetUpdateSettings(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2, arg3, arg4);
+}
+
+export function ShowDesktopNotification(arg1) {
+  return window['go']['main']['App']['ShowDesktopNotification'](arg1);
 }
 
 export function ShowNotification(arg1, arg2) {

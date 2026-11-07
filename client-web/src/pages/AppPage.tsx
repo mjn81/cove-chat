@@ -8,6 +8,7 @@ import {
 import LeftSidebar from '@/domains/channels/components/left-sidebar';
 import { MacDragStrip } from '@/domains/desktop/components/mac-drag-region';
 import { useAppShellChrome } from '@/domains/desktop/hooks/use-app-shell-chrome';
+import { useNotificationOpen } from '@/domains/desktop/hooks/use-notification-open';
 import RightSidebar from '@/components/Layout/RightSidebar';
 import { NavStrip } from '@/components/Layout/NavStrip';
 import ChatArea from '@/components/ChatArea';
@@ -39,6 +40,8 @@ export default function AppPage() {
 	// The desktop shell has no title bar here: the macOS traffic lights sit in the nav strip. The phone-width
 	// layout has no such column, so it keeps the bar.
 	useAppShellChrome(!isMobile);
+	// Clicking a desktop notification popup opens its chat.
+	useNotificationOpen();
 	const {
 		isRightSidebarOpen,
 		setLeftSidebarOpen,
