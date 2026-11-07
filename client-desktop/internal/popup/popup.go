@@ -32,11 +32,14 @@ const (
 const (
 	Width      = 360
 	CardHeight = 76
-	Gap        = 0
+	Gap        = 4
+	// HeaderHeight is the strip with the dismiss-all button above the cards, shown from HeaderMinCards cards up.
+	HeaderHeight   = 28
+	HeaderMinCards = 2
 	Padding    = 0
 	EdgeMargin = 12
 	// MaxVisible is how many popups stack before the oldest is dropped.
-	MaxVisible = 5
+	MaxVisible = 3
 )
 
 // Lifetimes. The popup UI runs the timer (it knows about hover); the values travel with the item.
@@ -188,6 +191,13 @@ func (s *Stack) Remove(id string) (Item, bool) {
 	return Item{}, false
 }
 
+// Clear removes every popup and returns them.
+func (s *Stack) Clear() []Item {
+	out := s.items
+	s.items = nil
+	return out
+}
+
 // Items returns a copy of the visible popups, oldest first.
 func (s *Stack) Items() []Item { return append([]Item(nil), s.items...) }
 
@@ -210,6 +220,9 @@ func Layout(work Rect, n int, corner Corner, scale float64) Rect {
 	px := func(v int) int { return int(float64(v)*scale + 0.5) }
 	w := px(Width)
 	h := px(2*Padding) + n*px(CardHeight) + (n-1)*px(Gap)
+	if n >= HeaderMinCards {
+		h += px(HeaderHeight)
+	}
 	margin := px(EdgeMargin)
 	if w > work.W {
 		w = work.W

@@ -1019,7 +1019,8 @@
     }
   },
   "notificationPopup": {
-  	"close": "بستن"
+  	"close": "بستن",
+  	"dismissAll": "بستن همه"
   },
   "desktopSettings": {
     "title": "برنامه دسکتاپ",

@@ -68,6 +68,20 @@ func (p *PopupApp) PopupClick(id string) {
 	p.report(popup.Event{Event: popup.EventClick, ID: id})
 }
 
+// PopupDismissAll removes every popup at once (the dismiss-all button).
+func (p *PopupApp) PopupDismissAll() {
+	if p.stack == nil {
+		return
+	}
+	p.mu.Lock()
+	gone := p.stack.Clear()
+	p.mu.Unlock()
+	p.apply()
+	for _, it := range gone {
+		p.report(popup.Event{Event: popup.EventDismiss, ID: it.ID})
+	}
+}
+
 func (p *PopupApp) remove(id string) {
 	p.mu.Lock()
 	_, ok := p.stack.Remove(id)

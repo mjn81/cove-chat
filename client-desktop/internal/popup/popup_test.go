@@ -17,9 +17,8 @@ func TestStackReplacesSameTagAndCapsSize(t *testing.T) {
 		t.Fatalf("a repeated tag must replace the older popup and move to the newest slot, got %+v", got)
 	}
 
-	s.Push(Item{ID: "4"})
-	got = s.Push(Item{ID: "5"})
-	if len(got) != 3 || got[0].ID != "3" || got[2].ID != "5" {
+	got = s.Push(Item{ID: "4"})
+	if len(got) != 3 || got[0].ID != "2" || got[2].ID != "4" {
 		t.Fatalf("beyond the cap the oldest popup is dropped, got %+v", got)
 	}
 }
@@ -40,12 +39,41 @@ func TestStackRemove(t *testing.T) {
 func TestLayoutBottomRightDefault(t *testing.T) {
 	work := Rect{X: 0, Y: 0, W: 1920, H: 1040}
 	r := Layout(work, 2, BottomRight, 1)
-	wantH := 2*CardHeight + Gap + 2*Padding
+	wantH := 2*CardHeight + Gap + 2*Padding + HeaderHeight
 	if r.W != Width || r.H != wantH {
 		t.Fatalf("size = %dx%d, want %dx%d", r.W, r.H, Width, wantH)
 	}
 	if r.X != 1920-Width-EdgeMargin || r.Y != 1040-wantH-EdgeMargin {
 		t.Fatalf("position = %d,%d", r.X, r.Y)
+	}
+}
+
+func TestLayoutFitsEveryVisibleCard(t *testing.T) {
+	work := Rect{W: 1920, H: 1040}
+	one := Layout(work, 1, BottomRight, 1)
+	if one.H != CardHeight+2*Padding {
+		t.Fatalf("one card has no header, height = %d", one.H)
+	}
+	three := Layout(work, MaxVisible, BottomRight, 1)
+	want := 3*CardHeight + 2*Gap + HeaderHeight + 2*Padding
+	if MaxVisible != 3 || three.H != want {
+		t.Fatalf("three cards need %d px, got %d (max %d)", want, three.H, MaxVisible)
+	}
+	if three.H <= Layout(work, 2, BottomRight, 1).H {
+		t.Fatal("each extra card must grow the window")
+	}
+	if three.Y+three.H+EdgeMargin != work.H {
+		t.Fatalf("the stack stays anchored to the bottom edge: %+v", three)
+	}
+}
+
+func TestStackClear(t *testing.T) {
+	s := NewStack(3)
+	s.Push(Item{ID: "1"})
+	s.Push(Item{ID: "2"})
+	got := s.Clear()
+	if len(got) != 2 || len(s.Items()) != 0 {
+		t.Fatalf("clear = %+v, left %+v", got, s.Items())
 	}
 }
 

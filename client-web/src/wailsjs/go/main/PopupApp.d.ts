@@ -6,4 +6,6 @@ export function PopupClick(arg1:string):Promise<void>;
 
 export function PopupDismiss(arg1:string):Promise<void>;
 
+export function PopupDismissAll():Promise<void>;
+
 export function PopupItems():Promise<Array<popup.Item>>;

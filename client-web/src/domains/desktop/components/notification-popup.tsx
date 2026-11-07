@@ -4,13 +4,19 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { APP_NAME } from '@/lib/brand';
-import { PopupClick, PopupDismiss, PopupItems } from '@/wailsjs/go/main/PopupApp';
+import { PopupClick, PopupDismiss, PopupDismissAll, PopupItems } from '@/wailsjs/go/main/PopupApp';
 import { EventsOn } from '@/wailsjs/runtime/runtime';
 import type { popup } from '@/wailsjs/go/models';
 import { PauseTimer } from '../utils/pause-timer';
 
 /** Height of one card in px; the desktop app sizes the window as a multiple of it (popup.CardHeight in Go). */
 const CARD_HEIGHT = 76;
+/** Height of the strip holding the dismiss-all button, shown from two popups up (popup.HeaderHeight in Go). */
+const HEADER_HEIGHT = 28;
+/** The gap between cards in px (popup.Gap in Go). */
+const CARD_GAP = 4;
+/** Fade-out time in ms before a timed-out popup is removed. */
+const FADE_MS = 250;
 
 interface PopupCardProps {
 	item: popup.Item;
@@ -21,7 +27,14 @@ interface PopupCardProps {
 /** One notification: icon, title and body, a close button, and a timer that pauses while the pointer is over it. */
 function PopupCard({ item, onOpen, onClose }: PopupCardProps) {
 	const { t } = useTranslation();
-	const [timer] = useState(() => new PauseTimer(item.ttl_ms, () => onClose(item.id)));
+	const [leaving, setLeaving] = useState(false);
+	const [timer] = useState(
+		() =>
+			new PauseTimer(item.ttl_ms, () => {
+				setLeaving(true);
+				setTimeout(() => onClose(item.id), FADE_MS);
+			}),
+	);
 
 	useEffect(() => {
 		timer.start();
@@ -32,10 +45,15 @@ function PopupCard({ item, onOpen, onClose }: PopupCardProps) {
 		<div
 			role="button"
 			tabIndex={0}
-			style={{ height: CARD_HEIGHT }}
-			className="flex w-full cursor-pointer items-center gap-3 border-b border-border bg-card px-3 text-start text-card-foreground hover:bg-accent"
-			onMouseEnter={() => timer.pause()}
-			onMouseLeave={() => timer.start()}
+			style={{ height: CARD_HEIGHT, opacity: leaving ? 0 : 1, transition: `opacity ${FADE_MS}ms ease-out` }}
+			className="flex w-full shrink-0 cursor-pointer items-center gap-3 bg-card px-3 text-start text-card-foreground hover:bg-accent"
+			onMouseEnter={() => {
+				if (leaving) return;
+				timer.pause();
+			}}
+			onMouseLeave={() => {
+				if (!leaving) timer.start();
+			}}
 			onClick={() => onOpen(item.id)}
 			onKeyDown={(e) => {
 				if (e.key === 'Enter' || e.key === ' ') onOpen(item.id);
@@ -72,7 +90,7 @@ function PopupCard({ item, onOpen, onClose }: PopupCardProps) {
  * and reports dismissals and clicks back through the PopupApp bindings.
  */
 export function NotificationPopup() {
-	const { i18n } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [items, setItems] = useState<popup.Item[]>([]);
 
 	useEffect(() => {
@@ -92,7 +110,21 @@ export function NotificationPopup() {
 	}, [newest, i18n]);
 
 	return (
-		<div className="flex flex-col bg-card">
+		<div className="flex flex-col bg-background" style={{ gap: CARD_GAP }}>
+			{items.length >= 2 && (
+				<div className="flex shrink-0 items-center justify-end px-1" style={{ height: HEADER_HEIGHT }}>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-6 text-muted-foreground"
+						aria-label={t('notificationPopup.dismissAll')}
+						title={t('notificationPopup.dismissAll')}
+						onClick={() => void PopupDismissAll()}
+					>
+						<X className="size-4" />
+					</Button>
+				</div>
+			)}
 			{items.map((item) => (
 				<PopupCard
 					key={item.id}

@@ -10,6 +10,10 @@ export function PopupDismiss(arg1) {
   return window['go']['main']['PopupApp']['PopupDismiss'](arg1);
 }
 
+export function PopupDismissAll() {
+  return window['go']['main']['PopupApp']['PopupDismissAll']();
+}
+
 export function PopupItems() {
   return window['go']['main']['PopupApp']['PopupItems']();
 }

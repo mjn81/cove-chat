@@ -152,7 +152,6 @@ export function initWebSocket() {
 					showBrowserNotification(`${senderName} (#${channelName})`, text, {
 						kind: 'message',
 						channelId: msg.channel_id,
-						tag: `cove-chat-${msg.channel_id}`,
 					});
 				}
 			}

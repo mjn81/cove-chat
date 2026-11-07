@@ -1019,7 +1019,8 @@
     }
   },
   "notificationPopup": {
-  	"close": "إغلاق"
+  	"close": "إغلاق",
+  	"dismissAll": "إغلاق الكل"
   },
   "desktopSettings": {
     "title": "تطبيق سطح المكتب",
