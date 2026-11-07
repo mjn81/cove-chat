@@ -132,15 +132,16 @@ class H264Publisher(
 
     private fun createEncoder(): VideoEncoder? {
         // Hardware first; a device with only a software AVC encoder still beats having no video at all.
+        // Ask the factory for the exact codec description it advertises (Constrained Baseline, as high profile is disabled).
         val hw = HardwareVideoEncoderFactory(egl.eglBaseContext, false, false)
-        if (hw.supportedCodecs.any { it.name.equals("H264", true) }) hw.createEncoder(H264_INFO)?.let { return it }
+        hw.supportedCodecs.firstOrNull { it.name.equals("H264", true) }?.let { info -> hw.createEncoder(info)?.let { return it } }
         return fallbackEncoder()
     }
 
     private fun fallbackEncoder(): VideoEncoder? {
         val any = HardwareVideoEncoderFactory(egl.eglBaseContext, false, false, Predicate<MediaCodecInfo> { true })
-        if (any.supportedCodecs.none { it.name.equals("H264", true) }) return null
-        return any.createEncoder(H264_INFO)
+        val info = any.supportedCodecs.firstOrNull { it.name.equals("H264", true) } ?: return null
+        return any.createEncoder(info)
     }
 
     private fun initEncoder(w: Int, h: Int): Boolean {

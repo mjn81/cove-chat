@@ -300,6 +300,8 @@ class UdpCallManager(
     // ── Signalling ────────────────────────────────────────────────────────────
 
     private suspend fun onSignal(type: String, p: JsonObject) {
+        // The WebRTC engine hears the same events; ignore everything while no call of ours is running.
+        if (!_inCall.value) return
         when (type) {
             "call_joined" -> onJoined(p)
             "call_participant_joined" -> {
@@ -369,7 +371,7 @@ class UdpCallManager(
         _participants.value = j.participants.filter { it.userId != j.selfId }.map { CallParticipant(it.userId, it.username, it.audio, it.video, it.screen) } + self
 
         val ring = try {
-            join.complete(j.media, j.channelId, j.selfId)
+            join.complete(j.media, j.channelId, j.selfId, SystemClock::elapsedRealtime)
         } catch (e: Exception) {
             Log.w(tag, "key agreement failed: ${e.javaClass.simpleName}")
             _status.value = "Couldn't start the call."
@@ -382,7 +384,7 @@ class UdpCallManager(
         scope.launch {
             val addr = withContext(Dispatchers.IO) { runCatching { UdpMediaClient.resolve(endpoint.first, endpoint.second) }.getOrNull() }
             if (addr == null || !_inCall.value) { sessionScope.cancel(); if (addr == null) _status.value = "Couldn't connect to the call."; return@launch }
-            val client = UdpMediaClient(addr, ring, sessionScope)
+            val client = UdpMediaClient(addr, ring, sessionScope, SystemClock::elapsedRealtime)
             client.start()
             val ok = try { client.handshake(HANDSHAKE_TIMEOUT_MS); true } catch (_: TimeoutCancellationException) { false }
             if (!ok || !_inCall.value || channelId != j.channelId) {
@@ -416,7 +418,12 @@ class UdpCallManager(
         audio = engine
         if (engine.micFailed) { /* checked asynchronously in statusLoop */ }
 
-        sessionScope.launch { for (rf in client.frames) withContext(Dispatchers.Main) { onFrame(rf) } }
+        sessionScope.launch {
+            for (rf in client.frames) {
+                // Audio goes straight to the jitter buffer from this thread; video touches UI state, so it hops to Main.
+                if (rf.frame.kind == Kind.AUDIO) onAudioFrame(rf) else withContext(Dispatchers.Main) { onVideoFrame(rf) }
+            }
+        }
         sessionScope.launch {
             for (kind in client.keyframeRequests) {
                 when (kind) {
@@ -428,19 +435,21 @@ class UdpCallManager(
         }
     }
 
-    /** Routes one reassembled frame to the audio engine or a video decoder. Runs on the main thread. */
-    private fun onFrame(rf: ReceivedFrame) {
-        val user = directory.userOf(rf.src) ?: return // not announced yet; media from it is skipped until the roster catches up
+    /** Hands an Opus frame to the playout engine. Runs on the network thread; everything it touches is thread safe. */
+    private fun onAudioFrame(rf: ReceivedFrame) {
+        val user = directory.userOf(rf.src) ?: return // not announced yet; skipped until the roster catches up
+        if (user == _selfId.value || rf.frame.codec != Codec.OPUS) return
+        audio?.feed(user, rf.frame.id, rf.frame.data)
+    }
+
+    /** Routes a camera or screen frame to its decoder. Runs on the main thread. */
+    private fun onVideoFrame(rf: ReceivedFrame) {
+        val user = directory.userOf(rf.src) ?: return
         if (user == _selfId.value) return
         val f = rf.frame
-        when (f.kind) {
-            Kind.AUDIO -> if (f.codec == Codec.OPUS) audio?.feed(user, f.id, f.data)
-            Kind.VIDEO, Kind.SCREEN -> {
-                if (f.codec != Codec.H264) return // another codec: ignore the stream, as the protocol allows
-                if (f.kind == Kind.SCREEN && _receiveQuality.value == ReceiveQuality.Paused) return
-                receiver(user, f.kind).decode(f.keyframe, f.ts, f.data)
-            }
-        }
+        if (f.codec != Codec.H264) return // another codec: ignore the stream, as the protocol allows
+        if (f.kind == Kind.SCREEN && _receiveQuality.value == ReceiveQuality.Paused) return
+        receiver(user, f.kind).decode(f.keyframe, f.ts, f.data)
     }
 
     private fun receiver(user: String, kind: Kind): H264Subscriber = receivers.getOrPut(user to kind) {
@@ -562,8 +571,8 @@ class UdpCallManager(
         }
     }
 
+    /** A frame did not fit the protocol's 64 fragments: lower the quality even if adaptive quality is off, or no keyframe would ever fit. */
     private fun forceBackoff() {
-        if (!_adaptive.value) return
         backoff.sample(Int.MAX_VALUE)
         _networkPoor.value = backoff.level > 0
         applyEncodings()

@@ -45,6 +45,10 @@ class UdpMediaClient(
     private val frameIds = Array(4) { AtomicLong(0) }
     private val streams = HashMap<Pair<Int, Kind>, Reassembler>()
     private val jobs = ArrayList<Job>()
+    // Android forbids socket I/O on the main thread (NetworkOnMainThreadException) and callers include the UI thread
+    // (keyframe requests, BYE on hang-up), so every send goes through one background thread. It also keeps sequence
+    // numbers and the wire order of a frame's fragments identical.
+    private val sender = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "udp-media-send").apply { isDaemon = true } }
     private val dropped = AtomicLong(0)
     private val keyframeRequestCount = AtomicInteger(0)
     private val nackSentCount = AtomicInteger(0)
@@ -102,11 +106,21 @@ class UdpMediaClient(
 
     private fun send(type: Int, pt: ByteArray) {
         if (closed) return
-        val pkt = ring.seal(type, pt)
         try {
+            sender.execute { sendNow(type, pt) }
+        } catch (_: java.util.concurrent.RejectedExecutionException) {
+            // closing
+        }
+    }
+
+    private fun sendNow(type: Int, pt: ByteArray) {
+        try {
+            val pkt = ring.seal(type, pt)
             socket.send(DatagramPacket(pkt, pkt.size, server))
         } catch (_: java.io.IOException) {
             // Transient (network switch, ENETUNREACH): the next keepalive/HELLO retries; media is loss-tolerant.
+        } catch (_: UdpMediaException) {
+            // Oversized plaintext: nothing sensible to do with a single bad packet.
         }
     }
 
@@ -128,10 +142,11 @@ class UdpMediaClient(
     /** Sends BYE, stops the loops and closes the socket and channels. Idempotent. */
     fun close() {
         if (closed) return
-        runCatching { send(PacketType.BYE, ByteArray(0)) }
         closed = true
         jobs.forEach { it.cancel() }
-        socket.close()
+        // BYE and the socket close run on the sender thread, after anything already queued, without blocking the caller.
+        sender.execute { sendNow(PacketType.BYE, ByteArray(0)); socket.close() }
+        sender.shutdown()
         frames.close()
         keyframeRequests.close()
     }
