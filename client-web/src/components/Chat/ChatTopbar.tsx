@@ -32,6 +32,7 @@ import { isDirectMessage, isSystemChannel } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isAdmin } from '@/utils/role';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { useTranslation } from 'react-i18next';
 import { useVoiceStore } from '@/store/voiceStore';
 
 import { UserProfileModal } from '../UserProfileModal';
@@ -92,7 +93,8 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 	const setRightSidebarOpen = useAppStore((state) => state.setRightSidebarOpen);
 	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
 
-	const { startVoice, stopVoice } = useVoiceChat();
+	const { t } = useTranslation();
+	const { startVoice, stopVoice, callsBlocked } = useVoiceChat();
 	const isActive = useVoiceStore(
 		(state) => state.isActive && state.activeChannelId === liveChannel.id,
 	);
@@ -399,8 +401,9 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => startVoice(liveChannel.id)}
-							className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors cursor-pointer animate-in fade-in"
-							title={`Join ongoing voice call (${participantCount} active)`}
+							aria-disabled={callsBlocked}
+							className={`relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors animate-in fade-in ${callsBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+							title={callsBlocked ? t('calls.nativeRequiredTitle') : `Join ongoing voice call (${participantCount} active)`}
 						>
 							<PhoneCall size={18} className="animate-pulse" />
 							<span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-success text-success-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background tabular-nums">
@@ -411,8 +414,9 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						<button
 							type="button"
 							onClick={() => startVoice(liveChannel.id)}
-							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-							title="Start Voice Call"
+							aria-disabled={callsBlocked}
+							className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors ${callsBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+							title={callsBlocked ? t('calls.nativeRequiredTitle') : 'Start Voice Call'}
 						>
 							<Phone size={18} className="opacity-80 hover:opacity-100" />
 						</button>

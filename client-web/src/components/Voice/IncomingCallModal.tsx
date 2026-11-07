@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, PhoneOff } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useChannelStore } from '@/store/store';
-import { webRTCManager } from '@/rtc/WebRTCManager';
+import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from '../Avatar';
 import { Button } from '../ui/button';
@@ -14,6 +14,7 @@ import { Button } from '../ui/button';
  */
 export const IncomingCallModal: React.FC = () => {
 	const { t } = useTranslation();
+	const { startCall } = useVoiceChat();
 	const incomingCall = useVoiceStore((state) => state.incomingCall);
 	const dismissIncomingCall = useVoiceStore((state) => state.dismissIncomingCall);
 	const channels = useChannelStore((state) => state.channels);
@@ -97,7 +98,7 @@ export const IncomingCallModal: React.FC = () => {
 		if (targetChannel) {
 			setActiveChannel(targetChannel);
 		}
-		await webRTCManager.join(incomingCall.channelId);
+		await startCall(incomingCall.channelId);
 	};
 
 	const handleDecline = () => {
