@@ -8,8 +8,9 @@ Cove has two call engines, selected by `voice.mode`.
 | | `webrtc` (default) | `raw_udp` |
 |---|---|---|
 | Audio | Yes | Yes |
-| Video and screen share | Yes | No |
-| Encryption | DTLS-SRTP | None |
+| Video and screen share | Yes | Yes (native clients only) |
+| Encryption | DTLS-SRTP | AES-256-GCM per session (docs/udp-media.md) |
+| Web client | Yes | No: call buttons are disabled; use the desktop or Android app |
 | NAT traversal | ICE, STUN and embedded TURN | None; clients must reach the server directly |
 | Best for | Internet-facing servers | Air-gapped or trusted LANs |
 

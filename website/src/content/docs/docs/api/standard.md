@@ -89,7 +89,8 @@ The server lists the optional features it supports as `capabilities: string[]`, 
 | `invite_messages` | Invite cards in chat |
 | `whisper` | End-to-end encrypted [Whisper](/docs/security/whisper/) chats |
 | `webrtc_sfu` | WebRTC group calls and screen sharing (the default voice mode) |
-| `raw_udp_voice` | Audio-only UDP calls (the air-gapped voice mode, reported instead of `webrtc_sfu`) |
+| `raw_udp_voice` | UDP calls (the air-gapped voice mode, reported instead of `webrtc_sfu`) |
+| `raw_udp_media` | Air-gapped calls use the encrypted UDP media protocol (audio, video, screen share) that only native clients speak; web clients disable call buttons |
 
 ## Minimum client version
 
