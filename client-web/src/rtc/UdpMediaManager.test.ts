@@ -21,7 +21,7 @@ import { useVoiceStore } from '@/store/voiceStore';
 function fakeBridge() {
 	const b = {
 		begin: vi.fn(async () => ({ client_pub: 'pub', client_nonce: 'nonce' })),
-		complete: vi.fn(async (..._a: unknown[]) => {}),
+		complete: vi.fn<(...args: unknown[]) => Promise<void>>(async () => {}),
 		sendFrames: vi.fn(async () => {}),
 		requestKeyframe: vi.fn(async () => {}),
 		close: vi.fn(async () => {}),
