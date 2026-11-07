@@ -33,15 +33,14 @@ type Config struct {
 
 // App is the Wails application struct.
 type App struct {
-	ctx          context.Context
-	config       Config
-	voiceManager *VoiceManager
-	secrets      secretStore
-	vault        vaultState
-	win          windowState
-	upd          updateState
-	popupOnce    sync.Once
-	popups       *popup.Manager
+	ctx       context.Context
+	config    Config
+	secrets   secretStore
+	vault     vaultState
+	win       windowState
+	upd       updateState
+	popupOnce sync.Once
+	popups    *popup.Manager
 }
 
 // NewApp creates the application struct.

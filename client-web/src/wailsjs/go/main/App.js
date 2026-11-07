@@ -70,14 +70,6 @@ export function InstallUpdateAndRestart() {
   return window['go']['main']['App']['InstallUpdateAndRestart']();
 }
 
-export function JoinVoiceChannel(arg1) {
-  return window['go']['main']['App']['JoinVoiceChannel'](arg1);
-}
-
-export function LeaveVoiceChannel() {
-  return window['go']['main']['App']['LeaveVoiceChannel']();
-}
-
 export function Lock() {
   return window['go']['main']['App']['Lock']();
 }
@@ -110,10 +102,6 @@ export function SaveSession(arg1) {
   return window['go']['main']['App']['SaveSession'](arg1);
 }
 
-export function SendVoiceAudio(arg1) {
-  return window['go']['main']['App']['SendVoiceAudio'](arg1);
-}
-
 export function SetAutoLock(arg1) {
   return window['go']['main']['App']['SetAutoLock'](arg1);
 }
@@ -144,14 +132,6 @@ export function ShowDesktopNotification(arg1) {
 
 export function ShowNotification(arg1, arg2) {
   return window['go']['main']['App']['ShowNotification'](arg1, arg2);
-}
-
-export function StartVoiceChat(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['StartVoiceChat'](arg1, arg2, arg3, arg4);
-}
-
-export function StopVoiceChat() {
-  return window['go']['main']['App']['StopVoiceChat']();
 }
 
 export function Unlock(arg1) {

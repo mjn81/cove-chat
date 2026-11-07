@@ -5,7 +5,6 @@ import com.cove.chat.data.local.LocalData
 import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.remote.ApiClient
 import com.cove.chat.data.remote.WebSocketManager
-import com.cove.chat.rtc.RawUdpVoiceManager
 import com.cove.chat.data.model.previewText
 import com.cove.chat.notify.ActiveChat
 import com.cove.chat.notify.CallCoordinator
@@ -30,7 +29,6 @@ class CoveApp : Application() {
         private set
     lateinit var webRTCManager: WebRTCManager
         private set
-    lateinit var rawUdpVoiceManager: RawUdpVoiceManager
         private set
     lateinit var notificationHelper: NotificationHelper
         private set
@@ -74,7 +72,6 @@ class CoveApp : Application() {
         apiClient = ApiClient(preferencesManager)
         webSocketManager = WebSocketManager(preferencesManager)
         webRTCManager = WebRTCManager(this, webSocketManager)
-        rawUdpVoiceManager = RawUdpVoiceManager()
 
         notificationHelper = NotificationHelper(this)
         updateManager = com.cove.chat.data.update.UpdateManager(this, preferencesManager)

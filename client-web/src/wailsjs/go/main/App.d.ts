@@ -36,10 +36,6 @@ export function GetUpdateState():Promise<string>;
 
 export function InstallUpdateAndRestart():Promise<void>;
 
-export function JoinVoiceChannel(arg1:string):Promise<void>;
-
-export function LeaveVoiceChannel():Promise<void>;
-
 export function Lock():Promise<void>;
 
 export function QuitApp():Promise<void>;
@@ -56,8 +52,6 @@ export function SaveServerURL(arg1:string):Promise<void>;
 
 export function SaveSession(arg1:string):Promise<void>;
 
-export function SendVoiceAudio(arg1:Array<number>):Promise<void>;
-
 export function SetAutoLock(arg1:number):Promise<void>;
 
 export function SetAutostart(arg1:boolean):Promise<void>;
@@ -73,9 +67,5 @@ export function SetUpdateSettings(arg1:boolean,arg2:boolean,arg3:boolean,arg4:st
 export function ShowDesktopNotification(arg1:popup.Request):Promise<void>;
 
 export function ShowNotification(arg1:string,arg2:string):Promise<void>;
-
-export function StartVoiceChat(arg1:string,arg2:number,arg3:string,arg4:string):Promise<void>;
-
-export function StopVoiceChat():Promise<void>;
 
 export function Unlock(arg1:string):Promise<void>;
