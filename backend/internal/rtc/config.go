@@ -28,9 +28,9 @@ const (
 	// ModeWebRTC is the production, internet-capable path: the SFU in this
 	// package, DTLS-SRTP encrypted, with NAT traversal via ICE/STUN/TURN.
 	ModeWebRTC Mode = "webrtc"
-	// ModeRawUDP keeps the original unencrypted, audio-only UDP router
-	// (internal/voice) for isolated/LAN deployments. This package is not
-	// used at all in that mode.
+	// ModeRawUDP selects the encrypted UDP media router
+	// (internal/mediarouter) for isolated/LAN deployments. This package is
+	// not used at all in that mode.
 	ModeRawUDP Mode = "raw_udp"
 )
 

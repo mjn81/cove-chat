@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,7 +22,6 @@ import (
 	"cove/backend/internal/models"
 	"cove/backend/internal/storage"
 	"cove/backend/internal/store"
-	"cove/backend/internal/voice"
 	"cove/backend/internal/ws"
 
 	"github.com/coder/websocket"
@@ -50,7 +48,7 @@ func TestStressBackend(t *testing.T) {
 	fmt.Printf("\n>>> STARTING STRESS TEST: %d concurrency, %d requests per worker (Total: %d)\n", concurrency, requestsPerWorker, totalExpected)
 
 	// 2. Setup isolated complex server (REST + WS + UDP)
-	srv, udpAddr, cleanup := setupComplexTestServer(t)
+	srv, cleanup := setupComplexTestServer(t)
 	defer cleanup()
 
 	var wg sync.WaitGroup
@@ -71,7 +69,7 @@ func TestStressBackend(t *testing.T) {
 				username := fmt.Sprintf("stress_%d_%d_%d", workerID, j, time.Now().UnixNano()%1000)
 				password := "password123"
 
-				if err := runFullUserFlow(srv, udpAddr, username, password); err != nil {
+				if err := runFullUserFlow(srv, username, password); err != nil {
 					errors <- fmt.Errorf("worker %d flow %d failed: %v", workerID, j, err)
 				} else {
 					results <- time.Since(flowStart)
@@ -125,7 +123,7 @@ func TestStressBackend(t *testing.T) {
 	fmt.Printf("Report saved to %s\n", filename)
 }
 
-func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, password string) error {
+func runFullUserFlow(srv *httptest.Server, username, password string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -167,20 +165,6 @@ func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, passw
 		return fmt.Errorf("ws read: %v", err)
 	}
 
-	// E. Voice UDP Registration
-	udpConn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		return fmt.Errorf("udp dial: %v", err)
-	}
-	defer udpConn.Close()
-
-	// Packet format: [Type=Register][Token]
-	regPkt := append([]byte{voice.PacketTypeRegister}, []byte(loginResp.Token)...)
-	_, err = udpConn.Write(regPkt)
-	if err != nil {
-		return fmt.Errorf("udp write: %v", err)
-	}
-
 	// API Me call (one more REST)
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/me", nil)
 	req.Header.Set("Authorization", "Bearer "+loginResp.Token)
@@ -193,7 +177,7 @@ func runFullUserFlow(srv *httptest.Server, udpAddr *net.UDPAddr, username, passw
 	return nil
 }
 
-func setupComplexTestServer(t *testing.T) (*httptest.Server, *net.UDPAddr, func()) {
+func setupComplexTestServer(t *testing.T) (*httptest.Server, func()) {
 	dir := t.TempDir()
 	kek := crypto.DeriveKEK("stress-test-master-password")
 	dek, _ := db.BootstrapDEK(dir+"/meta", kek)
@@ -220,20 +204,13 @@ func setupComplexTestServer(t *testing.T) (*httptest.Server, *net.UDPAddr, func(
 
 	srv := httptest.NewServer(rootMux)
 
-	// UDP Voice
-	voiceRouter := voice.NewRouter(sessions, hub, dataStore)
-	udpConn, _ := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
-	udpAddr := udpConn.LocalAddr().(*net.UDPAddr)
-	go voiceRouter.HandleConn(udpConn)
-
 	cleanup := func() {
 		srv.Close()
-		udpConn.Close()
 		database.Close()
 		os.RemoveAll(dir)
 	}
 
-	return srv, udpAddr, cleanup
+	return srv, cleanup
 }
 
 func getEnvInt(key string, defaultVal int) int {

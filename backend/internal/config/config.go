@@ -122,6 +122,8 @@ type VoiceConfig struct {
 type ServerConfig struct {
 	Domain              string `toml:"domain"`
 	HTTPPort            int    `toml:"http_port"`
+	// UDPPort is the encrypted UDP media router port; it is used only when voice.mode = "raw_udp" (otherwise nothing
+	// listens on it). Old config files that still carry the key keep loading.
 	UDPPort             int    `toml:"udp_port"`
 	MaxFileSizeMB       int    `toml:"max_file_size_mb"`
 	MaxVideoSizeMB      int    `toml:"max_video_size_mb"`
@@ -219,7 +221,7 @@ func defaults() *Config {
 			WebRTCPortMax:          50100,
 			// "webrtc" mode is the internet-capable path — a deployment
 			// that genuinely has no internet egress (air-gapped/isolated)
-			// should use Mode "raw_udp" instead (internal/voice), not
+			// should use Mode "raw_udp" instead (internal/mediarouter), not
 			// "webrtc" with this left empty. So it's safe, and more useful
 			// out of the box, to default to auto-detecting the public IP
 			// via STUN here rather than requiring every operator to set it

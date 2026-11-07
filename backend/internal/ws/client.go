@@ -43,15 +43,11 @@ func (h *Hub) unregister(c *Client) {
 	h.mu.Unlock()
 
 	// If user has no more active connections, clean up any whisper sessions,
-	// purge stale voice-call state (a client that crashes/drops without
-	// sending a voice Leave packet would otherwise stay a ghost participant
-	// forever), and notify peers.
+	// purge stale call state (a client that crashes/drops without
+	// sending call_leave would otherwise stay a ghost participant forever), and notify peers.
 	if !stillConnected {
 		if h.rtc != nil {
 			h.rtc.RemoveUser(c.UserID)
-		}
-		if h.voiceRouter != nil {
-			h.voiceRouter.RemoveUser(c.UserID)
 		}
 		closedSessions := h.CleanupUserWhisperSessions(c.UserID)
 		for _, sess := range closedSessions {

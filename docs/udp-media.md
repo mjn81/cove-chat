@@ -4,8 +4,9 @@ Status: **v1, backend + Go client library implemented; desktop client code writt
 [Implementation status](#implementation-status)).
 
 This document specifies the call media path used when the server runs with `voice.mode = "raw_udp"`
-(air-gapped or isolated LANs with no ICE, STUN or TURN). It replaces the old unencrypted, audio-only packet
-format on the UDP port (default `9090`). The user-visible behaviour matches `voice.mode = "webrtc"`: members-only
+(air-gapped or isolated LANs with no ICE, STUN or TURN). It is the only UDP call path and uses the UDP port
+(default `9090`); the older unencrypted, audio-only router was removed (migration note: its packets are no longer
+answered, and there is no opt-in to bring it back). The user-visible behaviour matches `voice.mode = "webrtc"`: members-only
 rooms, audio, camera video, screen share, mute/camera/share state, join/leave and kick handling. Only the
 transport differs, and only native clients can speak it, because a browser cannot open raw UDP sockets.
 
@@ -204,6 +205,7 @@ Not defended:
 |---|---|
 | Protocol library `pkg/udpmedia` (packets, AEAD, key schedule, rotation, replay window, fragmentation, reassembler with NACK/keyframe logic, UDP client) | Implemented, unit and loopback tested |
 | Server router `internal/mediarouter` (WS signalling, handshake, forwarding, NACK cache, keyframe relay, rate limits, kick/eviction, membership sweep) | Implemented, tested including a multi-participant forwarding test with Go test clients |
+| Removal of the old unencrypted audio-only router (`internal/voice`) | Done. Nothing listens on `server.udp_port` in `webrtc` mode, and legacy-format datagrams get no reply in `raw_udp` mode. The old desktop (`voice.go`) and Android (`RawUdpVoiceManager`) clients were deleted with it. |
 | Capability advertisement, Swagger/docs | Implemented |
 | Web client gating | Implemented (buttons disabled with explanation) |
 | Desktop (Wails) | **Implemented, untested on real devices.** Go side: `client-desktop/media_bridge.go` (Wails binding `MediaBridge`, batched frame events) on top of `media_call.go`. Web side: `client-web/src/rtc/UdpMediaManager.ts` (WebCodecs Opus + H.264 Annex-B capture/encode/decode, canvas rendering into the existing tiles), selected only inside Wails on a `raw_udp_media` server. Covered by unit tests with a fake bridge and a loopback echo test; mic, camera, screen share and playback have **not** been run against a real server and devices. Screen-share audio is not sent. Needs a webview with WebCodecs encoders: WebView2 (Windows) is expected to work; WebKitGTK and WKWebView likely lack them (a Go-side codec would be the fallback, not built). |

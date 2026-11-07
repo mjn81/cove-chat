@@ -9,7 +9,7 @@ Native Android client for **Cove**, built with Kotlin, Jetpack Compose, Ktor, St
 - **UI & Framework**: 100% Kotlin + Jetpack Compose (Material 3)
 - **Calling Engine**:
   - **Default**: WebRTC SFU via `io.getstream:stream-webrtc-android` (Dual PeerConnection: Publish & Subscribe) matching `backend/internal/rtc/` and `client-web/src/rtc/WebRTCManager.ts`.
-  - **Air-Gapped Fallback**: Raw UDP packet streaming on port `9090` matching `backend/internal/voice/router.go`.
+  - **Air-Gapped Mode** (`voice.mode = "raw_udp"`): the encrypted UDP media router (`backend/internal/mediarouter`, `docs/udp-media.md`). The Android client for it is not built yet, so calls are unavailable on such servers until it is.
 - **Networking**:
   - **REST API**: Ktor HTTP Client (`OkHttp` engine) with Kotlinx Serialization.
   - **Real-Time Duplex**: Ktor WebSocket Client (`/ws?token=...`).

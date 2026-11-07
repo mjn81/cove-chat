@@ -12,7 +12,7 @@ import ArchitectureDiagram from '../../../../components/docs/ArchitectureDiagram
 - **REST API** on `http_port` (default 4000), using the standard library `ServeMux`. Every route is wrapped by an access tier: public, authenticated, channel member, admin or owner.
 - **WebSocket hub** delivers messages and presence in real time and carries call signaling. It applies the same membership checks as the REST API.
 - **WebRTC SFU** (`voice.mode = "webrtc"`, the default) forwards audio, video and screen shares between participants. Media is encrypted with DTLS-SRTP. An embedded STUN/TURN relay handles NAT traversal.
-- **Raw UDP router** (`voice.mode = "raw_udp"`) is an encrypted UDP media router for isolated LANs (audio, video and screen sharing, AES-256-GCM). Only native clients can use it, because browsers cannot open raw UDP sockets.
+- **Encrypted UDP media router** (`voice.mode = "raw_udp"`) is an encrypted UDP media router for isolated LANs (audio, video and screen sharing, AES-256-GCM). Only native clients can use it, because browsers cannot open raw UDP sockets.
 - **BadgerDB** stores everything. The database is encrypted with a data key that is itself wrapped by a key derived from your master password.
 
 ## Clients
