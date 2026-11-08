@@ -188,6 +188,16 @@ phases:
         title: "Encrypted UDP for closed networks"
         note: "AES-256-GCM sessions with replay protection and key rotation are built and tested; waiting on native clients."
         date: "2026-12-31"
+      - id: emoji
+        area: chat
+        title: "Emoji styles and custom emoji"
+        note: "Pick the emoji art style (Noto, Twemoji, Blobmoji, Fluent, FxEmojis or your device's own); admins choose which are offered and can upload custom emoji. Styles are built into the server, so air-gapped networks need nothing extra."
+        date: "2026-12-31"
+      - id: stickers
+        area: chat
+        title: "Stickers and animated emoji"
+        note: "Two default sticker packs, packs you make yourself (with admin limits) and big animated emoji when a message is a single emoji. The server side is built; the apps are next."
+        date: "2026-12-31"
 
   - id: next
     title: Next
@@ -244,10 +254,6 @@ phases:
         area: platform
         title: "Bot API"
         note: "Build bots and integrations against a stable interface."
-      - id: emoji
-        area: chat
-        title: "Native and custom emoji"
-        note: "Native emoji, admin-curated sets and uploaded custom emoji."
       - id: rich-markdown
         area: chat
         title: "Advanced markdown"

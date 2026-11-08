@@ -132,6 +132,9 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Their sticker packs and installs go with the account, and so do the stored images.
+	h.cleanupUserPacks(session.UserID)
+
 	h.Sessions.Delete(token)
 	auth.ClearSessionCookies(w, !h.IsDev)
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})

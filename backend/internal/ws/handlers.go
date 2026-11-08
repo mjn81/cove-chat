@@ -47,6 +47,12 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 		}
 	}
 
+	if body.Type == models.MessageTypeSticker {
+		if rej := c.validateStickerMessage(body.ChannelID, body.Compression, body.Nonce, body.Ciphertext); rej != nil {
+			return c.rejectMessage(body.ChannelID, rej)
+		}
+	}
+
 	// For DMs, check blocking and DM privacy permission
 	ch, chErr := c.hub.store.GetChannel(body.ChannelID)
 	if chErr == nil {
@@ -136,6 +142,9 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 	}
 	if msg.Type == models.MessageTypeInvite {
 		return fmt.Errorf("invite messages cannot be edited")
+	}
+	if msg.Type == models.MessageTypeSticker {
+		return fmt.Errorf("sticker messages cannot be edited")
 	}
 
 	now := time.Now().UTC()

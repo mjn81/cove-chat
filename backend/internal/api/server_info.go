@@ -14,6 +14,12 @@ type ServerInfoResponse struct {
 	// CaptchaRequired is true when sign-up needs a solved proof-of-work challenge (GET /api/captcha/challenge).
 	// It is false while the server still has no owner, because that first account is always allowed.
 	CaptchaRequired bool `json:"captcha_required" example:"false"`
+	// EmojiStyles lists the emoji style ids users may pick ("native" is the device's own font). Additive.
+	EmojiStyles []string `json:"emoji_styles"`
+	// DefaultEmojiStyle is the style new devices start with; it is one of EmojiStyles.
+	DefaultEmojiStyle string `json:"default_emoji_style" example:"noto"`
+	// UserStickersEnabled is false when the admin switched user-made sticker packs off.
+	UserStickersEnabled bool `json:"user_stickers_enabled" example:"true"`
 }
 
 // GetServerInfo godoc
@@ -32,5 +38,8 @@ func (h *Handler) GetServerInfo(w http.ResponseWriter, r *http.Request) {
 		Demo:             h.Demo.Enabled,
 	}
 	info.CaptchaRequired = h.captchaOn() && !info.NeedsOwner
+	emoji := h.emojiSettings()
+	info.EmojiStyles, info.DefaultEmojiStyle = emoji.EnabledStyles, emoji.DefaultStyle
+	info.UserStickersEnabled = h.packSettings().UserUploadsEnabled
 	writeJSON(w, http.StatusOK, info)
 }

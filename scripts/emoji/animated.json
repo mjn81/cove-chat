@@ -1,0 +1,294 @@
+[
+ {
+  "name": "grinning face",
+  "code": "1f600"
+ },
+ {
+  "name": "grinning face with big eyes",
+  "code": "1f603"
+ },
+ {
+  "name": "beaming face",
+  "code": "1f601"
+ },
+ {
+  "name": "face with tears of joy",
+  "code": "1f602"
+ },
+ {
+  "name": "rolling on the floor laughing",
+  "code": "1f923"
+ },
+ {
+  "name": "smiling face with open mouth",
+  "code": "1f604"
+ },
+ {
+  "name": "winking face",
+  "code": "1f609"
+ },
+ {
+  "name": "smiling face with smiling eyes",
+  "code": "1f60a"
+ },
+ {
+  "name": "smiling face with heart-eyes",
+  "code": "1f60d"
+ },
+ {
+  "name": "smiling face with hearts",
+  "code": "1f970"
+ },
+ {
+  "name": "face blowing a kiss",
+  "code": "1f618"
+ },
+ {
+  "name": "star-struck",
+  "code": "1f929"
+ },
+ {
+  "name": "smiling face with sunglasses",
+  "code": "1f60e"
+ },
+ {
+  "name": "thinking face",
+  "code": "1f914"
+ },
+ {
+  "name": "face with raised eyebrow",
+  "code": "1f928"
+ },
+ {
+  "name": "neutral face",
+  "code": "1f610"
+ },
+ {
+  "name": "unamused face",
+  "code": "1f612"
+ },
+ {
+  "name": "face with rolling eyes",
+  "code": "1f644"
+ },
+ {
+  "name": "grimacing face",
+  "code": "1f62c"
+ },
+ {
+  "name": "relieved face",
+  "code": "1f60c"
+ },
+ {
+  "name": "sleepy face",
+  "code": "1f62a"
+ },
+ {
+  "name": "sleeping face",
+  "code": "1f634"
+ },
+ {
+  "name": "face savoring food",
+  "code": "1f60b"
+ },
+ {
+  "name": "zany face",
+  "code": "1f92a"
+ },
+ {
+  "name": "nerd face",
+  "code": "1f913"
+ },
+ {
+  "name": "pleading face",
+  "code": "1f97a"
+ },
+ {
+  "name": "loudly crying face",
+  "code": "1f62d"
+ },
+ {
+  "name": "crying face",
+  "code": "1f622"
+ },
+ {
+  "name": "face screaming in fear",
+  "code": "1f631"
+ },
+ {
+  "name": "exploding head",
+  "code": "1f92f"
+ },
+ {
+  "name": "partying face",
+  "code": "1f973"
+ },
+ {
+  "name": "hugging face",
+  "code": "1f917"
+ },
+ {
+  "name": "angry face",
+  "code": "1f620"
+ },
+ {
+  "name": "face with symbols on mouth",
+  "code": "1f92c"
+ },
+ {
+  "name": "smiling face with horns",
+  "code": "1f608"
+ },
+ {
+  "name": "skull",
+  "code": "1f480"
+ },
+ {
+  "name": "ghost",
+  "code": "1f47b"
+ },
+ {
+  "name": "alien",
+  "code": "1f47d"
+ },
+ {
+  "name": "robot",
+  "code": "1f916"
+ },
+ {
+  "name": "clown face",
+  "code": "1f921"
+ },
+ {
+  "name": "poop",
+  "code": "1f4a9"
+ },
+ {
+  "name": "see-no-evil monkey",
+  "code": "1f648"
+ },
+ {
+  "name": "red heart",
+  "code": "2764"
+ },
+ {
+  "name": "broken heart",
+  "code": "1f494"
+ },
+ {
+  "name": "sparkling heart",
+  "code": "1f496"
+ },
+ {
+  "name": "fire",
+  "code": "1f525"
+ },
+ {
+  "name": "sparkles",
+  "code": "2728"
+ },
+ {
+  "name": "hundred points",
+  "code": "1f4af"
+ },
+ {
+  "name": "party popper",
+  "code": "1f389"
+ },
+ {
+  "name": "rocket",
+  "code": "1f680"
+ },
+ {
+  "name": "eyes",
+  "code": "1f440"
+ },
+ {
+  "name": "thumbs up",
+  "code": "1f44d"
+ },
+ {
+  "name": "clapping hands",
+  "code": "1f44f"
+ },
+ {
+  "name": "folded hands",
+  "code": "1f64f"
+ },
+ {
+  "name": "waving hand",
+  "code": "1f44b"
+ },
+ {
+  "name": "flexed biceps",
+  "code": "1f4aa"
+ },
+ {
+  "name": "raising hands",
+  "code": "1f64c"
+ },
+ {
+  "name": "OK hand",
+  "code": "1f44c"
+ },
+ {
+  "name": "victory hand",
+  "code": "270c"
+ },
+ {
+  "name": "cat face",
+  "code": "1f431"
+ },
+ {
+  "name": "unicorn",
+  "code": "1f984"
+ },
+ {
+  "name": "pizza",
+  "code": "1f355"
+ },
+ {
+  "name": "birthday cake",
+  "code": "1f382"
+ },
+ {
+  "name": "trophy",
+  "code": "1f3c6"
+ },
+ {
+  "name": "light bulb",
+  "code": "1f4a1"
+ },
+ {
+  "name": "rainbow",
+  "code": "1f308"
+ },
+ {
+  "name": "balloon",
+  "code": "1f388"
+ },
+ {
+  "name": "gift",
+  "code": "1f381"
+ },
+ {
+  "name": "check mark",
+  "code": "2705"
+ },
+ {
+  "name": "collision",
+  "code": "1f4a5"
+ },
+ {
+  "name": "dizzy",
+  "code": "1f4ab"
+ },
+ {
+  "name": "rose",
+  "code": "1f339"
+ },
+ {
+  "name": "sleeping face 2",
+  "code": "1f634"
+ }
+]

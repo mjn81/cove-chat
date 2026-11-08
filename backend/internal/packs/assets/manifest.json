@@ -1,0 +1,1357 @@
+{
+ "schema": 1,
+ "emoji_styles": [
+  {
+   "id": "noto",
+   "name": "Noto Color Emoji",
+   "license": "Apache-2.0",
+   "license_file": "licenses/noto.txt",
+   "attribution": "Noto Color Emoji © Google LLC, Apache License 2.0.",
+   "source": "https://github.com/googlefonts/noto-emoji",
+   "source_commit": "99701e07d3d1fe1bdbcdb14964547f0fd592966f",
+   "cell_size": 64,
+   "width": 4096,
+   "height": 3776,
+   "count": 3750,
+   "sheet": "emoji/noto/sheet.webp",
+   "index": "emoji/noto/index.json"
+  },
+  {
+   "id": "twemoji",
+   "name": "Twemoji",
+   "license": "CC-BY-4.0",
+   "license_file": "licenses/twemoji.txt",
+   "attribution": "Twemoji graphics © Twitter, Inc. and other contributors (jdecked/twemoji fork), licensed CC BY 4.0.",
+   "source": "https://github.com/jdecked/twemoji",
+   "source_commit": "b6b55fef1e8636b540a6d016a4729ca8cdf2e60b",
+   "cell_size": 64,
+   "width": 4096,
+   "height": 4032,
+   "count": 4009,
+   "sheet": "emoji/twemoji/sheet.webp",
+   "index": "emoji/twemoji/index.json"
+  },
+  {
+   "id": "blobmoji",
+   "name": "Blobmoji",
+   "license": "Apache-2.0",
+   "license_file": "licenses/blobmoji.txt",
+   "attribution": "Blobmoji © Google LLC and the Blobmoji contributors (C1710/blobmoji, archived), Apache License 2.0.",
+   "source": "https://github.com/C1710/blobmoji",
+   "source_commit": "7dd14d2b0141693485fd26bc35817bd290352a79",
+   "cell_size": 64,
+   "width": 4096,
+   "height": 2688,
+   "count": 2687,
+   "sheet": "emoji/blobmoji/sheet.webp",
+   "index": "emoji/blobmoji/index.json"
+  },
+  {
+   "id": "fluent",
+   "name": "Fluent Emoji Flat",
+   "license": "MIT",
+   "license_file": "licenses/fluent.txt",
+   "attribution": "Fluent Emoji (Flat) © Microsoft Corporation, MIT License.",
+   "source": "https://github.com/microsoft/fluentui-emoji",
+   "source_commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+   "cell_size": 64,
+   "width": 4096,
+   "height": 1600,
+   "count": 1595,
+   "sheet": "emoji/fluent/sheet.webp",
+   "index": "emoji/fluent/index.json"
+  },
+  {
+   "id": "fxemoji",
+   "name": "FxEmojis",
+   "license": "CC-BY-4.0",
+   "license_file": "licenses/fxemoji.txt",
+   "attribution": "FxEmojis © Mozilla Foundation, graphics licensed CC BY 4.0.",
+   "source": "https://github.com/mozilla/fxemoji",
+   "source_commit": "270af343bee346d8221f87806d2b1eee0438431a",
+   "cell_size": 64,
+   "width": 4096,
+   "height": 1024,
+   "count": 986,
+   "sheet": "emoji/fxemoji/sheet.webp",
+   "index": "emoji/fxemoji/index.json"
+  }
+ ],
+ "sticker_packs": [
+  {
+   "id": "cove-basics",
+   "name": "Cove Basics",
+   "order": 0,
+   "animated": false,
+   "license": "MIT",
+   "license_file": "licenses/fluent-3d.txt",
+   "attribution": "Fluent Emoji (3D) © Microsoft Corporation, MIT License. Converted to WebP.",
+   "source": "https://github.com/microsoft/fluentui-emoji",
+   "source_commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+   "items": [
+    {
+     "id": "grinning-face",
+     "name": "Grinning face",
+     "emoji": "😀",
+     "file": "stickers/cove-basics/grinning-face.webp",
+     "animated": false,
+     "bytes": 14236
+    },
+    {
+     "id": "face-with-tears-of-joy",
+     "name": "Face with tears of joy",
+     "emoji": "😂",
+     "file": "stickers/cove-basics/face-with-tears-of-joy.webp",
+     "animated": false,
+     "bytes": 14668
+    },
+    {
+     "id": "smiling-face-with-heart-eyes",
+     "name": "Smiling face with heart-eyes",
+     "emoji": "😍",
+     "file": "stickers/cove-basics/smiling-face-with-heart-eyes.webp",
+     "animated": false,
+     "bytes": 13924
+    },
+    {
+     "id": "smiling-face-with-hearts",
+     "name": "Smiling face with hearts",
+     "emoji": "🥰",
+     "file": "stickers/cove-basics/smiling-face-with-hearts.webp",
+     "animated": false,
+     "bytes": 16800
+    },
+    {
+     "id": "winking-face",
+     "name": "Winking face",
+     "emoji": "😉",
+     "file": "stickers/cove-basics/winking-face.webp",
+     "animated": false,
+     "bytes": 15142
+    },
+    {
+     "id": "smiling-face-with-sunglasses",
+     "name": "Smiling face with sunglasses",
+     "emoji": "😎",
+     "file": "stickers/cove-basics/smiling-face-with-sunglasses.webp",
+     "animated": false,
+     "bytes": 14992
+    },
+    {
+     "id": "thinking-face",
+     "name": "Thinking face",
+     "emoji": "🤔",
+     "file": "stickers/cove-basics/thinking-face.webp",
+     "animated": false,
+     "bytes": 15546
+    },
+    {
+     "id": "face-with-rolling-eyes",
+     "name": "Face with rolling eyes",
+     "emoji": "🙄",
+     "file": "stickers/cove-basics/face-with-rolling-eyes.webp",
+     "animated": false,
+     "bytes": 12668
+    },
+    {
+     "id": "loudly-crying-face",
+     "name": "Loudly crying face",
+     "emoji": "😭",
+     "file": "stickers/cove-basics/loudly-crying-face.webp",
+     "animated": false,
+     "bytes": 13274
+    },
+    {
+     "id": "face-screaming-in-fear",
+     "name": "Face screaming in fear",
+     "emoji": "😱",
+     "file": "stickers/cove-basics/face-screaming-in-fear.webp",
+     "animated": false,
+     "bytes": 14552
+    },
+    {
+     "id": "exploding-head",
+     "name": "Exploding head",
+     "emoji": "🤯",
+     "file": "stickers/cove-basics/exploding-head.webp",
+     "animated": false,
+     "bytes": 18180
+    },
+    {
+     "id": "partying-face",
+     "name": "Partying face",
+     "emoji": "🥳",
+     "file": "stickers/cove-basics/partying-face.webp",
+     "animated": false,
+     "bytes": 17164
+    },
+    {
+     "id": "star-struck",
+     "name": "Star-struck",
+     "emoji": "🤩",
+     "file": "stickers/cove-basics/star-struck.webp",
+     "animated": false,
+     "bytes": 15304
+    },
+    {
+     "id": "smiling-face-with-halo",
+     "name": "Smiling face with halo",
+     "emoji": "😇",
+     "file": "stickers/cove-basics/smiling-face-with-halo.webp",
+     "animated": false,
+     "bytes": 16314
+    },
+    {
+     "id": "zany-face",
+     "name": "Zany face",
+     "emoji": "🤪",
+     "file": "stickers/cove-basics/zany-face.webp",
+     "animated": false,
+     "bytes": 17252
+    },
+    {
+     "id": "face-blowing-a-kiss",
+     "name": "Face blowing a kiss",
+     "emoji": "😘",
+     "file": "stickers/cove-basics/face-blowing-a-kiss.webp",
+     "animated": false,
+     "bytes": 15406
+    },
+    {
+     "id": "sleeping-face",
+     "name": "Sleeping face",
+     "emoji": "😴",
+     "file": "stickers/cove-basics/sleeping-face.webp",
+     "animated": false,
+     "bytes": 15850
+    },
+    {
+     "id": "nerd-face",
+     "name": "Nerd face",
+     "emoji": "🤓",
+     "file": "stickers/cove-basics/nerd-face.webp",
+     "animated": false,
+     "bytes": 16264
+    },
+    {
+     "id": "hugging-face",
+     "name": "Hugging face",
+     "emoji": "🤗",
+     "file": "stickers/cove-basics/hugging-face.webp",
+     "animated": false,
+     "bytes": 16228
+    },
+    {
+     "id": "saluting-face",
+     "name": "Saluting face",
+     "emoji": "🫡",
+     "file": "stickers/cove-basics/saluting-face.webp",
+     "animated": false,
+     "bytes": 16594
+    },
+    {
+     "id": "red-heart",
+     "name": "Red heart",
+     "emoji": "❤️",
+     "file": "stickers/cove-basics/red-heart.webp",
+     "animated": false,
+     "bytes": 11396
+    },
+    {
+     "id": "broken-heart",
+     "name": "Broken heart",
+     "emoji": "💔",
+     "file": "stickers/cove-basics/broken-heart.webp",
+     "animated": false,
+     "bytes": 16754
+    },
+    {
+     "id": "sparkling-heart",
+     "name": "Sparkling heart",
+     "emoji": "💖",
+     "file": "stickers/cove-basics/sparkling-heart.webp",
+     "animated": false,
+     "bytes": 14308
+    },
+    {
+     "id": "fire",
+     "name": "Fire",
+     "emoji": "🔥",
+     "file": "stickers/cove-basics/fire.webp",
+     "animated": false,
+     "bytes": 11578
+    },
+    {
+     "id": "party-popper",
+     "name": "Party popper",
+     "emoji": "🎉",
+     "file": "stickers/cove-basics/party-popper.webp",
+     "animated": false,
+     "bytes": 24356
+    },
+    {
+     "id": "rocket",
+     "name": "Rocket",
+     "emoji": "🚀",
+     "file": "stickers/cove-basics/rocket.webp",
+     "animated": false,
+     "bytes": 14318
+    },
+    {
+     "id": "sparkles",
+     "name": "Sparkles",
+     "emoji": "✨",
+     "file": "stickers/cove-basics/sparkles.webp",
+     "animated": false,
+     "bytes": 16856
+    },
+    {
+     "id": "hundred-points",
+     "name": "Hundred points",
+     "emoji": "💯",
+     "file": "stickers/cove-basics/hundred-points.webp",
+     "animated": false,
+     "bytes": 24630
+    },
+    {
+     "id": "eyes",
+     "name": "Eyes",
+     "emoji": "👀",
+     "file": "stickers/cove-basics/eyes.webp",
+     "animated": false,
+     "bytes": 10240
+    },
+    {
+     "id": "thumbs-up",
+     "name": "Thumbs up",
+     "emoji": "👍",
+     "file": "stickers/cove-basics/thumbs-up.webp",
+     "animated": false,
+     "bytes": 10564
+    },
+    {
+     "id": "clapping-hands",
+     "name": "Clapping hands",
+     "emoji": "👏",
+     "file": "stickers/cove-basics/clapping-hands.webp",
+     "animated": false,
+     "bytes": 15060
+    },
+    {
+     "id": "folded-hands",
+     "name": "Folded hands",
+     "emoji": "🙏",
+     "file": "stickers/cove-basics/folded-hands.webp",
+     "animated": false,
+     "bytes": 8872
+    },
+    {
+     "id": "waving-hand",
+     "name": "Waving hand",
+     "emoji": "👋",
+     "file": "stickers/cove-basics/waving-hand.webp",
+     "animated": false,
+     "bytes": 19624
+    },
+    {
+     "id": "flexed-biceps",
+     "name": "Flexed biceps",
+     "emoji": "💪",
+     "file": "stickers/cove-basics/flexed-biceps.webp",
+     "animated": false,
+     "bytes": 12310
+    },
+    {
+     "id": "victory-hand",
+     "name": "Victory hand",
+     "emoji": "✌️",
+     "file": "stickers/cove-basics/victory-hand.webp",
+     "animated": false,
+     "bytes": 12190
+    },
+    {
+     "id": "raising-hands",
+     "name": "Raising hands",
+     "emoji": "🙌",
+     "file": "stickers/cove-basics/raising-hands.webp",
+     "animated": false,
+     "bytes": 17612
+    },
+    {
+     "id": "cat-face",
+     "name": "Cat face",
+     "emoji": "🐱",
+     "file": "stickers/cove-basics/cat-face.webp",
+     "animated": false,
+     "bytes": 12254
+    },
+    {
+     "id": "dog-face",
+     "name": "Dog face",
+     "emoji": "🐶",
+     "file": "stickers/cove-basics/dog-face.webp",
+     "animated": false,
+     "bytes": 10390
+    },
+    {
+     "id": "unicorn",
+     "name": "Unicorn",
+     "emoji": "🦄",
+     "file": "stickers/cove-basics/unicorn.webp",
+     "animated": false,
+     "bytes": 14410
+    },
+    {
+     "id": "pizza",
+     "name": "Pizza",
+     "emoji": "🍕",
+     "file": "stickers/cove-basics/pizza.webp",
+     "animated": false,
+     "bytes": 11422
+    },
+    {
+     "id": "birthday-cake",
+     "name": "Birthday cake",
+     "emoji": "🎂",
+     "file": "stickers/cove-basics/birthday-cake.webp",
+     "animated": false,
+     "bytes": 14882
+    },
+    {
+     "id": "hot-beverage",
+     "name": "Hot beverage",
+     "emoji": "☕",
+     "file": "stickers/cove-basics/hot-beverage.webp",
+     "animated": false,
+     "bytes": 12764
+    },
+    {
+     "id": "beer-mug",
+     "name": "Beer mug",
+     "emoji": "🍺",
+     "file": "stickers/cove-basics/beer-mug.webp",
+     "animated": false,
+     "bytes": 8636
+    },
+    {
+     "id": "trophy",
+     "name": "Trophy",
+     "emoji": "🏆",
+     "file": "stickers/cove-basics/trophy.webp",
+     "animated": false,
+     "bytes": 12106
+    },
+    {
+     "id": "light-bulb",
+     "name": "Light bulb",
+     "emoji": "💡",
+     "file": "stickers/cove-basics/light-bulb.webp",
+     "animated": false,
+     "bytes": 10944
+    },
+    {
+     "id": "rainbow",
+     "name": "Rainbow",
+     "emoji": "🌈",
+     "file": "stickers/cove-basics/rainbow.webp",
+     "animated": false,
+     "bytes": 12494
+    },
+    {
+     "id": "sun",
+     "name": "Sun",
+     "emoji": "☀️",
+     "file": "stickers/cove-basics/sun.webp",
+     "animated": false,
+     "bytes": 12324
+    },
+    {
+     "id": "crescent-moon",
+     "name": "Crescent moon",
+     "emoji": "🌙",
+     "file": "stickers/cove-basics/crescent-moon.webp",
+     "animated": false,
+     "bytes": 10914
+    }
+   ]
+  },
+  {
+   "id": "cove-moves",
+   "name": "Cove Moves",
+   "order": 1,
+   "animated": true,
+   "license": "CC-BY-4.0",
+   "license_file": "licenses/noto-animated.txt",
+   "attribution": "Noto Emoji animations © Google LLC, licensed CC BY 4.0. Re-encoded to 256 px animated WebP.",
+   "source": "https://googlefonts.github.io/noto-emoji-animation/",
+   "items": [
+    {
+     "id": "grinning-face",
+     "name": "grinning face",
+     "emoji": "😀",
+     "file": "stickers/cove-moves/grinning-face.webp",
+     "animated": true,
+     "bytes": 107778
+    },
+    {
+     "id": "grinning-face-with-big-eyes",
+     "name": "grinning face with big eyes",
+     "emoji": "😃",
+     "file": "stickers/cove-moves/grinning-face-with-big-eyes.webp",
+     "animated": true,
+     "bytes": 99064
+    },
+    {
+     "id": "beaming-face",
+     "name": "beaming face",
+     "emoji": "😁",
+     "file": "stickers/cove-moves/beaming-face.webp",
+     "animated": true,
+     "bytes": 118238
+    },
+    {
+     "id": "face-with-tears-of-joy",
+     "name": "face with tears of joy",
+     "emoji": "😂",
+     "file": "stickers/cove-moves/face-with-tears-of-joy.webp",
+     "animated": true,
+     "bytes": 109954
+    },
+    {
+     "id": "rolling-on-the-floor-laughing",
+     "name": "rolling on the floor laughing",
+     "emoji": "🤣",
+     "file": "stickers/cove-moves/rolling-on-the-floor-laughing.webp",
+     "animated": true,
+     "bytes": 85670
+    },
+    {
+     "id": "smiling-face-with-open-mouth",
+     "name": "smiling face with open mouth",
+     "emoji": "😄",
+     "file": "stickers/cove-moves/smiling-face-with-open-mouth.webp",
+     "animated": true,
+     "bytes": 145834
+    },
+    {
+     "id": "winking-face",
+     "name": "winking face",
+     "emoji": "😉",
+     "file": "stickers/cove-moves/winking-face.webp",
+     "animated": true,
+     "bytes": 132344
+    },
+    {
+     "id": "smiling-face-with-smiling-eyes",
+     "name": "smiling face with smiling eyes",
+     "emoji": "😊",
+     "file": "stickers/cove-moves/smiling-face-with-smiling-eyes.webp",
+     "animated": true,
+     "bytes": 146876
+    },
+    {
+     "id": "smiling-face-with-heart-eyes",
+     "name": "smiling face with heart-eyes",
+     "emoji": "😍",
+     "file": "stickers/cove-moves/smiling-face-with-heart-eyes.webp",
+     "animated": true,
+     "bytes": 127616
+    },
+    {
+     "id": "smiling-face-with-hearts",
+     "name": "smiling face with hearts",
+     "emoji": "🥰",
+     "file": "stickers/cove-moves/smiling-face-with-hearts.webp",
+     "animated": true,
+     "bytes": 140218
+    },
+    {
+     "id": "face-blowing-a-kiss",
+     "name": "face blowing a kiss",
+     "emoji": "😘",
+     "file": "stickers/cove-moves/face-blowing-a-kiss.webp",
+     "animated": true,
+     "bytes": 129804
+    },
+    {
+     "id": "star-struck",
+     "name": "star-struck",
+     "emoji": "🤩",
+     "file": "stickers/cove-moves/star-struck.webp",
+     "animated": true,
+     "bytes": 144774
+    },
+    {
+     "id": "smiling-face-with-sunglasses",
+     "name": "smiling face with sunglasses",
+     "emoji": "😎",
+     "file": "stickers/cove-moves/smiling-face-with-sunglasses.webp",
+     "animated": true,
+     "bytes": 138496
+    },
+    {
+     "id": "thinking-face",
+     "name": "thinking face",
+     "emoji": "🤔",
+     "file": "stickers/cove-moves/thinking-face.webp",
+     "animated": true,
+     "bytes": 137264
+    },
+    {
+     "id": "face-with-raised-eyebrow",
+     "name": "face with raised eyebrow",
+     "emoji": "🤨",
+     "file": "stickers/cove-moves/face-with-raised-eyebrow.webp",
+     "animated": true,
+     "bytes": 80230
+    },
+    {
+     "id": "neutral-face",
+     "name": "neutral face",
+     "emoji": "😐",
+     "file": "stickers/cove-moves/neutral-face.webp",
+     "animated": true,
+     "bytes": 29594
+    },
+    {
+     "id": "unamused-face",
+     "name": "unamused face",
+     "emoji": "😒",
+     "file": "stickers/cove-moves/unamused-face.webp",
+     "animated": true,
+     "bytes": 151208
+    },
+    {
+     "id": "face-with-rolling-eyes",
+     "name": "face with rolling eyes",
+     "emoji": "🙄",
+     "file": "stickers/cove-moves/face-with-rolling-eyes.webp",
+     "animated": true,
+     "bytes": 89750
+    },
+    {
+     "id": "grimacing-face",
+     "name": "grimacing face",
+     "emoji": "😬",
+     "file": "stickers/cove-moves/grimacing-face.webp",
+     "animated": true,
+     "bytes": 70894
+    },
+    {
+     "id": "relieved-face",
+     "name": "relieved face",
+     "emoji": "😌",
+     "file": "stickers/cove-moves/relieved-face.webp",
+     "animated": true,
+     "bytes": 121224
+    },
+    {
+     "id": "sleepy-face",
+     "name": "sleepy face",
+     "emoji": "😪",
+     "file": "stickers/cove-moves/sleepy-face.webp",
+     "animated": true,
+     "bytes": 146072
+    },
+    {
+     "id": "sleeping-face",
+     "name": "sleeping face",
+     "emoji": "😴",
+     "file": "stickers/cove-moves/sleeping-face.webp",
+     "animated": true,
+     "bytes": 147204
+    },
+    {
+     "id": "face-savoring-food",
+     "name": "face savoring food",
+     "emoji": "😋",
+     "file": "stickers/cove-moves/face-savoring-food.webp",
+     "animated": true,
+     "bytes": 103292
+    },
+    {
+     "id": "zany-face",
+     "name": "zany face",
+     "emoji": "🤪",
+     "file": "stickers/cove-moves/zany-face.webp",
+     "animated": true,
+     "bytes": 129560
+    },
+    {
+     "id": "nerd-face",
+     "name": "nerd face",
+     "emoji": "🤓",
+     "file": "stickers/cove-moves/nerd-face.webp",
+     "animated": true,
+     "bytes": 127906
+    },
+    {
+     "id": "pleading-face",
+     "name": "pleading face",
+     "emoji": "🥺",
+     "file": "stickers/cove-moves/pleading-face.webp",
+     "animated": true,
+     "bytes": 124090
+    },
+    {
+     "id": "loudly-crying-face",
+     "name": "loudly crying face",
+     "emoji": "😭",
+     "file": "stickers/cove-moves/loudly-crying-face.webp",
+     "animated": true,
+     "bytes": 139030
+    },
+    {
+     "id": "crying-face",
+     "name": "crying face",
+     "emoji": "😢",
+     "file": "stickers/cove-moves/crying-face.webp",
+     "animated": true,
+     "bytes": 135782
+    },
+    {
+     "id": "face-screaming-in-fear",
+     "name": "face screaming in fear",
+     "emoji": "😱",
+     "file": "stickers/cove-moves/face-screaming-in-fear.webp",
+     "animated": true,
+     "bytes": 122972
+    },
+    {
+     "id": "exploding-head",
+     "name": "exploding head",
+     "emoji": "🤯",
+     "file": "stickers/cove-moves/exploding-head.webp",
+     "animated": true,
+     "bytes": 122788
+    },
+    {
+     "id": "partying-face",
+     "name": "partying face",
+     "emoji": "🥳",
+     "file": "stickers/cove-moves/partying-face.webp",
+     "animated": true,
+     "bytes": 143138
+    },
+    {
+     "id": "hugging-face",
+     "name": "hugging face",
+     "emoji": "🤗",
+     "file": "stickers/cove-moves/hugging-face.webp",
+     "animated": true,
+     "bytes": 147120
+    },
+    {
+     "id": "angry-face",
+     "name": "angry face",
+     "emoji": "😠",
+     "file": "stickers/cove-moves/angry-face.webp",
+     "animated": true,
+     "bytes": 96388
+    },
+    {
+     "id": "face-with-symbols-on-mouth",
+     "name": "face with symbols on mouth",
+     "emoji": "🤬",
+     "file": "stickers/cove-moves/face-with-symbols-on-mouth.webp",
+     "animated": true,
+     "bytes": 119102
+    },
+    {
+     "id": "smiling-face-with-horns",
+     "name": "smiling face with horns",
+     "emoji": "😈",
+     "file": "stickers/cove-moves/smiling-face-with-horns.webp",
+     "animated": true,
+     "bytes": 122232
+    },
+    {
+     "id": "skull",
+     "name": "skull",
+     "emoji": "💀",
+     "file": "stickers/cove-moves/skull.webp",
+     "animated": true,
+     "bytes": 121048
+    },
+    {
+     "id": "ghost",
+     "name": "ghost",
+     "emoji": "👻",
+     "file": "stickers/cove-moves/ghost.webp",
+     "animated": true,
+     "bytes": 121466
+    },
+    {
+     "id": "alien",
+     "name": "alien",
+     "emoji": "👽",
+     "file": "stickers/cove-moves/alien.webp",
+     "animated": true,
+     "bytes": 146038
+    },
+    {
+     "id": "robot",
+     "name": "robot",
+     "emoji": "🤖",
+     "file": "stickers/cove-moves/robot.webp",
+     "animated": true,
+     "bytes": 106514
+    },
+    {
+     "id": "clown-face",
+     "name": "clown face",
+     "emoji": "🤡",
+     "file": "stickers/cove-moves/clown-face.webp",
+     "animated": true,
+     "bytes": 148892
+    },
+    {
+     "id": "poop",
+     "name": "poop",
+     "emoji": "💩",
+     "file": "stickers/cove-moves/poop.webp",
+     "animated": true,
+     "bytes": 134678
+    },
+    {
+     "id": "see-no-evil-monkey",
+     "name": "see-no-evil monkey",
+     "emoji": "🙈",
+     "file": "stickers/cove-moves/see-no-evil-monkey.webp",
+     "animated": true,
+     "bytes": 135684
+    },
+    {
+     "id": "red-heart",
+     "name": "red heart",
+     "emoji": "❤️",
+     "file": "stickers/cove-moves/red-heart.webp",
+     "animated": true,
+     "bytes": 88984
+    },
+    {
+     "id": "broken-heart",
+     "name": "broken heart",
+     "emoji": "💔",
+     "file": "stickers/cove-moves/broken-heart.webp",
+     "animated": true,
+     "bytes": 153268
+    },
+    {
+     "id": "sparkling-heart",
+     "name": "sparkling heart",
+     "emoji": "💖",
+     "file": "stickers/cove-moves/sparkling-heart.webp",
+     "animated": true,
+     "bytes": 55738
+    },
+    {
+     "id": "fire",
+     "name": "fire",
+     "emoji": "🔥",
+     "file": "stickers/cove-moves/fire.webp",
+     "animated": true,
+     "bytes": 63348
+    },
+    {
+     "id": "sparkles",
+     "name": "sparkles",
+     "emoji": "✨",
+     "file": "stickers/cove-moves/sparkles.webp",
+     "animated": true,
+     "bytes": 76964
+    },
+    {
+     "id": "hundred-points",
+     "name": "hundred points",
+     "emoji": "💯",
+     "file": "stickers/cove-moves/hundred-points.webp",
+     "animated": true,
+     "bytes": 140970
+    },
+    {
+     "id": "party-popper",
+     "name": "party popper",
+     "emoji": "🎉",
+     "file": "stickers/cove-moves/party-popper.webp",
+     "animated": true,
+     "bytes": 109516
+    },
+    {
+     "id": "rocket",
+     "name": "rocket",
+     "emoji": "🚀",
+     "file": "stickers/cove-moves/rocket.webp",
+     "animated": true,
+     "bytes": 60824
+    },
+    {
+     "id": "eyes",
+     "name": "eyes",
+     "emoji": "👀",
+     "file": "stickers/cove-moves/eyes.webp",
+     "animated": true,
+     "bytes": 69906
+    },
+    {
+     "id": "thumbs-up",
+     "name": "thumbs up",
+     "emoji": "👍",
+     "file": "stickers/cove-moves/thumbs-up.webp",
+     "animated": true,
+     "bytes": 48214
+    },
+    {
+     "id": "clapping-hands",
+     "name": "clapping hands",
+     "emoji": "👏",
+     "file": "stickers/cove-moves/clapping-hands.webp",
+     "animated": true,
+     "bytes": 54728
+    },
+    {
+     "id": "folded-hands",
+     "name": "folded hands",
+     "emoji": "🙏",
+     "file": "stickers/cove-moves/folded-hands.webp",
+     "animated": true,
+     "bytes": 64414
+    },
+    {
+     "id": "waving-hand",
+     "name": "waving hand",
+     "emoji": "👋",
+     "file": "stickers/cove-moves/waving-hand.webp",
+     "animated": true,
+     "bytes": 140120
+    },
+    {
+     "id": "flexed-biceps",
+     "name": "flexed biceps",
+     "emoji": "💪",
+     "file": "stickers/cove-moves/flexed-biceps.webp",
+     "animated": true,
+     "bytes": 99160
+    },
+    {
+     "id": "raising-hands",
+     "name": "raising hands",
+     "emoji": "🙌",
+     "file": "stickers/cove-moves/raising-hands.webp",
+     "animated": true,
+     "bytes": 91130
+    },
+    {
+     "id": "ok-hand",
+     "name": "OK hand",
+     "emoji": "👌",
+     "file": "stickers/cove-moves/ok-hand.webp",
+     "animated": true,
+     "bytes": 57126
+    },
+    {
+     "id": "victory-hand",
+     "name": "victory hand",
+     "emoji": "✌️",
+     "file": "stickers/cove-moves/victory-hand.webp",
+     "animated": true,
+     "bytes": 88714
+    },
+    {
+     "id": "cat-face",
+     "name": "cat face",
+     "emoji": "🐱",
+     "file": "stickers/cove-moves/cat-face.webp",
+     "animated": true,
+     "bytes": 124520
+    },
+    {
+     "id": "unicorn",
+     "name": "unicorn",
+     "emoji": "🦄",
+     "file": "stickers/cove-moves/unicorn.webp",
+     "animated": true,
+     "bytes": 150422
+    },
+    {
+     "id": "pizza",
+     "name": "pizza",
+     "emoji": "🍕",
+     "file": "stickers/cove-moves/pizza.webp",
+     "animated": true,
+     "bytes": 56850
+    },
+    {
+     "id": "birthday-cake",
+     "name": "birthday cake",
+     "emoji": "🎂",
+     "file": "stickers/cove-moves/birthday-cake.webp",
+     "animated": true,
+     "bytes": 93892
+    },
+    {
+     "id": "trophy",
+     "name": "trophy",
+     "emoji": "🏆",
+     "file": "stickers/cove-moves/trophy.webp",
+     "animated": true,
+     "bytes": 124482
+    },
+    {
+     "id": "light-bulb",
+     "name": "light bulb",
+     "emoji": "💡",
+     "file": "stickers/cove-moves/light-bulb.webp",
+     "animated": true,
+     "bytes": 29786
+    },
+    {
+     "id": "rainbow",
+     "name": "rainbow",
+     "emoji": "🌈",
+     "file": "stickers/cove-moves/rainbow.webp",
+     "animated": true,
+     "bytes": 79968
+    },
+    {
+     "id": "balloon",
+     "name": "balloon",
+     "emoji": "🎈",
+     "file": "stickers/cove-moves/balloon.webp",
+     "animated": true,
+     "bytes": 74930
+    },
+    {
+     "id": "gift",
+     "name": "gift",
+     "emoji": "🎁",
+     "file": "stickers/cove-moves/gift.webp",
+     "animated": true,
+     "bytes": 137294
+    },
+    {
+     "id": "check-mark",
+     "name": "check mark",
+     "emoji": "✅",
+     "file": "stickers/cove-moves/check-mark.webp",
+     "animated": true,
+     "bytes": 22114
+    },
+    {
+     "id": "collision",
+     "name": "collision",
+     "emoji": "💥",
+     "file": "stickers/cove-moves/collision.webp",
+     "animated": true,
+     "bytes": 140270
+    },
+    {
+     "id": "dizzy",
+     "name": "dizzy",
+     "emoji": "💫",
+     "file": "stickers/cove-moves/dizzy.webp",
+     "animated": true,
+     "bytes": 82802
+    },
+    {
+     "id": "rose",
+     "name": "rose",
+     "emoji": "🌹",
+     "file": "stickers/cove-moves/rose.webp",
+     "animated": true,
+     "bytes": 133250
+    }
+   ]
+  }
+ ],
+ "animated_emoji": [
+  {
+   "sequence": "1f600",
+   "id": "grinning-face"
+  },
+  {
+   "sequence": "1f603",
+   "id": "grinning-face-with-big-eyes"
+  },
+  {
+   "sequence": "1f601",
+   "id": "beaming-face"
+  },
+  {
+   "sequence": "1f602",
+   "id": "face-with-tears-of-joy"
+  },
+  {
+   "sequence": "1f923",
+   "id": "rolling-on-the-floor-laughing"
+  },
+  {
+   "sequence": "1f604",
+   "id": "smiling-face-with-open-mouth"
+  },
+  {
+   "sequence": "1f609",
+   "id": "winking-face"
+  },
+  {
+   "sequence": "1f60a",
+   "id": "smiling-face-with-smiling-eyes"
+  },
+  {
+   "sequence": "1f60d",
+   "id": "smiling-face-with-heart-eyes"
+  },
+  {
+   "sequence": "1f970",
+   "id": "smiling-face-with-hearts"
+  },
+  {
+   "sequence": "1f618",
+   "id": "face-blowing-a-kiss"
+  },
+  {
+   "sequence": "1f929",
+   "id": "star-struck"
+  },
+  {
+   "sequence": "1f60e",
+   "id": "smiling-face-with-sunglasses"
+  },
+  {
+   "sequence": "1f914",
+   "id": "thinking-face"
+  },
+  {
+   "sequence": "1f928",
+   "id": "face-with-raised-eyebrow"
+  },
+  {
+   "sequence": "1f610",
+   "id": "neutral-face"
+  },
+  {
+   "sequence": "1f612",
+   "id": "unamused-face"
+  },
+  {
+   "sequence": "1f644",
+   "id": "face-with-rolling-eyes"
+  },
+  {
+   "sequence": "1f62c",
+   "id": "grimacing-face"
+  },
+  {
+   "sequence": "1f60c",
+   "id": "relieved-face"
+  },
+  {
+   "sequence": "1f62a",
+   "id": "sleepy-face"
+  },
+  {
+   "sequence": "1f634",
+   "id": "sleeping-face"
+  },
+  {
+   "sequence": "1f60b",
+   "id": "face-savoring-food"
+  },
+  {
+   "sequence": "1f92a",
+   "id": "zany-face"
+  },
+  {
+   "sequence": "1f913",
+   "id": "nerd-face"
+  },
+  {
+   "sequence": "1f97a",
+   "id": "pleading-face"
+  },
+  {
+   "sequence": "1f62d",
+   "id": "loudly-crying-face"
+  },
+  {
+   "sequence": "1f622",
+   "id": "crying-face"
+  },
+  {
+   "sequence": "1f631",
+   "id": "face-screaming-in-fear"
+  },
+  {
+   "sequence": "1f92f",
+   "id": "exploding-head"
+  },
+  {
+   "sequence": "1f973",
+   "id": "partying-face"
+  },
+  {
+   "sequence": "1f917",
+   "id": "hugging-face"
+  },
+  {
+   "sequence": "1f620",
+   "id": "angry-face"
+  },
+  {
+   "sequence": "1f92c",
+   "id": "face-with-symbols-on-mouth"
+  },
+  {
+   "sequence": "1f608",
+   "id": "smiling-face-with-horns"
+  },
+  {
+   "sequence": "1f480",
+   "id": "skull"
+  },
+  {
+   "sequence": "1f47b",
+   "id": "ghost"
+  },
+  {
+   "sequence": "1f47d",
+   "id": "alien"
+  },
+  {
+   "sequence": "1f916",
+   "id": "robot"
+  },
+  {
+   "sequence": "1f921",
+   "id": "clown-face"
+  },
+  {
+   "sequence": "1f4a9",
+   "id": "poop"
+  },
+  {
+   "sequence": "1f648",
+   "id": "see-no-evil-monkey"
+  },
+  {
+   "sequence": "2764",
+   "id": "red-heart"
+  },
+  {
+   "sequence": "1f494",
+   "id": "broken-heart"
+  },
+  {
+   "sequence": "1f496",
+   "id": "sparkling-heart"
+  },
+  {
+   "sequence": "1f525",
+   "id": "fire"
+  },
+  {
+   "sequence": "2728",
+   "id": "sparkles"
+  },
+  {
+   "sequence": "1f4af",
+   "id": "hundred-points"
+  },
+  {
+   "sequence": "1f389",
+   "id": "party-popper"
+  },
+  {
+   "sequence": "1f680",
+   "id": "rocket"
+  },
+  {
+   "sequence": "1f440",
+   "id": "eyes"
+  },
+  {
+   "sequence": "1f44d",
+   "id": "thumbs-up"
+  },
+  {
+   "sequence": "1f44f",
+   "id": "clapping-hands"
+  },
+  {
+   "sequence": "1f64f",
+   "id": "folded-hands"
+  },
+  {
+   "sequence": "1f44b",
+   "id": "waving-hand"
+  },
+  {
+   "sequence": "1f4aa",
+   "id": "flexed-biceps"
+  },
+  {
+   "sequence": "1f64c",
+   "id": "raising-hands"
+  },
+  {
+   "sequence": "1f44c",
+   "id": "ok-hand"
+  },
+  {
+   "sequence": "270c",
+   "id": "victory-hand"
+  },
+  {
+   "sequence": "1f431",
+   "id": "cat-face"
+  },
+  {
+   "sequence": "1f984",
+   "id": "unicorn"
+  },
+  {
+   "sequence": "1f355",
+   "id": "pizza"
+  },
+  {
+   "sequence": "1f382",
+   "id": "birthday-cake"
+  },
+  {
+   "sequence": "1f3c6",
+   "id": "trophy"
+  },
+  {
+   "sequence": "1f4a1",
+   "id": "light-bulb"
+  },
+  {
+   "sequence": "1f308",
+   "id": "rainbow"
+  },
+  {
+   "sequence": "1f388",
+   "id": "balloon"
+  },
+  {
+   "sequence": "1f381",
+   "id": "gift"
+  },
+  {
+   "sequence": "2705",
+   "id": "check-mark"
+  },
+  {
+   "sequence": "1f4a5",
+   "id": "collision"
+  },
+  {
+   "sequence": "1f4ab",
+   "id": "dizzy"
+  },
+  {
+   "sequence": "1f339",
+   "id": "rose"
+  }
+ ]
+}

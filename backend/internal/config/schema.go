@@ -80,6 +80,18 @@ var schema = []Setting{
 		get: func(c *Config) any { return c.Update.GitHubFallback }},
 	{Key: "update.notify_admins", Group: "updates", Type: "bool", RestartRequired: true,
 		get: func(c *Config) any { return c.Update.NotifyAdmins }},
+	{Key: "emoji.enabled_styles", Group: "emoji", Type: "list", Options: EmojiStyleIDs,
+		get: func(c *Config) any { return c.Emoji.EnabledStyles }},
+	{Key: "emoji.default_style", Group: "emoji", Type: "enum", Options: EmojiStyleIDs,
+		get: func(c *Config) any { return c.Emoji.DefaultStyle }},
+	{Key: "packs.user_uploads_enabled", Group: "emoji", Type: "bool",
+		get: func(c *Config) any { return c.Packs.UserUploadsEnabled }},
+	{Key: "packs.max_packs_per_user", Group: "emoji", Type: "int", Min: 1, Max: 200,
+		get: func(c *Config) any { return c.Packs.MaxPacksPerUser }},
+	{Key: "packs.max_stickers_per_pack", Group: "emoji", Type: "int", Min: 1, Max: 500,
+		get: func(c *Config) any { return c.Packs.MaxStickersPerPack }},
+	{Key: "packs.max_user_storage_mb", Group: "emoji", Type: "int", Min: 1, Max: 1024,
+		get: func(c *Config) any { return c.Packs.MaxUserStorageMB }},
 	{Key: "security.token_expire_hours", Group: "security", Type: "int", Min: 1, Max: 8760, OwnerOnly: true, RestartRequired: true,
 		get: func(c *Config) any { return c.Security.TokenExpireHours }},
 }
@@ -184,6 +196,8 @@ func coerce(s Setting, v any) (any, error) {
 			}
 		}
 		return nil, fmt.Errorf("must be one of %v", s.Options)
+	case "list":
+		return coerceList(s, v)
 	case "string":
 		str, ok := v.(string)
 		if !ok {

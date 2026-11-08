@@ -42,6 +42,18 @@ const (
 	CodeUnavailable        = "service_unavailable"
 	// CodeInviteNotAllowed means the sender may not invite people to the channel an invite message points at.
 	CodeInviteNotAllowed = "invite_not_allowed"
+	// CodePackNotFound means the pack (or its item) does not exist or is not available to the caller.
+	CodePackNotFound = "pack_not_found"
+	// CodePackLimitReached means a per-user quota (packs, stickers per pack, total size) or a pack's size is reached.
+	CodePackLimitReached = "pack_limit_reached"
+	// CodeEmojiNameTaken means another custom emoji already uses the shortcode.
+	CodeEmojiNameTaken = "emoji_name_taken"
+	// CodeUploadsDisabled means the admin switched user sticker uploads off.
+	CodeUploadsDisabled = "pack_uploads_disabled"
+	// CodeImageInvalid means an uploaded sticker or emoji image is not an allowed raster image or is out of bounds.
+	CodeImageInvalid = "image_invalid"
+	// CodeStickerInvalid means a sticker message points at a pack, sticker or file that does not match.
+	CodeStickerInvalid = "sticker_invalid"
 )
 
 // Capability names advertised in GET /api/version and the WebSocket hello event.
@@ -53,6 +65,14 @@ const (
 	// CapRawUDPMedia means calls (audio, video, screen share) run over the encrypted UDP media protocol, which only
 	// native clients can speak (docs/udp-media.md). Web clients must disable their call buttons when it is present.
 	CapRawUDPMedia = "raw_udp_media"
+	// CapEmojiPacks means the server serves emoji styles (sprite sheets) under /api/emoji/styles.
+	CapEmojiPacks = "emoji_packs"
+	// CapCustomEmoji means the server has a custom emoji set (:name: shortcodes) under /api/emoji/custom.
+	CapCustomEmoji = "custom_emoji"
+	// CapStickers means sticker packs and the `sticker` message type are supported (docs/packs-api.md).
+	CapStickers = "stickers"
+	// CapAnimatedEmoji means the server serves the animated emoji table under /api/emoji/animated.
+	CapAnimatedEmoji = "animated_emoji"
 )
 
 // CodeForStatus maps an HTTP status to the generic error code used when a handler did not pick a specific one.
@@ -88,7 +108,7 @@ func CodeForStatus(status int) string {
 // Capabilities lists what this server supports. webrtc reports whether the in-process SFU is running; otherwise
 // calls fall back to the audio-only UDP router.
 func Capabilities(webrtc bool) []string {
-	caps := []string{CapInviteMessages, CapWhisper}
+	caps := []string{CapInviteMessages, CapWhisper, CapEmojiPacks, CapCustomEmoji, CapStickers, CapAnimatedEmoji}
 	if webrtc {
 		caps = append(caps, CapWebRTCSFU)
 	} else {

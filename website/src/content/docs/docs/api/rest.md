@@ -29,13 +29,23 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/admin/config` | Editable server settings | Server Admin. |
 | `PATCH` | `/api/admin/config` | Change server settings | Server Admin. Owner-only settings need the owner and their password. |
 | `POST` | `/api/admin/delete` | Delete the server | Server Owner, with their password and the server domain typed as confirmation. |
+| `POST` | `/api/admin/emoji` | Add a custom emoji | Server Admin. |
+| `DELETE` | `/api/admin/emoji/{name}` | Remove a custom emoji | Server Admin. |
 | `GET` | `/api/admin/invites` | List invitation codes | Server Admin. |
 | `POST` | `/api/admin/invites` | Create an invitation code | Server Admin. |
 | `DELETE` | `/api/admin/invites/{code}` | Revoke an invitation code | Server Admin. |
 | `POST` | `/api/admin/notices` | Send a server-wide notice | Server Owner. |
 | `GET` | `/api/admin/overview` | Server overview | Server Admin. |
 | `POST` | `/api/admin/owner/transfer` | Hand the owner role to another account | Server Owner. |
+| `GET` | `/api/admin/packs` | List every pack on the server | Server Admin. |
+| `POST` | `/api/admin/packs` | Create a server sticker pack | Server Admin. |
+| `PATCH` | `/api/admin/packs/{id}` | Change a pack | Server Admin. |
+| `DELETE` | `/api/admin/packs/{id}` | Delete any pack | Server Admin. |
+| `POST` | `/api/admin/packs/{id}/items` | Add a sticker to a server pack | Server Admin. |
+| `DELETE` | `/api/admin/packs/{id}/items/{item}` | Remove a sticker from any pack | Server Admin. |
+| `PUT` | `/api/admin/packs/{id}/order` | Reorder the stickers of any pack | Server Admin. |
 | `POST` | `/api/admin/reset` | Reset server data | Server Owner, with their password and the phrase `RESET`. |
+| `POST` | `/api/admin/restart` | Restart the server | Server Owner, with their password. |
 | `POST` | `/api/admin/restore` | Restore a backup | Server Owner, with their password, the archive passphrase and the phrase `RESTORE`. |
 | `GET` | `/api/admin/update` | Server update status | Server Admin. |
 | `POST` | `/api/admin/update` | Update the server | Server Owner, with their password. |
@@ -68,6 +78,17 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/join/{link}` | Preview the channel behind an invite link | Authenticated. |
 | `POST` | `/api/join/{link}` | Join a channel via a unique invite link or a public channel's id | Authenticated. |
 
+## emoji
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/emoji/animated` | Animated emoji table | Authenticated. |
+| `GET` | `/api/emoji/animated/{version}/{file}` | Download one animated emoji | Authenticated. |
+| `GET` | `/api/emoji/custom` | Custom emoji | Authenticated. |
+| `GET` | `/api/emoji/styles` | Emoji styles this server offers | Authenticated. |
+| `GET` | `/api/emoji/styles/{style}/{version}/{file}` | Download an emoji style's sprite sheet or index | Authenticated. |
+| `GET` | `/api/packs/attribution` | Credits for the built-in emoji and stickers | Authenticated. |
+
 ## files
 
 | Method | Path | Summary | Access |
@@ -80,6 +101,23 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | Method | Path | Summary | Access |
 | --- | --- | --- | --- |
 | `GET` | `/api/channels/{id}/messages` | List messages of a channel | Channel Member. |
+
+## packs
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/packs` | The caller's sticker picker | Authenticated. |
+| `POST` | `/api/packs` | Create a sticker pack | Authenticated (when user uploads are enabled). |
+| `GET` | `/api/packs/{id}` | A sticker pack with its items | Authenticated. |
+| `PATCH` | `/api/packs/{id}` | Rename a sticker pack | Authenticated (pack owner). |
+| `DELETE` | `/api/packs/{id}` | Delete a sticker pack | Authenticated (pack owner). |
+| `PUT` | `/api/packs/{id}/install` | Add a user pack to the caller's picker | Authenticated. |
+| `DELETE` | `/api/packs/{id}/install` | Remove a pack from the caller's picker | Authenticated. |
+| `POST` | `/api/packs/{id}/items` | Add a sticker to a pack | Authenticated (pack owner, when user uploads are enabled). |
+| `DELETE` | `/api/packs/{id}/items/{item}` | Remove a sticker from a pack | Authenticated (pack owner). |
+| `GET` | `/api/packs/{id}/items/{item}/file` | Download a sticker or custom emoji image | Authenticated (server packs while enabled, any user pack). |
+| `PUT` | `/api/packs/{id}/order` | Reorder the stickers of a pack | Authenticated (pack owner). |
+| `GET` | `/api/stickers/builtin/{pack}/{version}/{file}` | Download a built-in sticker | Authenticated. |
 
 ## relationships
 

@@ -25,6 +25,8 @@ type Config struct {
 	Captcha      CaptchaConfig      `toml:"captcha"`
 	Sessions     SessionsConfig     `toml:"sessions"`
 	Update       UpdateConfig       `toml:"update"`
+	Emoji        EmojiConfig        `toml:"emoji"`
+	Packs        PacksConfig        `toml:"packs"`
 }
 
 // Registration modes.
@@ -181,6 +183,8 @@ const configPath = "config.toml"
 func defaults() *Config {
 	return &Config{
 		Captcha: CaptchaConfig{Difficulty: "medium"},
+		Emoji:   EmojiConfig{EnabledStyles: append([]string(nil), EmojiStyleIDs...), DefaultStyle: DefaultEmojiStyle},
+		Packs:   PacksConfig{UserUploadsEnabled: true, MaxPacksPerUser: 10, MaxStickersPerPack: 60, MaxUserStorageMB: 20},
 		Sessions: SessionsConfig{LoginNotifications: true},
 		Update:   UpdateConfig{ManifestURL: "https://covechat.dev/releases/manifest.json", GitHubFallback: true, NotifyAdmins: true},
 		Server: ServerConfig{
@@ -338,6 +342,12 @@ func (c *Config) Validate() error {
 	case "low", "medium", "high":
 	default:
 		return fmt.Errorf("config: captcha.difficulty must be \"low\", \"medium\" or \"high\", got %q", c.Captcha.Difficulty)
+	}
+	if err := ValidateEmojiStyles(c.Emoji.EnabledStyles, c.Emoji.DefaultStyle); err != nil {
+		return err
+	}
+	if c.Packs.MaxPacksPerUser < 0 || c.Packs.MaxStickersPerPack < 0 || c.Packs.MaxUserStorageMB < 0 {
+		return fmt.Errorf("config: packs limits cannot be negative")
 	}
 	for i, inv := range c.Registration.Invites {
 		if strings.TrimSpace(inv.Code) == "" {

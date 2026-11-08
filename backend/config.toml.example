@@ -158,3 +158,19 @@ mode = "open"
 # manifest_url = "https://covechat.dev/releases/manifest.json"
 # github_fallback = true
 # notify_admins = true          # tell the owner and admins (once per version) when a new release is out
+
+# ── Emoji styles and stickers ─────────────────────────────────────────────
+# The emoji styles are built into the server binary (no internet needed). Users pick one of the enabled styles;
+# "native" is the device's own emoji font. default_style must be one of enabled_styles. Both keys can also be
+# changed live from the admin panel. See docs/packs-api.md.
+[emoji]
+# enabled_styles = ["native", "noto", "twemoji", "blobmoji", "fluent", "fxemoji"]
+# default_style = "noto"
+
+# Sticker packs that users make themselves (admins can always add server packs and custom emoji, without these limits).
+# Every key can be changed live from the admin panel.
+[packs]
+# user_uploads_enabled = true   # false: nobody can create packs or upload stickers (existing packs keep working)
+# max_packs_per_user = 10
+# max_stickers_per_pack = 60
+# max_user_storage_mb = 20      # total size of all stickers one user owns

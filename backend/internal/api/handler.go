@@ -11,6 +11,7 @@ import (
 	"cove/backend/internal/config"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
+	"cove/backend/internal/packs"
 	"cove/backend/internal/storage"
 	"cove/backend/internal/store"
 )
@@ -84,6 +85,9 @@ type Handler struct {
 	Updater *Updater
 	// NotifyUpdates makes the update notifier message the owner and admins about each new release.
 	NotifyUpdates bool
+
+	// Packs overrides the built-in emoji and sticker assets (tests); nil means the ones embedded in the binary.
+	Packs *packs.Catalog
 }
 
 // NewRouter wires the full HTTP API with rate limiting.
@@ -128,6 +132,16 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("POST /api/admin/update", protectOwner(h.AdminStartUpdate))
 	mux.Handle("POST /api/admin/update/upload", protectOwner(h.AdminUploadUpdate))
 	mux.Handle("POST /api/admin/restart", protectOwner(h.AdminRestart))
+	// Emoji packs and stickers (docs/packs-api.md). Admin management first; the catch-all below stays last.
+	mux.Handle("GET /api/admin/packs", protectAdmin(h.AdminListPacks))
+	mux.Handle("POST /api/admin/packs", protectAdmin(h.AdminCreatePack))
+	mux.Handle("PATCH /api/admin/packs/{id}", protectAdmin(h.AdminUpdatePack))
+	mux.Handle("DELETE /api/admin/packs/{id}", protectAdmin(h.AdminDeletePack))
+	mux.Handle("POST /api/admin/packs/{id}/items", protectAdmin(h.AdminUploadPackItem))
+	mux.Handle("DELETE /api/admin/packs/{id}/items/{item}", protectAdmin(h.AdminDeletePackItem))
+	mux.Handle("PUT /api/admin/packs/{id}/order", protectAdmin(h.AdminReorderPackItems))
+	mux.Handle("POST /api/admin/emoji", protectAdmin(h.AdminAddCustomEmoji))
+	mux.Handle("DELETE /api/admin/emoji/{name}", protectAdmin(h.AdminDeleteCustomEmoji))
 	mux.Handle("/api/admin/", protectAdmin(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "admin.errors.not_found")
 	}))
@@ -175,6 +189,26 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("PATCH /api/channels/{id}/members/{uid}", protectMember(h.UpdateMember))
 	mux.Handle("DELETE /api/channels/{id}/members/{uid}", protectMember(h.RemoveMember))
 	mux.Handle("GET /api/channels/{id}/messages", protectMember(h.ListMessages))
+
+	// Emoji styles, custom emoji, animated emoji and stickers. Asset URLs carry a content version and are immutable.
+	mux.Handle("GET /api/emoji/styles", protect(h.ListEmojiStyles))
+	mux.Handle("GET /api/emoji/styles/{style}/{version}/{file}", protect(h.GetEmojiStyleAsset))
+	mux.Handle("GET /api/emoji/custom", protect(h.ListCustomEmoji))
+	mux.Handle("GET /api/emoji/animated", protect(h.ListAnimatedEmoji))
+	mux.Handle("GET /api/emoji/animated/{version}/{file}", protect(h.GetAnimatedEmojiAsset))
+	mux.Handle("GET /api/stickers/builtin/{pack}/{version}/{file}", protect(h.GetBuiltinSticker))
+	mux.Handle("GET /api/packs/attribution", protect(h.GetPackAttribution))
+	mux.Handle("GET /api/packs", protect(h.ListPacks))
+	mux.Handle("POST /api/packs", protect(h.CreatePack))
+	mux.Handle("GET /api/packs/{id}", protect(h.GetPack))
+	mux.Handle("PATCH /api/packs/{id}", protect(h.UpdatePack))
+	mux.Handle("DELETE /api/packs/{id}", protect(h.DeletePack))
+	mux.Handle("PUT /api/packs/{id}/install", protect(h.InstallPack))
+	mux.Handle("DELETE /api/packs/{id}/install", protect(h.UninstallPack))
+	mux.Handle("POST /api/packs/{id}/items", protect(h.UploadPackItem))
+	mux.Handle("DELETE /api/packs/{id}/items/{item}", protect(h.DeletePackItem))
+	mux.Handle("GET /api/packs/{id}/items/{item}/file", protect(h.GetPackItemFile))
+	mux.Handle("PUT /api/packs/{id}/order", protect(h.ReorderPackItems))
 
 	mux.Handle("POST /api/files", protect(h.UploadFile))
 	mux.Handle("GET /api/files/{id}", protect(h.DownloadFile))
