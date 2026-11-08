@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { apiGetVersion } from '@/api/client';
 import type { ThemeDefinition, ThemeMode } from '@/domains/themes/types/themes.types';
 import type { ChatBackgroundChoice } from '@/domains/themes/utils/chat-backgrounds';
-import { isBuiltinThemeId } from '@/domains/themes/data/builtin-themes';
+import { DEFAULT_THEME_ID, isBuiltinThemeId } from '@/domains/themes/data/builtin-themes';
 import { resolveTheme } from '@/domains/themes/utils/resolve-theme';
 import {
 	backgroundAfterThemeChange,
@@ -47,6 +47,8 @@ export interface AppSlice {
 	setMode: (mode: ThemeMode) => void;
 	/** Selects a theme (built-in, or an installed one whose validated definition is passed in). */
 	selectTheme: (theme: ThemeDefinition) => void;
+	/** Back to the Cove theme and no chat background; the light/dark preference is kept. */
+	resetTheme: () => void;
 	setChatBackground: (bg: ChatBackgroundChoice) => void;
 	setLeftSidebarOpen: (open: boolean) => void;
 	setRightSidebarOpen: (open: boolean) => void;
@@ -91,6 +93,10 @@ export const useAppStore = create<AppSlice>()(
 					theme: effectiveMode(mode, def.id, customTheme),
 					chatBackground: backgroundAfterThemeChange(chatBackground, def),
 				});
+			},
+			resetTheme: () => {
+				const { mode } = get();
+				set({ themeId: DEFAULT_THEME_ID, customTheme: null, theme: effectiveMode(mode, DEFAULT_THEME_ID, null), chatBackground: 'none' });
 			},
 			setChatBackground: (chatBackground) => set({ chatBackground }),
 			setLeftSidebarOpen: (isLeftSidebarOpen) => set({ isLeftSidebarOpen }),

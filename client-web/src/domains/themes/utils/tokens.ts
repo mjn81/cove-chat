@@ -101,8 +101,8 @@ export function sanitizeTokens(input: unknown): SanitizedTokens {
 	return { tokens, errors, warnings };
 }
 
-/** Text/surface pairs checked by the readability guard: `[text, surface]`. */
-const READABILITY_PAIRS: ReadonlyArray<readonly [ThemeTokenName, ThemeTokenName]> = [
+/** Text/surface pairs of the readability guard; the editor reuses them for its warnings and fixes. */
+export const READABILITY_PAIRS: ReadonlyArray<readonly [ThemeTokenName, ThemeTokenName]> = [
 	['foreground', 'background'],
 	['card-foreground', 'card'],
 	['popover-foreground', 'popover'],

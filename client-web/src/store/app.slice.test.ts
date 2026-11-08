@@ -90,3 +90,14 @@ describe('actions', () => {
 		expect(useAppStore.getState().chatBackground).toBe('none');
 	});
 });
+
+describe('resetTheme', () => {
+	it('returns to Cove and no background but keeps the mode', () => {
+		useAppStore.getState().setMode('light');
+		useAppStore.getState().selectTheme(getBuiltinTheme('nord')!);
+		useAppStore.getState().setChatBackground('space');
+		useAppStore.getState().resetTheme();
+		const s = useAppStore.getState();
+		expect([s.themeId, s.customTheme, s.chatBackground, s.mode, s.theme]).toEqual(['cove', null, 'none', 'light', 'light']);
+	});
+});

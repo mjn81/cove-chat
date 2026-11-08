@@ -4,6 +4,7 @@ import { buildDesktopNotification, type DesktopNotificationOptions } from '@/dom
 import { avatarThumbnail } from '@/lib/avatar-thumbnail';
 import { SYSTEM_AVATAR_ID } from '@/domains/desktop/utils/sender-avatar';
 import { ShowDesktopNotification } from '@/wailsjs/go/main/App';
+import { activeAppearance } from '@/domains/themes/utils/popup-appearance';
 import { isWails } from './wails';
 
 /**
@@ -63,7 +64,9 @@ export function showBrowserNotification(title: string, body: string, options: Br
 
   if (isWails()) {
     // The desktop app shows its own popup (or the system notification, depending on the user's choice there).
-    const appearance = { dark: document.documentElement.classList.contains('dark'), lang: i18n.language || 'en' };
+    const { themeId, customTheme, mode } = useAppStore.getState();
+    const look = activeAppearance(themeId, customTheme, mode);
+    const appearance = { dark: look.dark, tokens: look.tokens, lang: i18n.language || 'en' };
     // With a known sender the popup is titled with their name; the original title becomes the secondary text.
     const popupTitle = options.sender ? options.sender.name : title;
     const opts = { ...options, subtitle: options.subtitle ?? (options.sender ? title : undefined), ttlMs: options.ttlMs ?? (options.requireInteraction ? 30_000 : 0) };

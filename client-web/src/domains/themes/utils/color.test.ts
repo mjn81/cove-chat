@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	contrastRatio,
 	hexToHslTriplet,
+	hslToTriplet,
+	tripletToHex,
+	tripletToHsl,
 	hslTripletToRgb,
 	mixHex,
 	parseColorValue,
@@ -86,5 +89,23 @@ describe('helpers', () => {
 			const fg = pickForeground(bg);
 			expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
 		}
+	});
+});
+
+describe('slider helpers', () => {
+	it('round-trips a triplet through numbers', () => {
+		expect(tripletToHsl('217 91% 60%')).toEqual([217, 91, 60]);
+		expect(hslToTriplet(217, 91, 60)).toBe('217 91% 60%');
+	});
+	it('clamps and rounds slider output', () => {
+		expect(hslToTriplet(400, 120, -5)).toBe('360 100% 0%');
+		expect(hslToTriplet(10.04, 20, 30)).toBe('10 20% 30%');
+	});
+	it('gives hex for display', () => {
+		expect(tripletToHex('0 100% 50%')).toBe('#ff0000');
+		expect(tripletToHex('0 0% 100%')).toBe('#ffffff');
+	});
+	it('does not throw on text outside the grammar', () => {
+		expect(tripletToHsl('nope')).toEqual([0, 0, 0]);
 	});
 });

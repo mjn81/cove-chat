@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Download, Moon, Sun, Upload } from 'lucide-react';
+import { Download, Moon, Plus, RotateCcw, Sun, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app.slice';
 import { dexieThemeStore } from '../api/dexie-theme-store';
 import { saveThemeFile } from '../api/save-theme-file';
+import { applyKnown, startThemePreview } from '../api/theme-actions';
 import { deleteInstalledTheme, exportThemeFile, installThemeFromBytes } from '../api/theme-library';
-import { BUILTIN_THEMES, DEFAULT_THEME_ID, getBuiltinTheme } from '../data/builtin-themes';
+import { BUILTIN_THEMES, DEFAULT_THEME_ID, getBuiltinTheme, isBuiltinThemeId } from '../data/builtin-themes';
 import { useInstalledThemes } from '../hooks/use-installed-themes';
 import type { ThemeDefinition, ThemeMode } from '../types/themes.types';
 import { COVETHEME_EXTENSION, COVETHEME_LIMITS } from '../utils/covetheme';
@@ -18,6 +19,7 @@ import { resolveTheme, supportsBothModes } from '../utils/resolve-theme';
 import { definitionFor } from '../utils/theme-settings';
 import type { ThemeIssue } from '../utils/tokens';
 import { ThemeCard } from './theme-card';
+import { ThemeEditor, type ThemeEditorSource } from './theme-editor';
 
 /** What the last import attempt left on screen. */
 type ImportState =
@@ -63,11 +65,14 @@ export function ThemesSection() {
 	const mode = useAppStore((s) => s.mode);
 	const themeId = useAppStore((s) => s.themeId);
 	const customTheme = useAppStore((s) => s.customTheme);
+	const chatBackground = useAppStore((s) => s.chatBackground);
 	const setMode = useAppStore((s) => s.setMode);
 	const selectTheme = useAppStore((s) => s.selectTheme);
+	const resetTheme = useAppStore((s) => s.resetTheme);
 	const installed = useInstalledThemes();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [importState, setImportState] = useState<ImportState>({ kind: 'idle' });
+	const [editor, setEditor] = useState<ThemeEditorSource | null>(null);
 
 	const current = definitionFor(themeId, customTheme);
 	const nameOf = (theme: ThemeDefinition) => localizedThemeName(theme.name, i18n.language);
@@ -104,6 +109,18 @@ export function ThemesSection() {
 		}
 	}
 
+	/** Opens the editor on a theme: installed ones keep their id and images, anything else becomes a copy. */
+	async function openEditor(theme: ThemeDefinition, inPlace: boolean) {
+		try {
+			const assets = inPlace ? ((await dexieThemeStore.get(theme.id))?.assets ?? {}) : {};
+			setEditor({ theme, assets, asCopy: !inPlace });
+		} catch {
+			toast.error(t('themes.edit_failed'));
+		}
+	}
+
+	const handlePreview = (theme: ThemeDefinition) => startThemePreview({ theme, apply: applyKnown(theme) });
+
 	async function handleDelete(theme: ThemeDefinition) {
 		try {
 			await deleteInstalledTheme(theme.id, dexieThemeStore);
@@ -130,7 +147,16 @@ export function ThemesSection() {
 				<h4 className="mb-2 text-xs font-semibold text-muted-foreground">{t('themes.builtin')}</h4>
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					{BUILTIN_THEMES.map((theme) => (
-						<ThemeCard key={theme.id} theme={theme} mode={mode} selected={themeId === theme.id} onSelect={selectTheme} />
+						<ThemeCard
+							key={theme.id}
+							theme={theme}
+							mode={mode}
+							selected={themeId === theme.id}
+							onSelect={selectTheme}
+							onPreview={handlePreview}
+							onEdit={(th) => void openEditor(th, false)}
+							origin="builtin"
+						/>
 					))}
 				</div>
 			</div>
@@ -149,6 +175,9 @@ export function ThemesSection() {
 								selected={themeId === row.id}
 								onSelect={selectTheme}
 								onDelete={handleDelete}
+								onPreview={handlePreview}
+								onEdit={(th) => void openEditor(th, true)}
+								origin="file"
 							/>
 						))}
 					</div>
@@ -161,9 +190,20 @@ export function ThemesSection() {
 						<Upload />
 						{importState.kind === 'busy' ? t('themes.importing') : t('themes.import')}
 					</Button>
+					<Button type="button" variant="secondary" size="sm" onClick={() => void openEditor(current, !isBuiltinThemeId(current.id))}>
+						<Plus />
+						{t('themes.editor.create')}
+					</Button>
 					<Button type="button" variant="secondary" size="sm" onClick={handleExport}>
 						<Download />
 						{t('themes.export')}
+					</Button>
+					<Button type="button" variant="ghost" size="sm" disabled={themeId === DEFAULT_THEME_ID && chatBackground === 'none'} onClick={() => {
+						resetTheme();
+						toast.success(t('themes.reset_done'));
+					}}>
+						<RotateCcw />
+						{t('themes.reset')}
 					</Button>
 					<input
 						ref={fileInput}
@@ -180,6 +220,7 @@ export function ThemesSection() {
 				<p className="text-[11px] text-muted-foreground">{t('themes.import_hint')}</p>
 				<ImportResult state={importState} onUse={selectTheme} nameOf={nameOf} />
 			</div>
+			{editor && <ThemeEditor key={editor.theme.id} source={editor} onClose={() => setEditor(null)} />}
 		</section>
 	);
 }

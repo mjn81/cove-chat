@@ -7,6 +7,7 @@ import { APP_NAME } from '@/lib/brand';
 import { PopupClick, PopupDismiss, PopupDismissAll, PopupItems } from '@/wailsjs/go/main/PopupApp';
 import { EventsOn } from '@/wailsjs/runtime/runtime';
 import type { popup } from '@/wailsjs/go/models';
+import { applyTokenMap } from '@/domains/themes/utils/popup-appearance';
 import { PauseTimer } from '../utils/pause-timer';
 import { dragOpacity, isDrag, swipeOutcome } from '../utils/swipe';
 import { EXIT_MS, cardMotion, nextLeaving, slotMotion, type MotionPhase } from '../utils/popup-motion';
@@ -221,6 +222,8 @@ export function NotificationPopup() {
 		const root = document.documentElement;
 		root.classList.toggle('dark', newest.theme === 'dark');
 		root.classList.toggle('light', newest.theme !== 'dark');
+		// The theme's colours ride along with the notification; without any, the stylesheet's palette applies.
+		applyTokenMap(root, newest.tokens);
 		root.lang = newest.lang;
 		root.dir = newest.dir;
 		void i18n.changeLanguage(newest.lang);
