@@ -485,6 +485,162 @@
                 }
             }
         },
+        "/api/admin/emoji": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Multipart form: `name` (2-32 lowercase letters, digits or underscores, optionally wrapped in colons; unique on\nthe server) and `file` (PNG, WebP or GIF). Stored at most 128x128 and 256 KB after normalisation. Users send\nit as `:name:` in ordinary text.\n**Access:** Server Admin.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Add a custom emoji",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shortcode, for example party_parrot",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The image",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ItemUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/emoji/{name}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes the emoji and its image; the shortcode becomes free again. Messages that contain it keep the text.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Remove a custom emoji",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Shortcode without colons",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/admin/invites": {
             "get": {
                 "security": [
@@ -829,6 +985,523 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/packs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Built-in sticker packs, server packs and all user packs with their owners, enabled and default flags,\nfor management and moderation. Items are left out. The custom emoji set is listed as kind `emoji_custom`.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List every pack on the server",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AdminPackListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates an empty pack that every user sees (when enabled). Add stickers with `POST /api/admin/packs/{id}/items`.\nServer packs are not subject to the user quotas.\n**Access:** Server Admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create a server sticker pack",
+                "parameters": [
+                    {
+                        "description": "Pack",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CreatePackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/packs/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a server or user pack with its stickers and stored images and drops it from every picker. The\naction is written to the audit log with the pack and its owner. Built-in packs cannot be deleted (disable\nthem instead) and neither can the custom emoji set (remove emoji one by one).\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete any pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Server packs: rename, `enabled`, `default` (at most one pack is the default; the others lose the flag) and\n`order`. Built-in sticker packs: `enabled`, `default` and `order` only (their art is fixed). User packs:\nname and description only (moderation). A disabled pack disappears from pickers but keeps its items.\n**Access:** Server Admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Change a pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to change",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdatePackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/packs/{id}/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Same upload rules as `POST /api/packs/{id}/items` (PNG, JPEG, GIF or WebP, at most 512x512 and 512 KB after\nnormalisation) without the per-user quotas. Works on any stored pack for moderation.\n**Access:** Server Admin.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Add a sticker to a server pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The image",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Emoji this sticker maps to",
+                        "name": "emoji",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ItemUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/packs/{id}/items/{item}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes one sticker and deletes its stored image.\n**Access:** Server Admin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Remove a sticker from any pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "item",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/packs/{id}/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "`item_ids` must list every item of the pack exactly once, in the new order.\n**Access:** Server Admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Reorder the stickers of any pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New order",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ReorderItemsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -2221,6 +2894,279 @@
                 }
             }
         },
+        "/api/emoji/animated": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Maps an emoji (code point sequence, lower-case hex joined by `-`, every FE0F removed) to an animated\nWebP. A message that is exactly one emoji with an entry here is shown as a big animation on the client;\nthe message stays plain Unicode on the wire. Images are the Cove Moves animations (256 px).\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Animated emoji table",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AnimatedEmojiResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/emoji/animated/{version}/{file}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "`file` is `\u003cid\u003e.webp` from the table. Immutable, versioned URL (see `GET /api/emoji/animated`).\n**Access:** Authenticated.",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Download one animated emoji",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "\u003cid\u003e.webp",
+                        "name": "file",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "304": {
+                        "description": "Not Modified"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/emoji/custom": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The server's custom emoji. They travel as `:name:` inside ordinary text messages (no message type);\na client resolves the shortcode with this list and shows the text unchanged when it is unknown.\n`version` changes whenever the set changes; the response also carries an ETag.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Custom emoji",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CustomEmojiListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/emoji/styles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the styles the admin enabled, the default one, and for each downloadable style a WebP sprite\nsheet plus a JSON index (code point sequence to cell corner) at immutable, versioned URLs. `native`\n(the device's own emoji font) has no assets. Clients bundle at most the default style and download the\nothers on demand. The same choice is visible without signing in at `GET /api/server-info`.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Emoji styles this server offers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.EmojiStylesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/emoji/styles/{style}/{version}/{file}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "`file` is `sheet.webp` or `index.json`. The URL contains the content version from `GET /api/emoji/styles`,\nso the response is immutable (`Cache-Control: private, max-age=31536000, immutable`, ETag). A style the\nadmin has not enabled, or a stale version, is 404.\n**Access:** Authenticated.",
+                "produces": [
+                    "image/webp",
+                    "application/json"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Download an emoji style's sprite sheet or index",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Style id",
+                        "name": "style",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sheet.webp or index.json",
+                        "name": "file",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "304": {
+                        "description": "Not Modified"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/files": {
             "post": {
                 "security": [
@@ -2652,6 +3598,810 @@
                 }
             }
         },
+        "/api/packs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Built-in and server sticker packs that are enabled (shown to everyone), plus user packs the caller owns\nor added. Items are left out (`item_count`, `cover_url`); fetch a pack for them. Order: default pack\nfirst, then built-in, server and user packs, each by `order`. `quota` tells the client what the caller may\nstill create.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "The caller's sticker picker",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates an empty pack owned by the caller; upload stickers with `POST /api/packs/{id}/items`. Limited by the\nadmin's quota (`packs.max_packs_per_user`) and refused while user uploads are switched off.\n**Access:** Authenticated (when user uploads are enabled).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Create a sticker pack",
+                "parameters": [
+                    {
+                        "description": "Pack",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.CreatePackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/attribution": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The licence credits the About page must show (generated with the assets by `make emoji/build`).\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emoji"
+                ],
+                "summary": "Credits for the built-in emoji and stickers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AttributionResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Works for built-in packs, server packs (while enabled) and any user pack, whose unguessable id acts as a\nshare link. Admins can open disabled packs too.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "A sticker pack with its items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a pack the caller owns with all its stickers, removes it from everyone's picker and deletes the\nstored images. Stickers already sent in chats keep their record but no longer load.\n**Access:** Authenticated (pack owner).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Delete a sticker pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes the name or description of a pack the caller owns. `enabled`, `default` and `order` are for admins\n(`PATCH /api/admin/packs/{id}`) and are refused here.\n**Access:** Authenticated (pack owner).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Rename a sticker pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to change",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.UpdatePackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}/install": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Used by the \"Add\" button of a shared pack card. Built-in and server packs are always in the picker, so\nthey cannot be installed (400). Installing a pack twice is fine.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Add a user pack to the caller's picker",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a pack added with install. The owner of a pack cannot uninstall it (delete it instead, 400).\nRemoving a pack that is not installed succeeds.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Remove a pack from the caller's picker",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Multipart form: `file` (PNG, JPEG, GIF or WebP; SVG and everything else is refused by magic bytes, never by\nthe claimed content type) and optional `emoji` (the emoji the sticker stands for). At most 4 MB is accepted;\nthe stored result is at most 512x512 and 512 KB. With ffmpeg the image is re-encoded to WebP (metadata is\nstripped, animations stay animated, at most 10 s); without it only files that already fit are accepted\nunchanged. Limited by the admin's quotas (stickers per pack, total bytes) and refused while user uploads are off.\n**Access:** Authenticated (pack owner, when user uploads are enabled).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Add a sticker to a pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The image",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Emoji this sticker maps to",
+                        "name": "emoji",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ItemUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}/items/{item}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes one sticker and deletes its stored image.\n**Access:** Authenticated (pack owner).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Remove a sticker from a pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "item",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}/items/{item}/file": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Serves the stored image of a server or user pack item with an immutable cache (an item's image never\nchanges; replacing it makes a new item). Privacy trade-off: like avatars, these images are not tied to a\nchannel, so any signed-in user who knows the unguessable ids can load them. That is what lets a sticker\nshow in every conversation without re-encrypting it per channel.\n**Access:** Authenticated (server packs while enabled, any user pack).",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Download a sticker or custom emoji image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "item",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "304": {
+                        "description": "Not Modified"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{id}/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "`item_ids` must list every sticker of the pack exactly once, in the new order.\n**Access:** Authenticated (pack owner).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Reorder the stickers of a pack",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pack ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New order",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ReorderItemsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/register": {
             "post": {
                 "description": "Creates a new Cove user account. Depends on the server's registration mode:\n**open** lets anyone sign up, **invite_only** needs a valid invite_code, **closed** refuses everyone.\nThe very first account on a fresh server is always accepted and becomes the server owner.\nWhen the sign-up check is on (captcha_required in /api/server-info) every sign-up except the first must carry a solved proof-of-work challenge in `captcha`.\n**Access:** Public.",
@@ -2990,6 +4740,81 @@
                     },
                     "429": {
                         "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/stickers/builtin/{pack}/{version}/{file}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "`file` is `\u003csticker id\u003e.webp`. The URL carries the pack's content version (see the `url` of a pack item),\nso the response is immutable. A disabled pack is 404 for everyone but admins.\n**Access:** Authenticated.",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "packs"
+                ],
+                "summary": "Download a built-in sticker",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Built-in pack id",
+                        "name": "pack",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "\u003csticker id\u003e.webp",
+                        "name": "file",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "304": {
+                        "description": "Not Modified"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -3584,14 +5409,16 @@
                 "file",
                 "voice",
                 "video",
-                "invite"
+                "invite",
+                "sticker"
             ],
             "x-enum-varnames": [
                 "MessageTypeText",
                 "MessageTypeFile",
                 "MessageTypeVoice",
                 "MessageTypeVideo",
-                "MessageTypeInvite"
+                "MessageTypeInvite",
+                "MessageTypeSticker"
             ]
         },
         "internal_api.AddMembersRequest": {
@@ -3696,6 +5523,90 @@
                 "version": {
                     "type": "string",
                     "example": "0.9.0"
+                }
+            }
+        },
+        "internal_api.AdminPackListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.PackResponse"
+                    }
+                }
+            }
+        },
+        "internal_api.AnimatedEmojiEntry": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "grinning-face"
+                },
+                "sequence": {
+                    "description": "Sequence is lower-case hex code points joined by \"-\" with every FE0F removed.",
+                    "type": "string",
+                    "example": "1f600"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "/api/emoji/animated/9a8b7c6d5e4f/grinning-face.webp"
+                }
+            }
+        },
+        "internal_api.AnimatedEmojiResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.AnimatedEmojiEntry"
+                    }
+                },
+                "version": {
+                    "type": "string",
+                    "example": "9a8b7c6d5e4f"
+                }
+            }
+        },
+        "internal_api.AttributionEntry": {
+            "type": "object",
+            "properties": {
+                "attribution": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "noto"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "emoji_style",
+                        "sticker"
+                    ]
+                },
+                "license": {
+                    "type": "string",
+                    "example": "Apache-2.0"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.AttributionResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.AttributionEntry"
+                    }
                 }
             }
         },
@@ -3884,6 +5795,43 @@
                 "captcha.enabled": {
                     "type": "boolean"
                 },
+                "emoji.default_style": {
+                    "type": "string",
+                    "enum": [
+                        "native",
+                        "noto",
+                        "twemoji",
+                        "blobmoji",
+                        "fluent",
+                        "fxemoji"
+                    ]
+                },
+                "emoji.enabled_styles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "native",
+                            "noto",
+                            "twemoji",
+                            "blobmoji",
+                            "fluent",
+                            "fxemoji"
+                        ]
+                    }
+                },
+                "packs.max_packs_per_user": {
+                    "type": "integer"
+                },
+                "packs.max_stickers_per_pack": {
+                    "type": "integer"
+                },
+                "packs.max_user_storage_mb": {
+                    "type": "integer"
+                },
+                "packs.user_uploads_enabled": {
+                    "type": "boolean"
+                },
                 "rate_limit.auth_rps": {
                     "type": "integer"
                 },
@@ -4050,6 +5998,59 @@
                 }
             }
         },
+        "internal_api.CreatePackRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My cats"
+                }
+            }
+        },
+        "internal_api.CustomEmojiListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.CustomEmojiResponse"
+                    }
+                },
+                "version": {
+                    "description": "Version changes whenever the set changes; use it (or the ETag) to refresh a cached list.",
+                    "type": "string",
+                    "example": "v3"
+                }
+            }
+        },
+        "internal_api.CustomEmojiResponse": {
+            "type": "object",
+            "properties": {
+                "animated": {
+                    "type": "boolean"
+                },
+                "file_id": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "party_parrot"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "/api/packs/custom-emoji/items/3f2a/file"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_api.DeleteAccountRequest": {
             "type": "object",
             "properties": {
@@ -4068,6 +6069,92 @@
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_api.EmojiStyleResponse": {
+            "type": "object",
+            "properties": {
+                "attribution": {
+                    "type": "string"
+                },
+                "cell_size": {
+                    "type": "integer",
+                    "example": 64
+                },
+                "count": {
+                    "description": "Count is how many emoji the sheet covers; the client falls back to the device font for the rest.",
+                    "type": "integer",
+                    "example": 3750
+                },
+                "default": {
+                    "type": "boolean"
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 3776
+                },
+                "id": {
+                    "type": "string",
+                    "example": "noto"
+                },
+                "index_bytes": {
+                    "type": "integer"
+                },
+                "index_url": {
+                    "type": "string",
+                    "example": "/api/emoji/styles/noto/3fa9c1d2e4b7/index.json"
+                },
+                "license": {
+                    "type": "string",
+                    "example": "Apache-2.0"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Noto Color Emoji"
+                },
+                "sheet_bytes": {
+                    "type": "integer"
+                },
+                "sheet_url": {
+                    "type": "string",
+                    "example": "/api/emoji/styles/noto/3fa9c1d2e4b7/sheet.webp"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Version is a content hash of the sheet and index.",
+                    "type": "string",
+                    "example": "3fa9c1d2e4b7"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 4096
+                }
+            }
+        },
+        "internal_api.EmojiStylesResponse": {
+            "type": "object",
+            "properties": {
+                "default_style": {
+                    "description": "DefaultStyle is the style new devices start with. It is \"native\" (the device's own emoji font) or a style id.",
+                    "type": "string",
+                    "example": "noto"
+                },
+                "enabled_styles": {
+                    "description": "EnabledStyles lists every selectable style id, including \"native\" when allowed.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "styles": {
+                    "description": "Styles holds the downloadable styles among EnabledStyles (\"native\" has no assets).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.EmojiStyleResponse"
+                    }
                 }
             }
         },
@@ -4206,6 +6293,17 @@
                 }
             }
         },
+        "internal_api.ItemUploadResponse": {
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/internal_api.PackItemResponse"
+                },
+                "pack": {
+                    "$ref": "#/definitions/internal_api.PackResponse"
+                }
+            }
+        },
         "internal_api.LoginRequest": {
             "type": "object",
             "properties": {
@@ -4306,6 +6404,172 @@
                 },
                 "recipients": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_api.PackItemResponse": {
+            "type": "object",
+            "properties": {
+                "animated": {
+                    "type": "boolean"
+                },
+                "bytes": {
+                    "type": "integer"
+                },
+                "emoji": {
+                    "type": "string"
+                },
+                "file_id": {
+                    "description": "FileID is the stored image of a server or user pack (the value a sticker message carries); empty for built-in packs.",
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "url": {
+                    "description": "URL is where the image is served (relative to the API base). Built-in images are immutable, versioned URLs.",
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.PackListResponse": {
+            "type": "object",
+            "properties": {
+                "default_pack_id": {
+                    "description": "DefaultPackID is the pack the picker opens on, when one is set.",
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.PackResponse"
+                    }
+                },
+                "quota": {
+                    "$ref": "#/definitions/internal_api.PackQuotaResponse"
+                }
+            }
+        },
+        "internal_api.PackQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "max_packs": {
+                    "type": "integer"
+                },
+                "max_stickers_per_pack": {
+                    "type": "integer"
+                },
+                "max_storage_bytes": {
+                    "type": "integer"
+                },
+                "owned_packs": {
+                    "type": "integer"
+                },
+                "sticker_max_bytes": {
+                    "description": "StickerMaxBytes and StickerMaxSide are the per-image caps after normalisation.",
+                    "type": "integer"
+                },
+                "sticker_max_side": {
+                    "type": "integer"
+                },
+                "used_storage_bytes": {
+                    "type": "integer"
+                },
+                "user_uploads_enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_api.PackResponse": {
+            "type": "object",
+            "properties": {
+                "animated": {
+                    "type": "boolean"
+                },
+                "attribution": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "editable": {
+                    "description": "Editable is true when the caller may change the pack (its owner, or an admin for any server or user pack).",
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "installed": {
+                    "description": "Installed is true when the pack is in the caller's picker: built-in and server packs always are (while enabled),\nuser packs when owned or added.",
+                    "type": "boolean"
+                },
+                "item_count": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api.PackItemResponse"
+                    }
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "emoji_style",
+                        "emoji_custom",
+                        "sticker"
+                    ]
+                },
+                "license": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "owner_name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string",
+                    "enum": [
+                        "builtin",
+                        "server",
+                        "user"
+                    ]
+                },
+                "version": {
+                    "description": "Version changes whenever the pack's contents change.",
+                    "type": "string"
                 }
             }
         },
@@ -4418,6 +6682,17 @@
                 }
             }
         },
+        "internal_api.ReorderItemsRequest": {
+            "type": "object",
+            "properties": {
+                "item_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "internal_api.ResetRequest": {
             "type": "object",
             "properties": {
@@ -4447,10 +6722,22 @@
                     "type": "boolean",
                     "example": false
                 },
+                "default_emoji_style": {
+                    "description": "DefaultEmojiStyle is the style new devices start with; it is one of EmojiStyles.",
+                    "type": "string",
+                    "example": "noto"
+                },
                 "demo": {
                     "description": "Demo is true on a public demo instance; clients show a notice that data resets and is not private.",
                     "type": "boolean",
                     "example": false
+                },
+                "emoji_styles": {
+                    "description": "EmojiStyles lists the emoji style ids users may pick (\"native\" is the device's own font). Additive.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "needs_owner": {
                     "description": "NeedsOwner is true on a fresh server: the next account created becomes the owner.",
@@ -4461,6 +6748,11 @@
                     "description": "RegistrationMode is \"open\", \"invite_only\" or \"closed\".",
                     "type": "string",
                     "example": "invite_only"
+                },
+                "user_stickers_enabled": {
+                    "description": "UserStickersEnabled is false when the admin switched user-made sticker packs off.",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -4701,6 +6993,26 @@
                         10
                     ],
                     "example": 10
+                }
+            }
+        },
+        "internal_api.UpdatePackRequest": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
                 }
             }
         },
