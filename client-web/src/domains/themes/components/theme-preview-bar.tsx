@@ -5,19 +5,18 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { previewSession } from '../api/theme-actions';
+import type { ActivePreview } from '../utils/preview-session';
 import { PREVIEW_BAR_VARS } from '../utils/preview-bar-palette';
 import { localizedThemeName } from '../utils/theme-name';
 
-/** Seconds left until a preview reverts by itself, ticking once a second while one runs. */
-function useSecondsLeft(expiresAt: number | null): number {
+/** Seconds left until a preview reverts by itself, ticking once a second. Mounted only while a preview runs. */
+function useSecondsLeft(expiresAt: number): number {
 	const [now, setNow] = useState(() => Date.now());
 	useEffect(() => {
-		if (expiresAt === null) return;
-		setNow(Date.now());
 		const timer = setInterval(() => setNow(Date.now()), 1000);
 		return () => clearInterval(timer);
 	}, [expiresAt]);
-	return expiresAt === null ? 0 : Math.max(0, Math.ceil((expiresAt - now) / 1000));
+	return Math.max(0, Math.ceil((expiresAt - now) / 1000));
 }
 
 /**
@@ -28,11 +27,8 @@ function useSecondsLeft(expiresAt: number | null): number {
  * `pointer-events: auto` keeps the bar clickable while a modal dialog (Settings) has disabled the rest of the page.
  */
 export function ThemePreviewBar() {
-	const { t, i18n } = useTranslation();
 	const session = previewSession();
 	const active = useSyncExternalStore(session.subscribe, session.current);
-	const secondsLeft = useSecondsLeft(active?.expiresAt ?? null);
-	const [busy, setBusy] = useState(false);
 	const { pathname } = useLocation();
 
 	useEffect(() => {
@@ -40,7 +36,14 @@ export function ThemePreviewBar() {
 		return () => session.revert();
 	}, [pathname, session]);
 
-	if (!active) return null;
+	return active ? <PreviewBarBody active={active} /> : null;
+}
+
+function PreviewBarBody({ active }: { active: ActivePreview }) {
+	const { t, i18n } = useTranslation();
+	const session = previewSession();
+	const secondsLeft = useSecondsLeft(active.expiresAt);
+	const [busy, setBusy] = useState(false);
 
 	async function apply() {
 		setBusy(true);

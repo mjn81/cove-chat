@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,13 +31,14 @@ function Channel({ label, value, max, onChange }: { label: string; value: number
 export function HslColorPicker({ label, value, onChange }: HslColorPickerProps) {
 	const { t } = useTranslation();
 	const [h, s, l] = tripletToHsl(value);
-	const [hex, setHex] = useState(() => tripletToHex(value));
-	useEffect(() => setHex(tripletToHex(value)), [value]);
+	// What the user is typing; `null` means the field simply shows the current colour.
+	const [typed, setTyped] = useState<string | null>(null);
+	const hex = typed ?? tripletToHex(value);
 
 	const commitHex = () => {
 		const parsed = parseColorValue(hex.trim());
 		if (parsed) onChange(parsed.value);
-		else setHex(tripletToHex(value));
+		setTyped(null);
 	};
 
 	return (
@@ -69,7 +70,7 @@ export function HslColorPicker({ label, value, onChange }: HslColorPickerProps) 
 				<Input
 					dir="ltr"
 					value={hex}
-					onChange={(e) => setHex(e.target.value)}
+					onChange={(e) => setTyped(e.target.value)}
 					onBlur={commitHex}
 					onKeyDown={(e) => {
 						if (e.key === 'Enter') commitHex();

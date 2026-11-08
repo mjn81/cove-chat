@@ -10,13 +10,12 @@ import type { ThemeAsset } from '../types/themes.types';
 export function useAssetBlobUrl(asset: ThemeAsset | null): string | null {
 	const [url, setUrl] = useState<string | null>(null);
 	useEffect(() => {
-		if (!asset) {
-			setUrl(null);
-			return;
-		}
+		if (!asset) return;
 		const next = URL.createObjectURL(new Blob([asset.bytes as BlobPart], { type: asset.mime }));
+		// An object URL is an external resource that must be created and revoked in step with the bytes.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setUrl(next);
 		return () => URL.revokeObjectURL(next);
 	}, [asset]);
-	return url;
+	return asset ? url : null;
 }
