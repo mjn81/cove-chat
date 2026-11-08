@@ -131,7 +131,7 @@ describe('parseCoveTheme: schema', () => {
 	});
 
 	it('refuses control and bidi-override characters in text', () => {
-		expect(parseJson(validThemeJson({ name: { en: 'Evil‮name' } })).ok).toBe(false);
+		expect(parseJson(validThemeJson({ name: { en: 'Evil\u202ename' } })).ok).toBe(false);
 		expect(parseJson(validThemeJson({ name: { en: 'bell\u0007' } })).ok).toBe(false);
 	});
 

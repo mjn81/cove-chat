@@ -185,7 +185,7 @@ export default function AppPage() {
 					{/* Overlay for Right Sidebar on Tablets/Small Desktop */}
 					{isRightSidebarOpen && activeChannel && (
 						<div
-							className="fixed inset-x-0 bottom-0 top-[var(--titlebar-h,0px)] bg-black/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+							className="fixed inset-x-0 bottom-0 top-[var(--titlebar-h,0px)] bg-overlay/60 z-40 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
 							onClick={() => setRightSidebarOpen(false)}
 						/>
 					)}

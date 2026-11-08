@@ -65,7 +65,7 @@ const failWith = (errors: ThemeIssue[]): ParseResult => ({ ok: false, error: err
 const ID_RE = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const ASSET_NAME_RE = /^assets\/[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.(png|jpe?g|webp)$/;
 // eslint-disable-next-line no-control-regex -- refusing control characters is the point
-const BAD_TEXT_RE = /[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩﻿]/;
+const BAD_TEXT_RE = /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]/;
 const EXT_MIME: Record<string, ThemeAsset['mime']> = {
 	png: 'image/png',
 	jpg: 'image/jpeg',
@@ -358,7 +358,7 @@ function parseUnsafe(bytes: Uint8Array): ParseResult {
 
 	let json: unknown;
 	try {
-		const text = strFromU8(jsonBytes).replace(/^﻿/, '');
+		const text = strFromU8(jsonBytes).replace(/^\ufeff/, '');
 		json = JSON.parse(text);
 	} catch {
 		return failWith([{ code: 'invalid_json' }]);
