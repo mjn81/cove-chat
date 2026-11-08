@@ -15,8 +15,16 @@ import { packErrorMessage } from '../utils/pack-errors';
 import { renderStickerWebp } from '../utils/sticker-image';
 import { checkStickerFile, isAnimatedImage, STICKER_MIME_TYPES, type StickerFileProblem } from '../utils/sticker-upload';
 
+/** What the flow needs from an upload mutation; the admin panel passes its own (no user quotas, admin route). */
+export interface StickerUploader {
+	mutateAsync: (v: { packId: string; file: Blob; emoji?: string; fileName?: string }) => Promise<unknown>;
+	isPending: boolean;
+}
+
 interface AddStickerFlowProps {
 	packId: string;
+	/** Upload mutation to use; defaults to the user route. */
+	uploader?: StickerUploader;
 	stickersInPack: number;
 	quota: PackQuota | undefined;
 }
@@ -37,14 +45,15 @@ interface Staged {
  * @param stickersInPack - Current sticker count, for the quota pre-check.
  * @param quota - Caps and usage from the pack list.
  */
-export function AddStickerFlow({ packId, stickersInPack, quota }: AddStickerFlowProps) {
+export function AddStickerFlow({ packId, stickersInPack, quota, uploader }: AddStickerFlowProps) {
 	const { t } = useTranslation();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [editing, setEditing] = useState<File | null>(null);
 	const [staged, setStaged] = useState<Staged | null>(null);
 	const [emoji, setEmoji] = useState('');
 	const [showPicker, setShowPicker] = useState(false);
-	const upload = useUploadSticker();
+	const ownUpload = useUploadSticker();
+	const upload: StickerUploader = uploader ?? ownUpload;
 
 	// The preview is an object URL; release it when the staged file changes or the flow closes.
 	useEffect(() => {

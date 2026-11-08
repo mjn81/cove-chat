@@ -90,8 +90,8 @@ export function ConfigPanel() {
 	const [draft, setDraft] = useState<Draft>({});
 	const [askPassword, setAskPassword] = useState(false);
 
-	// Registration lives in its own tab.
-	const settings = (config.data?.settings ?? []).filter((s) => s.key !== 'registration.mode');
+	// Registration and emoji/stickers live in their own tabs (the emoji group has a list setting this form cannot edit).
+	const settings = (config.data?.settings ?? []).filter((s) => s.key !== 'registration.mode' && s.group !== 'emoji');
 	const dirty = settings.filter((s) => s.key in draft && draft[s.key] !== s.value);
 	const needsOwner = dirty.some((s) => s.owner_only);
 	const invalid = dirty.some((s) => draft[s.key] === '');

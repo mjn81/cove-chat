@@ -112,3 +112,18 @@ export function tokenizeEmojiText(text: string, customNames?: ReadonlySet<string
 export function firstEmoji(text: string): string {
 	return splitGraphemes(text).find(isEmojiGrapheme) ?? '';
 }
+
+/**
+ * Normalises what an admin typed as a custom emoji name the way the server does: surrounding colons dropped,
+ * lower case, spaces and dashes to underscores.
+ *
+ * @param input - Raw text such as `:Party Parrot:`.
+ */
+export function normalizeEmojiName(input: string): string {
+	return input.trim().replace(/^:+|:+$/g, '').toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+/** Whether a (normalised) name satisfies the server's shortcode rule `[a-z0-9_]{2,32}`. */
+export function isValidEmojiName(name: string): boolean {
+	return new RegExp(`^${CUSTOM_NAME}$`).test(name);
+}

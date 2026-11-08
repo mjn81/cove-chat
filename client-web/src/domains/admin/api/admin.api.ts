@@ -24,6 +24,7 @@ export const adminKeys = {
 	admins: () => ['admin', 'admins'] as const,
 	audit: () => ['admin', 'audit'] as const,
 	update: () => ['admin', 'update'] as const,
+	packs: () => ['admin', 'packs'] as const,
 };
 
 export const adminOverview = () => request<AdminOverview>(apiClient.get('/api/admin/overview'));

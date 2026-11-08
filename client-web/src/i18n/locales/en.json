@@ -671,9 +671,67 @@
 		"retake": "Retake"
 	},
 	"admin": {
+		"packs": {
+			"builtin_readonly": "Built-in packs cannot be edited here. You can enable, disable, reorder or make them the default.",
+			"create_pack": "New server pack",
+			"default": "Default",
+			"default_style": "Default style",
+			"delete": "Delete pack",
+			"delete_confirm": "Delete the server pack \"{{name}}\" and all its stickers? This cannot be undone.",
+			"delete_user_confirm": "Delete \"{{name}}\" by {{owner}} and all its stickers? This cannot be undone.",
+			"emoji_added": "Custom emoji added",
+			"emoji_delete": "Delete :{{name}}:",
+			"emoji_hint": "Members type :name: to use one. PNG, WebP or GIF; stored at most 128 px and 256 KB.",
+			"emoji_name": "Emoji name",
+			"emoji_name_invalid": "Use 2 to 32 lowercase letters, digits or underscores.",
+			"emoji_name_placeholder": "party_parrot",
+			"emoji_none": "No custom emoji yet.",
+			"emoji_title": "Custom emoji",
+			"emoji_type": "Use a PNG, WebP or GIF image.",
+			"emoji_upload": "Choose image and add",
+			"enabled": "Enabled",
+			"items_title": "Stickers",
+			"items_unavailable": "The stickers of this pack could not be loaded. Enable the pack first.",
+			"limits": {
+				"packs.max_packs_per_user": "Packs per user",
+				"packs.max_stickers_per_pack": "Stickers per pack",
+				"packs.max_user_storage_mb": "Storage per user (MB)"
+			},
+			"make_default": "Make default",
+			"moderation_hint": "Packs made by members. Deleting one removes its stickers and is recorded in the audit log.",
+			"moderation_none": "No member packs.",
+			"moderation_title": "Member sticker packs",
+			"move_down": "Move down",
+			"move_up": "Move up",
+			"owner": "By {{name}}",
+			"problems": {
+				"none_enabled": "Enable at least one emoji style.",
+				"default_not_enabled": "The default style must be one of the enabled styles."
+			},
+			"scope_builtin": "Built-in",
+			"scope_server": "Server pack",
+			"server_hint": "Packs every member sees. Only one pack is the default.",
+			"server_title": "Server sticker packs",
+			"stickers": "Stickers",
+			"styles": {
+				"native": "Device emoji",
+				"noto": "Noto Color Emoji",
+				"twemoji": "Twemoji",
+				"blobmoji": "Blobmoji",
+				"fluent": "Fluent Emoji Flat",
+				"fxemoji": "FxEmojis"
+			},
+			"styles_hint": "Members choose among the enabled styles. Devices download a style the first time it is used.",
+			"styles_title": "Emoji styles",
+			"unsupported": "This server does not offer emoji and sticker settings.",
+			"uploads_title": "Member sticker uploads",
+			"user_uploads": "Allow members to make sticker packs",
+			"user_uploads_hint": "When off, existing packs keep working but nobody can create packs or upload stickers."
+		},
 		"title": "Server admin",
 		"section": "Administration",
 		"tabs": {
+			"emoji": "Emoji and stickers",
 			"overview": "Overview",
 			"registration": "Registration",
 			"config": "Settings",
@@ -1202,5 +1260,135 @@
 		"username_too_short": "Username is too short.",
 		"video_too_large": "The video exceeds the maximum size of {{detail}} MB.",
 		"video_too_long": "Video messages can't exceed {{detail}} seconds."
+	},
+	"emoji": {
+		"big": {
+			"replay": "Tap to replay"
+		},
+		"categories": {
+			"people": "Smileys and people",
+			"nature": "Animals and nature",
+			"foods": "Food and drink",
+			"activity": "Activities",
+			"places": "Travel and places",
+			"objects": "Objects",
+			"symbols": "Symbols",
+			"flags": "Flags"
+		},
+		"panel": {
+			"emoji": "Emoji",
+			"stickers": "Stickers"
+		},
+		"picker": {
+			"custom": "Custom emoji",
+			"downloading": "Downloading emoji style…",
+			"no_results": "No emoji found",
+			"recent": "Recently used",
+			"search": "Search emoji",
+			"style": "Emoji style"
+		},
+		"settings": {
+			"tab": "Emoji and stickers",
+			"title": "Emoji",
+			"style": "Emoji style",
+			"style_hint": "Applies to this device only. A style is downloaded the first time you use it.",
+			"animated": "Animated emoji",
+			"animated_hint": "Show a single emoji as a big animation. Off by default when your system reduces motion."
+		},
+		"shortcode": {
+			"header": "Custom emoji matching :{{query}}"
+		},
+		"styles": {
+			"native": "Device emoji"
+		}
+	},
+	"stickers": {
+		"credits": {
+			"open": "Credits and licenses",
+			"title": "Credits",
+			"description": "Artwork shipped with this server.",
+			"emoji": "Emoji styles",
+			"stickers": "Sticker packs",
+			"unavailable": "Credits could not be loaded."
+		},
+		"errors": {
+			"generic": "Something went wrong. Please try again.",
+			"pack_not_found": "That sticker pack no longer exists.",
+			"pack_limit_reached": "You have reached a sticker limit (packs, stickers per pack or storage).",
+			"emoji_name_taken": "Another emoji already uses that name.",
+			"pack_uploads_disabled": "The server administrator has turned off sticker uploads.",
+			"image_invalid": "That image cannot be used. Use a PNG, JPEG, GIF or WebP image that is not too large.",
+			"sticker_invalid": "That sticker could not be sent.",
+			"payload_too_large": "The file is too large.",
+			"rate_limited": "Too many requests. Please wait a moment.",
+			"service_unavailable": "The server is busy. Please try again shortly.",
+			"forbidden": "You are not allowed to do that.",
+			"unauthorized": "Please sign in again."
+		},
+		"manager": {
+			"title": "My stickers",
+			"new_pack": "New pack",
+			"create": "Create",
+			"name_label": "Pack name",
+			"name_placeholder": "Pack name",
+			"quota": "Packs: {{packs}} of {{maxPacks}} · Storage: {{used}} of {{max}}",
+			"mine": "My packs",
+			"none_mine": "You have not made any packs yet.",
+			"added": "Added from others",
+			"edit": "Edit",
+			"back": "Back",
+			"rename": "Rename pack",
+			"share": "Share to chat",
+			"delete": "Delete",
+			"delete_pack": "Delete pack",
+			"delete_pack_confirm": "Delete \"{{name}}\" and all its stickers? This cannot be undone.",
+			"delete_sticker": "Delete sticker",
+			"move_earlier": "Move earlier",
+			"move_later": "Move later",
+			"add_sticker": "Add sticker",
+			"upload": "Add",
+			"emoji_label": "Emoji for this sticker",
+			"emoji_placeholder": "Emoji (optional)",
+			"emoji_hint": "The emoji helps people find the sticker. It cannot be changed later.",
+			"pick_emoji": "Pick an emoji",
+			"empty_pack": "This pack is empty. Add your first sticker.",
+			"count_of": "Stickers: {{count}} of {{max}}"
+		},
+		"message": {
+			"sticker": "Sticker",
+			"open_pack": "Open sticker pack",
+			"unavailable": "This sticker cannot be shown."
+		},
+		"pack": {
+			"title": "Sticker pack",
+			"by": "By {{name}}",
+			"count": "Stickers: {{count}}",
+			"add": "Add stickers",
+			"add_stickers": "Add stickers",
+			"added": "Sticker pack added",
+			"added_short": "Added",
+			"remove": "Remove",
+			"preview": "Preview pack",
+			"unavailable": "This sticker pack is not available."
+		},
+		"panel": {
+			"empty": "No sticker packs yet.",
+			"recent": "Recently used"
+		},
+		"problems": {
+			"type": "Use a PNG, JPEG, GIF or WebP image.",
+			"too_large": "That file is larger than 4 MB.",
+			"pack_full": "This pack is full.",
+			"storage_full": "You have used all your sticker storage.",
+			"uploads_disabled": "Sticker uploads are turned off on this server.",
+			"pack_limit": "You have reached the limit of sticker packs.",
+			"decode": "That image could not be read."
+		},
+		"share": {
+			"title": "Share sticker pack",
+			"send": "Send",
+			"sent": "Shared in {{count}} chats",
+			"failed": "Could not share the pack."
+		}
 	}
 }

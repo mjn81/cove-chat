@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emojiKey, firstEmoji, isEmojiGrapheme, splitGraphemes, tokenizeEmojiText, CUSTOM_EMOJI_RE } from './emoji-text';
+import { emojiKey, firstEmoji, isEmojiGrapheme, isValidEmojiName, normalizeEmojiName, splitGraphemes, tokenizeEmojiText, CUSTOM_EMOJI_RE } from './emoji-text';
 
 describe('emojiKey', () => {
 	it('hex-encodes code points and drops every FE0F', () => {
@@ -75,5 +75,19 @@ describe('firstEmoji', () => {
 		expect(firstEmoji('ab 👍🏽😀')).toBe('👍🏽');
 		expect(firstEmoji('no emoji')).toBe('');
 		expect(firstEmoji('')).toBe('');
+	});
+});
+
+describe('normalizeEmojiName / isValidEmojiName', () => {
+	it('normalises like the server', () => {
+		expect(normalizeEmojiName(':Party Parrot:')).toBe('party_parrot');
+		expect(normalizeEmojiName('  cat-face ')).toBe('cat_face');
+	});
+	it('validates the shortcode rule', () => {
+		expect(isValidEmojiName('party_parrot')).toBe(true);
+		expect(isValidEmojiName('a')).toBe(false);
+		expect(isValidEmojiName('x'.repeat(33))).toBe(false);
+		expect(isValidEmojiName('bad name')).toBe(false);
+		expect(isValidEmojiName('Upper')).toBe(false);
 	});
 });
