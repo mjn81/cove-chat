@@ -416,3 +416,27 @@ export function buildCoveTheme(theme: ThemeDefinition, assets: Record<string, Th
 	for (const [path, asset] of Object.entries(assets)) files[path] = [asset.bytes, { level: 0 }];
 	return zipSync(files);
 }
+
+/**
+ * Re-validates a theme read back from local storage (the persisted settings or IndexedDB), so tampered or stale
+ * data is held to the same rules as a freshly imported file.
+ *
+ * @param value A stored {@link ThemeDefinition}, untrusted.
+ * @returns The sanitised theme, or `null` when it no longer validates.
+ */
+export function revalidateThemeDefinition(value: unknown): ThemeDefinition | null {
+	if (!isRecord(value)) return null;
+	try {
+		const json = themeToJson(value as unknown as ThemeDefinition);
+		// The image bytes live elsewhere (IndexedDB); the path only has to exist for the schema check.
+		const asset = (value.chat as { background?: { asset?: unknown } } | undefined)?.background?.asset;
+		const stub: ThemeAsset = { mime: 'image/png', bytes: new Uint8Array(0), width: 1, height: 1 };
+		const assets: Record<string, ThemeAsset> = {};
+		if (typeof asset === 'string') assets[asset] = stub;
+		if (typeof value.preview === 'string') assets[value.preview] = stub;
+		const result = validateThemeJson(json, assets);
+		return result.ok ? result.theme : null;
+	} catch {
+		return null;
+	}
+}

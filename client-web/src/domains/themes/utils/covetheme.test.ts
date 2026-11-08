@@ -9,7 +9,7 @@ import {
 	themeJsonEntry,
 	validThemeJson,
 } from './covetheme.fixtures';
-import { COVETHEME_LIMITS, buildCoveTheme, parseCoveTheme } from './covetheme';
+import { COVETHEME_LIMITS, buildCoveTheme, parseCoveTheme, revalidateThemeDefinition } from './covetheme';
 
 const enc = new TextEncoder();
 
@@ -313,5 +313,19 @@ describe('parseCoveTheme: archive hardening applies', () => {
 		for (const junk of [new Uint8Array(0), enc.encode('PK'), new Uint8Array(1000).fill(255), enc.encode('{"format":"cove-theme"}')]) {
 			expect(parseCoveTheme(junk).ok).toBe(false);
 		}
+	});
+});
+
+describe('revalidateThemeDefinition', () => {
+	it('accepts what the parser produced and rejects tampering', () => {
+		const r = parseJson(validThemeJson());
+		expect(r.ok).toBe(true);
+		if (!r.ok) return;
+		expect(revalidateThemeDefinition(r.theme)).toEqual(r.theme);
+		expect(revalidateThemeDefinition({ ...r.theme, tokens: { ...r.theme.tokens, primary: 'url(x)' } })).toBeNull();
+		expect(revalidateThemeDefinition({ ...r.theme, id: '../x' })).toBeNull();
+		expect(revalidateThemeDefinition(null)).toBeNull();
+		expect(revalidateThemeDefinition('x')).toBeNull();
+		expect(revalidateThemeDefinition({})).toBeNull();
 	});
 });
