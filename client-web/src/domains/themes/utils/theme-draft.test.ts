@@ -116,10 +116,10 @@ describe('draftIssues', () => {
 
 describe('export round trip', () => {
 	it('parses back to an equal theme', () => {
-		let d = draftFromTheme(nord, {}, { asCopy: true, random: () => 0.7 });
+		let d = draftFromTheme(dracula, {}, { asCopy: true, random: () => 0.7 });
 		d = { ...d, name: { en: 'Round Trip' }, author: 'Sam', license: 'CC0-1.0' };
 		d = setDraftToken(d, 'base', 'primary', '12 80% 60%');
-		d = setDraftBackground(d, { type: 'gradient', from: '200 10% 48%', to: '220 10% 52%', angle: 45 });
+		d = setDraftBackground(d, { type: 'gradient', from: '230 20% 14%', to: '230 20% 20%', angle: 45 });
 		const theme = draftToTheme(d);
 		const parsed = parseCoveTheme(buildCoveTheme(theme, draftAssets(d)));
 		expect(parsed.ok).toBe(true);
