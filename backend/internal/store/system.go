@@ -11,8 +11,6 @@ import (
 	"cove/backend/internal/crypto"
 	"cove/backend/internal/db"
 	"cove/backend/internal/models"
-
-	"github.com/segmentio/ksuid"
 )
 
 // maxKnownDevices bounds the per-user list of device fingerprints used to decide whether a login is new.
@@ -109,7 +107,7 @@ func (s *Store) PostSystemMessage(userID, text string, kek []byte) (msg *models.
 		return nil, nil, false, err
 	}
 	msg = &models.Message{
-		ID:          ksuid.New().String(),
+		ID:          NewMessageID(),
 		ChannelID:   ch.ID,
 		SenderID:    models.SystemUserID,
 		Type:        models.MessageTypeText,

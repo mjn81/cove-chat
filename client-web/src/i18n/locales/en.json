@@ -711,6 +711,9 @@
 				"owner": {
 					"transfer": "transferred ownership to"
 				},
+				"notice": {
+					"send": "sent a notice to"
+				},
 				"backup": {
 					"download": "downloaded a backup"
 				},

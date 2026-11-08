@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cove/backend/internal/models"
-	"github.com/segmentio/ksuid"
+	"cove/backend/internal/store"
 )
 
 // handleChatMessage persists and broadcasts an incoming encrypted chat message.
@@ -70,7 +70,7 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 
 	now := time.Now().UTC()
 	msg := &models.Message{
-		ID:          ksuid.New().String(),
+		ID:          store.NewMessageID(),
 		ChannelID:   body.ChannelID,
 		SenderID:    c.UserID,
 		Type:        body.Type,
