@@ -15,6 +15,9 @@ type SettingsInit struct {
 	MaxVideoDurationSec int
 	CaptchaEnabled      bool
 	CaptchaDifficulty   string
+	// Emoji and Packs are the live emoji-style and sticker-pack settings (zero values mean the config defaults).
+	Emoji config.EmojiConfig
+	Packs config.PacksConfig
 }
 
 // Settings holds the configuration values that can change while the server

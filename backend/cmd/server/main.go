@@ -191,6 +191,8 @@ func main() {
 			MaxFileSizeMB:       cfg.Server.MaxFileSizeMB,
 			MaxVideoSizeMB:      cfg.Server.MaxVideoSizeMB,
 			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
+			Emoji:               cfg.Emoji,
+			Packs:               cfg.Packs,
 		}),
 		Demo:         cfg.Demo,
 		LoginNotifications: cfg.Sessions.LoginNotifications,
