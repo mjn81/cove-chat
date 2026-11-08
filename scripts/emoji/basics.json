@@ -1,0 +1,194 @@
+[
+ {
+  "name": "Grinning face",
+  "path": "assets/Grinning face/3D/grinning_face_3d.png"
+ },
+ {
+  "name": "Face with tears of joy",
+  "path": "assets/Face with tears of joy/3D/face_with_tears_of_joy_3d.png"
+ },
+ {
+  "name": "Smiling face with heart-eyes",
+  "path": "assets/Smiling face with heart-eyes/3D/smiling_face_with_heart-eyes_3d.png"
+ },
+ {
+  "name": "Smiling face with hearts",
+  "path": "assets/Smiling face with hearts/3D/smiling_face_with_hearts_3d.png"
+ },
+ {
+  "name": "Winking face",
+  "path": "assets/Winking face/3D/winking_face_3d.png"
+ },
+ {
+  "name": "Smiling face with sunglasses",
+  "path": "assets/Smiling face with sunglasses/3D/smiling_face_with_sunglasses_3d.png"
+ },
+ {
+  "name": "Thinking face",
+  "path": "assets/Thinking face/3D/thinking_face_3d.png"
+ },
+ {
+  "name": "Face with rolling eyes",
+  "path": "assets/Face with rolling eyes/3D/face_with_rolling_eyes_3d.png"
+ },
+ {
+  "name": "Loudly crying face",
+  "path": "assets/Loudly crying face/3D/loudly_crying_face_3d.png"
+ },
+ {
+  "name": "Face screaming in fear",
+  "path": "assets/Face screaming in fear/3D/face_screaming_in_fear_3d.png"
+ },
+ {
+  "name": "Exploding head",
+  "path": "assets/Exploding head/3D/exploding_head_3d.png"
+ },
+ {
+  "name": "Partying face",
+  "path": "assets/Partying face/3D/partying_face_3d.png"
+ },
+ {
+  "name": "Star-struck",
+  "path": "assets/Star-struck/3D/star-struck_3d.png"
+ },
+ {
+  "name": "Smiling face with halo",
+  "path": "assets/Smiling face with halo/3D/smiling_face_with_halo_3d.png"
+ },
+ {
+  "name": "Zany face",
+  "path": "assets/Zany face/3D/zany_face_3d.png"
+ },
+ {
+  "name": "Face blowing a kiss",
+  "path": "assets/Face blowing a kiss/3D/face_blowing_a_kiss_3d.png"
+ },
+ {
+  "name": "Sleeping face",
+  "path": "assets/Sleeping face/3D/sleeping_face_3d.png"
+ },
+ {
+  "name": "Nerd face",
+  "path": "assets/Nerd face/3D/nerd_face_3d.png"
+ },
+ {
+  "name": "Hugging face",
+  "path": "assets/Hugging face/3D/hugging_face_3d.png"
+ },
+ {
+  "name": "Saluting face",
+  "path": "assets/Saluting face/3D/saluting_face_3d.png"
+ },
+ {
+  "name": "Red heart",
+  "path": "assets/Red heart/3D/red_heart_3d.png"
+ },
+ {
+  "name": "Broken heart",
+  "path": "assets/Broken heart/3D/broken_heart_3d.png"
+ },
+ {
+  "name": "Sparkling heart",
+  "path": "assets/Sparkling heart/3D/sparkling_heart_3d.png"
+ },
+ {
+  "name": "Fire",
+  "path": "assets/Fire/3D/fire_3d.png"
+ },
+ {
+  "name": "Party popper",
+  "path": "assets/Party popper/3D/party_popper_3d.png"
+ },
+ {
+  "name": "Rocket",
+  "path": "assets/Rocket/3D/rocket_3d.png"
+ },
+ {
+  "name": "Sparkles",
+  "path": "assets/Sparkles/3D/sparkles_3d.png"
+ },
+ {
+  "name": "Hundred points",
+  "path": "assets/Hundred points/3D/hundred_points_3d.png"
+ },
+ {
+  "name": "Eyes",
+  "path": "assets/Eyes/3D/eyes_3d.png"
+ },
+ {
+  "name": "Thumbs up",
+  "path": "assets/Thumbs up/Default/3D/thumbs_up_3d_default.png"
+ },
+ {
+  "name": "Clapping hands",
+  "path": "assets/Clapping hands/Default/3D/clapping_hands_3d_default.png"
+ },
+ {
+  "name": "Folded hands",
+  "path": "assets/Folded hands/Default/3D/folded_hands_3d_default.png"
+ },
+ {
+  "name": "Waving hand",
+  "path": "assets/Waving hand/Default/3D/waving_hand_3d_default.png"
+ },
+ {
+  "name": "Flexed biceps",
+  "path": "assets/Flexed biceps/Default/3D/flexed_biceps_3d_default.png"
+ },
+ {
+  "name": "Victory hand",
+  "path": "assets/Victory hand/Default/3D/victory_hand_3d_default.png"
+ },
+ {
+  "name": "Raising hands",
+  "path": "assets/Raising hands/Default/3D/raising_hands_3d_default.png"
+ },
+ {
+  "name": "Cat face",
+  "path": "assets/Cat face/3D/cat_face_3d.png"
+ },
+ {
+  "name": "Dog face",
+  "path": "assets/Dog face/3D/dog_face_3d.png"
+ },
+ {
+  "name": "Unicorn",
+  "path": "assets/Unicorn/3D/unicorn_3d.png"
+ },
+ {
+  "name": "Pizza",
+  "path": "assets/Pizza/3D/pizza_3d.png"
+ },
+ {
+  "name": "Birthday cake",
+  "path": "assets/Birthday cake/3D/birthday_cake_3d.png"
+ },
+ {
+  "name": "Hot beverage",
+  "path": "assets/Hot beverage/3D/hot_beverage_3d.png"
+ },
+ {
+  "name": "Beer mug",
+  "path": "assets/Beer mug/3D/beer_mug_3d.png"
+ },
+ {
+  "name": "Trophy",
+  "path": "assets/Trophy/3D/trophy_3d.png"
+ },
+ {
+  "name": "Light bulb",
+  "path": "assets/Light bulb/3D/light_bulb_3d.png"
+ },
+ {
+  "name": "Rainbow",
+  "path": "assets/Rainbow/3D/rainbow_3d.png"
+ },
+ {
+  "name": "Sun",
+  "path": "assets/Sun/3D/sun_3d.png"
+ },
+ {
+  "name": "Crescent moon",
+  "path": "assets/Crescent moon/3D/crescent_moon_3d.png"
+ }
+]

@@ -3,3 +3,6 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 VERSION text eol=lf
+
+# Embedded emoji/sticker assets (make emoji/build): hashed into asset URLs, so never convert line endings.
+backend/internal/packs/assets/** -text

@@ -1,4 +1,4 @@
-.PHONY: patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck desktop/test desktop/vet wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: emoji/install emoji/build patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck desktop/test desktop/vet wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -67,6 +67,12 @@ front/test: ## Run frontend unit tests (Vitest)
 
 front/lint: ## Run ESLint on the web client
 	$(PNPM) -C client-web lint
+
+emoji/install: ## Install the emoji/sticker asset generator's deps (pnpm, scripts/emoji)
+	$(PNPM) -C scripts/emoji install
+
+emoji/build: emoji/install ## Regenerate the embedded emoji styles + sticker packs (backend/internal/packs/assets); needs git + network
+	node scripts/emoji/build.mjs
 
 patterns: ## Regenerate the Lucide-based chat background patterns (web SVGs + Android assets)
 	node scripts/gen-chat-patterns.mjs

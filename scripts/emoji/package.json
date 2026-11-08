@@ -1,0 +1,9 @@
+{
+  "name": "cove-emoji-build",
+  "private": true,
+  "type": "module",
+  "description": "Build tooling for the emoji styles and sticker packs embedded in the server (make emoji/build).",
+  "dependencies": {
+    "sharp": "0.34.5"
+  }
+}
