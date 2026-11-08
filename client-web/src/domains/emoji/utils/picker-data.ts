@@ -9,7 +9,7 @@ export interface RawEmojiData {
 	emojis: Record<string, { id: string; name: string; keywords?: string[]; skins: { native: string }[] }>;
 }
 
-/** One picker entry: the default-skin character plus what search matches on. */
+/** One picker entry: the character in the chosen skin tone plus what search matches on. */
 export interface PickerEmoji {
 	id: string;
 	name: string;
@@ -24,16 +24,17 @@ export interface PickerCategory {
 }
 
 /**
- * Turns the raw dataset into display categories (default skin tone only), dropping ids that have no entry.
+ * Turns the raw dataset into display categories, dropping ids that have no entry.
  *
  * @param data - The emoji-mart dataset.
+ * @param skin - Skin tone 1 (default) to 6; emoji without tone variants keep their only form.
  */
-export function buildCategories(data: RawEmojiData): PickerCategory[] {
+export function buildCategories(data: RawEmojiData, skin = 1): PickerCategory[] {
 	return data.categories.map((category) => ({
 		id: category.id,
 		emojis: category.emojis.flatMap((id) => {
 			const e = data.emojis[id];
-			const native = e?.skins?.[0]?.native;
+			const native = (e?.skins?.[skin - 1] ?? e?.skins?.[0])?.native;
 			return e && native ? [{ id: e.id, name: e.name, keywords: e.keywords ?? [], native }] : [];
 		}),
 	}));

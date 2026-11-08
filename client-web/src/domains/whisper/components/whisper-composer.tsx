@@ -5,6 +5,7 @@ import { FileText, Smile, X } from 'lucide-react';
 
 import { AttachMenu } from '@/components/attach-menu';
 import EmojiPicker from '@/components/EmojiPicker';
+import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
@@ -161,6 +162,8 @@ export const WhisperComposer = ({
 						<button
 								type="button"
 								disabled={disabled}
+								data-emoji-toggle
+								onMouseDown={(e) => e.preventDefault()}
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowEmoji((v) => !v);
@@ -199,9 +202,15 @@ export const WhisperComposer = ({
 			{showEmoji && (
 				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
 					<EmojiPicker
-						onSelect={(emoji) => {
-							setInputText((prev) => prev + emoji.native);
-							setShowEmoji(false);
+						onSelect={(emoji, info) => {
+							const ta = textareaRef.current;
+							const next = insertAtSelection(inputText, ta?.selectionStart, ta?.selectionEnd, emoji.native);
+							setInputText(next.text);
+							if (!ta) return;
+							requestAnimationFrame(() => {
+								if (!info.keyboard) ta.focus();
+								ta.setSelectionRange(next.caret, next.caret);
+							});
 						}}
 						onClickOutside={() => setShowEmoji(false)}
 						theme={theme}

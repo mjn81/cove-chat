@@ -10,9 +10,12 @@ interface EmojiSettingsState {
 	animated: boolean | null;
 	/** Recently used emoji (unicode characters or `:name:` shortcodes), newest first. */
 	recents: string[];
+	/** Skin tone for people emoji in the picker: 1 (default) to 6. */
+	skinTone: number;
 	setStyle: (style: string | null) => void;
 	setAnimated: (animated: boolean | null) => void;
 	addRecent: (emoji: string) => void;
+	setSkinTone: (tone: number) => void;
 }
 
 export const useEmojiSettings = create<EmojiSettingsState>()(
@@ -21,8 +24,10 @@ export const useEmojiSettings = create<EmojiSettingsState>()(
 			style: null,
 			animated: null,
 			recents: [],
+			skinTone: 1,
 			setStyle: (style) => set({ style }),
 			setAnimated: (animated) => set({ animated }),
+			setSkinTone: (skinTone) => set({ skinTone: Math.min(6, Math.max(1, Math.round(skinTone))) }),
 			addRecent: (emoji) => set((s) => ({ recents: pushRecent(s.recents, emoji) })),
 		}),
 		{ name: 'cove_emoji_settings' },
