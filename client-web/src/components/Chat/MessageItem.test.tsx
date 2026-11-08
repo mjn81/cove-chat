@@ -14,6 +14,8 @@ vi.mock('../UserProfileModal', () => ({
 }));
 // The emoji renderer needs React Query and the API client; these tests only cover message behaviour.
 vi.mock('@/domains/emoji/components/emoji', () => ({ EmojiText: ({ text }: { text: string }) => <>{text}</> }));
+vi.mock('@/domains/stickers/components/sticker-message', () => ({ StickerMessage: () => null }));
+vi.mock('@/domains/stickers/components/pack-share-card', () => ({ PackShareCard: () => null }));
 vi.mock('@/domains/emoji/components/big-emoji', () => ({ BigEmoji: () => null }));
 vi.mock('@/domains/emoji/hooks/use-emoji-message-class', () => ({ useEmojiMessageClass: () => ({ kind: 'normal' }) }));
 vi.mock('@/store/store', () => ({

@@ -20,6 +20,9 @@ import { useLongPress } from '@/hooks/use-long-press';
 import { UserProfileModal } from '../UserProfileModal';
 import { EmojiText } from '@/domains/emoji/components/emoji';
 import { BigEmoji } from '@/domains/emoji/components/big-emoji';
+import { StickerMessage } from '@/domains/stickers/components/sticker-message';
+import { PackShareCard } from '@/domains/stickers/components/pack-share-card';
+import { parsePackShare } from '@/domains/stickers/utils/pack-share';
 import { useEmojiMessageClass } from '@/domains/emoji/hooks/use-emoji-message-class';
 
 interface MessageItemProps {
@@ -53,6 +56,7 @@ export const MessageItem = memo(
 		const [showMobileMenu, setShowMobileMenu] = useState(false);
 		const [dragX, setDragX] = useState(0);
 		const isOwn = user?.id === msg.sender_id;
+		const packShareId = msg.type === 'text' ? parsePackShare(msg.text) : null;
 		const emojiClass = useEmojiMessageClass(msg.type === 'text' ? msg.text : undefined);
 
 		const isMobile = useMediaQuery('(max-width: 768px)');
@@ -488,6 +492,8 @@ export const MessageItem = memo(
 										</span>
 									</div>
 								</div>
+							) : packShareId ? (
+								<PackShareCard packId={packShareId} />
 							) : emojiClass.kind !== 'normal' && msg.text ? (
 								<div className={msg.pending ? 'opacity-60' : ''} {...longPress}>
 									<BigEmoji text={msg.text} classification={emojiClass} />
@@ -538,6 +544,7 @@ export const MessageItem = memo(
 						</>
 					)}
 					{msg.type === 'invite' && <InviteMessage text={msg.text} />}
+				{msg.type === 'sticker' && <StickerMessage text={msg.text} />}
 					{!isKnownMessageType(msg.type) && <UnknownMessage />}
 					{(msg.type === 'file' || msg.type === 'voice') && (
 						<FileBubble msg={msg} />
