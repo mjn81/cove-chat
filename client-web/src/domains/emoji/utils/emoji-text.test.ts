@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emojiKey, isEmojiGrapheme, splitGraphemes, tokenizeEmojiText, CUSTOM_EMOJI_RE } from './emoji-text';
+import { emojiKey, firstEmoji, isEmojiGrapheme, splitGraphemes, tokenizeEmojiText, CUSTOM_EMOJI_RE } from './emoji-text';
 
 describe('emojiKey', () => {
 	it('hex-encodes code points and drops every FE0F', () => {
@@ -67,5 +67,13 @@ describe('CUSTOM_EMOJI_RE', () => {
 		expect(':ab:'.match(CUSTOM_EMOJI_RE)).not.toBeNull();
 		expect(':a:'.match(CUSTOM_EMOJI_RE)).toBeNull();
 		expect(':Ab:'.match(CUSTOM_EMOJI_RE)).toBeNull();
+	});
+});
+
+describe('firstEmoji', () => {
+	it('returns the first emoji grapheme or nothing', () => {
+		expect(firstEmoji('ab 👍🏽😀')).toBe('👍🏽');
+		expect(firstEmoji('no emoji')).toBe('');
+		expect(firstEmoji('')).toBe('');
 	});
 });

@@ -102,3 +102,13 @@ export function tokenizeEmojiText(text: string, customNames?: ReadonlySet<string
 	pushPlain(text.slice(last));
 	return tokens;
 }
+
+/**
+ * The first emoji in a string (for a sticker's "emoji" field, where a user may paste or type more than one character).
+ *
+ * @param text - Any string.
+ * @returns the first emoji grapheme, or an empty string when there is none.
+ */
+export function firstEmoji(text: string): string {
+	return splitGraphemes(text).find(isEmojiGrapheme) ?? '';
+}
