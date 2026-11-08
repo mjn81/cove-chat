@@ -23,6 +23,9 @@ import { AttachmentPreviews } from './attachment-previews';
 import { DropOverlay, ReplyPreview, SendErrorBanner } from './composer-banners';
 import { MentionPopup } from './mention-popup';
 import { ComposerEmojiPanel } from './composer-emoji-panel';
+import { preloadComposerEmojiPanel, preloadComposerEmojiPanelWhenIdle } from '../utils/emoji-panel-loader';
+import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import type { EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
 import { useSendSticker } from '../hooks/use-send-sticker';
 import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
 import { useShortcodeAutocomplete } from '@/domains/emoji/hooks/use-shortcode-autocomplete';
@@ -71,6 +74,13 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	);
 	const [sending, setSending] = useState(false);
 	const [showEmoji, setShowEmoji] = useState(false);
+	// The panel is built on first open and then kept (hidden) so reopening is instant and keeps its scroll position.
+	const [emojiMounted, setEmojiMounted] = useState(false);
+	const openEmoji = (open: boolean) => {
+		if (open) setEmojiMounted(true);
+		setShowEmoji(open);
+	};
+	useEffect(() => preloadComposerEmojiPanelWhenIdle(), []);
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 	const [sendError, setSendError] = useState<string | null>(null);
 
@@ -103,6 +113,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		if ((!text && attachments.files.length === 0) || sending) return;
 		setSending(true);
 		setSendError(null);
+		setShowEmoji(false);
 
 		try {
 			await attachments.sendAll(channel.id, channelKey);
@@ -196,14 +207,22 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		shortcodes.track(value, selectionStart);
 	};
 
-	const handleEmojiSelect = (text: string) => {
-		setInputText((prev) => prev + text);
-		setShowEmoji(false);
-		inputRef.current?.focus();
+	/** Inserts at the caret (replacing a selection) and keeps the panel open for the next emoji. */
+	const handleEmojiSelect = (text: string, info: EmojiPickInfo) => {
+		const ta = inputRef.current;
+		const current = useComposerDrafts.getState().drafts[channel.id]?.text ?? '';
+		const next = insertAtSelection(current, ta?.selectionStart, ta?.selectionEnd, text);
+		setInputText(next.text);
+		if (!ta) return;
+		// The composer keeps focus on mouse picks (the panel does not take it); keyboard picks leave focus in the panel.
+		requestAnimationFrame(() => {
+			if (!info.keyboard) ta.focus();
+			ta.setSelectionRange(next.caret, next.caret);
+		});
 	};
 
 	const handleStickerSelect = async (packId: string, item: PackItem) => {
-		setShowEmoji(false);
+		openEmoji(false);
 		const ok = await sendSticker(packId, item, replyTo?.id);
 		if (!ok) {
 			setSendError(t('composer.errors.send_failed'));
@@ -280,9 +299,14 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					<div className={cn('flex shrink-0 items-center', isTiny ? 'gap-0' : isSmall ? 'gap-1' : 'gap-1.5')}>
 						<button
 								type="button"
+								data-emoji-toggle
+								onMouseEnter={() => void preloadComposerEmojiPanel()}
+								onFocus={() => void preloadComposerEmojiPanel()}
+								// Keep the caret in the composer when the button is pressed.
+								onMouseDown={(e) => e.preventDefault()}
 								onClick={(e) => {
 									e.stopPropagation();
-									setShowEmoji((v) => !v);
+									openEmoji(!showEmoji);
 								}}
 								className={iconButtonClass}
 								title={t('composer.add_emoji')}
@@ -331,13 +355,14 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				/>
 			)}
 
-			{showEmoji && (
+			{emojiMounted && (
 				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
 					<ComposerEmojiPanel
+						open={showEmoji}
 						stickersEnabled={supports('stickers')}
 						onEmoji={handleEmojiSelect}
 						onSticker={handleStickerSelect}
-						onClose={() => setShowEmoji(false)}
+						onClose={() => openEmoji(false)}
 					/>
 				</div>
 			)}

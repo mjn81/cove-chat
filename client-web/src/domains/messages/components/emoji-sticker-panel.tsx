@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import EmojiPickerBody from '@/domains/emoji/components/emoji-picker-body';
+import EmojiPickerBody, { type EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
 import { StickerPanel } from '@/domains/stickers/components/sticker-panel';
 import type { PackItem } from '@/domains/stickers/types/stickers.types';
 
 interface EmojiStickerPanelProps {
 	/** Whether the server supports stickers; without it the panel is the emoji picker alone. */
 	stickersEnabled: boolean;
-	onEmoji: (text: string) => void;
+	onEmoji: (text: string, info: EmojiPickInfo) => void;
 	onSticker: (packId: string, item: PackItem) => void;
 }
 
@@ -31,10 +31,10 @@ export default function EmojiStickerPanel({ stickersEnabled, onEmoji, onSticker 
 	return (
 		<div className="flex h-[420px] w-full flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground">
 			<div role="tablist" className="flex gap-1 border-b border-border p-1">
-				<button type="button" role="tab" aria-selected={tab === 'emoji'} className={tabClass(tab === 'emoji')} onClick={() => setTab('emoji')}>
+				<button type="button" role="tab" onMouseDown={(e) => e.preventDefault()} aria-selected={tab === 'emoji'} className={tabClass(tab === 'emoji')} onClick={() => setTab('emoji')}>
 					{t('emoji.panel.emoji')}
 				</button>
-				<button type="button" role="tab" aria-selected={tab === 'stickers'} className={tabClass(tab === 'stickers')} onClick={() => setTab('stickers')}>
+				<button type="button" role="tab" onMouseDown={(e) => e.preventDefault()} aria-selected={tab === 'stickers'} className={tabClass(tab === 'stickers')} onClick={() => setTab('stickers')}>
 					{t('emoji.panel.stickers')}
 				</button>
 			</div>

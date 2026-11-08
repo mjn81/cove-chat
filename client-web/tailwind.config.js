@@ -83,7 +83,7 @@ export default {
         "copy-pop": "copy-pop 1400ms ease-out forwards",
       },
       fontFamily: {
-        sans: ["Vazirmatn", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif"],
+        sans: ["Vazirmatn", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"],
       },
     },
   },
