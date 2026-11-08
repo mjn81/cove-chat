@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.1](https://github.com/mjn81/cove-chat/compare/v0.11.0...v0.11.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* keep message IDs in send order, label the notice.send audit action ([ede810a](https://github.com/mjn81/cove-chat/commit/ede810a4087a552cca524dcacfbb4e58ffcf7919))
+* label the notice.send audit action on web and Android; note emulator checks in the parity doc ([91f34d5](https://github.com/mjn81/cove-chat/commit/91f34d507d2736444391d1e72ca24039514ec222))
+* **server:** issue message IDs that keep send order within the same second ([b20d761](https://github.com/mjn81/cove-chat/commit/b20d7614f7bce00cd10d9bb3467fb70e4c3fbfd6))
+
 ## [0.11.0](https://github.com/mjn81/cove-chat/compare/v0.10.0...v0.11.0) (2026-11-07)
 
 
