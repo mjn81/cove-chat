@@ -425,7 +425,7 @@ export const MessageItem = memo(
 								<span className="text-[13px] truncate text-muted-foreground/80 hover:text-foreground cursor-pointer italic max-w-[60%]">
 									{replyTarget
 										? replyTarget.type === 'text'
-											? replyTarget.text
+											? <EmojiText text={replyTarget.text ?? ''} size={14} />
 											: `[${replyTarget.type}]`
 										: 'Original message not found'}
 								</span>
