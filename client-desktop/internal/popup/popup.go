@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -109,7 +110,10 @@ type Request struct {
 	// app's settings, so the main window passes them along.
 	Theme string `json:"theme"`
 	Lang  string `json:"lang"`
-	TTLMs int64  `json:"ttl_ms"`
+	// Tokens are the active theme's resolved colours (CSS custom property name without "--" -> "H S% L%"), so the
+	// popup can match a custom theme. Empty for the default look.
+	Tokens map[string]string `json:"tokens,omitempty"`
+	TTLMs  int64             `json:"ttl_ms"`
 }
 
 // Item is a popup on screen: a sanitised Request with an id.
@@ -127,6 +131,8 @@ type Item struct {
 	Tag       string `json:"tag,omitempty"`
 	Theme     string `json:"theme"`
 	Lang      string `json:"lang"`
+	// Tokens: see Request.Tokens; already filtered by Sanitize.
+	Tokens map[string]string `json:"tokens,omitempty"`
 	// Dir is the text direction of the popup's chrome: "rtl" for Arabic.
 	Dir string `json:"dir"`
 	// Corner is the screen corner the stack sits in; the popup page slides cards in from that side.
@@ -169,6 +175,7 @@ func Sanitize(r Request) Item {
 	if r.Theme == "light" {
 		it.Theme = "light"
 	}
+	it.Tokens = sanitizeTokens(r.Tokens)
 	switch r.Lang {
 	case "fa", "ar":
 		it.Lang = r.Lang
@@ -188,6 +195,34 @@ func Sanitize(r Request) Item {
 	}
 	it.TTLMs = ttl.Milliseconds()
 	return it
+}
+
+// MaxThemeTokens bounds how many theme colours a popup request may carry (the web client defines 28).
+const MaxThemeTokens = 40
+
+var (
+	tokenNameRE  = regexp.MustCompile(`^[a-z]+(-[a-z]+){0,3}$`)
+	tokenValueRE = regexp.MustCompile(`^\d{1,3}(\.\d{1,2})? \d{1,3}(\.\d{1,2})?% \d{1,3}(\.\d{1,2})?%$`)
+)
+
+// sanitizeTokens keeps only entries shaped like theme colours: a lowercase dashed name and an "H S% L%" triplet.
+// The popup page applies them with style.setProperty after validating them again; this keeps hostile or garbled
+// values from travelling any further. Returns nil when nothing survives.
+func sanitizeTokens(in map[string]string) map[string]string {
+	var out map[string]string
+	for name, value := range in {
+		if len(out) >= MaxThemeTokens {
+			break
+		}
+		if len(name) > 40 || !tokenNameRE.MatchString(name) || !tokenValueRE.MatchString(value) {
+			continue
+		}
+		if out == nil {
+			out = make(map[string]string)
+		}
+		out[name] = value
+	}
+	return out
 }
 
 // validAvatar returns the avatar data URL if it is a small raster image, otherwise "".

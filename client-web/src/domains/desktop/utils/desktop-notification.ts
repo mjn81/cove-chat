@@ -22,6 +22,8 @@ export interface DesktopNotificationOptions {
 /** The look of the app the popup should match. */
 export interface NotificationAppearance {
 	dark: boolean;
+	/** The active theme's resolved colours (name to `H S% L%`); empty or absent for the default look. */
+	tokens?: Record<string, string>;
 	/** Any BCP-47 tag; only the primary subtag is sent. */
 	lang: string;
 }
@@ -48,6 +50,7 @@ export function buildDesktopNotification(
 		tag: options.tag ?? '',
 		theme: appearance.dark ? 'dark' : 'light',
 		lang: appearance.lang.split('-')[0],
+		...(appearance.tokens && Object.keys(appearance.tokens).length > 0 ? { tokens: appearance.tokens } : {}),
 		ttl_ms: options.ttlMs ?? 0,
 	};
 }

@@ -15,6 +15,7 @@ export namespace popup {
 		tag?: string;
 		theme: string;
 		lang: string;
+		tokens?: Record<string, string>;
 		dir: string;
 		corner?: string;
 		ttl_ms: number;
@@ -32,6 +33,7 @@ export namespace popup {
 		tag: string;
 		theme: string;
 		lang: string;
+		tokens?: Record<string, string>;
 		ttl_ms: number;
 	}
 }

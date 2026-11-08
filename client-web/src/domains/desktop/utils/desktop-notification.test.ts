@@ -22,6 +22,12 @@ describe('buildDesktopNotification', () => {
 		});
 	});
 
+	it('passes the theme tokens only when there are some', () => {
+		const withTokens = buildDesktopNotification('a', 'b', {}, { dark: true, lang: 'en', tokens: { primary: '1 2% 3%' } });
+		expect(withTokens.tokens).toEqual({ primary: '1 2% 3%' });
+		expect('tokens' in buildDesktopNotification('a', 'b', {}, { dark: true, lang: 'en', tokens: {} })).toBe(false);
+	});
+
 	it('defaults to a message with no routing and the dark theme', () => {
 		const req = buildDesktopNotification('a', 'b', {}, { dark: true, lang: 'en-US' });
 		expect(req.kind).toBe('message');

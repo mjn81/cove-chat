@@ -305,3 +305,27 @@ func TestReadEventsSkipsNoise(t *testing.T) {
 		t.Fatalf("events = %+v", got)
 	}
 }
+
+func TestSanitizeKeepsOnlyWellFormedThemeTokens(t *testing.T) {
+	it := Sanitize(Request{Tokens: map[string]string{
+		"primary":    "217 91% 60%",
+		"background": "0.5 10.2% 100%",
+		"bad-value":  "red; background:url(x)",
+		"Bad_Name":   "10 10% 10%",
+		"url(x)":     "10 10% 10%",
+		"empty":      "",
+	}})
+	if len(it.Tokens) != 2 || it.Tokens["primary"] != "217 91% 60%" || it.Tokens["background"] != "0.5 10.2% 100%" {
+		t.Fatalf("only well-formed HSL triplets under lowercase names may pass, got %+v", it.Tokens)
+	}
+	many := map[string]string{}
+	for i := 0; i < 200; i++ {
+		many[strings.Repeat("a", 1+i%20)+strings.Repeat("b", i/20)] = "1 1% 1%"
+	}
+	if len(Sanitize(Request{Tokens: many}).Tokens) > MaxThemeTokens {
+		t.Fatal("token count must be capped")
+	}
+	if Sanitize(Request{}).Tokens != nil {
+		t.Fatal("no tokens in, none out")
+	}
+}
