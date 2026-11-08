@@ -15,7 +15,7 @@ export function ConnectionBanner() {
 	if (!everConnected || wsState === 'connected') return null;
 
 	return (
-		<div className="shrink-0 z-50 flex items-center justify-center gap-2 py-1.5 text-xs font-medium text-white bg-warning/95 shadow animate-in fade-in slide-in-from-top-2 duration-200">
+		<div className="shrink-0 z-50 flex items-center justify-center gap-2 py-1.5 text-xs font-medium text-warning-foreground bg-warning/95 shadow animate-in fade-in slide-in-from-top-2 duration-200">
 			{wsState === 'connecting' ? (
 				<>
 					<Loader2 size={13} className="animate-spin" />

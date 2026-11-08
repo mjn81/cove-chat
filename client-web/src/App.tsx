@@ -13,6 +13,8 @@ import { UpdateSync } from './domains/desktop/components/update-sync';
 import { LockScreen } from './domains/security/components/lock-screen';
 import { useAutoLock } from './domains/security/hooks/use-auto-lock';
 import { useLockStore } from './domains/security/store/lock.store';
+import { getThemeEngine } from './domains/themes/utils/theme-engine';
+import { definitionFor } from './domains/themes/utils/theme-settings';
 
 /** Redirect to /login when unauthenticated */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -40,14 +42,16 @@ import NotFoundPage from './pages/NotFoundPage';
 function AppContent() {
   const lock = useLockStore(state => state.status);
   useAutoLock();
-  const theme = useAppStore(state => state.theme);
+  const mode = useAppStore(state => state.mode);
+  const themeId = useAppStore(state => state.themeId);
+  const customTheme = useAppStore(state => state.customTheme);
   const [isWailsReady, setIsWailsReady] = React.useState(false);
   const [shouldConnect, setShouldConnect] = React.useState(false);
 
+  // The single place a theme reaches the DOM: tokens as inline custom properties plus the dark/light class.
   useEffect(() => {
-    document.documentElement.classList.remove('dark', 'light');
-    document.documentElement.classList.add(theme);
-  }, [theme]);
+    getThemeEngine().apply(definitionFor(themeId, customTheme), mode);
+  }, [mode, themeId, customTheme]);
 
   useEffect(() => {
     let unmounted = false;
