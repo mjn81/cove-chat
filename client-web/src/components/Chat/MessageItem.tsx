@@ -18,6 +18,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { tokenizeMessage } from '@/utils/linkify';
 import { useLongPress } from '@/hooks/use-long-press';
 import { UserProfileModal } from '../UserProfileModal';
+import { EmojiText } from '@/domains/emoji/components/emoji';
+import { BigEmoji } from '@/domains/emoji/components/big-emoji';
+import { useEmojiMessageClass } from '@/domains/emoji/hooks/use-emoji-message-class';
 
 interface MessageItemProps {
 	msg: Message & { text?: string };
@@ -50,6 +53,7 @@ export const MessageItem = memo(
 		const [showMobileMenu, setShowMobileMenu] = useState(false);
 		const [dragX, setDragX] = useState(0);
 		const isOwn = user?.id === msg.sender_id;
+		const emojiClass = useEmojiMessageClass(msg.type === 'text' ? msg.text : undefined);
 
 		const isMobile = useMediaQuery('(max-width: 768px)');
 		const dragStartX = useRef<number | null>(null);
@@ -223,7 +227,8 @@ export const MessageItem = memo(
 						</a>
 					);
 				}
-				return token.value;
+				// Plain text: emoji and known :name: shortcodes become images, everything else is left as typed.
+				return <EmojiText key={i} text={token.value} size={20} />;
 			});
 		};
 
@@ -482,6 +487,10 @@ export const MessageItem = memo(
 											</span>
 										</span>
 									</div>
+								</div>
+							) : emojiClass.kind !== 'normal' && msg.text ? (
+								<div className={msg.pending ? 'opacity-60' : ''} {...longPress}>
+									<BigEmoji text={msg.text} classification={emojiClass} />
 								</div>
 							) : (
 								<div

@@ -12,6 +12,10 @@ vi.mock('../ConfirmModal', () => ({ ConfirmModal: () => null }));
 vi.mock('../UserProfileModal', () => ({
 	UserProfileModal: ({ userId }: { userId: string }) => <div data-testid="profile-modal">{userId}</div>,
 }));
+// The emoji renderer needs React Query and the API client; these tests only cover message behaviour.
+vi.mock('@/domains/emoji/components/emoji', () => ({ EmojiText: ({ text }: { text: string }) => <>{text}</> }));
+vi.mock('@/domains/emoji/components/big-emoji', () => ({ BigEmoji: () => null }));
+vi.mock('@/domains/emoji/hooks/use-emoji-message-class', () => ({ useEmojiMessageClass: () => ({ kind: 'normal' }) }));
 vi.mock('@/store/store', () => ({
 	useAuthStore: (sel: (s: unknown) => unknown) => sel({ user: { id: 'me', username: 'me' } }),
 }));
