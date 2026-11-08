@@ -307,3 +307,42 @@ Default: `true` (commented out in the example; optional)
 
 tell the owner and admins (once per version) when a new release is out
 
+## `[emoji]`
+
+The emoji styles are built into the server binary (no internet needed). Users pick one of the enabled styles;
+"native" is the device's own emoji font. default_style must be one of enabled_styles. Both keys can also be
+changed live from the admin panel. See docs/packs-api.md.
+
+### `emoji.enabled_styles`
+
+Default: `["native", "noto", "twemoji", "blobmoji", "fluent", "fxemoji"]` (commented out in the example; optional)
+
+### `emoji.default_style`
+
+Default: `"noto"` (commented out in the example; optional)
+
+## `[packs]`
+
+Sticker packs that users make themselves (admins can always add server packs and custom emoji, without these limits).
+Every key can be changed live from the admin panel.
+
+### `packs.user_uploads_enabled`
+
+Default: `true` (commented out in the example; optional)
+
+false: nobody can create packs or upload stickers (existing packs keep working)
+
+### `packs.max_packs_per_user`
+
+Default: `10` (commented out in the example; optional)
+
+### `packs.max_stickers_per_pack`
+
+Default: `60` (commented out in the example; optional)
+
+### `packs.max_user_storage_mb`
+
+Default: `20` (commented out in the example; optional)
+
+total size of all stickers one user owns
+
