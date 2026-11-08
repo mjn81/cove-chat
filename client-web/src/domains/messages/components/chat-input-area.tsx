@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Smile } from 'lucide-react';
 
-import EmojiPicker from '@/components/EmojiPicker';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
-import { useAppStore, useAuthStore, getChannelDisplayName } from '@/store/store';
+import { useAuthStore, getChannelDisplayName } from '@/store/store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isDirectMessage } from '@/utils/channel';
 import { logger } from '@/utils/logger';
@@ -23,6 +22,12 @@ import { useFilePicker } from '@/hooks/use-file-picker';
 import { AttachmentPreviews } from './attachment-previews';
 import { DropOverlay, ReplyPreview, SendErrorBanner } from './composer-banners';
 import { MentionPopup } from './mention-popup';
+import { ComposerEmojiPanel } from './composer-emoji-panel';
+import { useSendSticker } from '../hooks/use-send-sticker';
+import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
+import { useShortcodeAutocomplete } from '@/domains/emoji/hooks/use-shortcode-autocomplete';
+import { ShortcodePopup } from '@/domains/emoji/components/shortcode-popup';
+import type { PackItem } from '@/domains/stickers/types/stickers.types';
 
 interface ChatInputAreaProps {
 	channel: Channel;
@@ -49,7 +54,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const user = useAuthStore((state) => state.user);
-	const theme = useAppStore((state) => state.theme);
+	const { supports } = useServerCapabilities();
 	const isSmall = useMediaQuery('(max-width: 400px)');
 	const isTiny = useMediaQuery('(max-width: 340px)');
 
@@ -75,6 +80,8 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const filePicker = useFilePicker(attachments.add);
 	const mentions = useMentions(channel.id, inputRef);
 	const sendText = useSendText(channel.id);
+	const sendSticker = useSendSticker(channel.id);
+	const shortcodes = useShortcodeAutocomplete();
 	const isDragging = useFileDrop(attachments.add);
 	const { sendVoice, sendVideo } = useSendMedia({
 		channel,
@@ -132,7 +139,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}, 0);
 	};
 
+	const insertShortcode = (name: string) => {
+		const cursor = inputRef.current?.selectionStart ?? inputText.length;
+		const next = shortcodes.pick(inputText, cursor, name);
+		setInputText(next.text);
+		setTimeout(() => {
+			inputRef.current?.focus();
+			inputRef.current?.setSelectionRange(next.cursor, next.cursor);
+		}, 0);
+	};
+
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		const shortcode = shortcodes.handleKey(e);
+		if (shortcode === 'handled') return;
+		if (shortcode) {
+			insertShortcode(shortcode.pick.name);
+			return;
+		}
 		const result = mentions.handleKey(e);
 		if (result === 'handled') return;
 		if (result) {
@@ -170,11 +193,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		e.target.style.height = 'auto';
 		e.target.style.height = Math.min(e.target.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
 		mentions.track(value, selectionStart);
+		shortcodes.track(value, selectionStart);
 	};
 
-	const handleEmojiSelect = (emoji: { native: string }) => {
-		setInputText((prev) => prev + emoji.native);
+	const handleEmojiSelect = (text: string) => {
+		setInputText((prev) => prev + text);
 		setShowEmoji(false);
+		inputRef.current?.focus();
+	};
+
+	const handleStickerSelect = async (packId: string, item: PackItem) => {
+		setShowEmoji(false);
+		const ok = await sendSticker(packId, item, replyTo?.id);
+		if (!ok) {
+			setSendError(t('composer.errors.send_failed'));
+			return;
+		}
+		if (replyTo) onCancelReply?.();
 		inputRef.current?.focus();
 	};
 
@@ -286,12 +321,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				/>
 			)}
 
+			{shortcodes.isOpen && (
+				<ShortcodePopup
+					query={shortcodes.query}
+					items={shortcodes.matches}
+					selectedIndex={shortcodes.selectedIndex}
+					onHover={shortcodes.setSelectedIndex}
+					onPick={insertShortcode}
+				/>
+			)}
+
 			{showEmoji && (
 				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
-					<EmojiPicker
-						onSelect={handleEmojiSelect}
-						onClickOutside={() => setShowEmoji(false)}
-						theme={theme}
+					<ComposerEmojiPanel
+						stickersEnabled={supports('stickers')}
+						onEmoji={handleEmojiSelect}
+						onSticker={handleStickerSelect}
+						onClose={() => setShowEmoji(false)}
 					/>
 				</div>
 			)}

@@ -40,6 +40,7 @@ import { ChatBackgroundPattern } from './Chat/ChatBackgroundPattern';
 import { WhisperChatArea } from '@/domains/whisper/components/whisper-chat-area';
 import { VoiceCallStage } from './Voice/VoiceCallStage';
 import { useVoiceStore } from '@/store/voiceStore';
+import { hasTextBody } from '@/domains/messages/utils/message-types';
 
 interface ChatAreaProps {
 	channel: Channel;
@@ -122,7 +123,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 	const addMessage = useCallback(
 		async (msg: Message) => {
 			// Avoid duplicates if we just fetched from REST
-			const text = msg.type === 'text' || msg.type === 'invite' ? await decryptMessage(msg) : undefined;
+			const text = hasTextBody(msg.type) ? await decryptMessage(msg) : undefined;
 			const fullMsg = { ...msg, text };
 
 			// Save to IndexedDB
@@ -160,7 +161,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 			const msg = payload as Message;
 			if (msg.channel_id === channel.id) {
 				const text =
-					msg.type === 'text' || msg.type === 'invite' ? await decryptMessage(msg) : undefined;
+					hasTextBody(msg.type) ? await decryptMessage(msg) : undefined;
 				const fullMsg = { ...msg, text };
 
 				await db.cacheMessages([fullMsg]);

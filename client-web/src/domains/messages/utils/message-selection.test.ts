@@ -17,8 +17,8 @@ describe('selectionActions', () => {
 	});
 
 	it('forwards text, files, voice notes, video messages and invites but not unknown types', () => {
-		expect(selectionActions([mine(), theirs('file'), theirs('voice'), theirs('invite'), theirs('video')], 'me', false).canForward).toBe(true);
-		expect(selectionActions([mine(), theirs('sticker')], 'me', false).canForward).toBe(false);
+		expect(selectionActions([mine(), theirs('file'), theirs('voice'), theirs('invite'), theirs('video'), theirs('sticker')], 'me', false).canForward).toBe(true);
+		expect(selectionActions([mine(), theirs('poll')], 'me', false).canForward).toBe(false);
 	});
 
 	it('copies only when everything selected is text', () => {

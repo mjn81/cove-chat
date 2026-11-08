@@ -681,7 +681,8 @@
 			"config": "Settings",
 			"admins": "Admins",
 			"data": "Data",
-			"notices": "Notices"
+			"notices": "Notices",
+			"emoji": "Emoji and stickers"
 		},
 		"roles": {
 			"owner": "Owner",
@@ -728,7 +729,7 @@
 						"installed": "installed the server update",
 						"failed": "server update failed",
 						"check": "checked for server updates",
-							"upload": "uploaded a server update"
+						"upload": "uploaded a server update"
 					}
 				}
 			}
@@ -783,7 +784,7 @@
 				"calls": "Calls",
 				"network": "Network",
 				"security": "Security",
-					"updates": "Updates"
+				"updates": "Updates"
 			},
 			"keys": {
 				"server": {
@@ -813,11 +814,11 @@
 					"enabled": "Sign-up check (proof of work)",
 					"difficulty": "Sign-up check difficulty"
 				},
-					"update": {
-						"manifest_url": "Update manifest URL",
-						"github_fallback": "Fall back to GitHub",
-						"notify_admins": "Tell admins about new versions"
-					}
+				"update": {
+					"manifest_url": "Update manifest URL",
+					"github_fallback": "Fall back to GitHub",
+					"notify_admins": "Tell admins about new versions"
+				}
 			}
 		},
 		"admins": {
@@ -910,12 +911,12 @@
 			"update_no_checksums": "The release has no checksum file, so nothing was installed.",
 			"update_download_failed": "The update could not be downloaded.",
 			"update_failed": "The update could not be installed.",
-				"update_upload_too_large": "The file is larger than the allowed size.",
-				"update_upload_invalid": "This is not a valid Cove server release file.",
-				"update_upload_wrong_platform": "This file is built for a different system or architecture.",
-				"update_upload_version": "Enter the version of this release, for example 0.10.0.",
-				"update_no_upload": "Upload a release file first.",
-				"update_too_old": "This release cannot be installed directly from your version. Install an intermediate release first."
+			"update_upload_too_large": "The file is larger than the allowed size.",
+			"update_upload_invalid": "This is not a valid Cove server release file.",
+			"update_upload_wrong_platform": "This file is built for a different system or architecture.",
+			"update_upload_version": "Enter the version of this release, for example 0.10.0.",
+			"update_no_upload": "Upload a release file first.",
+			"update_too_old": "This release cannot be installed directly from your version. Install an intermediate release first."
 		},
 		"notices": {
 			"title": "Server notices",
@@ -966,23 +967,80 @@
 			"docker_title": "Running in Docker",
 			"docker_body": "Update the container by pulling the new image and recreating it:",
 			"docker_watchtower": "Or let Watchtower pull the image and restart the container automatically.",
-				"source_label": "Checked via",
-				"source_manifest": "Cove release manifest",
-				"source_github": "GitHub releases",
-				"upload_title": "Manual update (no internet)",
-				"upload_body": "For installs that cannot reach GitHub or covechat.dev. On another computer download the server zip for this machine from the release page, then upload it here. This is for non-Docker installs: with Docker, pull the new image instead.",
-				"upload_confirm": "Enter your password to stage this file. Nothing is installed until you press Install.",
-				"upload_file": "Release file (.zip or server binary)",
-				"upload_version": "Version of this release",
-				"upload_sha": "SHA-256 or SHA256SUMS (optional)",
-				"upload_sha_hint": "Paste the checksum, or the whole SHA256SUMS file, to verify the upload. Without it the file is trusted as it is.",
-				"upload_button": "Upload",
-				"uploading": "Uploading…",
-				"uploaded": "Version {{version}} is staged ({{checked}}).",
-				"checked_yes": "checksum verified",
-				"checked_no": "not verified",
-				"apply": "Install uploaded version",
-				"upload_done": "Upload staged. Press Install to apply it."
+			"source_label": "Checked via",
+			"source_manifest": "Cove release manifest",
+			"source_github": "GitHub releases",
+			"upload_title": "Manual update (no internet)",
+			"upload_body": "For installs that cannot reach GitHub or covechat.dev. On another computer download the server zip for this machine from the release page, then upload it here. This is for non-Docker installs: with Docker, pull the new image instead.",
+			"upload_confirm": "Enter your password to stage this file. Nothing is installed until you press Install.",
+			"upload_file": "Release file (.zip or server binary)",
+			"upload_version": "Version of this release",
+			"upload_sha": "SHA-256 or SHA256SUMS (optional)",
+			"upload_sha_hint": "Paste the checksum, or the whole SHA256SUMS file, to verify the upload. Without it the file is trusted as it is.",
+			"upload_button": "Upload",
+			"uploading": "Uploading…",
+			"uploaded": "Version {{version}} is staged ({{checked}}).",
+			"checked_yes": "checksum verified",
+			"checked_no": "not verified",
+			"apply": "Install uploaded version",
+			"upload_done": "Upload staged. Press Install to apply it."
+		},
+		"packs": {
+			"builtin_readonly": "Built-in packs cannot be edited here. You can enable, disable, reorder or make them the default.",
+			"create_pack": "New server pack",
+			"default": "Default",
+			"default_style": "Default style",
+			"delete": "Delete pack",
+			"delete_confirm": "Delete the server pack \"{{name}}\" and all its stickers? This cannot be undone.",
+			"delete_user_confirm": "Delete \"{{name}}\" by {{owner}} and all its stickers? This cannot be undone.",
+			"emoji_added": "Custom emoji added",
+			"emoji_delete": "Delete :{{name}}:",
+			"emoji_hint": "Members type :name: to use one. PNG, WebP or GIF; stored at most 128 px and 256 KB.",
+			"emoji_name": "Emoji name",
+			"emoji_name_invalid": "Use 2 to 32 lowercase letters, digits or underscores.",
+			"emoji_name_placeholder": "party_parrot",
+			"emoji_none": "No custom emoji yet.",
+			"emoji_title": "Custom emoji",
+			"emoji_type": "Use a PNG, WebP or GIF image.",
+			"emoji_upload": "Choose image and add",
+			"enabled": "Enabled",
+			"items_title": "Stickers",
+			"items_unavailable": "The stickers of this pack could not be loaded. Enable the pack first.",
+			"limits": {
+				"packs.max_packs_per_user": "Packs per user",
+				"packs.max_stickers_per_pack": "Stickers per pack",
+				"packs.max_user_storage_mb": "Storage per user (MB)"
+			},
+			"make_default": "Make default",
+			"moderation_hint": "Packs made by members. Deleting one removes its stickers and is recorded in the audit log.",
+			"moderation_none": "No member packs.",
+			"moderation_title": "Member sticker packs",
+			"move_down": "Move down",
+			"move_up": "Move up",
+			"owner": "By {{name}}",
+			"problems": {
+				"none_enabled": "Enable at least one emoji style.",
+				"default_not_enabled": "The default style must be one of the enabled styles."
+			},
+			"scope_builtin": "Built-in",
+			"scope_server": "Server pack",
+			"server_hint": "Packs every member sees. Only one pack is the default.",
+			"server_title": "Server sticker packs",
+			"stickers": "Stickers",
+			"styles": {
+				"native": "Device emoji",
+				"noto": "Noto Color Emoji",
+				"twemoji": "Twemoji",
+				"blobmoji": "Blobmoji",
+				"fluent": "Fluent Emoji Flat",
+				"fxemoji": "FxEmojis"
+			},
+			"styles_hint": "Members choose among the enabled styles. Devices download a style the first time it is used.",
+			"styles_title": "Emoji styles",
+			"unsupported": "This server does not offer emoji and sticker settings.",
+			"uploads_title": "Member sticker uploads",
+			"user_uploads": "Allow members to make sticker packs",
+			"user_uploads_hint": "When off, existing packs keep working but nobody can create packs or upload stickers."
 		}
 	},
 	"devices": {
@@ -1092,54 +1150,54 @@
 		"failed": "The check could not be completed.",
 		"retry": "Try again"
 	},
-		"desktopUpdate": {
-			"title": "Updates",
-			"auto": "Check for updates automatically",
-			"autoHint": "Cove looks for new versions in the background and downloads them, ready to install when you choose.",
-			"prerelease": "Include pre-releases",
-			"prereleaseHint": "Also offer early builds. Every 0.x version is published as a pre-release.",
-			"version": "Version {{version}}",
-			"checkNow": "Check now",
-			"status": {
-				"unknown": "Update status is not available yet.",
-				"checking": "Checking for updates…",
-				"downloading": "Downloading {{version}}… {{percent}}%",
-				"installing": "Installing the update…",
-				"ready": "Version {{version}} is downloaded and ready to install.",
-				"manual": "Version {{version}} is available, but this install location is read-only. Download it manually.",
-				"upToDate": "Cove is up to date. Last checked {{time}}.",
-				"notChecked": "Not checked yet.",
-					"available": "Version {{version}} is available. Nothing has been downloaded."
-			},
-			"banner": {
-				"restart": "Restart",
-				"download": "Download"
-			},
-			"confirm": {
-				"title": "Restart to update?",
-				"body": "Cove will close and reopen on version {{version}}.",
-				"call": "You are in a call. Restarting will end it.",
-				"draft": "You have unsent messages. They will be lost.",
-				"action": "Restart now"
-			},
-			"errors": {
-				"check_failed": "Could not check for updates. Check your connection and try again.",
-				"download_failed": "The update could not be downloaded.",
-				"checksum": "The downloaded update failed its integrity check, so it was discarded.",
-				"install_failed": "The update could not be installed. Your current version was kept.",
-				"unsupported": "Automatic updates are not available for this platform.",
-				"nothing_staged": "There is no downloaded update to install."
-			},
-				"autoDownload": "Download updates automatically",
-				"autoDownloadHint": "Off by default. Cove only checks for updates; turn this on to also download them in the background. Installing always needs your click.",
-				"source": "Update source",
-				"sourceHint": "Address of the release manifest. Keep the default unless you run a mirror, for example on a network without internet.",
-				"entry": {
-					"available": "Update available: Cove {{version}}",
-					"ready": "Update ready: Cove {{version}}",
-					"notes": "What's new"
-				}
+	"desktopUpdate": {
+		"title": "Updates",
+		"auto": "Check for updates automatically",
+		"autoHint": "Cove looks for new versions in the background and downloads them, ready to install when you choose.",
+		"prerelease": "Include pre-releases",
+		"prereleaseHint": "Also offer early builds. Every 0.x version is published as a pre-release.",
+		"version": "Version {{version}}",
+		"checkNow": "Check now",
+		"status": {
+			"unknown": "Update status is not available yet.",
+			"checking": "Checking for updates…",
+			"downloading": "Downloading {{version}}… {{percent}}%",
+			"installing": "Installing the update…",
+			"ready": "Version {{version}} is downloaded and ready to install.",
+			"manual": "Version {{version}} is available, but this install location is read-only. Download it manually.",
+			"upToDate": "Cove is up to date. Last checked {{time}}.",
+			"notChecked": "Not checked yet.",
+			"available": "Version {{version}} is available. Nothing has been downloaded."
 		},
+		"banner": {
+			"restart": "Restart",
+			"download": "Download"
+		},
+		"confirm": {
+			"title": "Restart to update?",
+			"body": "Cove will close and reopen on version {{version}}.",
+			"call": "You are in a call. Restarting will end it.",
+			"draft": "You have unsent messages. They will be lost.",
+			"action": "Restart now"
+		},
+		"errors": {
+			"check_failed": "Could not check for updates. Check your connection and try again.",
+			"download_failed": "The update could not be downloaded.",
+			"checksum": "The downloaded update failed its integrity check, so it was discarded.",
+			"install_failed": "The update could not be installed. Your current version was kept.",
+			"unsupported": "Automatic updates are not available for this platform.",
+			"nothing_staged": "There is no downloaded update to install."
+		},
+		"autoDownload": "Download updates automatically",
+		"autoDownloadHint": "Off by default. Cove only checks for updates; turn this on to also download them in the background. Installing always needs your click.",
+		"source": "Update source",
+		"sourceHint": "Address of the release manifest. Keep the default unless you run a mirror, for example on a network without internet.",
+		"entry": {
+			"available": "Update available: Cove {{version}}",
+			"ready": "Update ready: Cove {{version}}",
+			"notes": "What's new"
+		}
+	},
 	"apiErrors": {
 		"account_delete_failed": "Couldn't delete the account.",
 		"account_not_addable": "This account can't be added to chats.",
@@ -1418,6 +1476,136 @@
 			"author_dropped": "The author name was invalid and was ignored.",
 			"license_dropped": "The licence text was invalid and was ignored.",
 			"bubble_tint_dropped": "The bubble tint was invalid and was ignored."
+		}
+	},
+	"emoji": {
+		"big": {
+			"replay": "Tap to replay"
+		},
+		"categories": {
+			"people": "Smileys and people",
+			"nature": "Animals and nature",
+			"foods": "Food and drink",
+			"activity": "Activities",
+			"places": "Travel and places",
+			"objects": "Objects",
+			"symbols": "Symbols",
+			"flags": "Flags"
+		},
+		"panel": {
+			"emoji": "Emoji",
+			"stickers": "Stickers"
+		},
+		"picker": {
+			"custom": "Custom emoji",
+			"downloading": "Downloading emoji style…",
+			"no_results": "No emoji found",
+			"recent": "Recently used",
+			"search": "Search emoji",
+			"style": "Emoji style"
+		},
+		"settings": {
+			"tab": "Emoji and stickers",
+			"title": "Emoji",
+			"style": "Emoji style",
+			"style_hint": "Applies to this device only. A style is downloaded the first time you use it.",
+			"animated": "Animated emoji",
+			"animated_hint": "Show a single emoji as a big animation. Off by default when your system reduces motion."
+		},
+		"shortcode": {
+			"header": "Custom emoji matching :{{query}}"
+		},
+		"styles": {
+			"native": "Device emoji"
+		}
+	},
+	"stickers": {
+		"credits": {
+			"open": "Credits and licenses",
+			"title": "Credits",
+			"description": "Artwork shipped with this server.",
+			"emoji": "Emoji styles",
+			"stickers": "Sticker packs",
+			"unavailable": "Credits could not be loaded."
+		},
+		"errors": {
+			"generic": "Something went wrong. Please try again.",
+			"pack_not_found": "That sticker pack no longer exists.",
+			"pack_limit_reached": "You have reached a sticker limit (packs, stickers per pack or storage).",
+			"emoji_name_taken": "Another emoji already uses that name.",
+			"pack_uploads_disabled": "The server administrator has turned off sticker uploads.",
+			"image_invalid": "That image cannot be used. Use a PNG, JPEG, GIF or WebP image that is not too large.",
+			"sticker_invalid": "That sticker could not be sent.",
+			"payload_too_large": "The file is too large.",
+			"rate_limited": "Too many requests. Please wait a moment.",
+			"service_unavailable": "The server is busy. Please try again shortly.",
+			"forbidden": "You are not allowed to do that.",
+			"unauthorized": "Please sign in again."
+		},
+		"manager": {
+			"title": "My stickers",
+			"new_pack": "New pack",
+			"create": "Create",
+			"name_label": "Pack name",
+			"name_placeholder": "Pack name",
+			"quota": "Packs: {{packs}} of {{maxPacks}} · Storage: {{used}} of {{max}}",
+			"mine": "My packs",
+			"none_mine": "You have not made any packs yet.",
+			"added": "Added from others",
+			"edit": "Edit",
+			"back": "Back",
+			"rename": "Rename pack",
+			"share": "Share to chat",
+			"delete": "Delete",
+			"delete_pack": "Delete pack",
+			"delete_pack_confirm": "Delete \"{{name}}\" and all its stickers? This cannot be undone.",
+			"delete_sticker": "Delete sticker",
+			"move_earlier": "Move earlier",
+			"move_later": "Move later",
+			"add_sticker": "Add sticker",
+			"upload": "Add",
+			"emoji_label": "Emoji for this sticker",
+			"emoji_placeholder": "Emoji (optional)",
+			"emoji_hint": "The emoji helps people find the sticker. It cannot be changed later.",
+			"pick_emoji": "Pick an emoji",
+			"empty_pack": "This pack is empty. Add your first sticker.",
+			"count_of": "Stickers: {{count}} of {{max}}"
+		},
+		"message": {
+			"sticker": "Sticker",
+			"open_pack": "Open sticker pack",
+			"unavailable": "This sticker cannot be shown."
+		},
+		"pack": {
+			"title": "Sticker pack",
+			"by": "By {{name}}",
+			"count": "Stickers: {{count}}",
+			"add": "Add stickers",
+			"add_stickers": "Add stickers",
+			"added": "Sticker pack added",
+			"added_short": "Added",
+			"remove": "Remove",
+			"preview": "Preview pack",
+			"unavailable": "This sticker pack is not available."
+		},
+		"panel": {
+			"empty": "No sticker packs yet.",
+			"recent": "Recently used"
+		},
+		"problems": {
+			"type": "Use a PNG, JPEG, GIF or WebP image.",
+			"too_large": "That file is larger than 4 MB.",
+			"pack_full": "This pack is full.",
+			"storage_full": "You have used all your sticker storage.",
+			"uploads_disabled": "Sticker uploads are turned off on this server.",
+			"pack_limit": "You have reached the limit of sticker packs.",
+			"decode": "That image could not be read."
+		},
+		"share": {
+			"title": "Share sticker pack",
+			"send": "Send",
+			"sent": "Shared in {{count}} chats",
+			"failed": "Could not share the pack."
 		}
 	}
 }

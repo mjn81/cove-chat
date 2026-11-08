@@ -5,7 +5,7 @@ import { apiGetFile } from '@/api/client';
 const memoryCache = new Map<string, string>();
 const inFlightPromises = new Map<string, Promise<string | null>>();
 
-function detectMimeType(bytes: Uint8Array): string {
+export function detectMimeType(bytes: Uint8Array): string {
 	if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
 		return 'image/jpeg';
 	}
