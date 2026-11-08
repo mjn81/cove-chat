@@ -4,6 +4,7 @@ import { useAssetUrl } from '@/lib/asset-cache';
 import { useCustomEmoji, useLoadedEmojiStyle } from '../hooks/use-emoji';
 import { emojiKey, tokenizeEmojiText } from '../utils/emoji-text';
 import { spriteStyle } from '../utils/sprite';
+import type { LoadedEmojiStyle } from '../types/emoji.types';
 
 interface EmojiProps {
 	/** The emoji character exactly as typed or received; it stays in the DOM so copy and paste yields Unicode. */
@@ -15,17 +16,20 @@ interface EmojiProps {
 	className?: string;
 }
 
+interface EmojiSpriteProps {
+	char: string;
+	size: number;
+	/** The decoded style to draw from; null draws the device glyph. */
+	loaded: LoadedEmojiStyle | null;
+	className?: string;
+}
+
 /**
- * One emoji drawn from the active style's sprite sheet. While the sheet is loading, when the style is `native`, or
- * when the style has no image for this emoji, the device glyph is shown instead, so nothing ever blocks or goes
- * missing. The original character is always the element's text (transparent over the image), which keeps
- * selection and copy producing real Unicode.
- *
- * @param char - The emoji character.
- * @param size - Size in px (default 20).
+ * Hook-free emoji drawing, shared by {@link Emoji} and the picker (which renders thousands of them and so resolves
+ * the style once for the whole grid). The original character stays the element's text, transparent over the image,
+ * so selection and copy produce real Unicode.
  */
-export const Emoji = memo(function Emoji({ char, size = 20, styleId, className }: EmojiProps) {
-	const loaded = useLoadedEmojiStyle(styleId);
+export function EmojiSprite({ char, size, loaded, className }: EmojiSpriteProps) {
 	const sprite = loaded ? spriteStyle(loaded.sheetUrl, loaded.index, emojiKey(char), size) : null;
 	if (!sprite) {
 		return (
@@ -44,6 +48,19 @@ export const Emoji = memo(function Emoji({ char, size = 20, styleId, className }
 			{char}
 		</span>
 	);
+}
+
+/**
+ * One emoji drawn from the active style's sprite sheet. While the sheet is loading, when the style is `native`, or
+ * when the style has no image for this emoji, the device glyph is shown instead, so nothing ever blocks or goes
+ * missing.
+ *
+ * @param char - The emoji character.
+ * @param size - Size in px (default 20).
+ */
+export const Emoji = memo(function Emoji({ char, size = 20, styleId, className }: EmojiProps) {
+	const loaded = useLoadedEmojiStyle(styleId);
+	return <EmojiSprite char={char} size={size} loaded={loaded} className={className} />;
 });
 
 interface CustomEmojiImageProps {

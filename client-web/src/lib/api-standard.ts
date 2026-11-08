@@ -27,6 +27,13 @@ export const API_ERROR_CODES = [
 	'method_not_allowed',
 	'service_unavailable',
 	'internal',
+	// Emoji, stickers and packs (docs/packs-api.md).
+	'pack_not_found',
+	'pack_limit_reached',
+	'emoji_name_taken',
+	'pack_uploads_disabled',
+	'image_invalid',
+	'sticker_invalid',
 ] as const;
 
 /** One of the registered error codes. */
