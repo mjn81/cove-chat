@@ -125,3 +125,26 @@ const WHITE = '0 0% 100%';
 export function pickForeground(background: string): string {
 	return contrastRatio(WHITE, background) >= contrastRatio(NEAR_BLACK, background) ? WHITE : NEAR_BLACK;
 }
+
+/**
+ * Splits a canonical triplet into numbers for sliders.
+ *
+ * @returns `[hue 0-360, saturation 0-100, lightness 0-100]`; `[0, 0, 0]` for text outside the grammar.
+ */
+export function tripletToHsl(triplet: string): [number, number, number] {
+	const parsed = parseColorValue(triplet);
+	if (!parsed) return [0, 0, 0];
+	const [h, s, l] = parsed.value.replace(/%/g, '').split(' ').map(Number);
+	return [h, s, l];
+}
+
+/** Builds a canonical triplet from slider numbers (clamped and rounded to one decimal). */
+export function hslToTriplet(h: number, s: number, l: number): string {
+	const c = (n: number, max: number) => Math.round(clamp(Number.isFinite(n) ? n : 0, 0, max) * 10) / 10;
+	return (parseColorValue(`${c(h, 360)} ${c(s, 100)}% ${c(l, 100)}%`) as ParsedColor).value;
+}
+
+/** A canonical triplet as `#rrggbb`, for showing a hex value next to the sliders. */
+export function tripletToHex(triplet: string): string {
+	return '#' + hslTripletToRgb(triplet).map(toHex).join('');
+}

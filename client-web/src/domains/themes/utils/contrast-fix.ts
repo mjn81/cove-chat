@@ -1,5 +1,5 @@
 import type { PartialTokenSet, ThemeTokenName } from '../types/themes.types';
-import { contrastRatio, parseColorValue, pickForeground } from './color';
+import { contrastRatio, hslToTriplet, pickForeground, tripletToHsl } from './color';
 import { MIN_CONTRAST_AA, MIN_CONTRAST_HARD, READABILITY_PAIRS } from './tokens';
 
 /** A text/surface pair below the recommended contrast, with a suggested replacement for the text colour. */
@@ -12,16 +12,6 @@ export interface ContrastIssue {
 	/** A replacement for `foreground` that reaches AA against `surface`. */
 	fix?: string;
 }
-
-function hslOf(triplet: string): [number, number, number] {
-	const parsed = parseColorValue(triplet);
-	if (!parsed) return [0, 0, 0];
-	const [h, s, l] = parsed.value.replace(/%/g, '').split(' ').map(Number);
-	return [h, s, l];
-}
-
-const toTriplet = (h: number, s: number, l: number) => (parseColorValue(`${h} ${s}% ${l}%`) as { value: string }).value;
-
 /**
  * A text colour that reads on `surface`. It keeps the hue and saturation of `foreground` and walks the lightness
  * away from the surface until `target` is met; if the hue cannot get there, black or white is used instead.
@@ -33,15 +23,15 @@ const toTriplet = (h: number, s: number, l: number) => (parseColorValue(`${h} ${
  */
 export function suggestForeground(foreground: string, surface: string, target: number = MIN_CONTRAST_AA): string {
 	if (contrastRatio(foreground, surface) >= target) return foreground;
-	const [h, s, l] = hslOf(foreground);
-	const surfaceLightness = hslOf(surface)[2];
+	const [h, s, l] = tripletToHsl(foreground);
+	const surfaceLightness = tripletToHsl(surface)[2];
 	// Away from the surface: lighter text on a dark surface, darker on a light one.
 	const direction = surfaceLightness >= 50 ? -1 : 1;
 	let best = foreground;
 	let bestRatio = contrastRatio(foreground, surface);
 	for (let step = 1; step <= 100; step++) {
 		const next = Math.min(100, Math.max(0, l + direction * step));
-		const candidate = toTriplet(h, s, next);
+		const candidate = hslToTriplet(h, s, next);
 		const ratio = contrastRatio(candidate, surface);
 		if (ratio > bestRatio) {
 			best = candidate;
