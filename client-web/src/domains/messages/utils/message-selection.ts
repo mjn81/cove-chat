@@ -13,7 +13,7 @@ export interface SelectionActions {
 }
 
 /** Message types the forward dialog knows how to re-send. */
-const FORWARDABLE = new Set(['text', 'file', 'voice', 'video', 'invite']);
+const FORWARDABLE = new Set(['text', 'file', 'voice', 'video', 'invite', 'sticker']);
 
 /**
  * What the selection bar offers (Telegram style): delete only when the user may delete every selected message,

@@ -1,6 +1,6 @@
 // WebSocket client with auto-reconnect and channel key management
 
-import type { Message } from '@/types/api';
+import type { Message, MessageType } from '@/types/api';
 import { isWails } from '@/utils/wails';
 import { logger } from '@/utils/logger';
 import { getDesktopToken } from './lib/desktop-session';
@@ -499,7 +499,7 @@ export function wsSendReadReceipt(channelId: string) {
 export async function wsSendMessage(
 	channelId: string,
 	text: string,
-	type: 'text' | 'file' | 'voice' | 'video' | 'invite' = 'text',
+	type: MessageType = 'text',
 	compression: string = 'none',
 	replyToId?: string,
 ): Promise<boolean> {

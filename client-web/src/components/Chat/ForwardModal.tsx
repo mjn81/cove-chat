@@ -18,6 +18,7 @@ import { apiGetFile } from '@/api/client';
 import { base64ToBytes } from '@/ws';
 import { decryptAndDecompressFile } from '@/utils/file';
 import { encryptAndUploadFile } from '@/domains/files/utils/upload-encrypted-file';
+import { hasTextBody } from '@/domains/messages/utils/message-types';
 
 interface ForwardModalProps {
 	/** Messages to forward, oldest first. */
@@ -68,7 +69,7 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose })
 			}
 
 			// 2. Handle different message types
-			if (message.type === 'text' || message.type === 'invite') {
+			if (hasTextBody(message.type)) {
 				// Text is easy: just re-send encrypted for each channel
 				for (const targetId of selectedIds) {
 					await wsSendMessage(targetId, contentText, message.type);
