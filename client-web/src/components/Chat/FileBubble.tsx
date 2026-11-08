@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { type Message } from '@/types/api';
 import { decryptMessage, getChannelKey, base64ToBytes, onWS } from '@/ws';
@@ -16,6 +16,8 @@ import { useAuthStore } from '@/store/store';
 import { VoiceBubble } from './File/VoiceBubble';
 import { ImageVideoBubble } from './File/ImageVideoBubble';
 import { GenericFileBubble } from './File/GenericFileBubble';
+import { ThemeFileCard } from '@/domains/themes/components/theme-file-card';
+import { isThemeFile } from '@/domains/themes/utils/is-theme-file';
 
 interface FileBubbleProps {
 	msg: Message;
@@ -216,6 +218,27 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 		}
 	};
 
+	/**
+	 * The decrypted bytes of the file, from the local cache when it was opened before. Used by the theme card, which
+	 * validates them before showing anything; it never applies a theme itself.
+	 */
+	const loadBytes = useCallback(async (): Promise<Uint8Array> => {
+		if (!meta) throw new Error('No metadata');
+		const cached = await db.getCachedFile(meta.file_id);
+		if (cached) return cached.data;
+		const key = getChannelKey(msg.channel_id);
+		if (!key) throw new Error('Missing channel key');
+		const encryptedBuffer = await apiGetFile(meta.file_id);
+		const decrypted = await decryptAndDecompressFile(
+			new Uint8Array(encryptedBuffer),
+			base64ToBytes(meta.nonce),
+			key,
+			false,
+		);
+		await db.cacheFile(meta.file_id, decrypted, meta.mime);
+		return decrypted;
+	}, [meta, msg.channel_id]);
+
 	const handleFullscreen = async (e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (fullUrl) return;
@@ -288,6 +311,14 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 					progress={progress}
 					handleDownload={handleDownload}
 					handleFullscreen={handleFullscreen}
+				/>
+			) : isThemeFile(meta) ? (
+				<ThemeFileCard
+					fileName={meta.name || 'theme.covetheme'}
+					size={meta.size}
+					loadBytes={loadBytes}
+					onDownload={() => void handleDownload()}
+					downloading={isDecrypting}
 				/>
 			) : (
 				<GenericFileBubble

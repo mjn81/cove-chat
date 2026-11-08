@@ -13,6 +13,7 @@ import { UpdateSync } from './domains/desktop/components/update-sync';
 import { LockScreen } from './domains/security/components/lock-screen';
 import { useAutoLock } from './domains/security/hooks/use-auto-lock';
 import { useLockStore } from './domains/security/store/lock.store';
+import { ThemePreviewBar } from './domains/themes/components/theme-preview-bar';
 import { getThemeEngine } from './domains/themes/utils/theme-engine';
 import { definitionFor } from './domains/themes/utils/theme-settings';
 
@@ -126,6 +127,7 @@ function AppContent() {
   return (
     <BrowserRouter>
       {shouldConnect && <Navigate to="/connect" replace />}
+      <ThemePreviewBar />
       <Routes>
         {/* Public routes */}
         <Route path="/connect"  element={<ServerSelectionPage />} />
