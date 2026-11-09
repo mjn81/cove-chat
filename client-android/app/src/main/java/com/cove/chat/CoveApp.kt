@@ -78,6 +78,7 @@ class CoveApp : Application() {
 
         preferencesManager = PreferencesManager(this)
         apiClient = ApiClient(preferencesManager)
+        com.cove.chat.data.local.ClientCache.init(this)
         com.cove.chat.emoji.EmojiEngine.init(this, preferencesManager)
         webSocketManager = WebSocketManager(preferencesManager)
         webRTCManager = com.cove.chat.rtc.CallRouter(this, webSocketManager, preferencesManager, apiClient, WebRTCManager(this, webSocketManager))

@@ -72,3 +72,10 @@ targets are at least 44 dp (emoji cells, category/pack bar, tone and clear butto
 Stickers swipe as pager pages; the preview bar is capped at 560 dp wide and respects the navigation bar. Noto is always the
 default style: the device font only appears when the user picks "Device emoji". A docked side panel for tablets
 (WindowSizeClass Medium/Expanded) is not built. Still unverified on a device (emulator unusable).
+
+## Cold start (Android)
+
+`data/local/ClientCache.kt` + `BodyCache.kt`: the chat list, the last 50 messages per chat and decrypted bodies are saved in
+`cacheDir/cove` (wiped on sign-out) and drawn immediately on the next start while the network refresh and socket connect run
+in parallel; `CryptoManager` also keeps the imported `SecretKey` per channel and answers repeat decrypts from the body cache
+(keyed by channel and nonce). Channel keys are still never persisted. Timings: unmeasured (emulator unusable).

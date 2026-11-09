@@ -98,8 +98,10 @@ fun ChannelListScreen(
     val c = CoveTheme.extendedColors
     val me = prefs.userId
 
-    var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
-    var loaded by remember { mutableStateOf(false) }
+    // Cold start: draw the last saved list at once and refresh in the background (no empty or "loading" frame).
+    val cachedChannels = remember { com.cove.chat.data.local.ClientCache.readChannels() }
+    var channels by remember { mutableStateOf(cachedChannels ?: emptyList<Channel>()) }
+    var loaded by remember { mutableStateOf(cachedChannels != null) }
     var tab by remember { mutableStateOf(ListTab.All) }
     var showSearch by remember { mutableStateOf(false) }
     var showNew by remember { mutableStateOf(false) }
@@ -110,7 +112,7 @@ fun ChannelListScreen(
     var refreshTick by remember { mutableStateOf(0) }
 
     LaunchedEffect(refreshTick) {
-        api.getChannels().onSuccess { channels = it }
+        api.getChannels().onSuccess { channels = it; com.cove.chat.data.local.ClientCache.writeChannels(it) }
         loaded = true
     }
     LaunchedEffect(Unit) { api.getVersion().onSuccess { version = it.version } }

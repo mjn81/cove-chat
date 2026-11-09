@@ -171,7 +171,8 @@ fun ChatScreen(
 
     var channel by remember { mutableStateOf<Channel?>(null) }
     // Newest-first, exactly the order the API returns.
-    var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
+    // Last page from the previous visit first, so the chat is readable before the network answers.
+    var messages by remember(channelId) { mutableStateOf<List<Message>>(com.cove.chat.data.local.ClientCache.readMessages(channelId) ?: emptyList()) }
     var hasMore by remember { mutableStateOf(true) }
     // Opaque cursor to the next older page, from the previous answer.
     var olderCursor by remember { mutableStateOf<String?>(null) }
@@ -215,6 +216,7 @@ fun ChatScreen(
         api.getChannels().onSuccess { list -> channel = list.firstOrNull { it.id == channelId } }
         api.getMessages(channelId, pageSize).onSuccess {
             messages = it.items
+            com.cove.chat.data.local.ClientCache.writeMessages(channelId, it.items)
             olderCursor = it.nextCursor
             hasMore = it.hasMore
         }
