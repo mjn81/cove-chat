@@ -311,8 +311,17 @@ export const useVoiceStore = create<VoiceState>((set) => ({
 				if (enabled) {
 					nextSpotlight = userId;
 				} else if (state.spotlightStreamId === userId) {
-					nextSpotlight = state.isScreenSharing ? 'local' : null;
+					nextSpotlight = state.isScreenSharing ? 'local' : Object.keys(state.remoteScreenStreams).find((id) => id !== userId) ?? null;
 				}
+			}
+
+			// A share that ended must lose its tile. The stream object itself can outlive the share (a WebRTC receiver's
+			// MediaStream keeps its track after the sender stops, and the UDP path may still hold the canvas stream), so
+			// removing it here is what makes "enabled: false" authoritative.
+			let remoteScreenStreams = state.remoteScreenStreams;
+			if (kind === 'screen' && !enabled && remoteScreenStreams[userId]) {
+				remoteScreenStreams = { ...remoteScreenStreams };
+				delete remoteScreenStreams[userId];
 			}
 
 			return {
@@ -320,6 +329,7 @@ export const useVoiceStore = create<VoiceState>((set) => ({
 					...state.participantTrackStates,
 					[userId]: { ...current, [kind]: enabled },
 				},
+				remoteScreenStreams,
 				activePresenterId: nextPresenter,
 				spotlightStreamId: nextSpotlight,
 			};

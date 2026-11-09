@@ -614,7 +614,13 @@ export class UdpMediaManager {
 		const userId = this.mediaIds.get(f.src);
 		if (!userId) return;
 		if (f.kind === KIND_AUDIO && f.codec === CODEC_OPUS) this.playAudio(userId, f);
-		else if ((f.kind === KIND_VIDEO || f.kind === KIND_SCREEN) && f.codec === CODEC_H264) this.playVideo(userId, f);
+		else if ((f.kind === KIND_VIDEO || f.kind === KIND_SCREEN) && f.codec === CODEC_H264) {
+			// A stream the sender announced as stopped must not be revived by frames still in flight: that would create a
+			// tile (and decoder) that nothing ever removes again. The track-state event enabling it requests a keyframe,
+			// so dropping early frames costs at most one round trip.
+			const on = useVoiceStore.getState().participantTrackStates[userId]?.[f.kind === KIND_SCREEN ? 'screen' : 'video'];
+			if (on === true) this.playVideo(userId, f);
+		}
 	}
 
 	private playAudio(userId: string, f: PackedFrame): void {
@@ -714,9 +720,11 @@ export class UdpMediaManager {
 	private dropRemoteVideo(userId: string, kind: number): void {
 		const key = `${userId}:${kind}`;
 		const v = this.remoteVideo.get(key);
-		if (!v) return;
-		if (v.decoder.state !== 'closed') v.decoder.close();
-		this.remoteVideo.delete(key);
+		if (v) {
+			if (v.decoder.state !== 'closed') v.decoder.close();
+			this.remoteVideo.delete(key);
+		}
+		// Clear the tile even when no decoder exists (the stream may only have been announced), so it can never linger.
 		if (kind === KIND_SCREEN) useVoiceStore.getState().setRemoteScreenStream(userId, null);
 	}
 

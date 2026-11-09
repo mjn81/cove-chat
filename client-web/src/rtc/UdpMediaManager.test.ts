@@ -83,4 +83,46 @@ describe('UdpMediaManager', () => {
 		expect(bridge.close).not.toHaveBeenCalled();
 		await m.leave();
 	});
+
+	describe('screen share lifecycle', () => {
+		interface Internals {
+			handleRemoteFrame(f: { src: number; kind: number; codec: number; flags: number; ts: number; data: Uint8Array }): void;
+			playVideo(userId: string, f: unknown): void;
+		}
+		const frame = { src: 2, kind: 3, codec: 3, flags: 1, ts: 0, data: new Uint8Array(4) };
+
+		async function joinedWithPeer() {
+			const m = new UdpMediaManager(() => fakeBridge());
+			await m.join('chan1');
+			handlers.get('call_participant_joined')!({ channel_id: 'chan1', user: { user_id: 'u2', username: 'b', media_id: 2, track_states: {} } });
+			const played = vi.spyOn(m as unknown as Internals, 'playVideo').mockImplementation(() => {});
+			return { m, played, push: () => (m as unknown as Internals).handleRemoteFrame(frame) };
+		}
+
+		it('plays screen frames only while the sender says it is sharing, and drops the tile when it stops', async () => {
+			const { m, played, push } = await joinedWithPeer();
+			push();
+			expect(played).not.toHaveBeenCalled(); // not announced yet
+
+			handlers.get('call_track_state')!({ channel_id: 'chan1', user_id: 'u2', kind: 'screen', enabled: true });
+			push();
+			expect(played).toHaveBeenCalledTimes(1);
+
+			useVoiceStore.getState().setRemoteScreenStream('u2', ({ getVideoTracks: () => [] } as unknown as MediaStream));
+			handlers.get('call_track_state')!({ channel_id: 'chan1', user_id: 'u2', kind: 'screen', enabled: false });
+			expect(useVoiceStore.getState().remoteScreenStreams['u2']).toBeUndefined();
+			push(); // late frame still in flight after the stop
+			expect(played).toHaveBeenCalledTimes(1);
+			await m.leave();
+		});
+
+		it('removes the tile when the publisher leaves the call', async () => {
+			const { m } = await joinedWithPeer();
+			handlers.get('call_track_state')!({ channel_id: 'chan1', user_id: 'u2', kind: 'screen', enabled: true });
+			useVoiceStore.getState().setRemoteScreenStream('u2', ({ getVideoTracks: () => [] } as unknown as MediaStream));
+			handlers.get('call_participant_left')!({ channel_id: 'chan1', user: { user_id: 'u2', username: 'b', media_id: 2, track_states: {} } });
+			expect(useVoiceStore.getState().remoteScreenStreams['u2']).toBeUndefined();
+			await m.leave();
+		});
+	});
 });
