@@ -27,13 +27,29 @@ export const API_ERROR_CODES = [
 	'method_not_allowed',
 	'service_unavailable',
 	'internal',
+	// Emoji, stickers and packs (docs/packs-api.md).
+	'pack_not_found',
+	'pack_limit_reached',
+	'emoji_name_taken',
+	'pack_uploads_disabled',
+	'image_invalid',
+	'sticker_invalid',
 ] as const;
 
 /** One of the registered error codes. */
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
 /** Optional server features advertised in `capabilities`. Unknown names from newer servers are tolerated. */
-export type Capability = 'invite_messages' | 'whisper' | 'webrtc_sfu' | 'raw_udp_voice' | 'raw_udp_media';
+export type Capability =
+	| 'invite_messages'
+	| 'whisper'
+	| 'webrtc_sfu'
+	| 'raw_udp_voice'
+	| 'raw_udp_media'
+	| 'emoji_packs'
+	| 'custom_emoji'
+	| 'stickers'
+	| 'animated_emoji';
 
 /** Payload of {@link CLIENT_OUTDATED_EVENT}. */
 export interface ClientOutdatedDetail {

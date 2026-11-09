@@ -19,7 +19,7 @@ object ApiStandard {
     const val RELEASES_URL = "https://github.com/mjn81/cove-chat/releases/latest"
 
     /** Message types this build can render; anything else is shown as a placeholder. */
-    private val KNOWN_MESSAGE_TYPES = setOf("text", "file", "voice", "video", "invite")
+    private val KNOWN_MESSAGE_TYPES = setOf("text", "file", "voice", "video", "invite", "sticker")
 
     /** `android/0.10.0 (api 2)`. */
     fun clientHeader(version: String): String = "android/$version (api $API_VERSION)"

@@ -18,8 +18,8 @@ export interface AdminOverview {
 	data_size_bytes: number;
 }
 
-export type ConfigSettingType = 'enum' | 'int' | 'bool' | 'string';
-export type ConfigValue = string | number | boolean;
+export type ConfigSettingType = 'enum' | 'int' | 'bool' | 'string' | 'list';
+export type ConfigValue = string | number | boolean | string[];
 
 export interface ConfigSetting {
 	key: string;

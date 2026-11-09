@@ -18,7 +18,7 @@ func TestConfigChangesDTO_MatchesSchema(t *testing.T) {
 		name := strings.Split(typ.Field(i).Tag.Get("json"), ",")[0]
 		fields[name] = typ.Field(i).Type
 	}
-	want := map[string]reflect.Kind{"bool": reflect.Bool, "int": reflect.Int, "string": reflect.String, "enum": reflect.String}
+	want := map[string]reflect.Kind{"bool": reflect.Bool, "int": reflect.Int, "string": reflect.String, "enum": reflect.String, "list": reflect.Slice}
 	for _, s := range config.Schema() {
 		ft, ok := fields[s.Key]
 		if !ok {

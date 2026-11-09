@@ -5,6 +5,7 @@ import {
   OctagonX,
   TriangleAlert,
 } from "lucide-react"
+import type { CSSProperties } from "react"
 import { Toaster as Sonner } from "sonner"
 
 import { useAppStore } from "@/store/app.slice"
@@ -23,6 +24,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme}
       className="toaster group"
+      // Sonner's own defaults are fixed light/dark colours; point them at the tokens so a custom theme reaches
+      // everything a toast draws (background, text, border).
+      style={
+        {
+          '--normal-bg': 'hsl(var(--popover))',
+          '--normal-text': 'hsl(var(--popover-foreground))',
+          '--normal-border': 'hsl(var(--border))',
+        } as CSSProperties
+      }
       icons={{
         success: <CircleCheck className="h-4 w-4 text-success" />,
         info: <Info className="h-4 w-4" />,

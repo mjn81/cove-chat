@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Smile } from 'lucide-react';
 
-import EmojiPicker from '@/components/EmojiPicker';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
-import { useAppStore, useAuthStore, getChannelDisplayName } from '@/store/store';
+import { useAuthStore, getChannelDisplayName } from '@/store/store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isDirectMessage } from '@/utils/channel';
 import { logger } from '@/utils/logger';
@@ -23,6 +22,19 @@ import { useFilePicker } from '@/hooks/use-file-picker';
 import { AttachmentPreviews } from './attachment-previews';
 import { DropOverlay, ReplyPreview, SendErrorBanner } from './composer-banners';
 import { MentionPopup } from './mention-popup';
+import { ComposerEmojiPanel } from './composer-emoji-panel';
+import { preloadComposerEmojiPanel, preloadComposerEmojiPanelWhenIdle } from '../utils/emoji-panel-loader';
+import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import { RichInput, type ComposerInputHandle } from '@/domains/emoji/components/rich-input';
+import { registerComposer } from '@/domains/emoji/utils/composer-bridge';
+import { useEmojiSettings } from '@/domains/emoji/store/emoji.store';
+import { DOCK_MIN_WIDTH_QUERY, emojiButtonTarget } from '../utils/emoji-dock';
+import type { EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
+import { useSendSticker } from '../hooks/use-send-sticker';
+import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
+import { useShortcodeAutocomplete } from '@/domains/emoji/hooks/use-shortcode-autocomplete';
+import { ShortcodePopup } from '@/domains/emoji/components/shortcode-popup';
+import type { PackItem } from '@/domains/stickers/types/stickers.types';
 
 interface ChatInputAreaProps {
 	channel: Channel;
@@ -31,9 +43,6 @@ interface ChatInputAreaProps {
 	onCancelReply?: () => void;
 	messages: (Message & { text?: string })[];
 }
-
-/** Largest height the textarea grows to before it scrolls. */
-const MAX_INPUT_HEIGHT = 140;
 
 /**
  * The message composer: auto-growing textarea, @mentions, emoji picker,
@@ -49,7 +58,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const user = useAuthStore((state) => state.user);
-	const theme = useAppStore((state) => state.theme);
+	const { supports } = useServerCapabilities();
 	const isSmall = useMediaQuery('(max-width: 400px)');
 	const isTiny = useMediaQuery('(max-width: 340px)');
 
@@ -66,15 +75,31 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	);
 	const [sending, setSending] = useState(false);
 	const [showEmoji, setShowEmoji] = useState(false);
+	// The panel is built on first open and then kept (hidden) so reopening is instant and keeps its scroll position.
+	const [emojiMounted, setEmojiMounted] = useState(false);
+	const openEmoji = (open: boolean) => {
+		if (open) setEmojiMounted(true);
+		setShowEmoji(open);
+	};
+	useEffect(() => preloadComposerEmojiPanelWhenIdle(), []);
+	const emojiButtonRef = useRef<HTMLButtonElement>(null);
+	const panelMode = useEmojiSettings((s) => s.panelMode);
+	const dockOpen = useEmojiSettings((s) => s.dockOpen);
+	const setPanelMode = useEmojiSettings((s) => s.setPanelMode);
+	const setDockOpen = useEmojiSettings((s) => s.setDockOpen);
+	const wide = useMediaQuery(DOCK_MIN_WIDTH_QUERY);
+	const useDock = emojiButtonTarget(panelMode, wide) === 'dock';
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 	const [sendError, setSendError] = useState<string | null>(null);
 
-	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const inputRef = useRef<ComposerInputHandle>(null);
 
 	const attachments = useAttachments(channel.id);
 	const filePicker = useFilePicker(attachments.add);
 	const mentions = useMentions(channel.id, inputRef);
 	const sendText = useSendText(channel.id);
+	const sendSticker = useSendSticker(channel.id);
+	const shortcodes = useShortcodeAutocomplete();
 	const isDragging = useFileDrop(attachments.add);
 	const { sendVoice, sendVideo } = useSendMedia({
 		channel,
@@ -96,6 +121,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		if ((!text && attachments.files.length === 0) || sending) return;
 		setSending(true);
 		setSendError(null);
+		setShowEmoji(false);
 
 		try {
 			await attachments.sendAll(channel.id, channelKey);
@@ -103,7 +129,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 			setInputText('');
 			if (replyTo) onCancelReply?.();
-			if (inputRef.current) inputRef.current.style.height = 'auto';
 		} catch (err) {
 			logger.error('Failed to send messages', { error: String(err) });
 			setSendError(t('composer.errors.send_failed'));
@@ -132,7 +157,23 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}, 0);
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	const insertShortcode = (name: string) => {
+		const cursor = inputRef.current?.selectionStart ?? inputText.length;
+		const next = shortcodes.pick(inputText, cursor, name);
+		setInputText(next.text);
+		setTimeout(() => {
+			inputRef.current?.focus();
+			inputRef.current?.setSelectionRange(next.cursor, next.cursor);
+		}, 0);
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+		const shortcode = shortcodes.handleKey(e);
+		if (shortcode === 'handled') return;
+		if (shortcode) {
+			insertShortcode(shortcode.pick.name);
+			return;
+		}
 		const result = mentions.handleKey(e);
 		if (result === 'handled') return;
 		if (result) {
@@ -164,31 +205,50 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}
 	};
 
-	const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const { value, selectionStart } = e.target;
+	const handleValueChange = (value: string, caret: number) => {
 		setInputText(value);
-		e.target.style.height = 'auto';
-		e.target.style.height = Math.min(e.target.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
-		mentions.track(value, selectionStart);
+		mentions.track(value, caret);
+		shortcodes.track(value, caret);
 	};
 
-	const handleEmojiSelect = (emoji: { native: string }) => {
-		setInputText((prev) => prev + emoji.native);
-		setShowEmoji(false);
+	/** Inserts at the caret (replacing a selection) and keeps the panel open for the next emoji. */
+	const handleEmojiSelect = (text: string, info: EmojiPickInfo) => {
+		const ta = inputRef.current;
+		const current = useComposerDrafts.getState().drafts[channel.id]?.text ?? '';
+		const next = insertAtSelection(current, ta?.selectionStart, ta?.selectionEnd, text);
+		setInputText(next.text);
+		if (!ta) return;
+		// The composer keeps focus on mouse picks (the panel does not take it); keyboard picks leave focus in the panel.
+		requestAnimationFrame(() => {
+			if (!info.keyboard) ta.focus();
+			ta.setSelectionRange(next.caret, next.caret);
+		});
+	};
+
+	const handleStickerSelect = async (packId: string, item: PackItem) => {
+		openEmoji(false);
+		const ok = await sendSticker(packId, item, replyTo?.id);
+		if (!ok) {
+			setSendError(t('composer.errors.send_failed'));
+			return;
+		}
+		if (replyTo) onCancelReply?.();
 		inputRef.current?.focus();
 	};
+
+	// The docked panel (outside this component) inserts and sends through the bridge; the latest handlers are kept in a ref.
+	const panelHandlers = useRef({ insert: handleEmojiSelect, sticker: handleStickerSelect });
+	useEffect(() => {
+		panelHandlers.current = { insert: handleEmojiSelect, sticker: handleStickerSelect };
+	});
+	useEffect(
+		() => registerComposer({ insert: (t, i) => panelHandlers.current.insert(t, i), sticker: (p, item) => panelHandlers.current.sticker(p, item) }),
+		[],
+	);
 
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, [replyTo, channel.id]);
-
-	// A restored draft arrives with the text already set, so the textarea has to grow to fit it (typing does this itself).
-	useEffect(() => {
-		const el = inputRef.current;
-		if (!el) return;
-		el.style.height = 'auto';
-		el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
-	}, [inputText]);
 
 	const hasContent = inputText.trim() !== '' || attachments.files.length > 0;
 	const iconButtonClass =
@@ -229,25 +289,31 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					<AttachMenu compact={isSmall} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
-					<textarea
+					<RichInput
 						ref={inputRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground"
 						placeholder={isSmall ? t('composer.message_short') : t('composer.message_to', { target })}
 						aria-label={t('composer.message_to', { target })}
 						value={inputText}
-						onChange={handleInput}
+						onValueChange={handleValueChange}
 						onKeyDown={handleKeyDown}
-						rows={1}
-						dir="auto"
 					/>
 
 					<div className={cn('flex shrink-0 items-center', isTiny ? 'gap-0' : isSmall ? 'gap-1' : 'gap-1.5')}>
 						<button
 								type="button"
+								data-emoji-toggle
+								ref={emojiButtonRef}
+								aria-pressed={useDock ? dockOpen : showEmoji}
+								onMouseEnter={() => void preloadComposerEmojiPanel()}
+								onFocus={() => void preloadComposerEmojiPanel()}
+								// Keep the caret in the composer when the button is pressed.
+								onMouseDown={(e) => e.preventDefault()}
 								onClick={(e) => {
 									e.stopPropagation();
-									setShowEmoji((v) => !v);
+									if (useDock) setDockOpen(!dockOpen);
+									else openEmoji(!showEmoji);
 								}}
 								className={iconButtonClass}
 								title={t('composer.add_emoji')}
@@ -286,14 +352,38 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				/>
 			)}
 
-			{showEmoji && (
-				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
-					<EmojiPicker
-						onSelect={handleEmojiSelect}
-						onClickOutside={() => setShowEmoji(false)}
-						theme={theme}
-					/>
-				</div>
+			{shortcodes.isOpen && (
+				<ShortcodePopup
+					query={shortcodes.query}
+					items={shortcodes.matches}
+					selectedIndex={shortcodes.selectedIndex}
+					onHover={shortcodes.setSelectedIndex}
+					onPick={insertShortcode}
+				/>
+			)}
+
+			{emojiMounted && !useDock && (
+				<ComposerEmojiPanel
+					open={showEmoji}
+					anchor={emojiButtonRef}
+					stickersEnabled={supports('stickers')}
+					onEmoji={handleEmojiSelect}
+					onSticker={handleStickerSelect}
+					onClose={() => openEmoji(false)}
+					dock={
+						wide
+							? {
+									docked: false,
+									onToggle: () => {
+										// Move the panel to the docked side column.
+										openEmoji(false);
+										setPanelMode('dock');
+										setDockOpen(true);
+									},
+								}
+							: undefined
+					}
+				/>
 			)}
 
 			<VideoMessageRecorderModal

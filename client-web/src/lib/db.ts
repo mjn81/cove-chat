@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Message } from '@/types/api';
+import type { InstalledTheme } from '@/domains/themes/types/themes.types';
 import { decryptBytes, decryptText, encryptBytes, encryptText, isEncryptedText } from './cacheCrypto';
 import { logger } from '@/utils/logger';
 
@@ -46,6 +47,8 @@ export type StorageCategory =
 export class CoveDB extends Dexie {
 	messages!: Table<CachedMessage>;
 	files!: Table<CachedFile>;
+	/** Themes imported from `.covetheme` files (definition plus images). Per device; plain data, not secret. */
+	themes!: Table<InstalledTheme>;
 
 	constructor() {
 		super('CoveDB');
@@ -58,6 +61,12 @@ export class CoveDB extends Dexie {
 		this.version(3).stores({
 			messages: 'id, channel_id, sent_at',
 			files: 'id, mime, cached_at',
+		});
+
+		this.version(4).stores({
+			messages: 'id, channel_id, sent_at',
+			files: 'id, mime, cached_at',
+			themes: 'id, installed_at',
 		});
 	}
 

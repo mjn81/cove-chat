@@ -491,6 +491,16 @@ export async function apiGetFile(
 	);
 }
 
+/**
+ * Downloads any authenticated API path (emoji sheets, sticker and custom emoji images) as bytes. Goes through the
+ * axios client so the desktop Bearer token and the web session cookie apply; an `<img src>` could not do that on desktop.
+ *
+ * @param path - API path such as `/api/emoji/styles/noto/<version>/sheet.webp`.
+ */
+export async function apiGetBinary(path: string) {
+	return request<ArrayBuffer>(apiClient.get(path, { responseType: 'arraybuffer' }));
+}
+
 // ─────────────────────────────────────────────
 // Presence
 // ─────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/store';
 import { AdminsPanel } from './admins-panel';
 import { ConfigPanel } from './config-panel';
 import { DataPanel } from './data-panel';
+import { EmojiStickersPanel } from './emoji-stickers-panel';
 import { NoticePanel } from './notice-panel';
 import { OverviewPanel } from './overview-panel';
 import { RegistrationPanel } from './registration-panel';
@@ -27,6 +28,7 @@ export function AdminTab() {
 					<TabsTrigger value="overview">{t('admin.tabs.overview')}</TabsTrigger>
 					<TabsTrigger value="registration">{t('admin.tabs.registration')}</TabsTrigger>
 					<TabsTrigger value="config">{t('admin.tabs.config')}</TabsTrigger>
+					<TabsTrigger value="emoji">{t('admin.tabs.emoji')}</TabsTrigger>
 					<TabsTrigger value="admins">{t('admin.tabs.admins')}</TabsTrigger>
 					{role === 'owner' && <TabsTrigger value="notices">{t('admin.tabs.notices')}</TabsTrigger>}
 					{role === 'owner' && <TabsTrigger value="data">{t('admin.tabs.data')}</TabsTrigger>}
@@ -39,6 +41,9 @@ export function AdminTab() {
 				</TabsContent>
 				<TabsContent value="config" className="mt-6">
 					<ConfigPanel />
+				</TabsContent>
+				<TabsContent value="emoji" className="mt-6">
+					<EmojiStickersPanel />
 				</TabsContent>
 				<TabsContent value="admins" className="mt-6">
 					<AdminsPanel />

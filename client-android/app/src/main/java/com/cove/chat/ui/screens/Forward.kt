@@ -17,7 +17,7 @@ import kotlinx.coroutines.withContext
 suspend fun forwardMessage(m: Message, targetChannelId: String): Boolean = withContext(Dispatchers.IO) {
     runCatching {
         when (m.type) {
-            "text", "invite" ->
+            "text", "invite", "sticker" ->
                 CoveApp.instance.webSocketManager.sendChatMessage(
                     targetChannelId, CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce), type = m.type
                 )

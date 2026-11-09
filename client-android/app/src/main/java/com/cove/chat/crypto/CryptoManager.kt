@@ -26,6 +26,15 @@ object CryptoManager {
     // Keys are distributed over authenticated WSS and never saved to persistent storage.
     private val channelKeys = ConcurrentHashMap<String, ByteArray>()
 
+    // The imported key object per channel: built once when the key arrives instead of on every message.
+    private val channelSecrets = ConcurrentHashMap<String, SecretKey>()
+
+    /** Decrypted bodies kept between runs (set by `ClientCache.init`); lets a cold start show text before the keys arrive. */
+    @Volatile var bodyCache: com.cove.chat.data.local.BodyCache? = null
+    @Volatile var onBodyCached: (() -> Unit)? = null
+
+    private fun secretFor(channelId: String, raw: ByteArray): SecretKey = channelSecrets.getOrPut(channelId) { SecretKeySpec(raw, "AES") }
+
     private val _keyVersion = MutableStateFlow(0)
 
     /** Bumped whenever a channel key arrives so the UI can re-run decryption of "[encrypted]" bodies. */
@@ -33,6 +42,7 @@ object CryptoManager {
 
     fun setChannelKey(channelId: String, rawKey: ByteArray) {
         channelKeys[channelId] = rawKey
+        channelSecrets[channelId] = SecretKeySpec(rawKey, "AES")
         _keyVersion.update { it + 1 }
     }
 
@@ -49,6 +59,7 @@ object CryptoManager {
 
     fun clearKeys() {
         channelKeys.clear()
+        channelSecrets.clear()
         _keyVersion.update { it + 1 }
     }
 
@@ -78,19 +89,24 @@ object CryptoManager {
      * Decrypts AES-256-GCM ciphertext payload with nonce.
      */
     fun decryptMessage(channelId: String, base64Ciphertext: String, base64Nonce: String): String {
-        val keyBytes = channelKeys[channelId] ?: return "[encrypted]"
+        val cacheKey = com.cove.chat.data.local.BodyCache.key(channelId, base64Nonce)
+        val keyBytes = channelKeys[channelId] ?: return bodyCache?.get(cacheKey) ?: "[encrypted]"
+        // A nonce is unique per ciphertext, so a hit is exactly this message and skips Base64 and AES altogether.
+        bodyCache?.get(cacheKey)?.let { return it }
 
         return try {
             val iv = Base64.decode(base64Nonce, Base64.NO_WRAP)
             val ciphertext = Base64.decode(base64Ciphertext, Base64.NO_WRAP)
 
-            val secretKey: SecretKey = SecretKeySpec(keyBytes, "AES")
+            val secretKey: SecretKey = secretFor(channelId, keyBytes)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             val spec = GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv)
             cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
 
             val decrypted = cipher.doFinal(ciphertext)
-            String(decrypted, Charsets.UTF_8)
+            String(decrypted, Charsets.UTF_8).also { body ->
+                bodyCache?.let { it.put(cacheKey, body); if (it.dirty) onBodyCached?.invoke() }
+            }
         } catch (e: Exception) {
             "[decryption failed]"
         }

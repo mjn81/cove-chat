@@ -171,7 +171,8 @@ fun ChatScreen(
 
     var channel by remember { mutableStateOf<Channel?>(null) }
     // Newest-first, exactly the order the API returns.
-    var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
+    // Last page from the previous visit first, so the chat is readable before the network answers.
+    var messages by remember(channelId) { mutableStateOf<List<Message>>(com.cove.chat.data.local.ClientCache.readMessages(channelId) ?: emptyList()) }
     var hasMore by remember { mutableStateOf(true) }
     // Opaque cursor to the next older page, from the previous answer.
     var olderCursor by remember { mutableStateOf<String?>(null) }
@@ -215,6 +216,7 @@ fun ChatScreen(
         api.getChannels().onSuccess { list -> channel = list.firstOrNull { it.id == channelId } }
         api.getMessages(channelId, pageSize).onSuccess {
             messages = it.items
+            com.cove.chat.data.local.ClientCache.writeMessages(channelId, it.items)
             olderCursor = it.nextCursor
             hasMore = it.hasMore
         }
@@ -374,6 +376,14 @@ fun ChatScreen(
         }
     }
 
+    fun sendSticker(packId: String, item: com.cove.chat.data.model.PackItem) {
+        val reply = replyTo
+        scope.launch {
+            val ok = ws.sendChatMessage(channelId, com.cove.chat.emoji.StickerLogic.encode(packId, item), type = "sticker", replyToId = reply?.id)
+            if (ok) { replyTo = null; listState.scrollToItem(0) } else toast("Couldn't send. Check your connection and try again.")
+        }
+    }
+
     fun send() {
         val text = input.trim()
         if (text.isEmpty()) return
@@ -524,6 +534,7 @@ fun ChatScreen(
                 Text("This is an automated account. Replies aren't delivered.", color = CoveTheme.extendedColors.textMuted, fontSize = CoveType.label.fontSize)
             }
         } else ChatInputBar(
+            onSendSticker = { p, i -> sendSticker(p, i) },
             input = input,
             onInputChange = { input = it },
             targetLabel = if (isDm) "@$title" else "#$title",
@@ -691,23 +702,6 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
     }
 }
 
-/** True for a message made only of up to three emoji, which is shown large like Telegram does. */
-private fun isEmojiOnly(text: String): Boolean {
-    val t = text.trim()
-    if (t.isEmpty() || t.length > 24) return false
-    var symbols = 0
-    var i = 0
-    while (i < t.length) {
-        val cp = t.codePointAt(i)
-        i += Character.charCount(cp)
-        when {
-            Character.getType(cp) == Character.OTHER_SYMBOL.toInt() || cp in 0x1F1E6..0x1F1FF -> symbols++
-            cp == 0x200D || cp in 0xFE00..0xFE0F || cp in 0x1F3FB..0x1F3FF || cp == 0x20E3 -> Unit // joiners, selectors, skin tones
-            else -> return false
-        }
-    }
-    return symbols in 1..6
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -734,6 +728,7 @@ private fun MessageRow(
     val c = CoveTheme.extendedColors
     // keyVersion forces a re-decrypt once the channel key has arrived over the socket.
     val text = remember(m.id, m.ciphertext, keyVersion) { bodyOf(m) }
+    val emojiClass = if (m.type == "text") com.cove.chat.emoji.rememberEmojiMessageClass(text) else com.cove.chat.emoji.EmojiMessageClass.Normal
     // Swipe towards the end edge = reply, towards the start edge = forward (mirrored in RTL); springs back on release.
     val density = androidx.compose.ui.platform.LocalDensity.current
     val trigger = with(density) { 64.dp.toPx() }
@@ -829,6 +824,7 @@ private fun MessageRow(
                             fileMeta.mime.startsWith("video/") -> VideoBubble(m.channelId, fileMeta, keyVersion)
                             // Music and other audio files play inline like voice notes; "send as file" keeps the card.
                             isInlineAudio(fileMeta.mime) && fileMeta.asDocument != true -> VoiceBubble(m.channelId, fileMeta, keyVersion, fileMeta.name)
+                            isThemeFile(fileMeta) -> ThemeFileCard(m.channelId, fileMeta, keyVersion)
                             else -> FileBubble(m.channelId, fileMeta, keyVersion)
                         }
                     }
@@ -837,12 +833,21 @@ private fun MessageRow(
                     val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
                     else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (m.type == "sticker") {
+                    val sticker = remember(m.id, m.ciphertext, keyVersion) { com.cove.chat.emoji.StickerLogic.parse(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
+                    if (sticker != null) StickerBubble(sticker, Modifier.padding(top = 4.dp))
+                    else Text("This sticker can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (m.type == "text" && com.cove.chat.emoji.StickerLogic.parseShare(text) != null) {
+                    PackShareCard(com.cove.chat.emoji.StickerLogic.parseShare(text)!!)
                 } else if (!com.cove.chat.data.remote.ApiStandard.isKnownMessageType(m.type)) {
                     // A type from a newer Cove: keep it in the timeline as a placeholder instead of showing raw data.
                     Text("This message needs a newer version of Cove", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (emojiClass !is com.cove.chat.emoji.EmojiMessageClass.Normal && m.type == "text") {
+                    // One animated emoji, or up to three jumbo ones: large, no bubble, tap replays the animation.
+                    com.cove.chat.emoji.BigEmojiMessage(emojiClass, text)
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
-                        text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
+                        text, color = c.textPrimary, fontSize = CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f, fill = false), onMention = onMention, onInvite = onInvite, onLongPress = onLongPress
                     )
                     if (m.editedAt != null) {

@@ -17,7 +17,7 @@
   "dependencies": {
     "@bokuweb/zstd-wasm": "^0.0.27",
     "@emoji-mart/data": "^1.2.1",
-    "@emoji-mart/react": "^1.1.1",
+    "@fontsource/noto-color-emoji": "^5.3.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-checkbox": "^1.4.1",
     "@radix-ui/react-context-menu": "^2.2.16",
@@ -42,7 +42,7 @@
     "date-fns": "^4.4.0",
     "dexie": "^4.4.2",
     "dexie-react-hooks": "^4.4.0",
-    "emoji-mart": "^5.6.0",
+    "fflate": "^0.8.3",
     "framer-motion": "^13.4.0",
     "i18next": "^26.0.6",
     "lucide-react": "^1.8.0",

@@ -160,6 +160,9 @@ func (r *Router) onMedia(s *session, pt []byte) {
 		return
 	}
 	mh.Src = s.mediaID // never trust the sender's claim
+	if s.stopped.Load()&(uint32(1)<<mh.Kind) != 0 {
+		return // the sender said this stream ended; late frames must not resurrect it on the receivers
+	}
 	out := udpmedia.AppendMedia(make([]byte, 0, len(pt)), mh, payload)
 	s.cache.put(cacheKey{mh.Kind, mh.FrameID, mh.FragIdx}, out)
 	for _, peer := range r.peers(s) {

@@ -427,7 +427,7 @@ const MemberRow = memo(
 							<TooltipTrigger asChild>
 								<div
 									onClick={() => onViewProfile(member.id)}
-									className={`flex items-center rounded-md cursor-pointer transition-all hover:bg-white/5 active:bg-white/10 group relative ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-1.5 mx-2'}`}
+									className={`flex items-center rounded-md cursor-pointer transition-all hover:bg-accent/50 active:bg-accent group relative ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-2 py-1.5 mx-2'}`}
 								>
 									<div className="relative shrink-0">
 										<Avatar

@@ -194,7 +194,9 @@ fun ChatInputBar(
     onDiscardPendingVoice: () -> Unit = {},
     palette: ComposerPalette = chatComposerPalette(),
     placeholder: String = "Message $targetLabel",
-    onAttach: (() -> Unit)? = null
+    onAttach: (() -> Unit)? = null,
+    /** Sticker picking; null hides the Stickers tab (Whisper has no stickers). */
+    onSendSticker: ((packId: String, item: com.cove.chat.data.model.PackItem) -> Unit)? = null
 ) {
     val c = CoveTheme.extendedColors
     val density = LocalDensity.current
@@ -210,7 +212,6 @@ fun ChatInputBar(
     var discarding by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val discardT by animateFloatAsState(if (discarding) 1f else 0f, tween(280), label = "discard")
-    var recents by remember { mutableStateOf(prefs.recentEmojis.split(" ").filter { it.isNotBlank() }) }
     // The field keeps its own selection so emoji land at the cursor; the parent still owns the plain text.
     var field by remember { mutableStateOf(TextFieldValue(input)) }
     LaunchedEffect(input) { if (input != field.text) field = TextFieldValue(input, TextRange(input.length)) }
@@ -239,8 +240,6 @@ fun ChatInputBar(
         val text = field.text.replaceRange(sel.min, sel.max, s)
         field = TextFieldValue(text, TextRange(sel.min + s.length))
         onInputChange(text)
-        recents = (listOf(s) + recents.filter { it != s }).take(24)
-        prefs.recentEmojis = recents.joinToString(" ")
     }
 
     if (sheetOpen) {
@@ -357,7 +356,7 @@ fun ChatInputBar(
 
         if (emojiOpen && !recording) {
             Spacer(Modifier.height(6.dp))
-            EmojiPanel(recents = recents, palette = palette, height = keyboardDp.dp, onPick = { insert(it) }, onDismiss = { emojiOpen = false; keyboard?.show() })
+            EmojiStickerPanel(height = keyboardDp.dp, onEmoji = { insert(it) }, onSticker = onSendSticker?.let { send -> { p, i -> send(p, i) } }, onDismiss = { emojiOpen = false; keyboard?.show() })
         }
     }
 }
@@ -547,50 +546,5 @@ private fun ReplyBanner(ctx: InputContext, palette: ComposerPalette, onCancel: (
             Text(ctx.snippet, color = palette.text.copy(alpha = 0.8f), fontSize = CoveType.label.fontSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         CoveIconButton(Icons.Outlined.Close, "Cancel", onCancel, tint = palette.muted, size = 36.dp, iconSize = 18.dp)
-    }
-}
-
-private class EmojiCategory(val icon: String, val emojis: List<String>)
-
-private val EmojiCategories = listOf(
-    EmojiCategory("😀", "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 💀 💩 🤡 👻 👽 🤖".split(" ")),
-    EmojiCategory("👍", "👍 👎 👌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐️ 🖖 👋 🤝 🙏 ✍️ 💪 🙌 👏 🤲 👐 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝".split(" ")),
-    EmojiCategory("🐶", "🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🐺 🐗 🐴 🦄 🐝 🐛 🦋 🐌 🐞 🐜 🐢 🐍 🦎 🐙 🦑 🦀 🐠 🐟 🐬 🐳 🐋 🦈 🐊 🐅 🐘 🦒 🌵 🌲 🌳 🌴 🌱 🌿 🍀 🍁 🌸 🌼 🌻 🌞 🌙 ⭐ 🌈 ☁️ ⚡ 🔥 💧".split(" ")),
-    EmojiCategory("🍔", "🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🍆 🥔 🥕 🌽 🌶️ 🥒 🥦 🍄 🥜 🍞 🥐 🥖 🧀 🥚 🍳 🥓 🍔 🍟 🍕 🌭 🥪 🌮 🌯 🍝 🍜 🍲 🍣 🍤 🍙 🍚 🍦 🍩 🍪 🎂 🍰 🍫 🍬 🍭 ☕ 🍵 🍺 🍻 🥂 🍷 🥃 🍸".split(" ")),
-    EmojiCategory("⚽", "⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🎱 🏓 🏸 🥅 🏒 🏏 ⛳ 🏹 🎣 🥊 🥋 ⛸️ 🎿 🏂 🏋️ 🤸 🏆 🥇 🥈 🥉 🎮 🎲 🎯 🎳 🎸 🎹 🎺 🎻 🎬 🎤 🎧 🎨 🎭".split(" ")),
-    EmojiCategory("🚗", "🚗 🚕 🚙 🚌 🚎 🏎️ 🚓 🚑 🚒 🚚 🚜 🏍️ 🚲 ✈️ 🚀 🛸 🚁 ⛵ 🚤 🚢 🚂 🚇 🏠 🏢 🏥 🏫 🏰 ⛪ 🗼 🗽 🌉 🌅 🌃 🏖️ 🏝️ 🏔️ 🌋".split(" ")),
-    EmojiCategory("💡", "⌚ 📱 💻 ⌨️ 🖥️ 🖨️ 💾 📷 📹 🎥 📞 📺 📻 ⏰ 🔋 💡 🔦 💰 💳 💎 🔧 🔨 ⚙️ 🔒 🔓 🔑 📦 ✉️ 📝 📅 📌 📎 ✂️ 📚 🔬 🔭 💊 🧰".split(" ")),
-    EmojiCategory("🔣", "❤️ 💯 ✅ ❌ ⭕ ❗ ❓ ‼️ ⚠️ 🚫 ♻️ ➕ ➖ ➗ ✖️ ♾️ 💲 ™️ ©️ ®️ 🔔 🔕 🔊 🔇 ▶️ ⏸️ ⏹️ ⏩ ⏪ 🔀 🔁 ⬆️ ⬇️ ⬅️ ➡️ 🔴 🟠 🟡 🟢 🔵 🟣".split(" "))
-)
-
-/**
- * Emoji picker that takes the keyboard's place: a "recent" tab (when there are recents), the category tabs along the
- * bottom and a grid of 8 columns above them, at [height] so swapping with the keyboard does not shift the layout.
- */
-@Composable
-private fun EmojiPanel(recents: List<String>, palette: ComposerPalette, height: Dp, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val tabs = remember(recents) {
-        (if (recents.isNotEmpty()) listOf(EmojiCategory("🕘", recents)) else emptyList()) + EmojiCategories
-    }
-    var selected by remember { mutableStateOf(0) }
-    val tab = tabs[selected.coerceIn(0, tabs.lastIndex)]
-    Column(Modifier.fillMaxWidth().height(height).clip(CoveShapes.lg).background(palette.popover).border(1.dp, palette.border, CoveShapes.lg)) {
-        LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)) {
-            items(tab.emojis) { e ->
-                Box(Modifier.size(40.dp).clickable { onPick(e) }, contentAlignment = Alignment.Center) { androidx.compose.material3.Text(e, fontSize = 24.sp) }
-            }
-        }
-        Row(Modifier.fillMaxWidth().border(1.dp, palette.border).padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            tabs.forEachIndexed { i, cat ->
-                Box(
-                    Modifier.weight(1f).height(40.dp).clickable { selected = i }
-                        .background(if (i == selected) palette.accent.copy(alpha = 0.15f) else Color.Transparent),
-                    contentAlignment = Alignment.Center
-                ) { androidx.compose.material3.Text(cat.icon, fontSize = CoveType.title.fontSize, modifier = Modifier.alpha(if (i == selected) 1f else 0.6f)) }
-            }
-            Box(Modifier.size(40.dp).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
-                Icon(Icons.Outlined.Close, "Close", tint = palette.muted, modifier = Modifier.size(16.dp))
-            }
-        }
     }
 }

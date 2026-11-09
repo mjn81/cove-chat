@@ -54,3 +54,28 @@ and cropper, Farsi screens, and anything needing a camera, microphone or real pu
 
 `CoveApp.kt` had a stray duplicate `private set` left by the legacy UDP removal that stopped the app from
 compiling; removed.
+
+## Themes, emoji and stickers (Android)
+
+Implemented in `client-android` (`themes/`, `emoji/`, `ui/screens/{ThemesUi,EmojiPanel,StickerUi,EmojiSettings}.kt`):
+eleven built-in palettes, `.covetheme` parser/validator/ZIP hardening (JVM-tested), theme picker, preview bar (60 s auto-revert),
+chat theme card, share to chat, theme chat background (pattern/colour/gradient/image); bundled Noto emoji sheet with on-demand
+styles from the server, inline sprites in messages, big animated / jumbo emoji, system-glyph fallback; Telegram-style panel with
+Emoji and Stickers tabs, `sticker` message type, pack share card (`cove://stickers/<id>`).
+Not done: bubble tint (Android rows have no bubbles), composer-field sprites (the field shows system glyphs), a "My stickers"
+creation UI (API calls exist in `ApiClient`), a downloaded fallback style (the bundled Noto sheet is the fallback), emoji in
+sidebar previews / headers (`EmojiLabel` exists, not yet wired), and the theme editor.
+Verified by unit tests and `make android/build` only; the emulator was unusable here (System UI not responding), so no screenshots.
+
+Phone pass: the panel is a keyboard-replacing box at the keyboard's height (no docked or full-sidebar mode on phones); touch
+targets are at least 44 dp (emoji cells, category/pack bar, tone and clear buttons, theme and preview buttons); Emoji and
+Stickers swipe as pager pages; the preview bar is capped at 560 dp wide and respects the navigation bar. Noto is always the
+default style: the device font only appears when the user picks "Device emoji". A docked side panel for tablets
+(WindowSizeClass Medium/Expanded) is not built. Still unverified on a device (emulator unusable).
+
+## Cold start (Android)
+
+`data/local/ClientCache.kt` + `BodyCache.kt`: the chat list, the last 50 messages per chat and decrypted bodies are saved in
+`cacheDir/cove` (wiped on sign-out) and drawn immediately on the next start while the network refresh and socket connect run
+in parallel; `CryptoManager` also keeps the imported `SecretKey` per channel and answers repeat decrypts from the body cache
+(keyed by channel and nonce). Channel keys are still never persisted. Timings: unmeasured (emulator unusable).

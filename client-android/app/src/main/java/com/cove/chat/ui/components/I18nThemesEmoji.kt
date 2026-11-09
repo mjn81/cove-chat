@@ -1,0 +1,48 @@
+package com.cove.chat.ui.components
+
+/** Persian and Arabic text for the themes, emoji and stickers screens (English source text maps to the translation). */
+internal val ThemesEmojiFa: Map<String, String> = mapOf(
+    "MODE" to "حالت", "Dark" to "تیره", "Light" to "روشن", "THEME" to "پوسته", "Theme" to "پوسته",
+    "This theme only has a dark look." to "این پوسته فقط ظاهر تیره دارد.",
+    "This theme only has a light look." to "این پوسته فقط ظاهر روشن دارد.",
+    "INSTALLED ON THIS DEVICE" to "نصب‌شده روی این دستگاه",
+    "Themes you import appear here." to "پوسته‌هایی که وارد می‌کنید اینجا نمایش داده می‌شوند.",
+    "Import .covetheme file" to "وارد کردن فایل .covetheme", "Export current theme" to "خروجی پوسته فعلی",
+    "Share to chat" to "ارسال در گفتگو", "Delete theme" to "حذف پوسته",
+    "Theme files only change colours and backgrounds. They never contain code." to "فایل‌های پوسته فقط رنگ و پس‌زمینه را تغییر می‌دهند و هرگز کد ندارند.",
+    "Preview" to "پیش‌نمایش", "Install" to "نصب", "Installed" to "نصب شد", "Notes" to "یادداشت‌ها", "Unknown author" to "سازندهٔ نامشخص",
+    "Revert" to "بازگشت", "Apply" to "اعمال", "Theme file sent." to "فایل پوسته ارسال شد.", "Couldn't send the theme file." to "ارسال فایل پوسته ممکن نشد.",
+    "EMOJI STYLE" to "سبک اموجی", "Device emoji" to "اموجی دستگاه", "Uses your phone's own emoji font." to "از فونت اموجی خود گوشی استفاده می‌کند.",
+    "Animated emoji" to "اموجی متحرک", "Downloading…" to "در حال دانلود…",
+    "A single emoji plays its animation in chat. Turns off when the system removes animations." to "یک اموجی تنها در گفتگو متحرک پخش می‌شود. با حذف انیمیشن‌های سیستم خاموش می‌شود.",
+    "Emoji" to "اموجی", "Stickers" to "استیکرها", "Search emoji" to "جستجوی اموجی", "No emoji found" to "اموجی پیدا نشد",
+    "Recently used" to "اخیراً استفاده‌شده", "Custom emoji" to "اموجی سفارشی", "Smileys and people" to "چهره‌ها و آدم‌ها",
+    "Animals and nature" to "حیوانات و طبیعت", "Food and drink" to "خوردنی و نوشیدنی", "Activities" to "فعالیت‌ها",
+    "Travel and places" to "سفر و مکان‌ها", "Objects" to "اشیا", "Symbols" to "نمادها", "Flags" to "پرچم‌ها",
+    "Stickers are not available on this server." to "استیکر روی این سرور در دسترس نیست.", "No sticker packs yet." to "هنوز بستهٔ استیکری نیست.",
+    "Add stickers" to "افزودن استیکر", "Remove" to "حذف", "View" to "مشاهده", "Sent a sticker" to "استیکر فرستاد",
+    "This sticker can't be shown." to "این استیکر قابل نمایش نیست.", "This sticker pack isn't available." to "این بستهٔ استیکر در دسترس نیست.",
+)
+
+internal val ThemesEmojiAr: Map<String, String> = mapOf(
+    "MODE" to "الوضع", "Dark" to "داكن", "Light" to "فاتح", "THEME" to "السمة", "Theme" to "السمة",
+    "This theme only has a dark look." to "هذه السمة لها مظهر داكن فقط.",
+    "This theme only has a light look." to "هذه السمة لها مظهر فاتح فقط.",
+    "INSTALLED ON THIS DEVICE" to "المثبّتة على هذا الجهاز",
+    "Themes you import appear here." to "السمات التي تستوردها تظهر هنا.",
+    "Import .covetheme file" to "استيراد ملف .covetheme", "Export current theme" to "تصدير السمة الحالية",
+    "Share to chat" to "مشاركة في المحادثة", "Delete theme" to "حذف السمة",
+    "Theme files only change colours and backgrounds. They never contain code." to "ملفات السمات تغيّر الألوان والخلفيات فقط ولا تحتوي على أي شيفرة.",
+    "Preview" to "معاينة", "Install" to "تثبيت", "Installed" to "تم التثبيت", "Notes" to "ملاحظات", "Unknown author" to "مؤلف غير معروف",
+    "Revert" to "تراجع", "Apply" to "تطبيق", "Theme file sent." to "تم إرسال ملف السمة.", "Couldn't send the theme file." to "تعذّر إرسال ملف السمة.",
+    "EMOJI STYLE" to "نمط الإيموجي", "Device emoji" to "إيموجي الجهاز", "Uses your phone's own emoji font." to "يستخدم خط الإيموجي الخاص بهاتفك.",
+    "Animated emoji" to "إيموجي متحرك", "Downloading…" to "جارٍ التنزيل…",
+    "A single emoji plays its animation in chat. Turns off when the system removes animations." to "يعرض الإيموجي المنفرد حركته في المحادثة. يتوقف عند إزالة الرسوم المتحركة من النظام.",
+    "Emoji" to "إيموجي", "Stickers" to "ملصقات", "Search emoji" to "ابحث عن إيموجي", "No emoji found" to "لم يتم العثور على إيموجي",
+    "Recently used" to "المستخدمة مؤخرًا", "Custom emoji" to "إيموجي مخصص", "Smileys and people" to "الوجوه والأشخاص",
+    "Animals and nature" to "الحيوانات والطبيعة", "Food and drink" to "الطعام والشراب", "Activities" to "الأنشطة",
+    "Travel and places" to "السفر والأماكن", "Objects" to "الأشياء", "Symbols" to "الرموز", "Flags" to "الأعلام",
+    "Stickers are not available on this server." to "الملصقات غير متاحة على هذا الخادم.", "No sticker packs yet." to "لا توجد حزم ملصقات بعد.",
+    "Add stickers" to "إضافة ملصقات", "Remove" to "إزالة", "View" to "عرض", "Sent a sticker" to "أرسل ملصقًا",
+    "This sticker can't be shown." to "لا يمكن عرض هذا الملصق.", "This sticker pack isn't available." to "حزمة الملصقات هذه غير متاحة.",
+)

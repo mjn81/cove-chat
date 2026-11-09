@@ -13,7 +13,7 @@ import { applyMention, detectMention, filterMentionMembers, type MentionMember }
  * @param channelId - Channel whose members can be mentioned.
  * @param inputRef - Textarea, used to close the picker when clicking elsewhere.
  */
-export function useMentions(channelId: string, inputRef: React.RefObject<HTMLTextAreaElement | null>) {
+export function useMentions(channelId: string, inputRef: { current: { contains: (node: Node | null) => boolean } | null }) {
 	const userId = useAuthStore((s) => s.user?.id);
 	const [members, setMembers] = useState<MentionMember[]>([]);
 	const [query, setQuery] = useState<string | null>(null);

@@ -112,12 +112,15 @@ const (
 	// MessageTypeInvite carries a channel invitation (an encrypted JSON body with the invite code). It renders as a
 	// card with a Join button and cannot be edited, so a shared invite always shows what the sender sent.
 	MessageTypeInvite MessageType = "invite"
+	// MessageTypeSticker carries a sticker (an encrypted JSON body `{pack_id, sticker_id, file_id}`). It renders as a
+	// large image without a bubble and cannot be edited, so what was sent is what is shown.
+	MessageTypeSticker MessageType = "sticker"
 )
 
 // Valid reports whether t is one of the message types clients may send.
 func (t MessageType) Valid() bool {
 	switch t {
-	case MessageTypeText, MessageTypeFile, MessageTypeVoice, MessageTypeVideo, MessageTypeInvite:
+	case MessageTypeText, MessageTypeFile, MessageTypeVoice, MessageTypeVideo, MessageTypeInvite, MessageTypeSticker:
 		return true
 	}
 	return false

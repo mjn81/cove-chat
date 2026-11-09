@@ -69,6 +69,12 @@ Every non-2xx JSON response has this shape:
 | `method_not_allowed` | 405 | Wrong HTTP method |
 | `service_unavailable` | 503 | Temporarily down |
 | `invite_not_allowed` | WebSocket | An `invite` message pointed at a channel the sender may not invite to |
+| `sticker_invalid` | WebSocket | A `sticker` message names a pack, sticker or file that does not match, or a disabled pack |
+| `pack_not_found` | 404 | A sticker pack, sticker or custom emoji does not exist or is not visible to the caller |
+| `pack_limit_reached` | 409 | A user's pack quota (packs, stickers per pack, total size) is reached |
+| `emoji_name_taken` | 409 | Another custom emoji already uses the shortcode |
+| `pack_uploads_disabled` | 403 | The admin switched user sticker uploads off |
+| `image_invalid` | 400 | An uploaded sticker or emoji image is not an allowed raster image or is out of bounds |
 | `internal` | 5xx | Server fault. Details are logged, never returned |
 
 New codes are additive. A code is never reused for another meaning.
@@ -78,6 +84,7 @@ New codes are additive. A code is never reused for another meaning.
 - New JSON fields, endpoints, WebSocket events and message types are **non-breaking**.
 - Clients MUST ignore unknown JSON fields and tolerate missing optional fields and unknown enum values.
 - Clients MUST ignore unknown WebSocket event types (no crash, no disconnect).
+- Message types so far are `text`, `file`, `voice`, `video`, `invite` and `sticker` ([details](/docs/api/packs/#the-sticker-message)). Custom emoji are not a type: they travel as `:name:` in ordinary text.
 - Clients MUST show an unknown message type as a placeholder ("This message needs a newer version of Cove") and keep it in the timeline.
 - The server accepts requests with missing optional fields, ignores unknown ones, and ignores unknown WebSocket event types from clients without closing the connection.
 - A change that cannot follow these rules is breaking: raise `api_version` and follow the [deprecation policy](#deprecation-policy).
@@ -92,6 +99,10 @@ The server lists the optional features it supports as `capabilities: string[]`, 
 | `whisper` | End-to-end encrypted [Whisper](/docs/security/whisper/) chats |
 | `webrtc_sfu` | WebRTC group calls and screen sharing (the default voice mode) |
 | `raw_udp_voice` | UDP calls (the air-gapped voice mode, reported instead of `webrtc_sfu`) |
+| `emoji_packs` | Emoji styles served by the server ([Emoji and stickers](/docs/api/packs/)) |
+| `custom_emoji` | Custom emoji sent as `:name:` in ordinary text |
+| `stickers` | Sticker packs and the `sticker` message type |
+| `animated_emoji` | The table behind big animated single-emoji messages |
 | `raw_udp_media` | Air-gapped calls use the encrypted UDP media protocol (audio, video, screen share) that only native clients speak; web clients disable call buttons |
 
 ## Minimum client version

@@ -131,4 +131,17 @@ describe('voiceStore screen share spotlighting and mute tracking', () => {
 		useVoiceStore.getState().setTrackState('alice-456', 'audio', true);
 		expect(useVoiceStore.getState().participantTrackStates['alice-456']?.audio).toBe(true);
 	});
+
+	it('drops a remote screen tile as soon as its owner reports the share ended, even if the stream object lingers', () => {
+		const stream = ({ getVideoTracks: () => [] } as unknown as MediaStream);
+		useVoiceStore.setState({ isScreenSharing: false, remoteScreenStreams: { 'bob-123': stream, 'carol-1': ({ getVideoTracks: () => [] } as unknown as MediaStream) } });
+		useVoiceStore.getState().setTrackState('bob-123', 'screen', true);
+
+		useVoiceStore.getState().setTrackState('bob-123', 'screen', false);
+
+		const left = useVoiceStore.getState().remoteScreenStreams;
+		expect(left['bob-123']).toBeUndefined();
+		expect(left['carol-1']).toBeDefined(); // other shares stay
+		expect(useVoiceStore.getState().spotlightStreamId).not.toBe('bob-123');
+	});
 });

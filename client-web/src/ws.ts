@@ -1,6 +1,6 @@
 // WebSocket client with auto-reconnect and channel key management
 
-import type { Message } from '@/types/api';
+import type { Message, MessageType } from '@/types/api';
 import { isWails } from '@/utils/wails';
 import { logger } from '@/utils/logger';
 import { getDesktopToken } from './lib/desktop-session';
@@ -32,6 +32,7 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 import { useCryptoStore } from '@/store/crypto.slice';
+import { getChannelCryptoKey } from '@/lib/channel-crypto';
 
 // ── Channel Key Registry ────────────────────────────────────────────────
 // Keys are received from the server over WSS on connect and kept in memory.
@@ -499,7 +500,7 @@ export function wsSendReadReceipt(channelId: string) {
 export async function wsSendMessage(
 	channelId: string,
 	text: string,
-	type: 'text' | 'file' | 'voice' | 'video' | 'invite' = 'text',
+	type: MessageType = 'text',
 	compression: string = 'none',
 	replyToId?: string,
 ): Promise<boolean> {
@@ -511,16 +512,7 @@ export async function wsSendMessage(
 	if (key) {
 		// Full AES-256-GCM encryption using the Web Crypto API
 		const iv = crypto.getRandomValues(new Uint8Array(12));
-		const cryptoKey = await crypto.subtle.importKey(
-			'raw',
-			key.buffer.slice(
-				key.byteOffset,
-				key.byteOffset + key.byteLength,
-			) as ArrayBuffer,
-			{ name: 'AES-GCM' },
-			false,
-			['encrypt'],
-		);
+		const cryptoKey = await getChannelCryptoKey(key);
 		const encoded = new TextEncoder().encode(text);
 		const encrypted = await crypto.subtle.encrypt(
 			{ name: 'AES-GCM', iv },
@@ -558,16 +550,7 @@ export async function wsEditMessage(
 	if (!key) return false;
 
 	const iv = crypto.getRandomValues(new Uint8Array(12));
-	const cryptoKey = await crypto.subtle.importKey(
-		'raw',
-		key.buffer.slice(
-			key.byteOffset,
-			key.byteOffset + key.byteLength,
-		) as ArrayBuffer,
-		{ name: 'AES-GCM' },
-		false,
-		['encrypt'],
-	);
+	const cryptoKey = await getChannelCryptoKey(key);
 	const encoded = new TextEncoder().encode(text);
 	const encrypted = await crypto.subtle.encrypt(
 		{ name: 'AES-GCM', iv },
@@ -669,16 +652,7 @@ export async function decryptText(
 	if (!key) return '[encrypted]';
 
 	try {
-		const cryptoKey = await crypto.subtle.importKey(
-			'raw',
-			key.buffer.slice(
-				key.byteOffset,
-				key.byteOffset + key.byteLength,
-			) as ArrayBuffer,
-			{ name: 'AES-GCM' },
-			false,
-			['decrypt'],
-		);
+		const cryptoKey = await getChannelCryptoKey(key);
 		const iv = base64ToBytes(nonce);
 		const ct = base64ToBytes(ciphertext);
 		const decrypted = await crypto.subtle.decrypt(

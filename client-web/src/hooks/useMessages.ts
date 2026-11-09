@@ -4,6 +4,7 @@ import { decryptMessage } from '@/ws';
 import { db, type CachedMessage } from '@/lib/db';
 import { MAX_PAGE_LIMIT, pageItems } from '@/lib/paging';
 import { nextMessageCursor, rememberMessageCursor } from '@/domains/messages/utils/message-cursors';
+import { hasTextBody } from '@/domains/messages/utils/message-types';
 
 const PAGINATION_LIMIT = MAX_PAGE_LIMIT;
 
@@ -16,12 +17,13 @@ export function useMessages(channelId: string) {
 			const decrypted: CachedMessage[] = await Promise.all(
 				msgs.map(async (m) => ({
 					...m,
-					text: m.type === 'text' || m.type === 'invite' ? await decryptMessage(m) : undefined,
+					text: hasTextBody(m.type) ? await decryptMessage(m) : undefined,
 				})),
 			);
 			
 			if (decrypted.length > 0) {
-				await db.cacheMessages(decrypted);
+				// Written in the background: the page is returned (and drawn) without waiting for the encrypted cache write.
+				void db.cacheMessages(decrypted).catch(() => {});
 			}
 			
 			// The cursor is opaque and cannot live in the plain-array page the WebSocket handlers edit in place, so it

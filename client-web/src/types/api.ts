@@ -27,6 +27,9 @@ export interface InvitePreview {
 	already_member: boolean;
 }
 
+/** Message types a server may send; the client renders the ones in message-types.ts and shows a placeholder for others. */
+export type MessageType = 'text' | 'file' | 'voice' | 'video' | 'invite' | 'sticker';
+
 export interface Channel {
 	id: string;
 	name: string;
@@ -52,7 +55,7 @@ export interface Channel {
 	// last_message_preview (see channels.slice.ts) for the sidebar row.
 	last_message_ciphertext?: string;
 	last_message_nonce?: string;
-	last_message_type?: 'text' | 'file' | 'voice' | 'video' | 'invite';
+	last_message_type?: MessageType;
 	last_message_sender_id?: string;
 	last_message_id?: string;
 	// Client-only: decrypted, formatted preview text for the sidebar row
@@ -76,7 +79,7 @@ export interface Message {
 	id: string;
 	channel_id: string;
 	sender_id: string;
-	type: 'text' | 'file' | 'voice' | 'video' | 'invite';
+	type: MessageType;
 	ciphertext: string;
 	nonce: string;
 	compression: string;

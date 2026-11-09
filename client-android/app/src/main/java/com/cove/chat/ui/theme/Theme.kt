@@ -7,9 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.material3.Typography
 import androidx.compose.ui.unit.em
@@ -25,6 +23,10 @@ import androidx.core.view.WindowCompat
 import android.app.Activity
 import com.cove.chat.R
 import androidx.compose.ui.graphics.Color
+import com.cove.chat.themes.ResolvedTheme
+import com.cove.chat.themes.ThemeColor
+import com.cove.chat.themes.ThemeMode
+import com.cove.chat.themes.ThemeState
 
 @Immutable
 data class CoveExtendedColors(
@@ -173,9 +175,12 @@ object CoveTheme {
         get() = LocalCoveExtendedColors.current
 }
 
-/** App-wide theme choice (persisted by SettingsScreen); dark by default like the web client. */
+/**
+ * The mode actually on screen. A dark-only theme stays dark when the user prefers light, so this is derived from the
+ * resolved theme (see [ThemeState]); the user's own preference is [ThemeState.mode].
+ */
 object ThemeSettings {
-    var dark by mutableStateOf(true)
+    val dark: Boolean get() = ThemeState.resolved.mode == ThemeMode.Dark
 }
 
 /** Vazirmatn variable font, the same face the web client ships (client-web/public). */
@@ -207,13 +212,49 @@ private fun coveTypography(): Typography {
     )
 }
 
+private fun tokenColor(tokens: Map<String, String>, name: String): Color = Color(ThemeColor.tripletToArgb(tokens.getValue(name)))
+
+/** Maps a resolved token set to the app's colour roles (the same roles the web client derives from its CSS variables). */
+private fun extendedColorsFor(r: ResolvedTheme): CoveExtendedColors {
+    val t = r.tokens
+    fun c(name: String) = tokenColor(t, name)
+    return CoveExtendedColors(
+        chatCanvas = c("background"), card = c("card"), popover = c("popover"), accent = c("accent"),
+        textPrimary = c("foreground"), textMuted = c("muted-foreground"), border = c("border"),
+        statusOnline = CoveStatusOnline, statusIdle = CoveStatusIdle, statusDnd = CoveStatusDnd, statusOffline = CoveStatusOffline,
+        mentionBg = c("mention-background"), mentionBorder = c("mention-border"),
+        success = c("success"), warning = c("warning"),
+        overlay = c("overlay").copy(alpha = 0.6f), onOverlay = c("overlay-foreground"), mediaBackground = CoveMediaBackground,
+    )
+}
+
+private fun colorSchemeFor(r: ResolvedTheme): androidx.compose.material3.ColorScheme {
+    val t = r.tokens
+    fun c(name: String) = tokenColor(t, name)
+    val base = if (r.mode == ThemeMode.Dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = c("primary"), onPrimary = c("primary-foreground"),
+        secondary = c("secondary"), onSecondary = c("secondary-foreground"),
+        background = c("background"), onBackground = c("foreground"),
+        surface = c("card"), onSurface = c("card-foreground"),
+        surfaceVariant = c("popover"), onSurfaceVariant = c("muted-foreground"),
+        outline = c("border"), outlineVariant = c("border"),
+        error = c("destructive"), onError = c("destructive-foreground"),
+    )
+}
+
+/**
+ * Applies the active (or previewed) theme. Colours come from [ThemeState]; [darkTheme] is only used by previews that
+ * want to force a mode.
+ */
 @Composable
 fun CoveTheme(
     darkTheme: Boolean = ThemeSettings.dark,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
+    val resolved = ThemeState.resolved
+    val colorScheme = remember(resolved) { colorSchemeFor(resolved) }
+    val extendedColors = remember(resolved) { extendedColorsFor(resolved) }
 
     val view = LocalView.current
     if (!view.isInEditMode) {

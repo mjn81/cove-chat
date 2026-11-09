@@ -4,12 +4,13 @@ import { toast } from 'sonner';
 import { FileText, Smile, X } from 'lucide-react';
 
 import { AttachMenu } from '@/components/attach-menu';
-import EmojiPicker from '@/components/EmojiPicker';
+import { ComposerEmojiPanel } from '@/domains/messages/components/composer-emoji-panel';
+import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import { RichInput, type ComposerInputHandle } from '@/domains/emoji/components/rich-input';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
 import { useFilePicker } from '@/hooks/use-file-picker';
-import { useAppStore } from '@/store/store';
 import { useWhisperStore } from '@/store/whisperStore';
 import { decodeAudioBlob, extractWaveformPeaks } from '@/utils/audio';
 import { logger } from '@/utils/logger';
@@ -50,14 +51,14 @@ export const WhisperComposer = ({
 	onFilesSent,
 }: WhisperComposerProps) => {
 	const { t } = useTranslation();
-	const theme = useAppStore((s) => s.theme);
 	const { sendMessage, sendFile, sendVoiceMessage, sendVideoMessage } = useWhisperStore();
 
 	const [inputText, setInputText] = useState('');
 	const [isSending, setIsSending] = useState(false);
 	const [showEmoji, setShowEmoji] = useState(false);
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const textareaRef = useRef<ComposerInputHandle>(null);
+	const emojiButtonRef = useRef<HTMLButtonElement>(null);
 
 	const filePicker = useFilePicker((files) => onQueueFiles(files));
 	const disabled = isClosed || !hasSessionKey;
@@ -78,7 +79,6 @@ export const WhisperComposer = ({
 			if (trimmed) {
 				await sendMessage(trimmed);
 				setInputText('');
-				if (textareaRef.current) textareaRef.current.style.height = 'auto';
 			}
 		} finally {
 			setIsSending(false);
@@ -113,13 +113,7 @@ export const WhisperComposer = ({
 		}
 	};
 
-	const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		setInputText(e.target.value);
-		e.target.style.height = 'auto';
-		e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			handleSend();
@@ -141,26 +135,27 @@ export const WhisperComposer = ({
 					<AttachMenu compact={isMobile} disabled={disabled} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
-					<textarea
+					<RichInput
 						ref={textareaRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground"
 						placeholder={
 							isClosed ? t('whisper.chat.session_ended') : t('composer.message_to', { target: peerUsername })
 						}
 						aria-label={t('composer.message_to', { target: peerUsername })}
 						value={inputText}
 						disabled={disabled}
-						onChange={handleInput}
+						onValueChange={(value) => setInputText(value)}
 						onKeyDown={handleKeyDown}
-						rows={1}
-						dir="auto"
 					/>
 
 					<div className={cn('flex shrink-0 items-center', isMobile ? 'gap-1' : 'gap-1.5')}>
 						<button
 								type="button"
 								disabled={disabled}
+								data-emoji-toggle
+								ref={emojiButtonRef}
+								onMouseDown={(e) => e.preventDefault()}
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowEmoji((v) => !v);
@@ -197,16 +192,24 @@ export const WhisperComposer = ({
 			</div>
 
 			{showEmoji && (
-				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
-					<EmojiPicker
-						onSelect={(emoji) => {
-							setInputText((prev) => prev + emoji.native);
-							setShowEmoji(false);
-						}}
-						onClickOutside={() => setShowEmoji(false)}
-						theme={theme}
-					/>
-				</div>
+				<ComposerEmojiPanel
+					open
+					anchor={emojiButtonRef}
+					// Whisper chats carry plain text only: no stickers.
+					stickersEnabled={false}
+					onEmoji={(text, info) => {
+						const ta = textareaRef.current;
+						const next = insertAtSelection(inputText, ta?.selectionStart, ta?.selectionEnd, text);
+						setInputText(next.text);
+						if (!ta) return;
+						requestAnimationFrame(() => {
+							if (!info.keyboard) ta.focus();
+							ta.setSelectionRange(next.caret, next.caret);
+						});
+					}}
+					onSticker={() => {}}
+					onClose={() => setShowEmoji(false)}
+				/>
 			)}
 
 			<VideoMessageRecorderModal

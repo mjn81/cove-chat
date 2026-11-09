@@ -18,6 +18,12 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { tokenizeMessage } from '@/utils/linkify';
 import { useLongPress } from '@/hooks/use-long-press';
 import { UserProfileModal } from '../UserProfileModal';
+import { EmojiText } from '@/domains/emoji/components/emoji';
+import { BigEmoji } from '@/domains/emoji/components/big-emoji';
+import { StickerMessage } from '@/domains/stickers/components/sticker-message';
+import { PackShareCard } from '@/domains/stickers/components/pack-share-card';
+import { parsePackShare } from '@/domains/stickers/utils/pack-share';
+import { useEmojiMessageClass } from '@/domains/emoji/hooks/use-emoji-message-class';
 
 interface MessageItemProps {
 	msg: Message & { text?: string };
@@ -50,6 +56,8 @@ export const MessageItem = memo(
 		const [showMobileMenu, setShowMobileMenu] = useState(false);
 		const [dragX, setDragX] = useState(0);
 		const isOwn = user?.id === msg.sender_id;
+		const packShareId = msg.type === 'text' ? parsePackShare(msg.text) : null;
+		const emojiClass = useEmojiMessageClass(msg.type === 'text' ? msg.text : undefined);
 
 		const isMobile = useMediaQuery('(max-width: 768px)');
 		const dragStartX = useRef<number | null>(null);
@@ -223,7 +231,8 @@ export const MessageItem = memo(
 						</a>
 					);
 				}
-				return token.value;
+				// Plain text: emoji and known :name: shortcodes become images, everything else is left as typed.
+				return <EmojiText key={i} text={token.value} />;
 			});
 		};
 
@@ -416,7 +425,7 @@ export const MessageItem = memo(
 								<span className="text-[13px] truncate text-muted-foreground/80 hover:text-foreground cursor-pointer italic max-w-[60%]">
 									{replyTarget
 										? replyTarget.type === 'text'
-											? replyTarget.text
+											? <EmojiText text={replyTarget.text ?? ''} em={1.25} />
 											: `[${replyTarget.type}]`
 										: 'Original message not found'}
 								</span>
@@ -483,6 +492,12 @@ export const MessageItem = memo(
 										</span>
 									</div>
 								</div>
+							) : packShareId ? (
+								<PackShareCard packId={packShareId} />
+							) : emojiClass.kind !== 'normal' && msg.text ? (
+								<div className={msg.pending ? 'opacity-60' : ''} {...longPress}>
+									<BigEmoji text={msg.text} classification={emojiClass} />
+								</div>
 							) : (
 								<div
 									className={`relative text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 rounded-sm ${msg.pending ? 'opacity-60' : ''} ${copied ? 'animate-copy-flash' : ''}`}
@@ -529,6 +544,7 @@ export const MessageItem = memo(
 						</>
 					)}
 					{msg.type === 'invite' && <InviteMessage text={msg.text} />}
+				{msg.type === 'sticker' && <StickerMessage text={msg.text} />}
 					{!isKnownMessageType(msg.type) && <UnknownMessage />}
 					{(msg.type === 'file' || msg.type === 'voice') && (
 						<FileBubble msg={msg} />

@@ -81,6 +81,13 @@ type ConfigChanges struct {
 	UpdateGitHubFallback   *bool   `json:"update.github_fallback,omitempty"`
 	UpdateNotifyAdmins     *bool   `json:"update.notify_admins,omitempty"`
 	SecurityTokenExpire    *int    `json:"security.token_expire_hours,omitempty"`
+
+	EmojiEnabledStyles    *[]string `json:"emoji.enabled_styles,omitempty" enums:"native,noto,twemoji,blobmoji,fluent,fxemoji"`
+	EmojiDefaultStyle     *string   `json:"emoji.default_style,omitempty" enums:"native,noto,twemoji,blobmoji,fluent,fxemoji"`
+	PacksUserUploads      *bool     `json:"packs.user_uploads_enabled,omitempty"`
+	PacksMaxPerUser       *int      `json:"packs.max_packs_per_user,omitempty"`
+	PacksMaxStickers      *int      `json:"packs.max_stickers_per_pack,omitempty"`
+	PacksMaxUserStorageMB *int      `json:"packs.max_user_storage_mb,omitempty"`
 }
 
 // UnmarshalJSON decodes strictly: a key that is not an editable setting, or a value of the wrong type, is an error.
@@ -307,6 +314,13 @@ func (h *Handler) AdminUpdateConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if cur, rerr := config.Read(h.ConfigPath); rerr == nil {
+		if cerr := config.CheckEmojiChange(cur, changes); cerr != nil {
+			writeError(w, http.StatusBadRequest, "admin.errors.invalid_setting: "+cerr.Error())
+			return
+		}
+	}
+
 	needsOwner := false
 	for _, c := range changes {
 		if c.Setting.OwnerOnly {
@@ -368,6 +382,8 @@ func (h *Handler) applyLiveSettings() {
 	h.Settings.SetRegistrationMode(cfg.Registration.Mode)
 	h.Settings.SetLimits(cfg.Server.MaxFileSizeMB, cfg.Server.MaxVideoSizeMB, cfg.Server.MaxVideoDurationSec)
 	h.Settings.SetCaptcha(cfg.Captcha.Enabled, cfg.Captcha.Difficulty)
+	h.Settings.SetEmoji(cfg.Emoji)
+	h.Settings.SetPacks(cfg.Packs)
 }
 
 // ---- Invites ---------------------------------------------------------------- //

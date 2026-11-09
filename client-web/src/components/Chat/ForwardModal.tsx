@@ -18,14 +18,19 @@ import { apiGetFile } from '@/api/client';
 import { base64ToBytes } from '@/ws';
 import { decryptAndDecompressFile } from '@/utils/file';
 import { encryptAndUploadFile } from '@/domains/files/utils/upload-encrypted-file';
+import { hasTextBody } from '@/domains/messages/utils/message-types';
 
 interface ForwardModalProps {
-	/** Messages to forward, oldest first. */
-	messages: (Message & { text?: string })[];
+	/** Messages to forward, oldest first. Omit when sharing a file instead. */
+	messages?: (Message & { text?: string })[];
+	/** A file to send as a new message to every picked chat (the chat picker is reused; no message is forwarded). */
+	outgoingFile?: File;
+	/** Already-translated dialog title; defaults to the forward title. */
+	title?: string;
 	onClose: () => void;
 }
 
-export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose }) => {
+export const ForwardModal: React.FC<ForwardModalProps> = ({ messages = [], outgoingFile, title, onClose }) => {
 	const { t } = useTranslation();
 	const { channels } = useChannelStore();
 	const { user } = useAuthStore();
@@ -68,7 +73,7 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose })
 			}
 
 			// 2. Handle different message types
-			if (message.type === 'text' || message.type === 'invite') {
+			if (hasTextBody(message.type)) {
 				// Text is easy: just re-send encrypted for each channel
 				for (const targetId of selectedIds) {
 					await wsSendMessage(targetId, contentText, message.type);
@@ -117,12 +122,24 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose })
 			}
 	};
 
+	/** Sends a plain file (a theme export, say) as an ordinary file message, encrypted per chat like any upload. */
+	const sendOutgoingFile = async (file: File) => {
+		for (const targetId of selectedIds) {
+			const targetKey = getChannelKey(targetId);
+			if (!targetKey) throw new Error(`No key for channel ${targetId}`);
+			const uploaded = await encryptAndUploadFile({ file, channelKey: targetKey, channelId: targetId, asDocument: true });
+			await wsSendMessage(targetId, uploaded.metadata(), 'file', 'zstd');
+		}
+	};
+
 	const handleForward = async () => {
 		if (selectedIds.length === 0 || sending) return;
 		setSending(true);
 		try {
+			if (outgoingFile) await sendOutgoingFile(outgoingFile);
 			// In reading order, so the copies arrive in the order they were written.
 			for (const message of messages) await forwardOne(message);
+			if (outgoingFile) toast.success(t('themes.editor.shared', { count: selectedIds.length }));
 			onClose();
 		} catch (err) {
 			logger.error('Forwarding failed', { error: String(err) });
@@ -136,7 +153,7 @@ export const ForwardModal: React.FC<ForwardModalProps> = ({ messages, onClose })
 		<ModalShell
 			open
 			onOpenChange={onClose}
-			title={t('chat.forward.title')}
+			title={title ?? t('chat.forward.title')}
 			bodyClassName="p-0"
 			footer={
 				<div className="flex w-full items-center justify-between gap-2">

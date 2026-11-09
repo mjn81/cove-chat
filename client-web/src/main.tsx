@@ -13,6 +13,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV && isPerfEnabled()) {
 import { createRoot } from 'react-dom/client';
 import './i18n/index'; // must be imported before App
 import './index.css';
+import './styles/emoji-font.css';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

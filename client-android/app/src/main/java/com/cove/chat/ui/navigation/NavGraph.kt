@@ -57,7 +57,7 @@ fun NavGraph() {
     // The server ended this device's session (terminated from another device): back to the login screen.
     LaunchedEffect(Unit) {
         CoveApp.instance.sessionEnded.collect {
-            navController.navigate("login") { popUpTo(0) { inclusive = true } }
+            navController.resetTo(rootAfterSignOut(prefs.hasServer))
         }
     }
 
@@ -181,11 +181,7 @@ fun NavGraph() {
                     val enc = java.net.URLEncoder.encode(name, "UTF-8")
                     navController.navigate("chat/$id/$enc") { popUpTo("channels") }
                 },
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                onLogout = { navController.resetTo(rootAfterSignOut(prefs.hasServer)) }
             )
         }
 
@@ -243,4 +239,18 @@ fun NavGraph() {
             )
         }
     }
+}
+
+
+/** Where the app lands after the session ends: the login screen, or server selection when no server is saved any more. */
+internal fun rootAfterSignOut(hasServer: Boolean): String = if (hasServer) "login" else "server"
+
+/**
+ * Clears the whole back stack and shows [route]. `popUpTo(0)` is not a valid destination id: it could pop the root and
+ * leave the NavHost with nothing to draw (a blank screen), so this pops up to the graph itself and, if the stack still
+ * ended up empty, navigates to [route] again.
+ */
+internal fun androidx.navigation.NavController.resetTo(route: String) {
+    navigate(route) { popUpTo(graph.id) { inclusive = true }; launchSingleTop = true }
+    if (currentBackStackEntry == null) navigate(route)
 }

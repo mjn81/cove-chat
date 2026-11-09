@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { EmojiText } from '@/domains/emoji/components/emoji';
 import { AlertCircle, Clock, Download, FileText, Loader2, Lock } from 'lucide-react';
 
 import { Avatar } from '@/components/Avatar';
@@ -191,7 +192,7 @@ export const WhisperMessageRow = ({
 						className="min-w-0 flex-1 select-text whitespace-pre-wrap break-words text-[15px] leading-[22px] text-foreground/90"
 						dir="auto"
 					>
-						{message.text}
+						<EmojiText text={message.text} />
 					</div>
 				)}
 

@@ -77,8 +77,11 @@ fun MessageText(
     val c = CoveTheme.extendedColors
     val onMentionState = rememberUpdatedState(onMention)
     val onInviteState = rememberUpdatedState(onInvite)
-    val body = remember(text, linkColor, onInvite != null) {
-        linkifiedText(text, linkColor, { onMentionState.value(it) }, if (onInvite != null) ({ code -> onInviteState.value?.invoke(code) }) else null)
+    // Emoji become inline sprites; rebuilt when the style, its index or the custom emoji set changes.
+    val emojiEpoch = com.cove.chat.emoji.EmojiEngine.epoch
+    val inline = remember(text, fontSize, emojiEpoch) { com.cove.chat.emoji.EmojiInline(fontSize, com.cove.chat.emoji.EmojiText.SCALE_MESSAGE) }
+    val body = remember(text, linkColor, onInvite != null, inline) {
+        linkifiedText(text, linkColor, { onMentionState.value(it) }, if (onInvite != null) ({ code -> onInviteState.value?.invoke(code) }) else null, inline)
     }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val clipboard = LocalClipboardManager.current
@@ -140,6 +143,7 @@ fun MessageText(
     ) {
         androidx.compose.material3.Text(
             text = body, color = color, fontSize = fontSize, lineHeight = lineHeight,
+            inlineContent = inline.content,
             onTextLayout = { layout = it }
         )
         AnimatedVisibility(
