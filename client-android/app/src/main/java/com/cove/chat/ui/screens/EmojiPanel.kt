@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Eco
@@ -54,6 +56,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
+import com.cove.chat.ui.components.mirrorInRtl
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
@@ -117,15 +121,58 @@ fun EmojiStickerPanel(height: androidx.compose.ui.unit.Dp, onEmoji: (String) -> 
     val c = CoveTheme.extendedColors
     val prefs = CoveApp.instance.preferencesManager
     var tab by remember { mutableStateOf(if (onSticker != null && prefs.panelTab == "stickers") "stickers" else "emoji") }
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var tone by remember { mutableStateOf(prefs.emojiSkinTone) }
+    var toneMenu by remember { mutableStateOf(false) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    // Back closes the inline search first (the system back also closes the keyboard).
+    androidx.activity.compose.BackHandler(enabled = searching) { searching = false; query = "" }
     Column(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(12.dp)).background(c.popover).border(1.dp, c.border, RoundedCornerShape(12.dp))) {
-        if (onSticker != null) {
-            Row(Modifier.fillMaxWidth()) {
-                listOf("emoji" to "Emoji", "stickers" to "Stickers").forEach { (id, label) ->
-                    val on = tab == id
-                    Column(Modifier.weight(1f).heightIn(min = 44.dp).clickable { tab = id; prefs.panelTab = id }.padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(label, color = if (on) c.textPrimary else c.textMuted, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Spacer(Modifier.height(8.dp))
-                        Box(Modifier.width(44.dp).height(2.dp).clip(CircleShape).background(if (on) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
+        // One slim 44 dp toolbar: tabs on the start side, search and skin tone as small icon buttons on the end. Searching
+        // swaps the whole row for an inline field, so the grid below keeps nearly all of the height.
+        Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (searching) {
+                Box(Modifier.size(44.dp).clickable { searching = false; query = "" }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Close search", tint = c.textMuted, modifier = Modifier.size(20.dp).mirrorInRtl())
+                }
+                Box(Modifier.weight(1f)) {
+                    if (query.isEmpty()) Text(if (tab == "stickers") "Search stickers" else "Search emoji", color = c.textMuted, fontSize = 14.sp)
+                    BasicTextField(
+                        query, { query = it }, singleLine = true, textStyle = TextStyle(color = c.textPrimary, fontSize = 15.sp),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth().focusRequester(focus)
+                    )
+                }
+                if (query.isNotEmpty()) Box(Modifier.size(44.dp).clickable { query = "" }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Close, "Clear", tint = c.textMuted, modifier = Modifier.size(18.dp))
+                }
+                LaunchedEffect(Unit) { focus.requestFocus() }
+            } else {
+                if (onSticker != null) {
+                    listOf("emoji" to "Emoji", "stickers" to "Stickers").forEach { (id, label) ->
+                        val on = tab == id
+                        Column(Modifier.weight(1f).fillMaxHeight().clickable { tab = id; prefs.panelTab = id }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Text(label, color = if (on) c.textPrimary else c.textMuted, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Spacer(Modifier.height(4.dp))
+                            Box(Modifier.width(36.dp).height(2.dp).clip(CircleShape).background(if (on) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
+                        }
+                    }
+                } else Spacer(Modifier.weight(1f))
+                Box(Modifier.size(44.dp).clickable { searching = true }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Search, if (tab == "stickers") "Search stickers" else "Search emoji", tint = c.textMuted, modifier = Modifier.size(22.dp))
+                }
+                if (tab == "emoji") Box {
+                    Box(Modifier.size(44.dp).clickable { toneMenu = true }, contentAlignment = Alignment.Center) {
+                        EmojiView(PickerData.SKIN_SAMPLES[(tone - 1).coerceIn(0, 5)], 22.dp)
+                    }
+                    // Compact popup: the six tones side by side in one row.
+                    DropdownMenu(toneMenu, { toneMenu = false }) {
+                        Row(Modifier.padding(horizontal = 4.dp)) {
+                            PickerData.SKIN_SAMPLES.forEachIndexed { i, sample ->
+                                Box(Modifier.size(44.dp).clip(CircleShape).background(if (i + 1 == tone) c.accent else androidx.compose.ui.graphics.Color.Transparent)
+                                    .clickable { tone = i + 1; prefs.emojiSkinTone = tone; toneMenu = false }, contentAlignment = Alignment.Center) { EmojiView(sample, 26.dp) }
+                            }
+                        }
                     }
                 }
             }
@@ -135,15 +182,15 @@ fun EmojiStickerPanel(height: androidx.compose.ui.unit.Dp, onEmoji: (String) -> 
             val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = if (tab == "stickers") 1 else 0) { 2 }
             LaunchedEffect(tab) { if (pager.currentPage != (if (tab == "stickers") 1 else 0)) pager.animateScrollToPage(if (tab == "stickers") 1 else 0) }
             LaunchedEffect(pager.settledPage) { val t = if (pager.settledPage == 1) "stickers" else "emoji"; if (t != tab) { tab = t; prefs.panelTab = t } }
-            androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), beyondViewportPageCount = 0) { page ->
-                if (page == 1) StickerTab(onSticker) else EmojiTab(onEmoji)
+            androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), beyondViewportPageCount = 0, userScrollEnabled = !searching) { page ->
+                if (page == 1) StickerTab(onSticker, query) else EmojiTab(onEmoji, query, tone) { query = "" }
             }
-        } else Box(Modifier.weight(1f).fillMaxWidth()) { EmojiTab(onEmoji) }
+        } else Box(Modifier.weight(1f).fillMaxWidth()) { EmojiTab(onEmoji, query, tone) { query = "" } }
     }
 }
 
 @Composable
-private fun EmojiTab(onEmoji: (String) -> Unit) {
+private fun EmojiTab(onEmoji: (String) -> Unit, query: String, tone: Int, onClearQuery: () -> Unit) {
     val c = CoveTheme.extendedColors
     val ctx = LocalContext.current
     val prefs = CoveApp.instance.preferencesManager
@@ -152,9 +199,6 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
     var categories by remember { mutableStateOf(PickerCache.categories) }
     LaunchedEffect(Unit) { if (categories == null) categories = PickerCache.get(ctx) }
     var recents by remember { mutableStateOf(prefs.recentEmojis.split(" ").filter { it.isNotBlank() }) }
-    var tone by remember { mutableStateOf(prefs.emojiSkinTone) }
-    var query by remember { mutableStateOf("") }
-    var toneMenu by remember { mutableStateOf(false) }
     var widthDp by remember { mutableStateOf(0f) }
     val cols = EmojiText.pickerColumns(widthDp)
     // Custom emoji and the style change under the grid: re-read when the engine says so.
@@ -169,33 +213,6 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
 
     val cats = categories
     Column(Modifier.fillMaxSize()) {
-        // Search pill + skin tone.
-        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.weight(1f).height(44.dp).clip(CircleShape).background(c.card).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Search, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Box(Modifier.weight(1f)) {
-                    if (query.isEmpty()) Text("Search emoji", color = c.textMuted, fontSize = 14.sp)
-                    BasicTextField(
-                        query, { query = it }, singleLine = true, textStyle = TextStyle(color = c.textPrimary, fontSize = 14.sp),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                if (query.isNotEmpty()) Box(Modifier.size(44.dp).clickable { query = "" }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Close, "Clear", tint = c.textMuted, modifier = Modifier.size(18.dp)) }
-            }
-            Spacer(Modifier.width(6.dp))
-            Box {
-                Box(Modifier.size(44.dp).clip(CircleShape).clickable { toneMenu = true }, contentAlignment = Alignment.Center) {
-                    EmojiView(PickerData.SKIN_SAMPLES[(tone - 1).coerceIn(0, 5)], 24.dp)
-                }
-                DropdownMenu(toneMenu, { toneMenu = false }) {
-                    PickerData.SKIN_SAMPLES.forEachIndexed { i, s ->
-                        DropdownMenuItem(text = { EmojiView(s, 26.dp) }, onClick = { tone = i + 1; prefs.emojiSkinTone = tone; toneMenu = false })
-                    }
-                }
-            }
-        }
-
         if (cats == null) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp), color = c.textMuted) }
             return@Column
@@ -242,7 +259,7 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
                 val on = results == null && i == activeSection
                 Box(
                     Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) c.accent else androidx.compose.ui.graphics.Color.Transparent)
-                        .clickable { query = ""; scope.launch { grid.scrollToItem(starts[i]) } },
+                        .clickable { onClearQuery(); scope.launch { grid.scrollToItem(starts[i]) } },
                     contentAlignment = Alignment.Center
                 ) { Icon(CategoryIcons[s.id] ?: Icons.Outlined.Category, s.id, tint = if (on) c.textPrimary else c.textMuted, modifier = Modifier.size(20.dp)) }
             }
@@ -264,7 +281,7 @@ private fun CustomCell(shortcode: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun StickerTab(onSticker: (String, PackItem) -> Unit) {
+private fun StickerTab(onSticker: (String, PackItem) -> Unit, query: String) {
     val c = CoveTheme.extendedColors
     val prefs = CoveApp.instance.preferencesManager
     val userId = prefs.userId
@@ -301,11 +318,11 @@ private fun StickerTab(onSticker: (String, PackItem) -> Unit) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 packs.isEmpty() -> Text("No sticker packs yet.", color = c.textMuted, fontSize = 13.sp, modifier = Modifier.padding(24.dp))
-                active == "recent" -> StickerGrid(visibleRecents.map { it.second }, { item -> visibleRecents.firstOrNull { it.second.id == item.id }?.let { pick(it.first, it.second) } })
+                active == "recent" -> StickerGrid(visibleRecents.map { it.second }.filter { matchesSticker(it, query) }, { item -> visibleRecents.firstOrNull { it.second.id == item.id }?.let { pick(it.first, it.second) } })
                 pack == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp), color = c.textMuted) }
                 else -> Column {
                     Text(pack!!.name, color = c.textMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp))
-                    StickerGrid(pack!!.items.orEmpty(), { pick(pack!!.id, it) })
+                    StickerGrid(pack!!.items.orEmpty().filter { matchesSticker(it, query) }, { pick(pack!!.id, it) })
                 }
             }
         }
@@ -326,4 +343,10 @@ private fun TabCell(on: Boolean, onClick: () -> Unit, content: @Composable () ->
         Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) CoveTheme.extendedColors.accent else androidx.compose.ui.graphics.Color.Transparent).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { content() }
+}
+
+/** Sticker search: the query matches a sticker's emoji or name; an empty query keeps everything. */
+internal fun matchesSticker(item: PackItem, query: String): Boolean {
+    val q = query.trim().lowercase()
+    return q.isEmpty() || item.emoji?.contains(q) == true || item.name?.lowercase()?.contains(q) == true || item.id.lowercase().contains(q)
 }
