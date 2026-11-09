@@ -1493,6 +1493,9 @@
 			"flags": "Flags"
 		},
 		"panel": {
+			"close": "Close panel",
+			"dock": "Dock to the side",
+			"undock": "Back to popup",
 			"emoji": "Emoji",
 			"stickers": "Stickers"
 		},

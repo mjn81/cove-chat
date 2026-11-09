@@ -12,6 +12,12 @@ interface EmojiSettingsState {
 	recents: string[];
 	/** Skin tone for people emoji in the picker: 1 (default) to 6. */
 	skinTone: number;
+	/** Where the panel shows: a popover above the composer, or docked as a side column on wide windows. */
+	panelMode: 'popover' | 'dock';
+	/** Whether the docked panel is open (remembered, like Telegram's side panel). */
+	dockOpen: boolean;
+	setPanelMode: (mode: 'popover' | 'dock') => void;
+	setDockOpen: (open: boolean) => void;
 	setStyle: (style: string | null) => void;
 	setAnimated: (animated: boolean | null) => void;
 	addRecent: (emoji: string) => void;
@@ -25,6 +31,10 @@ export const useEmojiSettings = create<EmojiSettingsState>()(
 			animated: null,
 			recents: [],
 			skinTone: 1,
+			panelMode: 'popover',
+			dockOpen: false,
+			setPanelMode: (panelMode) => set({ panelMode }),
+			setDockOpen: (dockOpen) => set({ dockOpen }),
 			setStyle: (style) => set({ style }),
 			setAnimated: (animated) => set({ animated }),
 			setSkinTone: (skinTone) => set({ skinTone: Math.min(6, Math.max(1, Math.round(skinTone))) }),

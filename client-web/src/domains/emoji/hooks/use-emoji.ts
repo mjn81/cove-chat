@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
+import { logger } from '@/utils/logger';
+
 import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { loadAssetBytes } from '@/lib/asset-cache';
@@ -62,7 +64,12 @@ export function useLoadedEmojiStyle(styleId?: string, wanted = true): LoadedEmoj
 	const info = !wanted || id === NATIVE_STYLE ? undefined : styles?.styles.find((s) => s.id === id);
 	const { data } = useQuery({
 		queryKey: emojiKeys.sheet(id, info?.version ?? ''),
-		queryFn: () => loadStyle(info!),
+		queryFn: () =>
+			loadStyle(info!).catch((err: unknown) => {
+				// Without this a failing download (desktop base URL, token, cache key) would silently leave native glyphs.
+				logger.warn('emoji: style could not be loaded', { style: info!.id, err: String(err) });
+				throw err;
+			}),
 		enabled: !!info,
 		staleTime: Infinity,
 		gcTime: Infinity,

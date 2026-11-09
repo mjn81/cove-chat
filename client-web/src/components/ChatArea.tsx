@@ -41,6 +41,7 @@ import { WhisperChatArea } from '@/domains/whisper/components/whisper-chat-area'
 import { VoiceCallStage } from './Voice/VoiceCallStage';
 import { useVoiceStore } from '@/store/voiceStore';
 import { hasTextBody } from '@/domains/messages/utils/message-types';
+import { EmojiDock } from '@/domains/messages/components/emoji-dock';
 
 interface ChatAreaProps {
 	channel: Channel;
@@ -268,7 +269,8 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 
 	return (
 		<Profiler id="ChatArea" onRender={logProfiler}>
-			<div className="flex flex-col h-full w-full bg-background relative overflow-hidden overscroll-none">
+			<div className="flex h-full w-full overflow-hidden">
+			<div className="flex flex-col h-full min-w-0 flex-1 bg-background relative overflow-hidden overscroll-none">
 				<ChatBackgroundPattern />
 				<ChatTopbar
 					channel={channel}
@@ -365,6 +367,8 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 				confirmText={t('chat.selection.delete')}
 				variant="danger"
 			/>
+			</div>
+			<EmojiDock />
 			</div>
 		</Profiler>
 	);

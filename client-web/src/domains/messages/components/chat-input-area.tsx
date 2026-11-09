@@ -25,6 +25,9 @@ import { MentionPopup } from './mention-popup';
 import { ComposerEmojiPanel } from './composer-emoji-panel';
 import { preloadComposerEmojiPanel, preloadComposerEmojiPanelWhenIdle } from '../utils/emoji-panel-loader';
 import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import { registerComposer } from '@/domains/emoji/utils/composer-bridge';
+import { useEmojiSettings } from '@/domains/emoji/store/emoji.store';
+import { DOCK_MIN_WIDTH_QUERY, emojiButtonTarget } from '../utils/emoji-dock';
 import { EmojiTextarea } from '@/domains/emoji/components/emoji-textarea';
 import type { EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
 import { useSendSticker } from '../hooks/use-send-sticker';
@@ -82,6 +85,13 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		setShowEmoji(open);
 	};
 	useEffect(() => preloadComposerEmojiPanelWhenIdle(), []);
+	const emojiButtonRef = useRef<HTMLButtonElement>(null);
+	const panelMode = useEmojiSettings((s) => s.panelMode);
+	const dockOpen = useEmojiSettings((s) => s.dockOpen);
+	const setPanelMode = useEmojiSettings((s) => s.setPanelMode);
+	const setDockOpen = useEmojiSettings((s) => s.setDockOpen);
+	const wide = useMediaQuery(DOCK_MIN_WIDTH_QUERY);
+	const useDock = emojiButtonTarget(panelMode, wide) === 'dock';
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 	const [sendError, setSendError] = useState<string | null>(null);
 
@@ -233,6 +243,16 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		inputRef.current?.focus();
 	};
 
+	// The docked panel (outside this component) inserts and sends through the bridge; the latest handlers are kept in a ref.
+	const panelHandlers = useRef({ insert: handleEmojiSelect, sticker: handleStickerSelect });
+	useEffect(() => {
+		panelHandlers.current = { insert: handleEmojiSelect, sticker: handleStickerSelect };
+	});
+	useEffect(
+		() => registerComposer({ insert: (t, i) => panelHandlers.current.insert(t, i), sticker: (p, item) => panelHandlers.current.sticker(p, item) }),
+		[],
+	);
+
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, [replyTo, channel.id]);
@@ -301,13 +321,16 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						<button
 								type="button"
 								data-emoji-toggle
+								ref={emojiButtonRef}
+								aria-pressed={useDock ? dockOpen : showEmoji}
 								onMouseEnter={() => void preloadComposerEmojiPanel()}
 								onFocus={() => void preloadComposerEmojiPanel()}
 								// Keep the caret in the composer when the button is pressed.
 								onMouseDown={(e) => e.preventDefault()}
 								onClick={(e) => {
 									e.stopPropagation();
-									openEmoji(!showEmoji);
+									if (useDock) setDockOpen(!dockOpen);
+									else openEmoji(!showEmoji);
 								}}
 								className={iconButtonClass}
 								title={t('composer.add_emoji')}
@@ -356,16 +379,28 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				/>
 			)}
 
-			{emojiMounted && (
-				<div className="absolute bottom-[70px] end-2 z-50 w-[min(380px,calc(100vw-1rem))] sm:end-6 lg:w-[420px]">
-					<ComposerEmojiPanel
-						open={showEmoji}
-						stickersEnabled={supports('stickers')}
-						onEmoji={handleEmojiSelect}
-						onSticker={handleStickerSelect}
-						onClose={() => openEmoji(false)}
-					/>
-				</div>
+			{emojiMounted && !useDock && (
+				<ComposerEmojiPanel
+					open={showEmoji}
+					anchor={emojiButtonRef}
+					stickersEnabled={supports('stickers')}
+					onEmoji={handleEmojiSelect}
+					onSticker={handleStickerSelect}
+					onClose={() => openEmoji(false)}
+					dock={
+						wide
+							? {
+									docked: false,
+									onToggle: () => {
+										// Move the panel to the docked side column.
+										openEmoji(false);
+										setPanelMode('dock');
+										setDockOpen(true);
+									},
+								}
+							: undefined
+					}
+				/>
 			)}
 
 			<VideoMessageRecorderModal

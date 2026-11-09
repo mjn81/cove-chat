@@ -34,7 +34,29 @@ describe('EmojiStickerPanel layout', () => {
 	});
 
 	it('uses the same box for the emoji-only panel of servers without stickers', () => {
-		render(<EmojiStickerPanel stickersEnabled={false} onEmoji={noop} onSticker={noop} />);
-		expect(screen.getByTestId('emoji').className).toContain('h-[440px]');
+		const { container } = render(<EmojiStickerPanel stickersEnabled={false} onEmoji={noop} onSticker={noop} />);
+		expect((container.firstElementChild as HTMLElement).className).toContain('h-[440px]');
+	});
+});
+
+describe('EmojiStickerPanel docking', () => {
+	it('fills the dock column flat and offers undock and close', () => {
+		const onToggle = vi.fn();
+		const onClose = vi.fn();
+		const { container } = render(<EmojiStickerPanel stickersEnabled fill dock={{ docked: true, onToggle, onClose }} onEmoji={noop} onSticker={noop} />);
+		const cls = (container.firstElementChild as HTMLElement).className;
+		expect(cls).toContain('h-full');
+		expect(cls).toContain('rounded-none');
+		fireEvent.click(screen.getByRole('button', { name: 'emoji.panel.undock' }));
+		fireEvent.click(screen.getByRole('button', { name: 'emoji.panel.close' }));
+		expect(onToggle).toHaveBeenCalled();
+		expect(onClose).toHaveBeenCalled();
+	});
+
+	it('keeps rounded corners as a popover and only offers the dock button', () => {
+		const { container } = render(<EmojiStickerPanel stickersEnabled fill dock={{ docked: false, onToggle: noop }} onEmoji={noop} onSticker={noop} />);
+		expect((container.firstElementChild as HTMLElement).className).toContain('rounded-2xl');
+		expect(screen.getByRole('button', { name: 'emoji.panel.dock' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'emoji.panel.close' })).toBeNull();
 	});
 });
