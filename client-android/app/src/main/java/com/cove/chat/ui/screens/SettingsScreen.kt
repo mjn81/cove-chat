@@ -223,6 +223,8 @@ private fun AppearancePage() {
 
     ThemesSection()
     Spacer(Modifier.height(32.dp))
+    EmojiSettingsSection()
+    Spacer(Modifier.height(32.dp))
     Text("LANGUAGE", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
     Column(Modifier.fillMaxWidth().clip(CoveShapes.md).border(1.dp, c.border, CoveShapes.md).padding(4.dp)) {

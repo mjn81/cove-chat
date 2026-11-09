@@ -54,3 +54,15 @@ and cropper, Farsi screens, and anything needing a camera, microphone or real pu
 
 `CoveApp.kt` had a stray duplicate `private set` left by the legacy UDP removal that stopped the app from
 compiling; removed.
+
+## Themes, emoji and stickers (Android)
+
+Implemented in `client-android` (`themes/`, `emoji/`, `ui/screens/{ThemesUi,EmojiPanel,StickerUi,EmojiSettings}.kt`):
+eleven built-in palettes, `.covetheme` parser/validator/ZIP hardening (JVM-tested), theme picker, preview bar (60 s auto-revert),
+chat theme card, share to chat, theme chat background (pattern/colour/gradient/image); bundled Noto emoji sheet with on-demand
+styles from the server, inline sprites in messages, big animated / jumbo emoji, system-glyph fallback; Telegram-style panel with
+Emoji and Stickers tabs, `sticker` message type, pack share card (`cove://stickers/<id>`).
+Not done: bubble tint (Android rows have no bubbles), composer-field sprites (the field shows system glyphs), a "My stickers"
+creation UI (API calls exist in `ApiClient`), a downloaded fallback style (the bundled Noto sheet is the fallback), emoji in
+sidebar previews / headers (`EmojiLabel` exists, not yet wired), and the theme editor.
+Verified by unit tests and `make android/build` only; the emulator was unusable here (System UI not responding), so no screenshots.

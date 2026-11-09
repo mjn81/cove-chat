@@ -19,5 +19,6 @@ fun Message.previewText(): String = when (type) {
     "voice" -> "Sent a voice message"
     "video" -> "Sent a video message"
     "invite" -> "Sent an invitation"
+    "sticker" -> "Sent a sticker"
     else -> "Sent a $type"
 }

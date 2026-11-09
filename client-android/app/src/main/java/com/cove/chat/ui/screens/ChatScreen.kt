@@ -374,6 +374,14 @@ fun ChatScreen(
         }
     }
 
+    fun sendSticker(packId: String, item: com.cove.chat.data.model.PackItem) {
+        val reply = replyTo
+        scope.launch {
+            val ok = ws.sendChatMessage(channelId, com.cove.chat.emoji.StickerLogic.encode(packId, item), type = "sticker", replyToId = reply?.id)
+            if (ok) { replyTo = null; listState.scrollToItem(0) } else toast("Couldn't send. Check your connection and try again.")
+        }
+    }
+
     fun send() {
         val text = input.trim()
         if (text.isEmpty()) return
@@ -524,6 +532,7 @@ fun ChatScreen(
                 Text("This is an automated account. Replies aren't delivered.", color = CoveTheme.extendedColors.textMuted, fontSize = CoveType.label.fontSize)
             }
         } else ChatInputBar(
+            onSendSticker = { p, i -> sendSticker(p, i) },
             input = input,
             onInputChange = { input = it },
             targetLabel = if (isDm) "@$title" else "#$title",
@@ -822,6 +831,12 @@ private fun MessageRow(
                     val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
                     else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (m.type == "sticker") {
+                    val sticker = remember(m.id, m.ciphertext, keyVersion) { com.cove.chat.emoji.StickerLogic.parse(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
+                    if (sticker != null) StickerBubble(sticker, Modifier.padding(top = 4.dp))
+                    else Text("This sticker can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (m.type == "text" && com.cove.chat.emoji.StickerLogic.parseShare(text) != null) {
+                    PackShareCard(com.cove.chat.emoji.StickerLogic.parseShare(text)!!)
                 } else if (!com.cove.chat.data.remote.ApiStandard.isKnownMessageType(m.type)) {
                     // A type from a newer Cove: keep it in the timeline as a placeholder instead of showing raw data.
                     Text("This message needs a newer version of Cove", color = c.textMuted, fontSize = CoveType.label.fontSize)
