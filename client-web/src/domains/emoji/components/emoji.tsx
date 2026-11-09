@@ -1,9 +1,9 @@
 import { memo, useMemo } from 'react';
 
 import { useAssetUrl } from '@/lib/asset-cache';
-import { useCustomEmoji, useLoadedEmojiStyle } from '../hooks/use-emoji';
+import { useCustomEmoji, useFallbackStyleId, useLoadedEmojiStyle } from '../hooks/use-emoji';
 import { emojiKey, tokenizeEmojiText } from '../utils/emoji-text';
-import { spriteStyle } from '../utils/sprite';
+import { pickSprite } from '../utils/sprite';
 import type { LoadedEmojiStyle } from '../types/emoji.types';
 
 interface EmojiProps {
@@ -21,6 +21,8 @@ interface EmojiSpriteProps {
 	size: number;
 	/** The decoded style to draw from; null draws the device glyph. */
 	loaded: LoadedEmojiStyle | null;
+	/** Style that fills gaps in `loaded` (flags and keycaps missing from Noto). */
+	fallback?: LoadedEmojiStyle | null;
 	className?: string;
 }
 
@@ -29,8 +31,8 @@ interface EmojiSpriteProps {
  * the style once for the whole grid). The original character stays the element's text, transparent over the image,
  * so selection and copy produce real Unicode.
  */
-export function EmojiSprite({ char, size, loaded, className }: EmojiSpriteProps) {
-	const sprite = loaded ? spriteStyle(loaded.sheetUrl, loaded.index, emojiKey(char), size) : null;
+export function EmojiSprite({ char, size, loaded, fallback = null, className }: EmojiSpriteProps) {
+	const sprite = pickSprite(loaded, fallback, emojiKey(char), size);
 	if (!sprite) {
 		return (
 			<span className={className} style={size > 28 ? { fontSize: size * 0.85, lineHeight: 1 } : undefined}>
@@ -60,7 +62,10 @@ export function EmojiSprite({ char, size, loaded, className }: EmojiSpriteProps)
  */
 export const Emoji = memo(function Emoji({ char, size = 20, styleId, className }: EmojiProps) {
 	const loaded = useLoadedEmojiStyle(styleId);
-	return <EmojiSprite char={char} size={size} loaded={loaded} className={className} />;
+	// The fallback style is only downloaded once an emoji turns up that the active style lacks.
+	const lacks = !!loaded && !loaded.index.emoji[emojiKey(char)];
+	const fallback = useLoadedEmojiStyle(useFallbackStyleId() ?? undefined, lacks);
+	return <EmojiSprite char={char} size={size} loaded={loaded} fallback={fallback} className={className} />;
 });
 
 interface CustomEmojiImageProps {

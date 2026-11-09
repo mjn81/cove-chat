@@ -31,12 +31,16 @@ import { ConnectionBanner } from '@/components/ConnectionBanner';
 import { WhisperIncomingToast } from '@/components/WhisperIncomingToast';
 import { WhisperStartModal } from '@/components/Chat/WhisperStartModal';
 import { WhisperSafetyNumberModal } from '@/components/Chat/WhisperSafetyNumberModal';
+import { EmojiPrewarm } from '@/domains/emoji/components/emoji-prewarm';
+import { preloadComposerEmojiPanelWhenIdle } from '@/domains/messages/utils/emoji-panel-loader';
 
 export default function AppPage() {
 	const activeChannel = useChannelStore((state) => state.activeChannel);
 	const refreshChannels = useChannelStore((state) => state.refreshChannels);
 
 	const { t } = useTranslation();
+	// Warm the emoji picker chunk and data in idle time so the first open is instant.
+	useEffect(() => preloadComposerEmojiPanelWhenIdle(), []);
 	const isMobile = useMediaQuery('(max-width: 768px)');
 	// The desktop shell has no title bar here: the macOS traffic lights sit in the nav strip. The phone-width
 	// layout has no such column, so it keeps the bar.
@@ -158,6 +162,7 @@ export default function AppPage() {
 	return (
 		<div className="h-screen w-full bg-background flex flex-col overflow-hidden relative">
 			<ConnectionBanner />
+			<EmojiPrewarm />
 			{isMobile ? (
 				<>
 					{/* Mobile App Navigation Logic */}

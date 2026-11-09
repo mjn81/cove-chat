@@ -39,3 +39,46 @@ export function spriteStyle(
 export function styleCacheKey(style: string, version: string, part: 'sheet' | 'index'): string {
 	return `emoji:${style}:${version}:${part}`;
 }
+
+/** The pieces of a decoded style that drawing needs. */
+export interface SpriteSource {
+	sheetUrl: string;
+	index: EmojiSpriteIndex;
+}
+
+/**
+ * Sprite CSS from the active style, or, when that style has no image for the emoji (Noto has no flags or keycaps),
+ * from the fallback style. Null means "draw the device glyph".
+ *
+ * @param primary - The active style, once loaded.
+ * @param fallback - A full-coverage style used only for gaps, once loaded.
+ * @param key - Emoji key.
+ * @param size - Rendered size in px.
+ */
+export function pickSprite(
+	primary: SpriteSource | null,
+	fallback: SpriteSource | null,
+	key: string,
+	size: number,
+): CSSProperties | null {
+	for (const source of [primary, fallback]) {
+		if (!source) continue;
+		const style = spriteStyle(source.sheetUrl, source.index, key, size);
+		if (style) return style;
+	}
+	return null;
+}
+
+/**
+ * The style to borrow missing emoji from: a different, enabled, downloadable style with the most emoji (Twemoji
+ * covers everything). Null when the server offers nothing else, in which case gaps use the device font.
+ *
+ * @param enabled - Enabled style ids.
+ * @param active - The active style.
+ * @param counts - Emoji count per style id.
+ */
+export function chooseFallbackStyle(enabled: readonly string[], active: string, counts: Readonly<Record<string, number>>): string | null {
+	const candidates = enabled.filter((id) => id !== active && id !== 'native' && (counts[id] ?? 0) > 0);
+	candidates.sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0));
+	return candidates[0] ?? null;
+}

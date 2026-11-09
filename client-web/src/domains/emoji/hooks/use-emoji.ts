@@ -8,7 +8,7 @@ import { apiGetAnimatedEmoji, apiGetCustomEmoji, apiGetEmojiStyles, emojiKeys } 
 import { useEmojiSettings } from '../store/emoji.store';
 import type { EmojiSpriteIndex, EmojiStyleInfo, LoadedEmojiStyle } from '../types/emoji.types';
 import { NATIVE_STYLE, resolveAnimated, resolveEmojiStyle } from '../utils/emoji-settings';
-import { styleCacheKey } from '../utils/sprite';
+import { chooseFallbackStyle, styleCacheKey } from '../utils/sprite';
 
 /** The styles the server offers (`emoji_packs`). Disabled, hence empty, on servers without the capability. */
 export function useEmojiStyles() {
@@ -37,6 +37,13 @@ async function loadStyle(info: EmojiStyleInfo): Promise<LoadedEmojiStyle> {
 	if (!sheet || !indexBytes) throw new Error(`emoji style ${info.id} unavailable`);
 	const index = JSON.parse(new TextDecoder().decode(indexBytes)) as EmojiSpriteIndex;
 	const sheetUrl = URL.createObjectURL(new Blob([sheet as BlobPart], { type: 'image/webp' }));
+	// Decode the (large) sheet before reporting it ready. Otherwise the first paint of every cell waits for the
+	// decode while the glyph is already hidden, which shows as blank emoji for a moment.
+	if (typeof Image !== 'undefined') {
+		const img = new Image();
+		img.src = sheetUrl;
+		await img.decode?.().catch(() => undefined);
+	}
 	return { info, sheetUrl, index };
 }
 
@@ -46,12 +53,13 @@ async function loadStyle(info: EmojiStyleInfo): Promise<LoadedEmojiStyle> {
  * native glyph until this returns a style.
  *
  * @param styleId - Style id to load; defaults to the active style.
+ * @param wanted - Set false to load nothing (used for the fallback style, which is fetched only when needed).
  */
-export function useLoadedEmojiStyle(styleId?: string): LoadedEmojiStyle | null {
+export function useLoadedEmojiStyle(styleId?: string, wanted = true): LoadedEmojiStyle | null {
 	const active = useActiveEmojiStyleId();
 	const id = styleId ?? active;
 	const { data: styles } = useEmojiStyles();
-	const info = id === NATIVE_STYLE ? undefined : styles?.styles.find((s) => s.id === id);
+	const info = !wanted || id === NATIVE_STYLE ? undefined : styles?.styles.find((s) => s.id === id);
 	const { data } = useQuery({
 		queryKey: emojiKeys.sheet(id, info?.version ?? ''),
 		queryFn: () => loadStyle(info!),
@@ -98,4 +106,17 @@ export function useCustomEmoji() {
 	const names = useMemo(() => new Set(items.map((i) => i.name)), [items]);
 	const byName = useMemo(() => new Map(items.map((i) => [i.name, i])), [items]);
 	return { items, names, byName, refetch: query.refetch };
+}
+
+/** Id of the style that fills gaps in the active one (Twemoji, for flags and keycaps missing from Noto); null when none. */
+export function useFallbackStyleId(): string | null {
+	const active = useActiveEmojiStyleId();
+	const { data } = useEmojiStyles();
+	return useMemo(
+		() =>
+			data
+				? chooseFallbackStyle(data.enabled_styles, active, Object.fromEntries(data.styles.map((s) => [s.id, s.count])))
+				: null,
+		[data, active],
+	);
 }
