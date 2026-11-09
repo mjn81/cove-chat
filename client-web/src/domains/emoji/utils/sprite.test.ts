@@ -51,3 +51,10 @@ describe('chooseFallbackStyle', () => {
 		expect(chooseFallbackStyle(['noto', 'twemoji'], 'native', {})).toBeNull();
 	});
 });
+
+describe('spriteStyle units', () => {
+	it('can scale in em so the emoji follows the surrounding font size (same on web and desktop zoom levels)', () => {
+		const s = spriteStyle('blob:x', index, '1f600', 1.5, 'em');
+		expect(s).toMatchObject({ backgroundSize: '15em 7.5em', backgroundPosition: '-3em -1.5em' });
+	});
+});

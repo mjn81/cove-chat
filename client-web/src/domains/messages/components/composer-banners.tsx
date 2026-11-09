@@ -58,7 +58,7 @@ export const ReplyPreview = ({ message, senderName, onCancel }: ReplyPreviewProp
 					{t('composer.replying_to')} <span className="font-bold text-foreground">{senderName}</span>
 				</span>
 				<span className="truncate border-s border-border ps-2 text-[13px] italic text-muted-foreground/70">
-					{message.text ? <EmojiText text={message.text} size={14} /> : `[${message.type}]`}
+					{message.text ? <EmojiText text={message.text} em={1.25} /> : `[${message.type}]`}
 				</span>
 			</div>
 			<IconButton label={t('composer.cancel_reply')} tone="destructive" onClick={onCancel} className="h-6 w-6 rounded-full">

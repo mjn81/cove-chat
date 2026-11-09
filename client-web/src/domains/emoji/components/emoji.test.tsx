@@ -24,9 +24,9 @@ const style = (id: string, keys: string[]): LoadedEmojiStyle => ({
 describe('EmojiText (sidebar previews, headers, quotes)', () => {
 	it('draws known emoji from the sheet and keeps the character as copyable text', () => {
 		styles.noto = style('noto', ['1f600']);
-		const { container } = render(<EmojiText text="You: 😀 hi" size={13} />);
+		const { container } = render(<EmojiText text="You: 😀 hi" em={1.25} />);
 		const img = screen.getByRole('img', { name: '😀' });
-		expect(img).toHaveStyle({ width: '13px', height: '13px' });
+		expect(img).toHaveStyle({ width: '1.25em', height: '1.25em' });
 		expect(img.style.backgroundImage).toContain('blob:noto');
 		expect(img.textContent).toBe('😀');
 		expect(container.textContent).toBe('You: 😀 hi');
@@ -35,13 +35,13 @@ describe('EmojiText (sidebar previews, headers, quotes)', () => {
 	it('uses the fallback style for an emoji the active style lacks', () => {
 		styles.noto = style('noto', ['1f600']);
 		styles.twemoji = style('twemoji', ['1fae0']);
-		render(<EmojiText text="🫠" size={13} />);
+		render(<EmojiText text="🫠" em={1.25} />);
 		expect(screen.getByRole('img', { name: '🫠' }).style.backgroundImage).toContain('blob:twemoji');
 	});
 
 	it('shows the plain glyph while no sheet is ready, never an empty box', () => {
 		styles.noto = null;
-		const { container } = render(<EmojiText text="😅 ok" size={13} />);
+		const { container } = render(<EmojiText text="😅 ok" em={1.25} />);
 		expect(screen.queryByRole('img')).toBeNull();
 		expect(container.textContent).toBe('😅 ok');
 	});

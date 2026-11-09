@@ -146,7 +146,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 								</div>
 								<div className="flex flex-col min-w-0 pointer-events-none">
 									<div className="text-[15px] font-bold text-foreground leading-tight truncate">
-										<EmojiText text={getChannelDisplayName(liveChannel, currentUserId)} size={18} />
+										<EmojiText text={getChannelDisplayName(liveChannel, currentUserId)} em={1.25} />
 									</div>
 									<div className="text-[12px] text-muted-foreground leading-tight mt-0.5 truncate">
 										{dmSubtitle}
@@ -177,7 +177,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 										className="text-[15px] font-bold text-foreground leading-tight truncate"
 										title={liveChannel.name}
 									>
-										<EmojiText text={getChannelDisplayName(liveChannel, currentUserId)} size={18} />
+										<EmojiText text={getChannelDisplayName(liveChannel, currentUserId)} em={1.25} />
 									</div>
 									<div
 										className="text-[12px] text-muted-foreground leading-tight truncate max-w-[200px] sm:max-w-xs md:max-w-md mt-0.5"

@@ -8,7 +8,8 @@ import type { EmojiSpriteIndex } from '../types/emoji.types';
  * @param sheetUrl - Blob URL of the decoded sheet.
  * @param index - The style's sprite index (sheet size and cell size).
  * @param key - Emoji key (see `emojiKey`).
- * @param size - Rendered size in CSS pixels.
+ * @param size - Rendered size in `unit`s.
+ * @param unit - `px` (default) or `em`; em makes the emoji follow the font size of the text around it.
  * @returns The inline style, or null when the style has no image for this emoji (the caller draws the glyph).
  */
 export function spriteStyle(
@@ -16,6 +17,7 @@ export function spriteStyle(
 	index: EmojiSpriteIndex,
 	key: string,
 	size: number,
+	unit: 'px' | 'em' = 'px',
 ): CSSProperties | null {
 	const cell = index.emoji[key];
 	if (!cell) return null;
@@ -23,8 +25,8 @@ export function spriteStyle(
 	return {
 		backgroundImage: `url("${sheetUrl}")`,
 		backgroundRepeat: 'no-repeat',
-		backgroundSize: `${index.width * scale}px ${index.height * scale}px`,
-		backgroundPosition: `${-cell[0] * scale}px ${-cell[1] * scale}px`,
+		backgroundSize: `${index.width * scale}${unit} ${index.height * scale}${unit}`,
+		backgroundPosition: `${-cell[0] * scale}${unit} ${-cell[1] * scale}${unit}`,
 	};
 }
 
@@ -53,17 +55,19 @@ export interface SpriteSource {
  * @param primary - The active style, once loaded.
  * @param fallback - A full-coverage style used only for gaps, once loaded.
  * @param key - Emoji key.
- * @param size - Rendered size in px.
+ * @param size - Rendered size in `unit`s.
+ * @param unit - `px` or `em`.
  */
 export function pickSprite(
 	primary: SpriteSource | null,
 	fallback: SpriteSource | null,
 	key: string,
 	size: number,
+	unit: 'px' | 'em' = 'px',
 ): CSSProperties | null {
 	for (const source of [primary, fallback]) {
 		if (!source) continue;
-		const style = spriteStyle(source.sheetUrl, source.index, key, size);
+		const style = spriteStyle(source.sheetUrl, source.index, key, size, unit);
 		if (style) return style;
 	}
 	return null;

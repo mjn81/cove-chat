@@ -192,7 +192,7 @@ export const WhisperMessageRow = ({
 						className="min-w-0 flex-1 select-text whitespace-pre-wrap break-words text-[15px] leading-[22px] text-foreground/90"
 						dir="auto"
 					>
-						<EmojiText text={message.text} size={20} />
+						<EmojiText text={message.text} />
 					</div>
 				)}
 

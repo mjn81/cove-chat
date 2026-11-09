@@ -232,7 +232,7 @@ export const MessageItem = memo(
 					);
 				}
 				// Plain text: emoji and known :name: shortcodes become images, everything else is left as typed.
-				return <EmojiText key={i} text={token.value} size={20} />;
+				return <EmojiText key={i} text={token.value} />;
 			});
 		};
 
@@ -425,7 +425,7 @@ export const MessageItem = memo(
 								<span className="text-[13px] truncate text-muted-foreground/80 hover:text-foreground cursor-pointer italic max-w-[60%]">
 									{replyTarget
 										? replyTarget.type === 'text'
-											? <EmojiText text={replyTarget.text ?? ''} size={14} />
+											? <EmojiText text={replyTarget.text ?? ''} em={1.25} />
 											: `[${replyTarget.type}]`
 										: 'Original message not found'}
 								</span>
