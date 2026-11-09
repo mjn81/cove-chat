@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { EmojiText } from '@/domains/emoji/components/emoji';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Trash2, User, Volume2 } from 'lucide-react';
 
@@ -141,7 +142,7 @@ export const ChannelRow = memo(
 						</div>
 					</TooltipTrigger>
 					<TooltipContent side="right" className="flex items-center gap-1.5 font-bold">
-						<span>{display}</span>
+						<span><EmojiText text={display} size={16} /></span>
 						{unreadCount > 0 && (
 							<span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-primary-foreground">
 								{unreadCount}
@@ -155,7 +156,7 @@ export const ChannelRow = memo(
 				{avatarNode}
 				<div className="pointer-events-none flex min-w-0 flex-1 select-none flex-col justify-center">
 					<div className="flex items-center gap-2">
-						<span className="truncate text-[14px] font-medium leading-tight">{display}</span>
+						<span className="truncate text-[14px] font-medium leading-tight"><EmojiText text={display} size={16} /></span>
 						{isBlocked && (
 							<span className="shrink-0 rounded bg-destructive/10 px-1 text-[10px] font-semibold text-destructive">
 								{t('sidebar.blocked')}
@@ -168,7 +169,8 @@ export const ChannelRow = memo(
 							hasVoice ? 'font-medium text-success' : 'text-muted-foreground/80',
 						)}
 					>
-						{subtitle}
+						{/* Previews are plain text; emoji go through the same renderer as chat messages so they never show as boxes. */}
+						<EmojiText text={subtitle} size={13} />
 					</span>
 				</div>
 
