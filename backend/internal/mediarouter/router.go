@@ -122,6 +122,10 @@ type session struct {
 	cache       *packetCache
 
 	tracks map[string]bool // guarded by Router.mu
+	// stopped has bit k set once the participant announced (call_track_state, enabled=false) that stream kind k ended.
+	// Uplink media of a stopped kind is dropped, so frames still in flight when a share stops cannot reach the other
+	// participants after they removed the tile. Cleared when the kind is enabled again. Read on the hot path, so atomic.
+	stopped atomic.Uint32
 }
 
 // room is one active call.

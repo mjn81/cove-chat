@@ -837,3 +837,81 @@ func TestMediaRouter_ConcurrentSendersUnderRace(t *testing.T) {
 		}
 	}
 }
+
+// TestMediaRouter_ScreenShareStopIsAnnouncedAndLateFramesAreDropped covers "the screen share tile never goes away":
+// when a publisher stops sharing, the others must hear it, and frames still in flight must not bring the stream back.
+func TestMediaRouter_ScreenShareStopIsAnnouncedAndLateFramesAreDropped(t *testing.T) {
+	e := newCallEnv(t, mediarouter.Config{})
+	e.addMember("a", "room")
+	e.addMember("b", "room")
+	a, b := e.join("a", "room"), e.join("b", "room")
+	track := func(kind string, on bool) {
+		p, _ := json.Marshal(mediarouter.TrackStatePayload{ChannelID: "room", Kind: kind, Enabled: on})
+		_ = e.router.HandleSignal("a", "a", mediarouter.MsgTrackState, p)
+	}
+	send := func(kind udpmedia.Kind, n int) {
+		for i := 0; i < n; i++ {
+			if err := a.client.SendFrame(kind, udpmedia.CodecH264, udpmedia.FlagKeyframe, uint32(i), []byte("frame")); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	track("screen", true)
+	send(udpmedia.KindScreen, 1)
+	if f, ok := b.recv(2 * time.Second); !ok || f.Kind != udpmedia.KindScreen {
+		t.Fatal("screen frame was not forwarded while sharing")
+	}
+
+	track("screen", false)
+	raw, ok := e.sender.take("b", mediarouter.MsgTrackState, 2*time.Second)
+	if !ok {
+		t.Fatal("subscriber was not told the share ended")
+	}
+	for { // the first event is the "enabled" one; wait for the stop
+		var ts mediarouter.TrackStatePayload
+		_ = json.Unmarshal(raw, &ts)
+		if ts.Kind == "screen" && !ts.Enabled && ts.UserID == "a" {
+			break
+		}
+		if raw, ok = e.sender.take("b", mediarouter.MsgTrackState, 2*time.Second); !ok {
+			t.Fatal("no screen-stopped event")
+		}
+	}
+
+	send(udpmedia.KindScreen, 3) // late frames of the stopped share
+	b.expectNothing(t, 300*time.Millisecond)
+
+	send(udpmedia.KindVideo, 1) // other streams are unaffected
+	if f, ok := b.recv(2 * time.Second); !ok || f.Kind != udpmedia.KindVideo {
+		t.Fatal("stopping the screen share also stopped the camera")
+	}
+
+	track("screen", true) // sharing again works
+	send(udpmedia.KindScreen, 1)
+	if f, ok := b.recv(2 * time.Second); !ok || f.Kind != udpmedia.KindScreen {
+		t.Fatal("a restarted share was not forwarded")
+	}
+}
+
+// A publisher that vanishes mid-share (app killed, network gone) is removed by the server and the room is told, which
+// is what lets receivers drop its tiles.
+func TestMediaRouter_PublisherVanishingMidShareNotifiesTheRoom(t *testing.T) {
+	e := newCallEnv(t, mediarouter.Config{})
+	e.addMember("a", "room")
+	e.addMember("b", "room")
+	e.join("a", "room")
+	e.join("b", "room")
+	p, _ := json.Marshal(mediarouter.TrackStatePayload{ChannelID: "room", Kind: "screen", Enabled: true})
+	_ = e.router.HandleSignal("a", "a", mediarouter.MsgTrackState, p)
+	e.router.RemoveUser("a") // the hub does this when a's WebSocket drops
+	raw, ok := e.sender.take("b", mediarouter.MsgParticipantLeft, 2*time.Second)
+	if !ok {
+		t.Fatal("room was not told the publisher left")
+	}
+	var ev mediarouter.ParticipantEventPayload
+	_ = json.Unmarshal(raw, &ev)
+	if ev.User.UserID != "a" {
+		t.Errorf("participant left = %+v", ev)
+	}
+}

@@ -331,6 +331,11 @@ func (r *Router) handleTrackState(userID string, p TrackStatePayload) {
 		return
 	}
 	s.tracks[p.Kind] = p.Enabled
+	if p.Enabled {
+		s.stopped.And(^(uint32(1) << kind))
+	} else {
+		s.stopped.Or(uint32(1) << kind)
+	}
 	others := r.rooms[s.channelID].otherUserIDs(userID)
 	r.mu.Unlock()
 	p.UserID = userID
