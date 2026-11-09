@@ -114,6 +114,8 @@ fun ChannelListScreen(
         loaded = true
     }
     LaunchedEffect(Unit) { api.getVersion().onSuccess { version = it.version } }
+    // Emoji style list, animated table and custom emoji (cheap conditional requests; cached copies keep working offline).
+    LaunchedEffect(Unit) { com.cove.chat.emoji.EmojiEngine.refresh() }
     // New messages and membership changes alter ordering/previews, so just reload the (small) list.
     LaunchedEffect(Unit) { ws.messageFlow.collect { refreshTick++ } }
     LaunchedEffect(Unit) { ws.channelsChangedFlow.collect { refreshTick++ } }

@@ -68,10 +68,11 @@ fun tokenizeMessage(text: String): List<MessageToken> {
  * [linkColor] with an underline; `@mentions` are bold in the same colour, like the web client.
  */
 fun linkifiedText(
-    text: String, linkColor: Color, onMention: ((username: String) -> Unit)? = null, onInvite: ((code: String) -> Unit)? = null
+    text: String, linkColor: Color, onMention: ((username: String) -> Unit)? = null, onInvite: ((code: String) -> Unit)? = null,
+    emoji: com.cove.chat.emoji.EmojiInline? = null
 ): AnnotatedString = buildAnnotatedString {
     for (t in tokenizeMessage(text)) when (t) {
-        is MessageToken.Plain -> append(t.value)
+        is MessageToken.Plain -> if (emoji != null) with(emoji) { appendWithEmoji(t.value) } else append(t.value)
         is MessageToken.Mention -> if (onMention == null) {
             withStyle(SpanStyle(color = linkColor, fontWeight = FontWeight.Medium)) { append(t.value) }
         } else {

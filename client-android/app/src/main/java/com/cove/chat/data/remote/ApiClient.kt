@@ -4,6 +4,13 @@ import com.cove.chat.data.local.PreferencesManager
 import com.cove.chat.data.model.AuthUser
 import com.cove.chat.ui.components.t
 import com.cove.chat.data.model.AdminAccount
+import com.cove.chat.data.model.AnimatedEmojiResponse
+import com.cove.chat.data.model.CreatePackRequest
+import com.cove.chat.data.model.CustomEmojiResponse
+import com.cove.chat.data.model.EmojiStylesResponse
+import com.cove.chat.data.model.ItemUploadResponse
+import com.cove.chat.data.model.Pack
+import com.cove.chat.data.model.PackListResponse
 import com.cove.chat.data.model.AdminOverview
 import com.cove.chat.data.model.AdminsResponse
 import com.cove.chat.data.model.AuditEntry
@@ -344,6 +351,53 @@ class ApiClient(private val prefs: PreferencesManager) {
     /** Downloads the encrypted blob of a file. */
     suspend fun downloadFile(fileId: String): Result<ByteArray> = runCatching {
         client.get(url("/api/files/$fileId")) { bearer() }.ok().body<ByteArray>()
+    }
+
+    // ── Emoji, stickers and packs (docs/packs-api.md) ────────────────────────
+
+    /** Raw bytes of a server-relative asset path (sprite sheets, sticker images, animated emoji); needs the session. */
+    suspend fun getBytes(path: String): Result<ByteArray> = runCatching {
+        client.get(url(path)) { bearer() }.ok().body<ByteArray>()
+    }
+
+    suspend fun getEmojiStyles(): Result<EmojiStylesResponse> = runCatching { client.get(url("/api/emoji/styles")) { bearer() }.ok().body() }
+
+    suspend fun getAnimatedEmoji(): Result<AnimatedEmojiResponse> = runCatching { client.get(url("/api/emoji/animated")) { bearer() }.ok().body() }
+
+    suspend fun getCustomEmoji(): Result<CustomEmojiResponse> = runCatching { client.get(url("/api/emoji/custom")) { bearer() }.ok().body() }
+
+    /** The caller's sticker picker (built-in, server and added/own user packs) with quota; items are left out. */
+    suspend fun getPacks(): Result<PackListResponse> = runCatching { client.get(url("/api/packs")) { bearer() }.ok().body() }
+
+    /** One pack with its stickers. Any user pack id works (the id is the share link). */
+    suspend fun getPack(id: String): Result<Pack> = runCatching { client.get(url("/api/packs/${id.encodeURLPath()}")) { bearer() }.ok().body() }
+
+    suspend fun installPack(id: String): Result<Unit> = runCatching { client.put(url("/api/packs/${id.encodeURLPath()}/install")) { bearer() }.ok(); Unit }
+
+    suspend fun uninstallPack(id: String): Result<Unit> = runCatching { client.delete(url("/api/packs/${id.encodeURLPath()}/install")) { bearer() }.ok(); Unit }
+
+    suspend fun createPack(name: String): Result<Pack> = runCatching {
+        client.post(url("/api/packs")) { contentType(ContentType.Application.Json); bearer(); setBody(CreatePackRequest(name)) }.ok().body()
+    }
+
+    suspend fun deletePack(id: String): Result<Unit> = runCatching { client.delete(url("/api/packs/${id.encodeURLPath()}")) { bearer() }.ok(); Unit }
+
+    suspend fun deleteSticker(packId: String, itemId: String): Result<Unit> = runCatching {
+        client.delete(url("/api/packs/${packId.encodeURLPath()}/items/${itemId.encodeURLPath()}")) { bearer() }.ok(); Unit
+    }
+
+    /** Uploads one sticker image (PNG/JPEG/GIF/WebP, normalised by the server) with an optional emoji. */
+    suspend fun uploadSticker(packId: String, bytes: ByteArray, mime: String, emoji: String?): Result<ItemUploadResponse> = runCatching {
+        client.post(url("/api/packs/${packId.encodeURLPath()}/items")) {
+            bearer()
+            setBody(MultiPartFormDataContent(formData {
+                emoji?.takeIf { it.isNotBlank() }?.let { append("emoji", it) }
+                append("file", bytes, Headers.build {
+                    append(HttpHeaders.ContentType, mime)
+                    append(HttpHeaders.ContentDisposition, "filename=\"sticker.webp\"")
+                })
+            }))
+        }.ok().body()
     }
 
     // ── Profile ─────────────────────────────────────────────────────────────

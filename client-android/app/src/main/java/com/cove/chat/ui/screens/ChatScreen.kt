@@ -691,23 +691,6 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
     }
 }
 
-/** True for a message made only of up to three emoji, which is shown large like Telegram does. */
-private fun isEmojiOnly(text: String): Boolean {
-    val t = text.trim()
-    if (t.isEmpty() || t.length > 24) return false
-    var symbols = 0
-    var i = 0
-    while (i < t.length) {
-        val cp = t.codePointAt(i)
-        i += Character.charCount(cp)
-        when {
-            Character.getType(cp) == Character.OTHER_SYMBOL.toInt() || cp in 0x1F1E6..0x1F1FF -> symbols++
-            cp == 0x200D || cp in 0xFE00..0xFE0F || cp in 0x1F3FB..0x1F3FF || cp == 0x20E3 -> Unit // joiners, selectors, skin tones
-            else -> return false
-        }
-    }
-    return symbols in 1..6
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -734,6 +717,7 @@ private fun MessageRow(
     val c = CoveTheme.extendedColors
     // keyVersion forces a re-decrypt once the channel key has arrived over the socket.
     val text = remember(m.id, m.ciphertext, keyVersion) { bodyOf(m) }
+    val emojiClass = if (m.type == "text") com.cove.chat.emoji.rememberEmojiMessageClass(text) else com.cove.chat.emoji.EmojiMessageClass.Normal
     // Swipe towards the end edge = reply, towards the start edge = forward (mirrored in RTL); springs back on release.
     val density = androidx.compose.ui.platform.LocalDensity.current
     val trigger = with(density) { 64.dp.toPx() }
@@ -841,9 +825,12 @@ private fun MessageRow(
                 } else if (!com.cove.chat.data.remote.ApiStandard.isKnownMessageType(m.type)) {
                     // A type from a newer Cove: keep it in the timeline as a placeholder instead of showing raw data.
                     Text("This message needs a newer version of Cove", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (emojiClass !is com.cove.chat.emoji.EmojiMessageClass.Normal && m.type == "text") {
+                    // One animated emoji, or up to three jumbo ones: large, no bubble, tap replays the animation.
+                    com.cove.chat.emoji.BigEmojiMessage(emojiClass, text)
                 } else Row(verticalAlignment = Alignment.Bottom) {
                     MessageText(
-                        text, color = c.textPrimary, fontSize = if (isEmojiOnly(text)) 38.sp else CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
+                        text, color = c.textPrimary, fontSize = CoveType.body.fontSize, linkColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f, fill = false), onMention = onMention, onInvite = onInvite, onLongPress = onLongPress
                     )
                     if (m.editedAt != null) {

@@ -10,7 +10,11 @@ data class ServerInfo(
     @SerialName("registration_mode") val registrationMode: String = "open",
     @SerialName("needs_owner") val needsOwner: Boolean = false,
     /** True when an admin turned on the sign-up proof-of-work check; the app solves it automatically. */
-    @SerialName("captcha_required") val captchaRequired: Boolean = false
+    @SerialName("captcha_required") val captchaRequired: Boolean = false,
+    /** Emoji styles users may choose (`native` is the device font) and the one to start with. */
+    @SerialName("emoji_styles") val emojiStyles: List<String> = emptyList(),
+    @SerialName("default_emoji_style") val defaultEmojiStyle: String = "",
+    @SerialName("user_stickers_enabled") val userStickersEnabled: Boolean = true,
 )
 
 @Serializable

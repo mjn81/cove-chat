@@ -67,12 +67,18 @@ class CoveApp : Application() {
             private set
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_RUNNING_LOW) com.cove.chat.emoji.EmojiEngine.trimMemory()
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
 
         preferencesManager = PreferencesManager(this)
         apiClient = ApiClient(preferencesManager)
+        com.cove.chat.emoji.EmojiEngine.init(this, preferencesManager)
         webSocketManager = WebSocketManager(preferencesManager)
         webRTCManager = com.cove.chat.rtc.CallRouter(this, webSocketManager, preferencesManager, apiClient, WebRTCManager(this, webSocketManager))
 
