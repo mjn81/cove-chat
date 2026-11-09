@@ -221,33 +221,7 @@ private fun AppearancePage() {
     val c = CoveTheme.extendedColors
     val prefs = CoveApp.instance.preferencesManager
 
-    Text("THEME", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(12.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        ThemeCard("Dark", dark = true, selected = ThemeSettings.dark, Modifier.weight(1f)) {
-            ThemeSettings.dark = true; prefs.darkTheme = true
-        }
-        ThemeCard("Light", dark = false, selected = !ThemeSettings.dark, Modifier.weight(1f)) {
-            ThemeSettings.dark = false; prefs.darkTheme = false
-        }
-    }
-    Spacer(Modifier.height(32.dp))
-    Text("CHAT BACKGROUND", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(12.dp))
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        ChatBackgroundIds.forEach { id ->
-            val on = ChatBackgroundSettings.id == id
-            Column(
-                Modifier.width(88.dp).clip(CoveShapes.lg).border(2.dp, if (on) MaterialTheme.colorScheme.primary else c.border, CoveShapes.lg)
-                    .clickable { ChatBackgroundSettings.id = id; prefs.chatBackground = id }.padding(Spacing.sm),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(Modifier.fillMaxWidth().height(64.dp).clip(CoveShapes.md).background(c.chatCanvas).chatBackgroundPattern(id, alpha = 0.12f))
-                Spacer(Modifier.height(Spacing.xs))
-                Text(id.replaceFirstChar { it.uppercase() }, color = if (on) c.textPrimary else c.textMuted, style = CoveType.label, maxLines = 1)
-            }
-        }
-    }
+    ThemesSection()
     Spacer(Modifier.height(32.dp))
     Text("LANGUAGE", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
@@ -261,35 +235,6 @@ private fun AppearancePage() {
                 trailing = if (on) ({ Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.primary) }) else null
             )
         }
-    }
-}
-
-@Composable
-private fun ThemeCard(label: String, dark: Boolean, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    // The mini preview always shows that theme's own palette, whichever theme is active.
-    val canvas = if (dark) CoveBackgroundDark else CoveBackgroundLight
-    val bar = if (dark) CoveAccentDark else CoveAccentLight
-    val tile = if (dark) CoveCardDark else CoveCardLight
-    val text = if (dark) CoveTextPrimaryDark else CoveTextPrimaryLight
-    val muted = CoveTheme.extendedColors.textMuted
-    Column(
-        modifier
-            .clip(CoveShapes.md)
-            .background(tile)
-            .border(2.dp, if (selected) MaterialTheme.colorScheme.primary else Color.Transparent, CoveShapes.md)
-            .clickable(onClick = onClick)
-            .padding(Spacing.md),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(Modifier.fillMaxWidth().height(48.dp).clip(CoveShapes.sm).background(canvas).padding(Spacing.md)) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs), modifier = Modifier.padding(start = 28.dp)) {
-                Box(Modifier.fillMaxWidth(0.8f).height(5.dp).clip(CoveShapes.sm).background(bar))
-                Box(Modifier.fillMaxWidth(0.55f).height(5.dp).clip(CoveShapes.sm).background(bar))
-            }
-            Box(Modifier.size(14.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-        }
-        Spacer(Modifier.height(10.dp))
-        Text(label, color = if (selected) text else muted, style = CoveType.body, fontWeight = FontWeight.Bold)
     }
 }
 

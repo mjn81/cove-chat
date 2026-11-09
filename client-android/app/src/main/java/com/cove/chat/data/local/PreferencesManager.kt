@@ -30,6 +30,40 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("dark_theme", true)
         set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
 
+    /** Selected theme id: a built-in id or an installed `.covetheme` id (Settings > Appearance). */
+    var themeId: String
+        get() = prefs.getString("theme_id", "cove") ?: "cove"
+        set(value) = prefs.edit().putString("theme_id", value).apply()
+
+    /** Emoji style id (`native`, `noto`, ...); blank = the server's default. */
+    var emojiStyle: String
+        get() = prefs.getString("emoji_style", "") ?: ""
+        set(value) = prefs.edit().putString("emoji_style", value).apply()
+
+    /** "Animated emoji" switch (big single emoji play their animation); on by default. */
+    var animatedEmoji: Boolean
+        get() = prefs.getBoolean("animated_emoji", true)
+        set(value) = prefs.edit().putBoolean("animated_emoji", value).apply()
+
+    /** Skin tone 1 (default) to 6 for the emoji picker. */
+    var emojiSkinTone: Int
+        get() = prefs.getInt("emoji_skin_tone", 1)
+        set(value) = prefs.edit().putInt("emoji_skin_tone", value.coerceIn(1, 6)).apply()
+
+    /** Recently used stickers as `packId|stickerId|fileId|animated|url|emoji` lines (newest first). */
+    var recentStickers: String
+        get() = prefs.getString("recent_stickers", "") ?: ""
+        set(value) = prefs.edit().putString("recent_stickers", value).apply()
+
+    /** Last open tab of the emoji panel (`emoji` or `stickers`) and of the sticker panel (`recent` or a pack id). */
+    var panelTab: String
+        get() = prefs.getString("panel_tab", "emoji") ?: "emoji"
+        set(value) = prefs.edit().putString("panel_tab", value).apply()
+
+    var stickerTab: String
+        get() = prefs.getString("sticker_tab", "") ?: ""
+        set(value) = prefs.edit().putString("sticker_tab", value).apply()
+
     /** Chat background pattern id (`none`, `animals`, `space`, `games`, `sweets`, `travel`, `nature`, `food`, `music`, `tech`, `weather`), same ids as the web setting. */
     var chatBackground: String
         get() = prefs.getString("chat_background", "none") ?: "none"

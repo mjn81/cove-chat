@@ -829,6 +829,7 @@ private fun MessageRow(
                             fileMeta.mime.startsWith("video/") -> VideoBubble(m.channelId, fileMeta, keyVersion)
                             // Music and other audio files play inline like voice notes; "send as file" keeps the card.
                             isInlineAudio(fileMeta.mime) && fileMeta.asDocument != true -> VoiceBubble(m.channelId, fileMeta, keyVersion, fileMeta.name)
+                            isThemeFile(fileMeta) -> ThemeFileCard(m.channelId, fileMeta, keyVersion)
                             else -> FileBubble(m.channelId, fileMeta, keyVersion)
                         }
                     }
