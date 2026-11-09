@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -121,7 +122,7 @@ fun EmojiStickerPanel(height: androidx.compose.ui.unit.Dp, onEmoji: (String) -> 
             Row(Modifier.fillMaxWidth()) {
                 listOf("emoji" to "Emoji", "stickers" to "Stickers").forEach { (id, label) ->
                     val on = tab == id
-                    Column(Modifier.weight(1f).clickable { tab = id; prefs.panelTab = id }.padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.weight(1f).heightIn(min = 44.dp).clickable { tab = id; prefs.panelTab = id }.padding(top = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(label, color = if (on) c.textPrimary else c.textMuted, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         Spacer(Modifier.height(8.dp))
                         Box(Modifier.width(44.dp).height(2.dp).clip(CircleShape).background(if (on) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
@@ -129,9 +130,15 @@ fun EmojiStickerPanel(height: androidx.compose.ui.unit.Dp, onEmoji: (String) -> 
                 }
             }
         }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (tab == "stickers" && onSticker != null) StickerTab(onSticker) else EmojiTab(onEmoji)
-        }
+        if (onSticker != null) {
+            // Telegram-style: swipe sideways between Emoji and Stickers; the strip above follows the page.
+            val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = if (tab == "stickers") 1 else 0) { 2 }
+            LaunchedEffect(tab) { if (pager.currentPage != (if (tab == "stickers") 1 else 0)) pager.animateScrollToPage(if (tab == "stickers") 1 else 0) }
+            LaunchedEffect(pager.settledPage) { val t = if (pager.settledPage == 1) "stickers" else "emoji"; if (t != tab) { tab = t; prefs.panelTab = t } }
+            androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), beyondViewportPageCount = 0) { page ->
+                if (page == 1) StickerTab(onSticker) else EmojiTab(onEmoji)
+            }
+        } else Box(Modifier.weight(1f).fillMaxWidth()) { EmojiTab(onEmoji) }
     }
 }
 
@@ -164,7 +171,7 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         // Search pill + skin tone.
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.weight(1f).height(36.dp).clip(CircleShape).background(c.card).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(1f).height(44.dp).clip(CircleShape).background(c.card).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Search, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f)) {
@@ -174,11 +181,11 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (query.isNotEmpty()) Icon(Icons.Outlined.Close, "Clear", tint = c.textMuted, modifier = Modifier.size(18.dp).clickable { query = "" })
+                if (query.isNotEmpty()) Box(Modifier.size(44.dp).clickable { query = "" }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Close, "Clear", tint = c.textMuted, modifier = Modifier.size(18.dp)) }
             }
             Spacer(Modifier.width(6.dp))
             Box {
-                Box(Modifier.size(36.dp).clip(CircleShape).clickable { toneMenu = true }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(44.dp).clip(CircleShape).clickable { toneMenu = true }, contentAlignment = Alignment.Center) {
                     EmojiView(PickerData.SKIN_SAMPLES[(tone - 1).coerceIn(0, 5)], 24.dp)
                 }
                 DropdownMenu(toneMenu, { toneMenu = false }) {
@@ -234,7 +241,7 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
             sections.forEachIndexed { i, s ->
                 val on = results == null && i == activeSection
                 Box(
-                    Modifier.weight(1f).height(38.dp).clip(RoundedCornerShape(10.dp)).background(if (on) c.accent else androidx.compose.ui.graphics.Color.Transparent)
+                    Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) c.accent else androidx.compose.ui.graphics.Color.Transparent)
                         .clickable { query = ""; scope.launch { grid.scrollToItem(starts[i]) } },
                     contentAlignment = Alignment.Center
                 ) { Icon(CategoryIcons[s.id] ?: Icons.Outlined.Category, s.id, tint = if (on) c.textPrimary else c.textMuted, modifier = Modifier.size(20.dp)) }
@@ -246,13 +253,13 @@ private fun EmojiTab(onEmoji: (String) -> Unit) {
 /** One emoji cell: 38 dp high, the emoji drawn at 26 dp. */
 @Composable
 private fun EmojiCell(emoji: String, onClick: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) { EmojiView(emoji, 26.dp) }
+    Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) { EmojiView(emoji, 28.dp) }
 }
 
 @Composable
 private fun CustomCell(shortcode: String, onClick: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        CustomEmojiView(shortcode.trim(':'), 26.dp)
+    Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        CustomEmojiView(shortcode.trim(':'), 28.dp)
     }
 }
 
@@ -316,7 +323,7 @@ private fun StickerTab(onSticker: (String, PackItem) -> Unit) {
 @Composable
 private fun TabCell(on: Boolean, onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
-        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(if (on) CoveTheme.extendedColors.accent else androidx.compose.ui.graphics.Color.Transparent).clickable(onClick = onClick),
+        Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) CoveTheme.extendedColors.accent else androidx.compose.ui.graphics.Color.Transparent).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { content() }
 }

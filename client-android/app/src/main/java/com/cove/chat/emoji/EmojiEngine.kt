@@ -129,7 +129,8 @@ object EmojiEngine {
     val enabledStyles: List<String>
         get() = (stylesResponse?.enabledStyles?.takeIf { it.isNotEmpty() } ?: listOf(NATIVE, BUNDLED)).let { if (NATIVE in it) it else listOf(NATIVE) + it }
 
-    private val serverDefault: String get() = stylesResponse?.defaultStyle?.takeIf { it.isNotBlank() } ?: BUNDLED
+    // The device font is never the default, even if a server lists it as default: users see Noto unless they pick "Device emoji".
+    private val serverDefault: String get() = stylesResponse?.defaultStyle?.takeIf { it.isNotBlank() && it != NATIVE } ?: BUNDLED
 
     /** The style in use: the user's pick when the server still offers it, else the server's default. */
     val activeStyleId: String

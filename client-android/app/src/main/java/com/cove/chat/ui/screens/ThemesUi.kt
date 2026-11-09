@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
@@ -240,8 +241,8 @@ fun ThemesSection() {
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
         CoveButton("Export current theme", {
             ThemeState.exportBytes(ThemeState.active)?.let { (n, b) -> shareThemeFile(context, n, b) }
-        }, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Sm)
-        CoveButton("Share to chat", { ThemeState.exportBytes(ThemeState.active)?.let { shareTarget = it } }, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Sm)
+        }, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Lg)
+        CoveButton("Share to chat", { ThemeState.exportBytes(ThemeState.active)?.let { shareTarget = it } }, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Lg)
     }
     Spacer(Modifier.height(Spacing.xs))
     Text("Theme files only change colours and backgrounds. They never contain code.", color = c.textMuted, fontSize = CoveType.caption.fontSize)
@@ -272,7 +273,7 @@ fun ThemesSection() {
 @Composable
 private fun SmallIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = Color.Unspecified, onClick: () -> Unit) {
     val c = CoveTheme.extendedColors
-    Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(icon, label, tint = if (tint == Color.Unspecified) c.textMuted else tint, modifier = Modifier.size(20.dp))
     }
 }
@@ -364,7 +365,7 @@ fun ThemePreviewBar(modifier: Modifier = Modifier) {
     val bg = tok(dark, "popover")
     val fg = tok(dark, "foreground")
     Row(
-        modifier.navigationBarsPadding().padding(12.dp).fillMaxWidth().clip(CoveShapes.lg).background(bg).border(1.dp, tok(dark, "border"), CoveShapes.lg).padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier.navigationBarsPadding().padding(12.dp).widthIn(max = 560.dp).fillMaxWidth().clip(CoveShapes.lg).background(bg).border(1.dp, tok(dark, "border"), CoveShapes.lg).padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Outlined.Palette, null, tint = tok(dark, "primary"), modifier = Modifier.size(20.dp))
@@ -373,7 +374,7 @@ fun ThemePreviewBar(modifier: Modifier = Modifier) {
             Text("Previewing ${preview.theme.localName()}", color = fg, style = CoveType.label, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("Reverts in ${seconds}s", color = tok(dark, "muted-foreground"), style = CoveType.caption)
         }
-        CoveButton("Revert", { ThemeState.endPreview() }, variant = ButtonVariant.Ghost, size = ButtonSize.Sm, contentColor = fg)
+        CoveButton("Revert", { ThemeState.endPreview() }, variant = ButtonVariant.Ghost, size = ButtonSize.Lg, contentColor = fg)
         Spacer(Modifier.width(4.dp))
         CoveButton("Apply", {
             val ok = if (preview.install) {
@@ -381,7 +382,7 @@ fun ThemePreviewBar(modifier: Modifier = Modifier) {
                 installTheme(context, bytes, select = true)
             } else { ThemeState.select(preview.theme, preview.assets); true }
             if (ok) ThemeState.endPreview()
-        }, size = ButtonSize.Sm)
+        }, size = ButtonSize.Lg)
     }
 }
 
@@ -420,11 +421,11 @@ fun ThemeFileCard(channelId: String, meta: FileMeta, keyVersion: Int) {
                 }
                 ThemeSwatch(s.theme, ThemeState.mode, Modifier.fillMaxWidth().height(48.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CoveButton("Preview", { ThemeState.startPreview(s.theme, s.assets, install = !installed) }, Modifier.weight(1f), ButtonVariant.Secondary, ButtonSize.Sm)
+                    CoveButton("Preview", { ThemeState.startPreview(s.theme, s.assets, install = !installed) }, Modifier.weight(1f), ButtonVariant.Secondary, ButtonSize.Lg)
                     if (installed) {
-                        CoveButton("Installed", {}, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Sm, enabled = false)
+                        CoveButton("Installed", {}, Modifier.weight(1f), ButtonVariant.Outline, ButtonSize.Lg, enabled = false)
                     } else {
-                        CoveButton("Install", { installTheme(context, s.bytes, select = false) }, Modifier.weight(1f), size = ButtonSize.Sm)
+                        CoveButton("Install", { installTheme(context, s.bytes, select = false) }, Modifier.weight(1f), size = ButtonSize.Lg)
                     }
                 }
             }

@@ -66,3 +66,9 @@ Not done: bubble tint (Android rows have no bubbles), composer-field sprites (th
 creation UI (API calls exist in `ApiClient`), a downloaded fallback style (the bundled Noto sheet is the fallback), emoji in
 sidebar previews / headers (`EmojiLabel` exists, not yet wired), and the theme editor.
 Verified by unit tests and `make android/build` only; the emulator was unusable here (System UI not responding), so no screenshots.
+
+Phone pass: the panel is a keyboard-replacing box at the keyboard's height (no docked or full-sidebar mode on phones); touch
+targets are at least 44 dp (emoji cells, category/pack bar, tone and clear buttons, theme and preview buttons); Emoji and
+Stickers swipe as pager pages; the preview bar is capped at 560 dp wide and respects the navigation bar. Noto is always the
+default style: the device font only appears when the user picks "Device emoji". A docked side panel for tablets
+(WindowSizeClass Medium/Expanded) is not built. Still unverified on a device (emulator unusable).

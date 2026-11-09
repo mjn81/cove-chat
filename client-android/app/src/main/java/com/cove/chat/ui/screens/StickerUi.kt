@@ -133,7 +133,7 @@ fun PackShareCard(packId: String, modifier: Modifier = Modifier) {
             Text(p?.name ?: if (failed) "This sticker pack isn't available." else "Loading…", color = c.textPrimary, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (p != null) Text("${p.itemCount} stickers", color = c.textMuted, style = CoveType.caption)
         }
-        if (pack != null) CoveButton(if (pack?.installed == true) "View" else "Add stickers", { open = true }, size = ButtonSize.Sm, variant = ButtonVariant.Secondary)
+        if (pack != null) CoveButton(if (pack?.installed == true) "View" else "Add stickers", { open = true }, size = ButtonSize.Lg, variant = ButtonVariant.Secondary)
     }
     if (open) pack?.let { p ->
         PackDetailDialog(p, onDismiss = { open = false }, onChanged = { scope.launch { pack = PackCache.detail(packId, force = true) } })
