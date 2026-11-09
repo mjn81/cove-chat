@@ -14,6 +14,9 @@ importers:
       '@emoji-mart/data':
         specifier: ^1.2.1
         version: 1.2.1
+      '@fontsource/noto-color-emoji':
+        specifier: ^5.3.2
+        version: 5.3.2
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -543,6 +546,9 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource/noto-color-emoji@5.3.2':
+    resolution: {integrity: sha512-rO15sQ45Dc28hMAMz1X1oSOWxcbqNL+CiHHJ7JPn1gmfiGIuR/QyLuHqBrXivSYHsHVTXGT/m6/DuQ42s5xQkw==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3478,6 +3484,8 @@ snapshots:
       react-dom: 19.2.5(react@19.2.5)
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@fontsource/noto-color-emoji@5.3.2': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

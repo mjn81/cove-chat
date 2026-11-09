@@ -39,12 +39,16 @@ A message made only of emoji (whitespace ignored): exactly one emoji with an ent
 (64 / 52 / 44 px for 1 / 2 / 3); four or more or any other text → normal. Custom emoji count as jumbo members, never
 animated. "Animated emoji" off (or OS reduced motion) → jumbo static.
 
-## 4. The composer must hold real Unicode
+## 4. The composer must hold real Unicode, drawn with Noto
 
 The input value is always real Unicode text (or `:name:`), never markup. Insert at the caret, replacing a selection, and put
-the caret after the inserted text. Where the platform cannot draw an emoji natively, the web client draws the text twice:
-the textarea text is made transparent (caret and selection stay) and a mirror layer draws the same text with sprites in
-boxes as wide as the native glyphs. Android can render the sprites inline (spans/inline content) instead.
+the caret after the inserted text. A text field cannot draw sprites, so its emoji are glyphs: the web client bundles
+**Noto Color Emoji** (woff2, restricted by unicode-range to emoji so digits and letters are untouched, downloaded only when
+used) and puts it right after the app font in the font stack, ahead of every system font, so Windows, macOS, Linux and
+Android look the same and never depend on the OS emoji font. Only the "Device emoji" style switches to the OS fonts.
+An earlier overlay (sprites drawn over a transparent textarea) was removed: sprite boxes sized from measured glyph widths
+could be narrower than the sprite and made neighbouring emoji overlap. Do not size inline emoji from measurements.
+Adjacent emoji are always separate units (grapheme clusters); only real ZWJ sequences, skin tones, flags and keycaps combine.
 
 ## 5. The panel
 

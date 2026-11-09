@@ -28,7 +28,6 @@ import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
 import { registerComposer } from '@/domains/emoji/utils/composer-bridge';
 import { useEmojiSettings } from '@/domains/emoji/store/emoji.store';
 import { DOCK_MIN_WIDTH_QUERY, emojiButtonTarget } from '../utils/emoji-dock';
-import { EmojiTextarea } from '@/domains/emoji/components/emoji-textarea';
 import type { EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
 import { useSendSticker } from '../hooks/use-send-sticker';
 import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
@@ -304,7 +303,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					<AttachMenu compact={isSmall} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
-					<EmojiTextarea
+					<textarea
 						ref={inputRef}
 						data-chat-input
 						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"

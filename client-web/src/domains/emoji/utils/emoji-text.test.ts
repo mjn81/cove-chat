@@ -91,3 +91,28 @@ describe('normalizeEmojiName / isValidEmojiName', () => {
 		expect(isValidEmojiName('Upper')).toBe(false);
 	});
 });
+
+describe('adjacent emoji stay separate', () => {
+	const emoji = (text: string) => tokenizeEmojiText(text).filter((t) => t.type === 'emoji').map((t) => t.value);
+
+	it.each([
+		['same emoji twice', '❤️❤️', ['❤️', '❤️']],
+		['two hearts of different colour', '❤️💛', ['❤️', '💛']],
+		['skin tones next to each other', '👍🏽👍🏿', ['👍🏽', '👍🏿']],
+		['a skin tone then a plain emoji', '👍🏽👍', ['👍🏽', '👍']],
+		['two flags', '🇩🇪🇫🇷', ['🇩🇪', '🇫🇷']],
+		['three flags (regional indicators pair up left to right)', '🇩🇪🇫🇷🇯🇵', ['🇩🇪', '🇫🇷', '🇯🇵']],
+		['keycaps', '1️⃣2️⃣3️⃣', ['1️⃣', '2️⃣', '3️⃣']],
+		['two ZWJ families', '👨‍👩‍👧👨‍👩‍👧', ['👨‍👩‍👧', '👨‍👩‍👧']],
+		['a ZWJ sequence then a plain emoji', '❤️‍🔥❤️', ['❤️‍🔥', '❤️']],
+		['faces', '😀😀😀', ['😀', '😀', '😀']],
+	])('%s', (_name, text, expected) => {
+		expect(emoji(text)).toEqual(expected);
+		expect(tokenizeEmojiText(text).map((t) => t.value).join('')).toBe(text);
+	});
+
+	it('gives every neighbouring pair its own sprite key (no key is the concatenation of two emoji)', () => {
+		const keys = tokenizeEmojiText('👍🏽❤️🇩🇪1️⃣').filter((t) => t.type === 'emoji').map((t) => (t.type === 'emoji' ? t.key : ''));
+		expect(keys).toEqual(['1f44d-1f3fd', '2764', '1f1e9-1f1ea', '31-20e3']);
+	});
+});

@@ -1,0 +1,27 @@
+/*
+ * Noto Color Emoji, bundled, so emoji look the same on Windows, macOS, Linux and Android instead of following the OS
+ * emoji font (Segoe UI Emoji, which is also missing newer emoji and breaks in WebView2).
+ *
+ * The unicode-range lists emoji only. Without it this font, which also contains glyphs for digits, "#", "*", "(c)" and
+ * "(r)" (keycap bases), would claim those characters and draw ordinary text in colour-emoji form. The font file is only
+ * downloaded when a page actually shows one of these characters.
+ *
+ * --emoji-font is what the app's font stack uses; the "Device emoji" style switches it to the OS fonts
+ * (html[data-emoji='device'], set by EmojiPrewarm).
+ */
+@font-face {
+  font-family: 'Noto Color Emoji';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource/noto-color-emoji/files/noto-color-emoji-emoji-400-normal.woff2') format('woff2');
+  unicode-range: U+200D, U+20E3, U+FE0F, U+203C, U+2049, U+2122, U+2139, U+2194-21AA, U+231A-23FF, U+24C2, U+25AA-25FE, U+2600-27BF, U+2934-2935, U+2B05-2B55, U+3030, U+303D, U+3297, U+3299, U+1F000-1FFFF, U+E0020-E007F;
+}
+
+:root {
+  --emoji-font: 'Noto Color Emoji';
+}
+
+:root[data-emoji='device'] {
+  --emoji-font: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+}
