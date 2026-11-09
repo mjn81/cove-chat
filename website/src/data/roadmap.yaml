@@ -152,6 +152,22 @@ phases:
         note: "Desktop and Android check for updates and ask first; server admins update from the admin panel, or upload a release for air-gapped servers."
         date: "2026-11-04"
 
+      - id: themes
+        area: platform
+        title: "Themes and custom colors"
+        note: "Eleven built-in themes, your own themes as .covetheme files you can share in chat, try before you keep, and chat backgrounds. Themes are data only, so they cannot run code."
+        date: "2026-11-09"
+      - id: emoji
+        area: chat
+        title: "Emoji styles and custom emoji"
+        note: "Noto by default on every platform, plus Twemoji, Blobmoji, Fluent and FxEmojis built into the server (no internet needed); admins choose the styles and can upload custom emoji. A Telegram-style picker on web, desktop and Android."
+        date: "2026-11-09"
+      - id: stickers
+        area: chat
+        title: "Stickers and animated emoji"
+        note: "Two default sticker packs, packs you make yourself (with admin limits) and big animated emoji when a message is a single emoji, on web, desktop and Android."
+        date: "2026-11-09"
+
   - id: now
     title: In progress
     subtitle: Being worked on right now
@@ -187,16 +203,6 @@ phases:
         area: calls
         title: "Encrypted UDP for closed networks"
         note: "AES-256-GCM sessions with replay protection and key rotation are built and tested; waiting on native clients."
-        date: "2026-12-31"
-      - id: emoji
-        area: chat
-        title: "Emoji styles and custom emoji"
-        note: "Pick the emoji art style (Noto, Twemoji, Blobmoji, Fluent, FxEmojis or your device's own); admins choose which are offered and can upload custom emoji. Styles are built into the server, so air-gapped networks need nothing extra."
-        date: "2026-12-31"
-      - id: stickers
-        area: chat
-        title: "Stickers and animated emoji"
-        note: "Two default sticker packs, packs you make yourself (with admin limits) and big animated emoji when a message is a single emoji. The server side is built; the apps are next."
         date: "2026-12-31"
 
   - id: next
@@ -246,10 +252,6 @@ phases:
         area: platform
         title: "S3-compatible storage"
         note: "AWS, MinIO or DigitalOcean for large files."
-      - id: themes
-        area: platform
-        title: "Themes and custom colors"
-        note: "Multiple palettes, custom themes, and a page to upload and download them."
       - id: bot-api
         area: platform
         title: "Bot API"
