@@ -40,7 +40,7 @@ export default function EmojiPicker({ onSelect, onClickOutside }: EmojiPickerPro
     <div ref={ref} className="w-full">
       <Suspense
         fallback={
-          <div className="h-[380px] rounded-lg border border-border bg-popover" aria-hidden="true" />
+          <div className="h-[400px] rounded-xl border border-border bg-popover" aria-hidden="true" />
         }
       >
         <EmojiPickerBody onSelect={(text, info) => onSelect({ native: text }, info)} />

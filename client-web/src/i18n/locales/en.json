@@ -1497,6 +1497,7 @@
 			"stickers": "Stickers"
 		},
 		"picker": {
+			"clear": "Clear search",
 			"skin_tone": "Skin tone",
 			"hover_hint": "Hover an emoji to preview it",
 			"custom": "Custom emoji",

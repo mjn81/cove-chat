@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Smile, Sticker } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import EmojiPickerBody, { type EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
@@ -25,22 +26,36 @@ export default function EmojiStickerPanel({ stickersEnabled, onEmoji, onSticker 
 
 	const tabClass = (active: boolean) =>
 		cn(
-			'flex-1 rounded-md px-3 py-1 text-sm font-medium transition-colors',
-			active ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
+			'relative flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors',
+			active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
 		);
+	const tabs = [
+		{ id: 'emoji' as const, label: t('emoji.panel.emoji'), icon: Smile },
+		{ id: 'stickers' as const, label: t('emoji.panel.stickers'), icon: Sticker },
+	];
 	return (
-		<div className="flex h-[420px] w-full flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground">
-			<div role="tablist" className="flex gap-1 border-b border-border p-1">
-				<button type="button" role="tab" onMouseDown={(e) => e.preventDefault()} aria-selected={tab === 'emoji'} className={tabClass(tab === 'emoji')} onClick={() => setTab('emoji')}>
-					{t('emoji.panel.emoji')}
-				</button>
-				<button type="button" role="tab" onMouseDown={(e) => e.preventDefault()} aria-selected={tab === 'stickers'} className={tabClass(tab === 'stickers')} onClick={() => setTab('stickers')}>
-					{t('emoji.panel.stickers')}
-				</button>
+		<div className="flex h-[440px] w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-sm">
+			<div role="tablist" className="flex border-b border-border">
+				{tabs.map((x) => (
+					<button
+						key={x.id}
+						type="button"
+						role="tab"
+						// Keep the caret in the composer when switching tabs.
+						onMouseDown={(e) => e.preventDefault()}
+						aria-selected={tab === x.id}
+						className={tabClass(tab === x.id)}
+						onClick={() => setTab(x.id)}
+					>
+						<x.icon size={16} />
+						{x.label}
+						{tab === x.id && <span aria-hidden="true" className="absolute inset-x-6 bottom-0 h-0.5 rounded-full bg-primary" />}
+					</button>
+				))}
 			</div>
 			<div className="min-h-0 flex-1">
 				{tab === 'emoji' ? (
-					<EmojiPickerBody onSelect={onEmoji} className="h-full rounded-none border-0" />
+					<EmojiPickerBody onSelect={onEmoji} className="h-full rounded-none border-0 shadow-none" />
 				) : (
 					<StickerPanel onSend={onSticker} />
 				)}

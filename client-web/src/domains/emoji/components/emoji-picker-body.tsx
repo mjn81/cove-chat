@@ -1,10 +1,11 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, Dumbbell, Flag, Leaf, Lightbulb, Loader2, Plane, Search, Shapes, Smile, Sparkles, Utensils } from 'lucide-react';
+import { Clock, Dumbbell, Flag, Leaf, Lightbulb, Loader2, Palette, Plane, Search, Shapes, Smile, Sparkles, Utensils, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { useElementSize } from '@/hooks/use-element-size';
@@ -23,6 +24,9 @@ const CELL = 36;
 const EMOJI_SIZE = 24;
 /** Height of a category heading in px; sections are sized from it so placeholders match the real thing. */
 const HEADING = 28;
+
+/** One sample per skin tone, shown on the tone button and in its menu. */
+const SKIN_SAMPLES = ['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿'];
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
 	people: Smile,
@@ -57,7 +61,7 @@ const Cell = memo(function Cell({ pick, label, char, loaded, fallback }: { pick:
 			data-label={label}
 			title={label}
 			aria-label={label}
-			className="flex items-center justify-center rounded-md hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+			className="flex items-center justify-center rounded-lg hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
 			style={{ width: CELL, height: CELL }}
 		>
 			{char ? <EmojiSprite char={char} size={EMOJI_SIZE} loaded={loaded} fallback={fallback} /> : null}
@@ -224,11 +228,14 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 
 	return (
 		<div
-			className={cn('flex h-[380px] w-full flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground', className)}
+			className={cn(
+				'flex h-[400px] w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-sm',
+				className,
+			)}
 		>
-			<div className="flex items-center gap-2 border-b border-border p-2">
+			<div className="flex items-center gap-1.5 p-2">
 				<div className="relative min-w-0 flex-1">
-					<Search size={14} className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+					<Search size={14} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
@@ -238,24 +245,62 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 						autoCorrect="off"
 						autoCapitalize="off"
 						spellCheck={false}
-						className="h-8 ps-8 text-sm"
+						className="h-9 rounded-full border-transparent bg-muted ps-9 pe-8 text-sm focus-visible:ring-1 focus-visible:ring-offset-0"
 					/>
+					{query && (
+						<button
+							type="button"
+							onClick={() => setQuery('')}
+							aria-label={t('emoji.picker.clear')}
+							className="absolute end-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+						>
+							<X size={12} />
+						</button>
+					)}
 				</div>
-				<button
-					type="button"
-					onMouseDown={(e) => e.preventDefault()}
-					onClick={() => setShowSkins((v) => !v)}
-					title={t('emoji.picker.skin_tone')}
-					aria-label={t('emoji.picker.skin_tone')}
-					aria-expanded={showSkins}
-					className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-accent"
-				>
-					<EmojiSprite char={['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿'][skin - 1]} size={20} loaded={loaded} fallback={fallback} />
-				</button>
+				<Popover open={showSkins} onOpenChange={setShowSkins}>
+					<PopoverTrigger asChild>
+						<button
+							type="button"
+							onMouseDown={(e) => e.preventDefault()}
+							title={t('emoji.picker.skin_tone')}
+							aria-label={t('emoji.picker.skin_tone')}
+							className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-accent"
+						>
+							<EmojiSprite char={SKIN_SAMPLES[skin - 1]} size={20} loaded={loaded} fallback={fallback} />
+						</button>
+					</PopoverTrigger>
+					<PopoverContent
+						align="end"
+						className="w-auto p-1"
+						// Keep the caret in the composer: the tone menu must not take focus.
+						onOpenAutoFocus={(e) => e.preventDefault()}
+						onCloseAutoFocus={(e) => e.preventDefault()}
+					>
+						<div className="flex items-center gap-0.5" role="radiogroup" aria-label={t('emoji.picker.skin_tone')}>
+							{SKIN_SAMPLES.map((c, i) => (
+								<button
+									key={c}
+									type="button"
+									role="radio"
+									aria-checked={skin === i + 1}
+									onMouseDown={(e) => e.preventDefault()}
+									onClick={() => {
+										setSkin(i + 1);
+										setShowSkins(false);
+									}}
+									className={cn('flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent', skin === i + 1 && 'bg-accent ring-1 ring-primary')}
+								>
+									<EmojiSprite char={c} size={20} loaded={loaded} fallback={fallback} />
+								</button>
+							))}
+						</div>
+					</PopoverContent>
+				</Popover>
 				{styleOptions.length > 1 && (
 					<Select value={activeStyle} onValueChange={(v) => setStyle(v)}>
-						<SelectTrigger className="h-8 w-[110px] shrink-0 text-xs" aria-label={t('emoji.picker.style')}>
-							<SelectValue />
+						<SelectTrigger className="h-9 w-auto shrink-0 gap-1 rounded-full border-transparent bg-muted px-3 text-xs" aria-label={t('emoji.picker.style')} title={t('emoji.picker.style')}>
+							<Palette size={14} className="text-muted-foreground" />
 						</SelectTrigger>
 						<SelectContent>
 							{styleOptions.map((id) => (
@@ -268,26 +313,6 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 				)}
 				{downloading && <Loader2 size={14} className="shrink-0 animate-spin text-muted-foreground" aria-label={t('emoji.picker.downloading')} />}
 			</div>
-			{showSkins && (
-				<div className="flex items-center gap-1 border-b border-border px-2 py-1" role="radiogroup" aria-label={t('emoji.picker.skin_tone')}>
-					{['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿'].map((c, i) => (
-						<button
-							key={c}
-							type="button"
-							role="radio"
-							aria-checked={skin === i + 1}
-							onMouseDown={(e) => e.preventDefault()}
-							onClick={() => {
-								setSkin(i + 1);
-								setShowSkins(false);
-							}}
-							className={cn('flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent', skin === i + 1 && 'bg-accent')}
-						>
-							<EmojiSprite char={c} size={20} loaded={loaded} fallback={fallback} />
-						</button>
-					))}
-				</div>
-			)}
 
 			<div
 				ref={scrollRef}
@@ -340,10 +365,10 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 				)}
 			</div>
 
-			<div className="flex h-9 items-center gap-2 border-t border-border px-3 text-sm" aria-live="polite">
+			<div className="flex h-10 items-center gap-2 border-t border-border bg-muted/40 px-3 text-sm" aria-live="polite">
 				{preview ? (
 					<>
-						{CUSTOM_EMOJI_RE.test(preview.pick) ? null : <EmojiSprite char={preview.pick} size={22} loaded={loaded} fallback={fallback} />}
+						{CUSTOM_EMOJI_RE.test(preview.pick) ? null : <EmojiSprite char={preview.pick} size={26} loaded={loaded} fallback={fallback} />}
 						<span className="truncate text-muted-foreground">{preview.label}</span>
 					</>
 				) : (
@@ -352,7 +377,7 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 			</div>
 
 			{!results && list && (
-				<div className="flex items-center justify-between border-t border-border px-1 py-1">
+				<div className="flex items-center justify-between border-t border-border px-1">
 					{sections.map((s) => (
 						<button
 							key={s.id}
@@ -365,11 +390,12 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 								sectionRefs.current[s.id]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
 							}}
 							className={cn(
-								'flex h-7 flex-1 items-center justify-center rounded-md hover:bg-accent hover:text-foreground',
-								currentSection === s.id ? 'bg-accent text-foreground' : 'text-muted-foreground',
+								'relative flex h-9 flex-1 items-center justify-center transition-colors hover:text-foreground',
+								currentSection === s.id ? 'text-primary' : 'text-muted-foreground',
 							)}
 						>
-							<s.icon size={16} />
+							<s.icon size={18} />
+							{currentSection === s.id && <span aria-hidden="true" className="absolute inset-x-2 top-0 h-0.5 rounded-full bg-primary" />}
 						</button>
 					))}
 				</div>
