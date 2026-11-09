@@ -7,23 +7,25 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
-import { cn } from '@/lib/utils';
 import { useElementSize } from '@/hooks/use-element-size';
+import { cn } from '@/lib/utils';
 import { useActiveEmojiStyleId, useCustomEmoji, useEmojiStyles, useFallbackStyleId, useLoadedEmojiStyle } from '../hooks/use-emoji';
 import { useEmojiSettings } from '../store/emoji.store';
 import type { LoadedEmojiStyle } from '../types/emoji.types';
 import { NATIVE_STYLE } from '../utils/emoji-settings';
-import { CUSTOM_EMOJI_RE } from '../utils/emoji-text';
-import { columnsFor, gridHeight } from '../utils/grid-layout';
+import { CUSTOM_EMOJI_RE, emojiKey } from '../utils/emoji-text';
+import { gridHeight, pickerColumns } from '../utils/grid-layout';
 import { stepIndex, type GridKey } from '../utils/insert-text';
 import { getPickerCategories } from '../utils/picker-cache';
 import { searchEmoji, type PickerCategory } from '../utils/picker-data';
+import { hasGaps } from '../utils/sprite';
 import { CustomEmojiImage, EmojiSprite } from './emoji';
 
-const CELL = 36;
-const EMOJI_SIZE = 24;
-/** Height of a category heading in px; sections are sized from it so placeholders match the real thing. */
-const HEADING = 28;
+/** Row height in px; columns share the full width equally, so emoji are evenly spaced edge to edge. */
+const ROW = 38;
+const EMOJI_SIZE = 26;
+/** Height of a category title in px; sections are sized from it so placeholders match the real thing. */
+const HEADING = 30;
 
 /** One sample per skin tone, shown on the tone button and in its menu. */
 const SKIN_SAMPLES = ['👋', '👋🏻', '👋🏼', '👋🏽', '👋🏾', '👋🏿'];
@@ -52,47 +54,68 @@ interface EmojiPickerBodyProps {
 
 const megabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-/** One emoji button. Memoised: the grid holds about two thousand of them and must not re-render on hover or scroll. */
-const Cell = memo(function Cell({ pick, label, char, loaded, fallback }: { pick: string; label: string; char?: string; loaded: LoadedEmojiStyle | null; fallback: LoadedEmojiStyle | null }) {
+/** One emoji button. Memoised: the grid holds about two thousand of them and must not re-render on scroll. */
+const Cell = memo(function Cell({
+	pick,
+	label,
+	char,
+	loaded,
+	fallback,
+}: {
+	pick: string;
+	label: string;
+	char: string;
+	loaded: LoadedEmojiStyle | null;
+	fallback: LoadedEmojiStyle | null;
+}) {
 	return (
 		<button
 			type="button"
 			data-pick={pick}
-			data-label={label}
 			title={label}
 			aria-label={label}
 			className="flex items-center justify-center rounded-lg hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-			style={{ width: CELL, height: CELL }}
+			style={{ height: ROW }}
 		>
-			{char ? <EmojiSprite char={char} size={EMOJI_SIZE} loaded={loaded} fallback={fallback} /> : null}
+			<EmojiSprite char={char} size={EMOJI_SIZE} loaded={loaded} fallback={fallback} />
+		</button>
+	);
+});
+
+/** A custom emoji cell; picks the `:name:` shortcode. */
+const CustomCell = memo(function CustomCell({ name, url }: { name: string; url: string }) {
+	return (
+		<button
+			type="button"
+			data-pick={`:${name}:`}
+			title={`:${name}:`}
+			aria-label={`:${name}:`}
+			className="flex items-center justify-center rounded-lg hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+			style={{ height: ROW }}
+		>
+			<CustomEmojiImage name={name} url={url} size={EMOJI_SIZE} />
 		</button>
 	);
 });
 
 /** Skeleton shown only while the very first cold load is in flight. */
-function PickerSkeleton() {
+function PickerSkeleton({ cols }: { cols: number }) {
 	return (
-		<div className="flex flex-wrap gap-1 p-2" aria-hidden="true">
-			{Array.from({ length: 64 }, (_, i) => (
-				<span key={i} className="animate-pulse rounded-md bg-muted" style={{ width: CELL - 4, height: CELL - 4 }} />
+		<div className="grid gap-y-1 p-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-hidden="true">
+			{Array.from({ length: cols * 6 }, (_, i) => (
+				<span key={i} className="mx-auto animate-pulse rounded-full bg-muted" style={{ width: EMOJI_SIZE - 4, height: EMOJI_SIZE - 4, marginBlock: 5 }} />
 			))}
 		</div>
 	);
 }
 
-/** Hover/focus preview: the emoji large with its name. Lives in its own component so hovering never re-renders the grid. */
-function usePreviewSlot() {
-	const [preview, setPreview] = useState<{ pick: string; label: string } | null>(null);
-	return { preview, setPreview };
-}
-
 /**
- * The emoji grid: recents, custom emoji, the standard categories drawn from the active style's sprite sheet,
- * search, skin tone, and a switcher among the styles the server enabled.
+ * The emoji grid, laid out like Telegram's: search with quick actions at the top, small muted category titles, a
+ * dense grid whose column count follows the panel's measured width, and a bottom bar of category icons.
  *
  * Interaction: clicking an emoji inserts it and the panel stays open; the buttons do not take focus on mouse down, so
  * the composer keeps its caret. Arrow keys, Home and End move between emoji (mirrored in RTL) and Enter/Space pick.
- * Category data comes from a module-level cache and sections are drawn progressively, so reopening is instant.
+ * Category data comes from a module-level cache and sections are virtualised, so opening is instant.
  *
  * @param onSelect - Receives the text to insert and how it was chosen.
  */
@@ -100,14 +123,13 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 	const { t } = useTranslation();
 	const skin = useEmojiSettings((s) => s.skinTone);
 	const setSkin = useEmojiSettings((s) => s.setSkinTone);
-	const [categories, setCategories] = useState<{ skin: number; list: PickerCategory[] } | null>(null);
+	const [categories, setCategories] = useState<PickerCategory[] | null>(null);
 	const [query, setQuery] = useState('');
 	const debounced = useDebounce(query.trim(), 120);
 	const [activeSection, setActiveSection] = useState<string>('');
 	const [showSkins, setShowSkins] = useState(false);
-	const { preview, setPreview } = usePreviewSlot();
 	const [scrollRef, scrollSize] = useElementSize<HTMLDivElement>();
-	const cols = columnsFor(scrollSize.width || 330, CELL);
+	const cols = pickerColumns(scrollSize.width);
 	const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
 	const recents = useEmojiSettings((s) => s.recents);
@@ -116,22 +138,32 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 	const activeStyle = useActiveEmojiStyleId();
 	const loaded = useLoadedEmojiStyle();
 	const fallbackId = useFallbackStyleId();
-	// The fallback sheet (Twemoji, for the flags and keycaps Noto lacks) is downloaded only once such emoji are on screen.
-	const needsFallback = !!loaded && (debounced !== '' || activeSection === 'flags' || activeSection === 'symbols');
-	const fallback = useLoadedEmojiStyle(fallbackId ?? undefined, needsFallback);
 	const { data: styles } = useEmojiStyles();
 	const { items: customItems } = useCustomEmoji();
 
 	useEffect(() => {
 		let alive = true;
-		getPickerCategories(skin).then((list) => alive && setCategories({ skin, list }));
+		getPickerCategories(skin).then((list) => alive && setCategories(list));
 		return () => {
 			alive = false;
 		};
 	}, [skin]);
-	const list = categories?.list ?? null;
 
-	const results = useMemo(() => (list && debounced ? searchEmoji(list, debounced) : null), [list, debounced]);
+	// Emoji the active style cannot draw (Noto has no flags or keycaps; Blobmoji, Fluent and FxEmojis miss newer
+	// emoji in the first categories). The fallback sheet downloads as soon as one is on screen or likely to be: at once
+	// when a gap sits in the ordinary categories or the recents, otherwise when the flags or symbols are reached.
+	const ordinaryGaps = useMemo(() => {
+		if (!loaded || !categories) return false;
+		const keys = [
+			...recents.filter((r) => !CUSTOM_EMOJI_RE.test(r)).map(emojiKey),
+			...categories.filter((c) => c.id !== 'flags' && c.id !== 'symbols').flatMap((c) => c.emojis.map((e) => emojiKey(e.native))),
+		];
+		return hasGaps(loaded.index, keys);
+	}, [loaded, categories, recents]);
+	const needsFallback = !!loaded && (ordinaryGaps || debounced !== '' || activeSection === 'flags' || activeSection === 'symbols');
+	const fallback = useLoadedEmojiStyle(fallbackId ?? undefined, needsFallback);
+
+	const results = useMemo(() => (categories && debounced ? searchEmoji(categories, debounced) : null), [categories, debounced]);
 	const customResults = useMemo(
 		() => (debounced ? customItems.filter((c) => c.name.includes(debounced.toLowerCase().replace(/\s+/g, '_'))) : []),
 		[customItems, debounced],
@@ -148,7 +180,7 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 	};
 
 	const sections: { id: string; title: string; icon: LucideIcon; cells: React.ReactNode[] }[] = [];
-	if (recents.length > 0) sections.push({ id: 'recent', title: t('emoji.picker.recent'), icon: Clock, cells: recents.map(cellFor) });
+	if (recents.length > 0) sections.push({ id: 'recent', title: t('emoji.picker.recent'), icon: Clock, cells: recents.map(cellFor).filter(Boolean) });
 	if (customItems.length > 0) {
 		sections.push({
 			id: 'custom',
@@ -157,7 +189,7 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 			cells: customItems.map((c) => <CustomCell key={`c:${c.name}`} name={c.name} url={c.url} />),
 		});
 	}
-	for (const category of list ?? []) {
+	for (const category of categories ?? []) {
 		sections.push({
 			id: category.id,
 			title: t(`emoji.categories.${category.id}`, { defaultValue: category.id }),
@@ -225,17 +257,15 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 	};
 	const downloading = activeStyle !== NATIVE_STYLE && !loaded;
 	const currentSection = activeSection || sections[0]?.id;
+	const gridStyle = { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
 
 	return (
 		<div
-			className={cn(
-				'flex h-[400px] w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-sm',
-				className,
-			)}
+			className={cn('flex h-[400px] w-full flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground', className)}
 		>
-			<div className="flex items-center gap-1.5 p-2">
+			<div className="flex items-center gap-1 px-2 pb-1 pt-2">
 				<div className="relative min-w-0 flex-1">
-					<Search size={14} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+					<Search size={16} className="pointer-events-none absolute start-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
@@ -245,14 +275,14 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 						autoCorrect="off"
 						autoCapitalize="off"
 						spellCheck={false}
-						className="h-9 rounded-full border-transparent bg-muted ps-9 pe-8 text-sm focus-visible:ring-1 focus-visible:ring-offset-0"
+						className="h-9 border-0 bg-transparent ps-8 pe-7 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
 					/>
 					{query && (
 						<button
 							type="button"
 							onClick={() => setQuery('')}
 							aria-label={t('emoji.picker.clear')}
-							className="absolute end-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+							className="absolute end-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
 						>
 							<X size={12} />
 						</button>
@@ -299,8 +329,12 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 				</Popover>
 				{styleOptions.length > 1 && (
 					<Select value={activeStyle} onValueChange={(v) => setStyle(v)}>
-						<SelectTrigger className="h-9 w-auto shrink-0 gap-1 rounded-full border-transparent bg-muted px-3 text-xs" aria-label={t('emoji.picker.style')} title={t('emoji.picker.style')}>
-							<Palette size={14} className="text-muted-foreground" />
+						<SelectTrigger
+							className="h-9 w-9 shrink-0 justify-center rounded-full border-0 bg-transparent p-0 text-muted-foreground shadow-none hover:bg-accent [&>svg:last-child]:hidden"
+							aria-label={t('emoji.picker.style')}
+							title={t('emoji.picker.style')}
+						>
+							{downloading ? <Loader2 size={16} className="animate-spin" /> : <Palette size={16} />}
 						</SelectTrigger>
 						<SelectContent>
 							{styleOptions.map((id) => (
@@ -311,34 +345,24 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 						</SelectContent>
 					</Select>
 				)}
-				{downloading && <Loader2 size={14} className="shrink-0 animate-spin text-muted-foreground" aria-label={t('emoji.picker.downloading')} />}
 			</div>
 
 			<div
 				ref={scrollRef}
-				className="flex-1 overflow-y-auto p-2 custom-scrollbar"
+				className="[scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] flex-1 overflow-y-auto px-1.5"
 				onScroll={onScroll}
 				onKeyDown={onKeyDown}
 				// Pressing an emoji must not move focus out of the composer, so the caret and selection survive.
 				onMouseDown={(e) => (e.target as HTMLElement).closest('[data-pick]') && e.preventDefault()}
 				onClick={(e) => pickFrom(e.target, e.detail === 0)}
-				onMouseOver={(e) => {
-					const el = (e.target as HTMLElement).closest<HTMLElement>('[data-pick]');
-					if (el?.dataset.pick) setPreview({ pick: el.dataset.pick, label: el.dataset.label ?? '' });
-				}}
-				onMouseLeave={() => setPreview(null)}
-				onFocus={(e) => {
-					const el = (e.target as HTMLElement).closest<HTMLElement>('[data-pick]');
-					if (el?.dataset.pick) setPreview({ pick: el.dataset.pick, label: el.dataset.label ?? '' });
-				}}
 			>
-				{!list ? (
-					<PickerSkeleton />
+				{!categories ? (
+					<PickerSkeleton cols={cols} />
 				) : results ? (
 					results.length + customResults.length === 0 ? (
 						<p className="py-8 text-center text-sm text-muted-foreground">{t('emoji.picker.no_results')}</p>
 					) : (
-						<div className="flex flex-wrap">
+						<div className="grid py-1" style={gridStyle}>
 							{customResults.map((c) => (
 								<CustomCell key={`c:${c.name}`} name={c.name} url={c.url} />
 							))}
@@ -353,7 +377,8 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 							key={s.id}
 							id={s.id}
 							title={s.title}
-							height={HEADING + gridHeight(s.cells.length, cols, CELL)}
+							height={HEADING + gridHeight(s.cells.length, cols, ROW)}
+							gridStyle={gridStyle}
 							root={scrollRef}
 							register={(el) => {
 								sectionRefs.current[s.id] = el;
@@ -365,19 +390,8 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 				)}
 			</div>
 
-			<div className="flex h-10 items-center gap-2 border-t border-border bg-muted/40 px-3 text-sm" aria-live="polite">
-				{preview ? (
-					<>
-						{CUSTOM_EMOJI_RE.test(preview.pick) ? null : <EmojiSprite char={preview.pick} size={26} loaded={loaded} fallback={fallback} />}
-						<span className="truncate text-muted-foreground">{preview.label}</span>
-					</>
-				) : (
-					<span className="truncate text-muted-foreground/60">{t('emoji.picker.hover_hint')}</span>
-				)}
-			</div>
-
-			{!results && list && (
-				<div className="flex items-center justify-between border-t border-border px-1">
+			{!results && categories && (
+				<div className="flex items-center justify-between gap-0.5 border-t border-border p-1">
 					{sections.map((s) => (
 						<button
 							key={s.id}
@@ -386,16 +400,13 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 							aria-label={s.title}
 							aria-current={currentSection === s.id}
 							onMouseDown={(e) => e.preventDefault()}
-							onClick={() => {
-								sectionRefs.current[s.id]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-							}}
+							onClick={() => sectionRefs.current[s.id]?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
 							className={cn(
-								'relative flex h-9 flex-1 items-center justify-center transition-colors hover:text-foreground',
-								currentSection === s.id ? 'text-primary' : 'text-muted-foreground',
+								'flex h-9 flex-1 items-center justify-center rounded-lg transition-colors hover:text-foreground',
+								currentSection === s.id ? 'bg-accent text-foreground' : 'text-muted-foreground',
 							)}
 						>
 							<s.icon size={18} />
-							{currentSection === s.id && <span aria-hidden="true" className="absolute inset-x-2 top-0 h-0.5 rounded-full bg-primary" />}
 						</button>
 					))}
 				</div>
@@ -404,32 +415,16 @@ export default function EmojiPickerBody({ onSelect, className }: EmojiPickerBody
 	);
 }
 
-/** A custom emoji cell; picks the `:name:` shortcode. */
-const CustomCell = memo(function CustomCell({ name, url }: { name: string; url: string }) {
-	return (
-		<button
-			type="button"
-			data-pick={`:${name}:`}
-			data-label={`:${name}:`}
-			title={`:${name}:`}
-			aria-label={`:${name}:`}
-			className="flex items-center justify-center rounded-md hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-			style={{ width: CELL, height: CELL }}
-		>
-			<CustomEmojiImage name={name} url={url} size={EMOJI_SIZE} />
-		</button>
-	);
-});
-
 /**
  * One category. Its height is known up front, so while it is far outside the viewport it is an empty box of exactly
  * that height and its cells are not rendered at all (virtualisation by section); it fills in when it comes within
- * 600 px of the visible area. Sticky headings and scroll-to-category work as if everything were rendered.
+ * 600 px of the visible area. Sticky titles and scroll-to-category work as if everything were rendered.
  */
 function LazySection({
 	id,
 	title,
 	height,
+	gridStyle,
 	root,
 	register,
 	children,
@@ -437,6 +432,7 @@ function LazySection({
 	id: string;
 	title: string;
 	height: number;
+	gridStyle: React.CSSProperties;
 	root: React.RefObject<HTMLDivElement | null>;
 	register: (el: HTMLElement | null) => void;
 	children: React.ReactNode;
@@ -461,10 +457,14 @@ function LazySection({
 			}}
 			style={{ minHeight: height }}
 		>
-			<h3 className="sticky top-0 z-10 bg-popover py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground" style={{ height: HEADING }}>
+			<h3 className="sticky top-0 z-10 flex items-center bg-popover/95 px-2 text-[13px] font-medium text-muted-foreground" style={{ height: HEADING }}>
 				{title}
 			</h3>
-			{near && <div className="flex flex-wrap">{children}</div>}
+			{near && (
+				<div className="grid" style={gridStyle}>
+					{children}
+				</div>
+			)}
 		</section>
 	);
 }

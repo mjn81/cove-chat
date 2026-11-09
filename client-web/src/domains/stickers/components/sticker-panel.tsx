@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Clock, Loader2, Sticker } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useElementSize } from '@/hooks/use-element-size';
+import { stickerColumns } from '@/domains/emoji/utils/grid-layout';
 import { useAuthStore } from '@/store/store';
 import { usePack, usePacks } from '../hooks/use-packs';
 import { useStickersStore } from '../store/stickers.store';
@@ -16,7 +18,8 @@ interface StickerPanelProps {
 	onSend: (packId: string, item: PackItem) => void;
 }
 
-const CELL = 84;
+/** Padding inside each equal grid cell around the sticker. */
+const GAP = 6;
 
 /**
  * The sticker tab of the composer panel: a strip of tabs (recent, then server packs including the two default packs,
@@ -28,6 +31,9 @@ export function StickerPanel({ onSend }: StickerPanelProps) {
 	const { t } = useTranslation();
 	const userId = useAuthStore((s) => s.user?.id);
 	const { data, isLoading } = usePacks();
+	// Columns follow the measured width and the cells share it equally, so there is never dead space at the side.
+	const [gridRef, gridSize] = useElementSize<HTMLDivElement>();
+	const gridStyle = { gridTemplateColumns: `repeat(${stickerColumns(gridSize.width)}, minmax(0, 1fr))` };
 	const recents = useStickersStore((s) => s.recents);
 	const lastTab = useStickersStore((s) => s.lastTab);
 	const setLastTab = useStickersStore((s) => s.setLastTab);
@@ -71,22 +77,22 @@ export function StickerPanel({ onSend }: StickerPanelProps) {
 		return <p className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">{t('stickers.panel.empty')}</p>;
 	}
 
-	const tabButton = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-accent';
+	const tabButton = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground';
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+			<div ref={gridRef} className="[scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] flex-1 overflow-y-auto px-1.5 pb-2">
 				{active === 'recent' ? (
-					<div className="flex flex-wrap">
+					<div className="grid" style={gridStyle}>
 						{visibleRecents.map((r) => (
 							<button
 								key={`${r.pack_id}:${r.item.id}`}
 								type="button"
 								onClick={() => pick(r.pack_id, { ...r.item, bytes: 0, order: 0 })}
 								aria-label={r.item.emoji ?? t('stickers.message.sticker')}
-								className="flex items-center justify-center rounded-md hover:bg-accent"
-								style={{ width: CELL, height: CELL }}
+								className="flex aspect-square items-center justify-center rounded-xl hover:bg-accent"
+								style={{ padding: GAP }}
 							>
-								<StickerImage path={r.item.url} alt={r.item.emoji ?? ''} size={CELL - 8} />
+								<StickerImage path={r.item.url} alt={r.item.emoji ?? ''} fill />
 							</button>
 						))}
 					</div>
@@ -96,32 +102,32 @@ export function StickerPanel({ onSend }: StickerPanelProps) {
 					</div>
 				) : (
 					<>
-						<h3 className="py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{pack.name}</h3>
-						<div className="flex flex-wrap">
+						<h3 className="sticky top-0 z-10 bg-popover/95 px-2 py-1.5 text-[13px] font-medium text-muted-foreground">{pack.name}</h3>
+						<div className="grid" style={gridStyle}>
 							{(pack.items ?? []).map((item) => (
 								<button
 									key={item.id}
 									type="button"
 									onClick={() => pick(pack.id, item)}
 									aria-label={item.emoji ?? item.name ?? t('stickers.message.sticker')}
-									className="flex items-center justify-center rounded-md hover:bg-accent"
-									style={{ width: CELL, height: CELL }}
+									className="flex aspect-square items-center justify-center rounded-xl hover:bg-accent"
+									style={{ padding: GAP }}
 								>
-									<StickerImage path={item.url} alt={item.emoji ?? ''} size={CELL - 8} />
+									<StickerImage path={item.url} alt={item.emoji ?? ''} fill />
 								</button>
 							))}
 						</div>
 					</>
 				)}
 			</div>
-			<div className="flex items-center gap-1 overflow-x-auto border-t border-border px-1 py-1">
+			<div className="flex items-center gap-1 overflow-x-auto border-t border-border p-1">
 				{visibleRecents.length > 0 && (
 					<button
 						type="button"
 						title={t('stickers.panel.recent')}
 						aria-label={t('stickers.panel.recent')}
 						onClick={() => select('recent')}
-						className={cn(tabButton, active === 'recent' && 'bg-accent')}
+						className={cn(tabButton, active === 'recent' && 'bg-accent text-foreground')}
 					>
 						<Clock size={18} />
 					</button>
@@ -133,7 +139,7 @@ export function StickerPanel({ onSend }: StickerPanelProps) {
 						title={p.name}
 						aria-label={p.name}
 						onClick={() => select(p.id)}
-						className={cn(tabButton, active === p.id && 'bg-accent')}
+						className={cn(tabButton, active === p.id && 'bg-accent text-foreground')}
 					>
 						{p.cover_url ? <StickerImage path={p.cover_url} alt="" size={26} /> : <Sticker size={18} />}
 					</button>

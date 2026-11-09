@@ -82,3 +82,16 @@ export function chooseFallbackStyle(enabled: readonly string[], active: string, 
 	candidates.sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0));
 	return candidates[0] ?? null;
 }
+
+/**
+ * Whether the active style lacks images for any of the given emoji keys. The picker uses it to decide whether the
+ * fallback sheet is needed right away (styles such as Blobmoji, Fluent or FxEmojis have gaps in the very first
+ * categories) or can wait until the user scrolls to flags and keycaps (the only gaps in Noto).
+ *
+ * @param index - The active style's index.
+ * @param keys - Emoji keys that are about to be shown.
+ */
+export function hasGaps(index: EmojiSpriteIndex, keys: Iterable<string>): boolean {
+	for (const key of keys) if (!index.emoji[key]) return true;
+	return false;
+}

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import data from '@emoji-mart/data';
 
 import { emojiKey } from './emoji-text';
+import { hasGaps, pickSprite } from './sprite';
 import type { EmojiSpriteIndex } from '../types/emoji.types';
 
 /**
@@ -60,5 +61,36 @@ describe.skipIf(!existsSync(ASSETS))('sprite coverage', () => {
 		for (const style of ['noto', 'twemoji', 'blobmoji', 'fluent', 'fxemoji']) {
 			expect(Object.keys(loadIndex(style).emoji).filter((k) => k.includes('fe0f'))).toEqual([]);
 		}
+	});
+});
+
+describe.skipIf(!existsSync(ASSETS))('no blank emoji', () => {
+	const source = (style: string) => ({ sheetUrl: `blob:${style}`, index: loadIndex(style) });
+	const fallback = source('twemoji');
+	const flagOrKeycap = (k: string) => flagKeys(k) || keycap(k) || k === 'a9' || k === 'ae';
+
+	// Recents are stored as plain characters, so they are resolved against whatever style is active when drawn.
+	const recents = ['🫠', '🥲', '🫡', '😮‍💨', '❤️‍🔥', '🇩🇪', '1️⃣', '👍🏽', '🧑‍🤝‍🧑', '©️'];
+
+	for (const style of ['noto', 'twemoji', 'blobmoji', 'fluent', 'fxemoji']) {
+		it(`${style} + twemoji fallback draws an image for every picker emoji, skin tone and recent`, () => {
+			const primary = source(style);
+			const blanks = [...all.map((e) => e.key), ...recents.map(emojiKey)].filter((k) => !pickSprite(primary, fallback, k, 24));
+			expect(blanks).toEqual([]);
+		});
+	}
+
+	it('the default style only needs the fallback for flags, keycaps and the copyright signs', () => {
+		const idx = loadIndex('noto');
+		expect(hasGaps(idx, all.map((e) => e.key).filter((k) => !flagOrKeycap(k)))).toBe(false);
+		expect(hasGaps(idx, all.map((e) => e.key))).toBe(true);
+	});
+
+	it('styles with real gaps in the first categories are detected, so the fallback loads at once', () => {
+		const smileys = all.filter((e) => ['melting_face', 'face_holding_back_tears', 'saluting_face'].includes(e.id)).map((e) => e.key);
+		expect(smileys.length).toBe(3);
+		expect(hasGaps(loadIndex('blobmoji'), smileys)).toBe(true);
+		expect(hasGaps(loadIndex('fxemoji'), smileys)).toBe(true);
+		expect(hasGaps(loadIndex('noto'), smileys)).toBe(false);
 	});
 });

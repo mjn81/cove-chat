@@ -43,7 +43,7 @@ export function ComposerEmojiPanel({ open, stickersEnabled, onEmoji, onSticker, 
 
 	return (
 		<div ref={ref} className="w-full" hidden={!open}>
-			<Suspense fallback={<div className="h-[440px] rounded-xl border border-border bg-popover" aria-hidden="true" />}>
+			<Suspense fallback={<div className="h-[440px] rounded-2xl border border-border bg-popover" aria-hidden="true" />}>
 				<EmojiStickerPanel stickersEnabled={stickersEnabled} onEmoji={onEmoji} onSticker={onSticker} />
 			</Suspense>
 		</div>

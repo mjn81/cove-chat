@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Smile, Sticker } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import EmojiPickerBody, { type EmojiPickInfo } from '@/domains/emoji/components/emoji-picker-body';
@@ -14,28 +13,27 @@ interface EmojiStickerPanelProps {
 	onSticker: (packId: string, item: PackItem) => void;
 }
 
+/** Panel box, identical for every tab and for servers without stickers: switching tabs never resizes it. */
+const PANEL_CLASS = 'h-[440px] w-full rounded-2xl';
+
 /**
- * The composer's emoji and sticker panel: an Emoji tab and, when the server has stickers, a Stickers tab. It is
- * loaded lazily by the composer, so none of this is in the first-load bundle.
+ * The composer's emoji and sticker panel, laid out like Telegram's: Emoji and Stickers tabs at the top with a short
+ * underline under the active one, then the tab's content. Loaded lazily by the composer, so none of this is in the
+ * first-load bundle.
  */
 export default function EmojiStickerPanel({ stickersEnabled, onEmoji, onSticker }: EmojiStickerPanelProps) {
 	const { t } = useTranslation();
 	const [tab, setTab] = useState<'emoji' | 'stickers'>('emoji');
 
-	if (!stickersEnabled) return <EmojiPickerBody onSelect={onEmoji} />;
+	if (!stickersEnabled) return <EmojiPickerBody onSelect={onEmoji} className={PANEL_CLASS} />;
 
-	const tabClass = (active: boolean) =>
-		cn(
-			'relative flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors',
-			active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-		);
 	const tabs = [
-		{ id: 'emoji' as const, label: t('emoji.panel.emoji'), icon: Smile },
-		{ id: 'stickers' as const, label: t('emoji.panel.stickers'), icon: Sticker },
+		{ id: 'emoji' as const, label: t('emoji.panel.emoji') },
+		{ id: 'stickers' as const, label: t('emoji.panel.stickers') },
 	];
 	return (
-		<div className="flex h-[440px] w-full flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-sm">
-			<div role="tablist" className="flex border-b border-border">
+		<div className={cn('flex flex-col overflow-hidden border border-border bg-popover text-popover-foreground', PANEL_CLASS)}>
+			<div role="tablist" className="flex">
 				{tabs.map((x) => (
 					<button
 						key={x.id}
@@ -44,18 +42,20 @@ export default function EmojiStickerPanel({ stickersEnabled, onEmoji, onSticker 
 						// Keep the caret in the composer when switching tabs.
 						onMouseDown={(e) => e.preventDefault()}
 						aria-selected={tab === x.id}
-						className={tabClass(tab === x.id)}
+						className={cn(
+							'relative flex-1 py-3 text-sm font-medium transition-colors',
+							tab === x.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+						)}
 						onClick={() => setTab(x.id)}
 					>
-						<x.icon size={16} />
 						{x.label}
-						{tab === x.id && <span aria-hidden="true" className="absolute inset-x-6 bottom-0 h-0.5 rounded-full bg-primary" />}
+						{tab === x.id && <span aria-hidden="true" className="absolute inset-x-0 bottom-0 mx-auto h-0.5 w-10 rounded-full bg-primary" />}
 					</button>
 				))}
 			</div>
 			<div className="min-h-0 flex-1">
 				{tab === 'emoji' ? (
-					<EmojiPickerBody onSelect={onEmoji} className="h-full rounded-none border-0 shadow-none" />
+					<EmojiPickerBody onSelect={onEmoji} className="h-full rounded-none border-0" />
 				) : (
 					<StickerPanel onSend={onSticker} />
 				)}

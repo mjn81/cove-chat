@@ -200,7 +200,7 @@ export const WhisperComposer = ({
 			</div>
 
 			{showEmoji && (
-				<div className="absolute bottom-[70px] end-2 z-50 w-[min(352px,calc(100vw-1rem))] sm:end-6">
+				<div className="absolute bottom-[70px] end-2 z-50 w-[min(380px,calc(100vw-1rem))] sm:end-6 lg:w-[420px]">
 					<EmojiPicker
 						onSelect={(emoji, info) => {
 							const ta = textareaRef.current;
