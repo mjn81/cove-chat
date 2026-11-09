@@ -39,16 +39,19 @@ A message made only of emoji (whitespace ignored): exactly one emoji with an ent
 (64 / 52 / 44 px for 1 / 2 / 3); four or more or any other text → normal. Custom emoji count as jumbo members, never
 animated. "Animated emoji" off (or OS reduced motion) → jumbo static.
 
-## 4. The composer must hold real Unicode, drawn with Noto
+## 4. The composer draws emoji exactly like the message list
 
-The input value is always real Unicode text (or `:name:`), never markup. Insert at the caret, replacing a selection, and put
-the caret after the inserted text. A text field cannot draw sprites, so its emoji are glyphs: the web client bundles
-**Noto Color Emoji** (woff2, restricted by unicode-range to emoji so digits and letters are untouched, downloaded only when
-used) and puts it right after the app font in the font stack, ahead of every system font, so Windows, macOS, Linux and
-Android look the same and never depend on the OS emoji font. Only the "Device emoji" style switches to the OS fonts.
-An earlier overlay (sprites drawn over a transparent textarea) was removed: sprite boxes sized from measured glyph widths
-could be narrower than the sprite and made neighbouring emoji overlap. Do not size inline emoji from measurements.
-Adjacent emoji are always separate units (grapheme clusters); only real ZWJ sequences, skin tones, flags and keycaps combine.
+The input value is always real Unicode text (or `:name:`), never markup; insert at the caret, replacing a selection, caret after
+the inserted text. On the web the input is a small contenteditable (`RichInput`) that draws every emoji as the selected
+style's sprite (same image, same 1.35 em size as messages), so it never depends on which emoji the OS font can draw. Each
+emoji span carries the real character (copy gives Unicode), caret positions are plain string offsets, pasted text is inserted as
+plain text, Shift+Enter inserts a newline, and emoji arriving as characters (OS emoji panel, IME) are turned into sprites once
+no composition is in progress. No filler characters (zero-width joiners or spaces) are ever added. Android should draw the same
+sprites inline in its text field. The bundled Noto Color Emoji font (restricted by unicode-range to emoji) only covers glyph
+fallbacks such as OS notifications and emoji newer than the sprite sheets; the "Device emoji" style switches that to OS fonts.
+An earlier overlay that sized boxes from measured glyph widths made neighbouring emoji overlap and was replaced: never size
+inline emoji from font measurements. Adjacent emoji are always separate units (grapheme clusters); only real ZWJ sequences,
+skin tones, flags and keycaps combine.
 
 ## 5. The panel
 

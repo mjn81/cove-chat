@@ -25,6 +25,7 @@ import { MentionPopup } from './mention-popup';
 import { ComposerEmojiPanel } from './composer-emoji-panel';
 import { preloadComposerEmojiPanel, preloadComposerEmojiPanelWhenIdle } from '../utils/emoji-panel-loader';
 import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import { RichInput, type ComposerInputHandle } from '@/domains/emoji/components/rich-input';
 import { registerComposer } from '@/domains/emoji/utils/composer-bridge';
 import { useEmojiSettings } from '@/domains/emoji/store/emoji.store';
 import { DOCK_MIN_WIDTH_QUERY, emojiButtonTarget } from '../utils/emoji-dock';
@@ -42,9 +43,6 @@ interface ChatInputAreaProps {
 	onCancelReply?: () => void;
 	messages: (Message & { text?: string })[];
 }
-
-/** Largest height the textarea grows to before it scrolls. */
-const MAX_INPUT_HEIGHT = 140;
 
 /**
  * The message composer: auto-growing textarea, @mentions, emoji picker,
@@ -94,7 +92,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 	const [sendError, setSendError] = useState<string | null>(null);
 
-	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const inputRef = useRef<ComposerInputHandle>(null);
 
 	const attachments = useAttachments(channel.id);
 	const filePicker = useFilePicker(attachments.add);
@@ -131,7 +129,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
 			setInputText('');
 			if (replyTo) onCancelReply?.();
-			if (inputRef.current) inputRef.current.style.height = 'auto';
 		} catch (err) {
 			logger.error('Failed to send messages', { error: String(err) });
 			setSendError(t('composer.errors.send_failed'));
@@ -170,7 +167,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}, 0);
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
 		const shortcode = shortcodes.handleKey(e);
 		if (shortcode === 'handled') return;
 		if (shortcode) {
@@ -208,13 +205,10 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}
 	};
 
-	const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const { value, selectionStart } = e.target;
+	const handleValueChange = (value: string, caret: number) => {
 		setInputText(value);
-		e.target.style.height = 'auto';
-		e.target.style.height = Math.min(e.target.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
-		mentions.track(value, selectionStart);
-		shortcodes.track(value, selectionStart);
+		mentions.track(value, caret);
+		shortcodes.track(value, caret);
 	};
 
 	/** Inserts at the caret (replacing a selection) and keeps the panel open for the next emoji. */
@@ -256,14 +250,6 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		inputRef.current?.focus();
 	}, [replyTo, channel.id]);
 
-	// A restored draft arrives with the text already set, so the textarea has to grow to fit it (typing does this itself).
-	useEffect(() => {
-		const el = inputRef.current;
-		if (!el) return;
-		el.style.height = 'auto';
-		el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + 'px';
-	}, [inputText]);
-
 	const hasContent = inputText.trim() !== '' || attachments.files.length > 0;
 	const iconButtonClass =
 		'group flex cursor-pointer items-center justify-center rounded-full p-1 text-muted-foreground transition hover:bg-secondary/80 hover:text-foreground';
@@ -303,17 +289,15 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					<AttachMenu compact={isSmall} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
-					<textarea
+					<RichInput
 						ref={inputRef}
 						data-chat-input
-						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"
+						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground"
 						placeholder={isSmall ? t('composer.message_short') : t('composer.message_to', { target })}
 						aria-label={t('composer.message_to', { target })}
 						value={inputText}
-						onChange={handleInput}
+						onValueChange={handleValueChange}
 						onKeyDown={handleKeyDown}
-						rows={1}
-						dir="auto"
 					/>
 
 					<div className={cn('flex shrink-0 items-center', isTiny ? 'gap-0' : isSmall ? 'gap-1' : 'gap-1.5')}>

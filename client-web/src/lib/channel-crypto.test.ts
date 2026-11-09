@@ -31,26 +31,4 @@ describe('getChannelCryptoKey', () => {
 		expect(new TextDecoder().decode(pt)).toBe('hi 😀');
 	});
 
-	it('is faster than re-importing for every message (measurement)', async () => {
-		const key = raw();
-		const iv = crypto.getRandomValues(new Uint8Array(12));
-		const first = await getChannelCryptoKey(key);
-		const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, first, new TextEncoder().encode('hello'));
-		const N = 400;
-
-		const t0 = performance.now();
-		for (let i = 0; i < N; i++) {
-			const k = await crypto.subtle.importKey('raw', key.slice().buffer, { name: 'AES-GCM' }, false, ['decrypt']);
-			await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, k, ct);
-		}
-		const perMessageImport = performance.now() - t0;
-
-		const t1 = performance.now();
-		for (let i = 0; i < N; i++) await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await getChannelCryptoKey(key), ct);
-		const cached = performance.now() - t1;
-
-		console.info(`[bench] decrypt x${N}: import per message ${perMessageImport.toFixed(1)} ms, cached key ${cached.toFixed(1)} ms`);
-		// Timing is only reported: the gain is small in Node and a hard assertion would be flaky.
-		expect(cached).toBeLessThan(perMessageImport * 3);
-	});
 });

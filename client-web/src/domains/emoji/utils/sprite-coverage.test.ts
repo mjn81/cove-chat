@@ -94,3 +94,16 @@ describe.skipIf(!existsSync(ASSETS))('no blank emoji', () => {
 		expect(hasGaps(loadIndex('noto'), smileys)).toBe(false);
 	});
 });
+
+describe.skipIf(!existsSync(ASSETS))('newest Unicode emoji', () => {
+	it('the default style has a sprite for every Unicode 14 and 15 emoji in the picker data', () => {
+		const idx = loadIndex('noto');
+		const raw = (data as unknown as { emojis: Record<string, { id: string; version?: number; skins: { native: string }[] }> }).emojis;
+		const newest = Object.values(raw).filter((e) => (e.version ?? 0) >= 14);
+		expect(newest.length).toBeGreaterThan(50);
+		const missing = newest.flatMap((e) => e.skins.map((s) => s.native)).filter((c) => !idx.emoji[emojiKey(c)]);
+		expect(missing).toEqual([]);
+		// The melting face reported from the desktop app.
+		expect(idx.emoji['1fae0']).toBeDefined();
+	});
+});
