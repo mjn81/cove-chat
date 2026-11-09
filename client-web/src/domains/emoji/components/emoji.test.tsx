@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import type { LoadedEmojiStyle } from '../types/emoji.types';
 
 const styles: Record<string, LoadedEmojiStyle | null> = { noto: null, twemoji: null };
-let fallbackId: string | null = 'twemoji';
+const fallbackId: string | null = 'twemoji';
 
 vi.mock('@/lib/asset-cache', () => ({ useAssetUrl: () => null }));
 vi.mock('../hooks/use-emoji', () => ({
