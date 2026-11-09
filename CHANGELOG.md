@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.11.2](https://github.com/mjn81/cove-chat/compare/v0.11.1...v0.11.2) (2026-11-09)
+
+
+### Features
+
+* **android:** emoji engine (bundled Noto sheet, on-demand styles), inline sprite rendering, big/jumbo emoji, pack API models ([bffb35e](https://github.com/mjn81/cove-chat/commit/bffb35efc802af743f20d1b539e74e756d8e62c6))
+* **android:** Telegram-style emoji/sticker panel, sticker messages and share cards, emoji settings, fa/ar strings ([45e8cdf](https://github.com/mjn81/cove-chat/commit/45e8cdf800305118844bdd246ef79690e495597b))
+* **android:** themes - eleven built-in palettes, .covetheme parser/validator/store, theme picker, preview bar, chat theme card, chat background from theme ([468eac7](https://github.com/mjn81/cove-chat/commit/468eac77f0a8ba4037df2f15b8c75be354b2b306))
+* **desktop,web:** pass active theme tokens to the notification popup ([a7eac1b](https://github.com/mjn81/cove-chat/commit/a7eac1b70dc15653abc943a8851116af0a75bc61))
+* **server:** embedded emoji styles, sticker packs and asset generator ([de05f22](https://github.com/mjn81/cove-chat/commit/de05f2295164db8212c0993a08b445d958579361))
+* **server:** emoji, custom emoji and sticker pack endpoints ([4ac8437](https://github.com/mjn81/cove-chat/commit/4ac8437b3bde19e1e000a88b2af4443db23a2c01))
+* **server:** pack data model, store and emoji/pack settings ([acf6b15](https://github.com/mjn81/cove-chat/commit/acf6b152018caf588230ae277f1c7b279ebd1678))
+* **server:** sticker message type with server-side validation ([f6b983a](https://github.com/mjn81/cove-chat/commit/f6b983ac8273a9e2f4002849123d875bb6aa28cd))
+* themes, emoji and stickers (web, desktop, Android), faster cold start, call share fixes ([a11e994](https://github.com/mjn81/cove-chat/commit/a11e994c6510d09ed683987356daadaa161bff87))
+* **web:** .covetheme v1 parser, validator and writer with security tests ([81e072c](https://github.com/mjn81/cove-chat/commit/81e072c380f389b7044b5ceb14e0c5618de6e5ab))
+* **web:** admin emoji and stickers tab, custom emoji upload, i18n en/fa/ar ([ee540c2](https://github.com/mjn81/cove-chat/commit/ee540c2958c341d78fd5bbed83ca364a20b3a4d0))
+* **web:** built-in themes with contrast tests and theme resolution ([5c6fe2f](https://github.com/mjn81/cove-chat/commit/5c6fe2fc95181be847a81f1fbbe61cfbdf3de1ba))
+* **web:** docked emoji panel for wide windows, fixed-position popover, composer bridge; docs for client emoji rules ([d997075](https://github.com/mjn81/cove-chat/commit/d997075c9c69e34587366a9357205ee956c5407b))
+* **web:** emoji and stickers settings tab with pack manager and credits ([a85d0d1](https://github.com/mjn81/cove-chat/commit/a85d0d1bd9a9e6c34931f177ca3a4b78729881d4))
+* **web:** emoji picker, shortcode autocomplete, asset cache and sticker utilities ([d7e59bf](https://github.com/mjn81/cove-chat/commit/d7e59bfecddc06ce11b91f4beaa75e10821b6484))
+* **web:** emoji renderer in reply previews ([1074733](https://github.com/mjn81/cove-chat/commit/107473366cddb35626355451ca195d785fc74d0f))
+* **web:** emoji sprite renderer, big animated emoji and custom emoji tokens in messages ([7b35f07](https://github.com/mjn81/cove-chat/commit/7b35f07a265980b894cc920313d0273ce1cc2469))
+* **web:** emoji text tokenizer, big-emoji classifier and shortcode helpers ([1656da8](https://github.com/mjn81/cove-chat/commit/1656da82d5bce09c7874a412b44862db2ac5600e))
+* **web:** sticker message type in every type list and decrypt condition ([960eda8](https://github.com/mjn81/cove-chat/commit/960eda854e394063e2f45bd71431128159f9b3a9))
+* **web:** sticker panel, sticker bubble, pack share card and composer integration ([70e1699](https://github.com/mjn81/cove-chat/commit/70e169956fcf84b422595d57f68545a7454cd6a5))
+* **web:** Telegram-style emoji panel: pill search, tone popover, underline tabs, active category indicator, preview bar ([494d7cc](https://github.com/mjn81/cove-chat/commit/494d7cc6ff23579ee67c57d87cffc544632d2aea))
+* **web:** theme card in chat, floating preview bar and theme file inspection ([9e37be9](https://github.com/mjn81/cove-chat/commit/9e37be94786e3c52b461023b7a81652373b1ba52))
+* **web:** theme colour maths, token allow-list, safe zip reader and image sniffing ([c2ac307](https://github.com/mjn81/cove-chat/commit/c2ac30700209c0676b7ef255921eb8d1ab386689))
+* **web:** theme editor building blocks (picker, sample UI, background editor, draft actions) ([caef581](https://github.com/mjn81/cove-chat/commit/caef5818de52da4689c749975828a1a0412378c8))
+* **web:** theme editor, share to chat, previews from the Themes page, origin labels and reset ([20f84c2](https://github.com/mjn81/cove-chat/commit/20f84c27e09e0e85d804b6347e777fa7157e213a))
+* **web:** theme engine, settings migration, install library and IndexedDB storage ([2de4217](https://github.com/mjn81/cove-chat/commit/2de4217d0e69833de1cbde5511a4fb9ccd5df465))
+* **web:** theme preview session, contrast auto-fix and editor draft logic ([9717665](https://github.com/mjn81/cove-chat/commit/971766504357f5ba2059f90e57f1d436112ff366))
+* **web:** Themes settings page, chat background picker, .covetheme import/export, token cleanup ([bfd5219](https://github.com/mjn81/cove-chat/commit/bfd5219b8e7660cd9a4439f5c25c920e957e03ca))
+* **web:** themes.* locale keys (en/fa/ar) and resetTheme store action ([37c3ec7](https://github.com/mjn81/cove-chat/commit/37c3ec75635554190d6978b9c565ac620c587f8b))
+
+
+### Bug Fixes
+
+* **android:** compact emoji panel header - tabs, search and skin-tone icons in one 44dp row, inline search, tone popup row; sticker search ([126c2fc](https://github.com/mjn81/cove-chat/commit/126c2fcdc530d2d3413d653b5e1579b6fd0245c9))
+* **android:** do not decode or send frames of a stopped share/camera ([6fb3864](https://github.com/mjn81/cove-chat/commit/6fb3864f8cee4e4c208bad85e124e99fb46e0629))
+* **android:** never leave the NavHost empty on logout/session end (popUpTo(0) -&gt; graph id, fallback navigate) ([214613c](https://github.com/mjn81/cove-chat/commit/214613cade204ebeabb534b84ed47c9f567dbe1f))
+* **android:** phone-friendly panel (44dp targets, swipe tabs), Noto always default, larger theme buttons ([1f702cd](https://github.com/mjn81/cove-chat/commit/1f702cd9d78bdc816db58f11f07edb813a05a89d))
+* **mediarouter:** drop uplink media of a stream its sender announced as stopped ([add8898](https://github.com/mjn81/cove-chat/commit/add889845bb5f2cbab27053ff926aa0671a83fd0))
+* **web:** bundle Noto Color Emoji for glyph text, drop the composer mirror that made adjacent emoji overlap, tests for adjacent emoji ([d8d934b](https://github.com/mjn81/cove-chat/commit/d8d934b7f72248ceeb81a5b33442aeced77e1411))
+* **web:** composer is a sprite-drawing rich input so emoji look exactly like in messages; tests over the whole emoji set ([8b1f50e](https://github.com/mjn81/cove-chat/commit/8b1f50e4c1b96c420c3ce783353d0ce932ac9f68))
+* **web:** composer renders emoji as sprites over a mirror layer, repair stored recents ([badab27](https://github.com/mjn81/cove-chat/commit/badab27e24959fc716623f06a8803bc487fbef90))
+* **web:** em-relative emoji sizing in text so web and desktop match ([aa66bbc](https://github.com/mjn81/cove-chat/commit/aa66bbce8bb898ba76b6a83ac3876049637eb7eb))
+* **web:** emoji gaps use a fallback style, decode sheets before use, virtualised picker sections, prewarm at start ([5e27204](https://github.com/mjn81/cove-chat/commit/5e272044dd9661dbf5b8a4e7ae68c2f6d6f5cfa9))
+* **web:** instant emoji picker, multi-pick at the caret, skin tone, keyboard nav, preload ([9bf2e3a](https://github.com/mjn81/cove-chat/commit/9bf2e3add8e578d15df8bf38f9e638a94bbc0b82))
+* **web:** lint in emoji test ([2ebe5d8](https://github.com/mjn81/cove-chat/commit/2ebe5d87b7fee874658c2e18352df78efc596d77))
+* **web:** no blank emoji (fallback sheet when the style has gaps), Telegram-style panel with width-driven grids, fixed panel size ([684ab20](https://github.com/mjn81/cove-chat/commit/684ab209e1b456f994cb5a1ccec85726c50a9fba))
+* **web:** remove a remote screen tile when its owner reports the share ended ([37a23fc](https://github.com/mjn81/cove-chat/commit/37a23fc83574fa1afeca4dbdb5c25472525374e1))
+* **web:** render emoji in sidebar previews, channel names, chat header and whisper messages through the emoji renderer ([3a0c8e0](https://github.com/mjn81/cove-chat/commit/3a0c8e02b28b60c347b9c8e00152f564acd8f670))
+
+
+### Performance Improvements
+
+* **android:** cold start from cache - saved chat list and last messages, decrypted body cache, per-channel SecretKey ([14c492b](https://github.com/mjn81/cove-chat/commit/14c492b5408ecac091c656848a469f5563664995))
+* **web:** show the app from cache at cold start, parallel channel refresh and socket, cached channel CryptoKeys ([ab379a9](https://github.com/mjn81/cove-chat/commit/ab379a9f5eb4288c35b503ecc4543c72766ef4a1))
+
 ## [0.11.1](https://github.com/mjn81/cove-chat/compare/v0.11.0...v0.11.1) (2026-11-08)
 
 
