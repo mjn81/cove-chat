@@ -20,7 +20,6 @@ import com.cove.chat.notify.NotificationHelper
 import com.cove.chat.notify.OpenChatRequest
 import com.cove.chat.ui.navigation.NavGraph
 import com.cove.chat.ui.theme.CoveTheme
-import com.cove.chat.ui.theme.ThemeSettings
 
 class MainActivity : ComponentActivity() {
 
@@ -37,8 +36,8 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
         handleOpenIntent(intent)
 
-        ThemeSettings.dark = CoveApp.instance.preferencesManager.darkTheme
         com.cove.chat.ui.components.ChatBackgroundSettings.id = CoveApp.instance.preferencesManager.chatBackground
+        com.cove.chat.themes.ThemeState.init(applicationContext, CoveApp.instance.preferencesManager)
         com.cove.chat.ui.components.AppLanguage.code = CoveApp.instance.preferencesManager.language
 
         AppLock.init()
@@ -48,6 +47,7 @@ class MainActivity : ComponentActivity() {
             CoveTheme {
                 Box(Modifier.fillMaxSize()) {
                     NavGraph()
+                    com.cove.chat.ui.screens.ThemePreviewBar(Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
                     if (AppLock.locked) LockScreen()
                     ClientOutdatedDialog()
                 }

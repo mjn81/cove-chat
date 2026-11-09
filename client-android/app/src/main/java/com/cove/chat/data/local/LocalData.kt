@@ -16,5 +16,6 @@ object LocalData {
         runCatching { context.cacheDir.listFiles()?.forEach { it.deleteRecursively() } }
         runCatching { File(context.filesDir, "whisper").deleteRecursively() }
         clearImageCache()
+        ClientCache.clearMemory()
     }
 }
