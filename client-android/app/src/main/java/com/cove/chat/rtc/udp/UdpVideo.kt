@@ -184,6 +184,8 @@ class H264Publisher(
     }
 
     private fun emit(key: Boolean, tsMs: Long, data: ByteArray) {
+        // Encoders deliver asynchronously: after stop() no frame may leave, or receivers could revive a finished share.
+        if (stopped) return
         // A keyframe the receiver cannot start from (no SPS) is useless; ask for another instead of sending it.
         if (key && H264Sps.size(data) == null) { wantKey = true; return }
         if (!send(key, tsMs, data)) { wantKey = true; onOversize() }

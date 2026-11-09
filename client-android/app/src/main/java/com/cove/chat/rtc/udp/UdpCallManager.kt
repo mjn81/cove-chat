@@ -448,6 +448,10 @@ class UdpCallManager(
         if (user == _selfId.value) return
         val f = rf.frame
         if (f.codec != Codec.H264) return // another codec: ignore the stream, as the protocol allows
+        // Only decode what the sender announced: frames still in flight after `call_track_state enabled=false` must
+        // not recreate a decoder and a tile that nothing would ever remove again.
+        val announced = _participants.value.firstOrNull { it.userId == user }?.let { if (f.kind == Kind.SCREEN) it.screen else it.video } ?: false
+        if (!announced) return
         if (f.kind == Kind.SCREEN && _receiveQuality.value == ReceiveQuality.Paused) return
         receiver(user, f.kind).decode(f.keyframe, f.ts, f.data)
     }
