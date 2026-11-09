@@ -11,6 +11,8 @@ import { useChannelStore } from './channels.slice';
 import { clearDesktopSession, loadDesktopSession, saveDesktopSession } from '@/lib/desktop-session';
 import { wipeLocalData } from '@/lib/wipe';
 import { evictStaleAvatars, prewarmAvatars } from '@/lib/avatarCache';
+import { loadChannelCache } from '@/lib/channel-cache';
+import { getCacheKey } from '@/lib/cacheCrypto';
 
 // The web client authenticates via an httpOnly session cookie and never
 // touches the token itself. The desktop (Wails) client still needs it in
@@ -82,6 +84,21 @@ export const useAuthStore = create<AuthSlice>()(
 					}
 
 					if (saved) {
+						// Cold start: a returning user sees the app now, from what this device already has, instead of a loading
+						// screen until the server answers. The session is verified below; a 401 still signs the user out.
+						set({ isAuthLoading: false });
+						// Open the cache key (its own IndexedDB) while the network works, so reading cached content has no wait left.
+						void getCacheKey().catch(() => {});
+						void loadChannelCache(saved.id).then((cached) => {
+							const store = useChannelStore.getState();
+							if (cached && store.channels.length === 0) useChannelStore.setState({ channels: cached });
+						});
+						// The channel list does not depend on the profile check, so request both at once.
+						const channelsRefresh = useChannelStore.getState().refreshChannels().catch(() => {});
+						// Channel keys arrive over the socket, so connect now rather than after the profile check.
+						// (The desktop app has no token until the profile check returns one, so it connects after it.)
+						const connectedEarly = !isWails() || !!saved.token;
+						if (connectedEarly) connectWS(saved.token);
 						try {
 							// Verify session is still valid on server and get fresh data
 							const fresh = await apiMe();
@@ -101,8 +118,8 @@ export const useAuthStore = create<AuthSlice>()(
 							// Pre-warm the cache for active avatars
 							prewarmAvatars(freshAvatars).catch(() => {});
 
-							connectWS(fresh.token);
-							useChannelStore.getState().refreshChannels().catch(() => {});
+							if (!connectedEarly || fresh.token !== saved.token) connectWS(fresh.token);
+							void channelsRefresh;
 							get().fetchRelationships().catch(() => {});
 							get().fetchIncomingRequests().catch(() => {});
 						} catch (err: any) {
@@ -115,8 +132,7 @@ export const useAuthStore = create<AuthSlice>()(
 							} else {
 								// Network error or server blip - stay "logged in" locally
 								// but the UI will show connection errors via WS state.
-								connectWS(saved.token);
-								useChannelStore.getState().refreshChannels().catch(() => {});
+								if (!connectedEarly) connectWS(saved.token);
 								get().fetchRelationships().catch(() => {});
 								get().fetchIncomingRequests().catch(() => {});
 							}

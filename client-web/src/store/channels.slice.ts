@@ -5,6 +5,17 @@ import type { Channel } from '@/types/api';
 import { wsSendReadReceipt } from '@/ws';
 import { useAuthStore } from './auth.slice';
 import { buildMessagePreview } from '@/utils/messagePreview';
+import { saveChannelCache } from '@/lib/channel-cache';
+
+// Previews decrypt asynchronously after the list arrives, so the on-device copy is written a moment later to include them.
+let cacheTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleChannelCacheSave() {
+	clearTimeout(cacheTimer);
+	cacheTimer = setTimeout(() => {
+		const userId = useAuthStore.getState().user?.id;
+		if (userId) void saveChannelCache(userId, useChannelStore.getState().channels);
+	}, 1500);
+}
 
 // Decrypts each channel's last-message ciphertext (returned by ListChannels)
 // into a sidebar preview string. Fire-and-forget per channel so the list
@@ -88,6 +99,7 @@ export const useChannelStore = create<ChannelSlice>((set) => ({
 				return { channels: list, activeChannel: nextActive };
 			});
 			hydrateLastMessagePreviews(list);
+			scheduleChannelCacheSave();
 		} catch (err) {
 			console.error('Failed to refresh channels:', err);
 		} finally {

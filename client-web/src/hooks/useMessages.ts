@@ -22,7 +22,8 @@ export function useMessages(channelId: string) {
 			);
 			
 			if (decrypted.length > 0) {
-				await db.cacheMessages(decrypted);
+				// Written in the background: the page is returned (and drawn) without waiting for the encrypted cache write.
+				void db.cacheMessages(decrypted).catch(() => {});
 			}
 			
 			// The cursor is opaque and cannot live in the plain-array page the WebSocket handlers edit in place, so it
