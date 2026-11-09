@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveEmojiStyle, resolveAnimated, pushRecent } from './emoji-settings';
+import { resolveEmojiStyle, resolveAnimated, pushRecent, sanitizeRecents } from './emoji-settings';
 
 describe('resolveEmojiStyle', () => {
 	const enabled = ['native', 'noto', 'twemoji'];
@@ -36,5 +36,16 @@ describe('pushRecent', () => {
 	});
 	it('caps the list', () => {
 		expect(pushRecent(['a', 'b', 'c'], 'd', 3)).toEqual(['d', 'a', 'b']);
+	});
+});
+
+describe('sanitizeRecents', () => {
+	it('keeps emoji and shortcodes, drops junk and duplicates', () => {
+		expect(sanitizeRecents(['😀', '👍🏽', ':party_parrot:', 'abc', '😀😀', '', ' ', '😀', 5, null, ':x:'])).toEqual(['😀', '👍🏽', ':party_parrot:']);
+	});
+	it('survives non-arrays and caps the length', () => {
+		expect(sanitizeRecents(undefined)).toEqual([]);
+		expect(sanitizeRecents('x')).toEqual([]);
+		expect(sanitizeRecents(Array.from({ length: 80 }, (_, i) => String.fromCodePoint(0x1f600 + (i % 60))))).toHaveLength(32);
 	});
 });

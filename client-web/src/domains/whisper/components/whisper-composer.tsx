@@ -6,6 +6,7 @@ import { FileText, Smile, X } from 'lucide-react';
 import { AttachMenu } from '@/components/attach-menu';
 import EmojiPicker from '@/components/EmojiPicker';
 import { insertAtSelection } from '@/domains/emoji/utils/insert-text';
+import { EmojiTextarea } from '@/domains/emoji/components/emoji-textarea';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { VideoMessageRecorderModal } from '@/domains/recording/components/video-message-recorder-modal';
@@ -142,7 +143,7 @@ export const WhisperComposer = ({
 					<AttachMenu compact={isMobile} disabled={disabled} onPick={filePicker.open} />
 					<input {...filePicker.inputProps} />
 
-					<textarea
+					<EmojiTextarea
 						ref={textareaRef}
 						data-chat-input
 						className="max-h-[140px] min-h-[24px] min-w-0 flex-1 resize-none border-none bg-transparent pb-0 pt-[3px] text-[15px] leading-6 text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground/60 focus:ring-0"

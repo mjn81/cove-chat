@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { pushRecent } from '../utils/emoji-settings';
+import { pushRecent, sanitizeRecents } from '../utils/emoji-settings';
 
 /** Per-device emoji preferences (decision: the style is chosen per device, not synced). */
 interface EmojiSettingsState {
@@ -30,6 +30,13 @@ export const useEmojiSettings = create<EmojiSettingsState>()(
 			setSkinTone: (skinTone) => set({ skinTone: Math.min(6, Math.max(1, Math.round(skinTone))) }),
 			addRecent: (emoji) => set((s) => ({ recents: pushRecent(s.recents, emoji) })),
 		}),
-		{ name: 'cove_emoji_settings' },
+		{
+			name: 'cove_emoji_settings',
+			// Repair what older builds may have stored (entries that drew as empty cells).
+			merge: (persisted, current) => {
+				const saved = (persisted ?? {}) as Partial<EmojiSettingsState>;
+				return { ...current, ...saved, recents: sanitizeRecents(saved.recents) };
+			},
+		},
 	),
 );

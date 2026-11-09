@@ -1,3 +1,5 @@
+import { isEmojiGrapheme, splitGraphemes } from './emoji-text';
+
 /**
  * Pure resolution rules for the per-device emoji settings, kept out of the store so they can be tested and reused
  * by the renderer, the picker and the settings page.
@@ -48,4 +50,22 @@ export const MAX_RECENT_EMOJI = 32;
  */
 export function pushRecent(recents: readonly string[], key: string, max = MAX_RECENT_EMOJI): string[] {
 	return [key, ...recents.filter((k) => k !== key)].slice(0, max);
+}
+
+/**
+ * Cleans a stored recents list: keeps only single emoji (one grapheme that is an emoji) and `:name:` shortcodes,
+ * drops duplicates and caps the length. Older builds could store text that is not an emoji, which drew as an empty cell.
+ *
+ * @param stored - Whatever was read from storage.
+ */
+export function sanitizeRecents(stored: unknown): string[] {
+	if (!Array.isArray(stored)) return [];
+	const seen = new Set<string>();
+	for (const entry of stored) {
+		if (typeof entry !== 'string' || seen.has(entry)) continue;
+		const graphemes = splitGraphemes(entry);
+		const isEmoji = graphemes.length === 1 && isEmojiGrapheme(graphemes[0]);
+		if (isEmoji || /^:[a-z0-9_]{2,32}:$/.test(entry)) seen.add(entry);
+	}
+	return [...seen].slice(0, MAX_RECENT_EMOJI);
 }
