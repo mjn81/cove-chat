@@ -13,6 +13,8 @@ services:
       - ./backend/data:/app/data
       - ./backend/config.toml:/app/config.toml
     restart: unless-stopped
+    # The process never needs to gain privileges (setuid binaries, file capabilities).
+    security_opt: [no-new-privileges:true]
 
   frontend:
     build:
