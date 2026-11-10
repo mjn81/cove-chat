@@ -1,0 +1,32 @@
+# Weekly dependency and advisory updates for every part of the repo. Grouped so a week of patch releases is one PR.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /backend
+    schedule: { interval: weekly }
+    groups: { go-minor-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: gomod
+    directory: /client-desktop
+    schedule: { interval: weekly }
+    groups: { go-minor-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: npm
+    directory: /client-web
+    schedule: { interval: weekly }
+    groups: { npm-minor-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: npm
+    directory: /website
+    schedule: { interval: weekly }
+    groups: { npm-minor-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: gradle
+    directory: /client-android
+    schedule: { interval: weekly }
+    groups: { gradle-minor-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /backend
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /client-web
+    schedule: { interval: weekly }
