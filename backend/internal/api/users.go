@@ -135,6 +135,8 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	// Their sticker packs and installs go with the account, and so do the stored images.
 	h.cleanupUserPacks(session.UserID)
+	// A bot belongs to its owner: without one it would run unsupervised, so the owner's bots go too.
+	h.deleteOwnedBots(session.UserID)
 
 	h.Sessions.Delete(token)
 	auth.ClearSessionCookies(w, !h.IsDev)

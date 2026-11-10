@@ -926,3 +926,28 @@ func (h *Handler) isAdminUser(id string) bool {
 	u, err := h.Store.GetUser(id)
 	return err == nil && models.IsServerAdmin(u.ServerRole)
 }
+
+// deleteOwnedBots removes every bot an account owns (its owner is being deleted), closing their connections and
+// telling the channels they were in. Failures are logged and do not stop the account deletion.
+func (h *Handler) deleteOwnedBots(ownerID string) {
+	owned, err := h.Store.ListBotsByOwner(ownerID)
+	if err != nil {
+		logger.Warnf("api: could not list bots of deleted account %s: %v", ownerID, err)
+		return
+	}
+	for _, b := range owned {
+		if h.Bots != nil {
+			h.Bots.DisconnectBot(b.ID)
+		}
+		channels, err := h.Store.DeleteBot(b.ID)
+		if err != nil {
+			logger.Warnf("api: could not delete bot %s of deleted account %s: %v", b.ID, ownerID, err)
+			continue
+		}
+		if h.Hub != nil {
+			for _, ch := range channels {
+				h.Hub.BroadcastMemberLeft(ch, b.ID)
+			}
+		}
+	}
+}

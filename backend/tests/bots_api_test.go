@@ -507,3 +507,22 @@ func TestBots_AdminSettingsApplyLive(t *testing.T) {
 	resp = e.patchConfig(t, e.member, map[string]any{"bots.creation": "users"})
 	wantStatus(t, resp, http.StatusForbidden)
 }
+
+func TestBots_DeletingTheOwnerDeletesTheirBots(t *testing.T) {
+	e := newBotEnv(t)
+	e.setBots(func(c *config.BotsConfig) { c.Creation = config.BotCreationUsers })
+	b := e.createBot(t, e.member, "orphan", nil)
+	ch := e.channel(t, "room")
+	e.install(t, ch, b.ID)
+
+	resp := e.do(t, "DELETE", "/api/users/me", e.member, map[string]string{"password": testPassword})
+	wantStatus(t, resp, http.StatusOK)
+
+	wantStatus(t, e.asBot(t, "GET", "/api/bots/me", b.Token, nil), http.StatusUnauthorized)
+	if _, err := e.store.GetBot(b.ID); err == nil {
+		t.Fatal("the bot record must be gone with its owner")
+	}
+	if uc, err := e.store.GetUserChannel(b.ID, ch); err == nil && uc.Status == models.StatusActive {
+		t.Fatal("the bot must not stay in the channel")
+	}
+}
