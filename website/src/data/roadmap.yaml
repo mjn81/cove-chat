@@ -173,6 +173,11 @@ phases:
     subtitle: Being worked on right now
     status: progress
     items:
+      - id: bots
+        area: chat
+        title: "Bot API"
+        note: "Bot accounts with tokens, slash commands, buttons, a keyboard-replacing action menu, a gateway and signed webhooks. Server and web are built; Android is next."
+        date: "2026-12-15"
       - id: markdown
         area: chat
         title: "Markdown and link rendering"
@@ -210,6 +215,11 @@ phases:
     subtitle: Polish, privacy and media
     status: planned
     items:
+      - id: bots-android
+        area: clients
+        title: "Bots on Android"
+        note: "Bot messages with buttons, slash commands and the action menu in the native app."
+        date: "2027-01-31"
       - id: security-tab
         area: privacy
         title: "Security settings tab"

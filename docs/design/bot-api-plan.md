@@ -133,3 +133,12 @@ Filtering: a bot receives a message only when (a) it is installed in the channel
 ## 10. Deferred (explicitly out of v1)
 
 Ephemeral interaction replies, dynamic autocomplete interactions, per-user keyboards, moderation scopes, sharding, a durable webhook queue, bot-to-bot message delivery controls, federation of bots, Android and desktop-native UI for buttons and the action menu (desktop gets the web UI for free).
+
+## 11. Implementation notes (what changed while building)
+
+- **Path `me`, not `@me`.** The self routes are `/api/bots/me/...`: the Swagger generator cannot parse `@` in a route, and a bot id is a UUID, so `me` cannot collide with an id.
+- **Gateway is receive-only.** Frames a bot sends are ignored and there is no `subscribe` event; filtering is by scope, mention, reply and DM (section 3). Narrowing by subscription is a follow-up.
+- **Interactions are answered through REST only.** A webhook response body is not interpreted as an answer; the bot calls the callback endpoint.
+- **Server-side crypto, no key distribution.** Section 0 decision 8 shipped as written: no endpoint ever returns a channel key to a bot.
+- **Installs are for group channels.** DMs with a bot need no install: the person opens the DM and that is the consent and the contact record.
+- **Android** is a documented follow-up (`docs/android-parity.md`); the desktop app uses the web UI.

@@ -346,3 +346,38 @@ Default: `20` (commented out in the example; optional)
 
 total size of all stickers one user owns
 
+## `[bots]`
+
+Bot API (docs/bots-api.md). Bots are accounts run by a person's own program; once installed in a channel they can read
+what the install allows, in plaintext. Every key can be changed live from the admin panel.
+
+### `bots.enabled`
+
+Default: `true` (commented out in the example; optional)
+
+false: the whole Bot API (management, bot endpoints, gateway, webhooks) is off
+
+### `bots.creation`
+
+Default: `"admins"` (commented out in the example; optional)
+
+who may create bots: "admins" (default), "users" or "disabled"
+
+### `bots.max_per_user`
+
+Default: `5` (commented out in the example; optional)
+
+bots one account may own
+
+### `bots.webhook_allow_private`
+
+Default: `false` (commented out in the example; optional)
+
+true lets webhooks reach private networks (owner only; off prevents server-side request forgery)
+
+### `bots.rate_limit_rps`
+
+Default: `25` (commented out in the example; optional)
+
+requests per second per bot token
+

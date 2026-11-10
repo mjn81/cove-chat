@@ -174,3 +174,12 @@ mode = "open"
 # max_packs_per_user = 10
 # max_stickers_per_pack = 60
 # max_user_storage_mb = 20      # total size of all stickers one user owns
+
+# Bot API (docs/bots-api.md). Bots are accounts run by a person's own program; once installed in a channel they can read
+# what the install allows, in plaintext. Every key can be changed live from the admin panel.
+[bots]
+# enabled = true                # false: the whole Bot API (management, bot endpoints, gateway, webhooks) is off
+# creation = "admins"           # who may create bots: "admins" (default), "users" or "disabled"
+# max_per_user = 5              # bots one account may own
+# webhook_allow_private = false # true lets webhooks reach private networks (owner only; off prevents server-side request forgery)
+# rate_limit_rps = 25           # requests per second per bot token
