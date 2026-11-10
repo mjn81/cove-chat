@@ -20,12 +20,12 @@ type FileSystemStorage struct {
 }
 
 func (s *FileSystemStorage) Save(id string, r io.Reader) (string, int64, error) {
-	if err := os.MkdirAll(s.BaseDir, 0755); err != nil {
+	if err := os.MkdirAll(s.BaseDir, 0o700); err != nil {
 		return "", 0, fmt.Errorf("storage: failed to create base dir: %w", err)
 	}
 
 	path := filepath.Join(s.BaseDir, id)
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return "", 0, fmt.Errorf("storage: failed to create file: %w", err)
 	}
