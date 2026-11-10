@@ -194,15 +194,15 @@ func main() {
 			Emoji:               cfg.Emoji,
 			Packs:               cfg.Packs,
 		}),
-		Demo:         cfg.Demo,
+		Demo:               cfg.Demo,
 		LoginNotifications: cfg.Sessions.LoginNotifications,
-		ConfigPath:   config.Path(),
-		DataDir:      cfg.Database.Path,
-		ServerDomain: cfg.Server.Domain,
-		StartedAt:    time.Now(),
-		Shutdown:     func() { quit <- syscall.SIGTERM },
-		Updater:      updater,
-		NotifyUpdates: cfg.Update.NotifyAdmins,
+		ConfigPath:         config.Path(),
+		DataDir:            cfg.Database.Path,
+		ServerDomain:       cfg.Server.Domain,
+		StartedAt:          time.Now(),
+		Shutdown:           func() { quit <- syscall.SIGTERM },
+		Updater:            updater,
+		NotifyUpdates:      cfg.Update.NotifyAdmins,
 	}
 	if _, err := dataStore.EnsureSystemUser(); err != nil {
 		logger.Warnf("could not create the Cove system account: %v", err)
@@ -237,11 +237,15 @@ func main() {
 	// ── 7. HTTP server ─────────────────────────────────────────────────────
 	addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)
 	srv := &http.Server{
-		Addr:         addr,
-		Handler:      middleware.Recover(middleware.Logger(rootMux)),
-		ReadTimeout:  1 * time.Hour,
-		WriteTimeout: 1 * time.Hour,
-		IdleTimeout:  120 * time.Second,
+		Addr:    addr,
+		Handler: middleware.Recover(middleware.Logger(rootMux)),
+		// Without a header deadline a client can hold a connection open forever by dribbling header bytes
+		// (slowloris); the long body timeouts below exist only for large uploads and downloads.
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    64 << 10,
+		ReadTimeout:       1 * time.Hour,
+		WriteTimeout:      1 * time.Hour,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	// ── 8. Encrypted UDP media router (air-gapped mode only) ───────────────
