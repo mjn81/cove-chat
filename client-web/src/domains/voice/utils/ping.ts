@@ -25,3 +25,18 @@ export function formatPing(ping: number, compact = false): string {
 	if (ping < 5) return compact ? '<5ms' : '< 5 ms';
 	return compact ? `${ping}ms` : `${ping} ms`;
 }
+
+/** What the app-wide connection indicator shows: the socket state first, then latency quality. */
+export type ConnectionLevel = 'offline' | 'connecting' | PingLevel;
+
+/**
+ * Resolves the indicator level for the WebSocket link.
+ *
+ * @param wsState - Socket lifecycle state from the app store.
+ * @param ping - Latest heartbeat round trip in ms, or `null` when unmeasured.
+ */
+export function connectionLevel(wsState: string, ping: number | null): ConnectionLevel {
+	if (wsState === 'connecting') return 'connecting';
+	if (wsState !== 'connected') return 'offline';
+	return pingLevel(ping);
+}

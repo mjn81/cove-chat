@@ -44,6 +44,7 @@ export function getChannelKey(channelId: string): Uint8Array | undefined {
 
 // ── Event Listeners ─────────────────────────────────────────────────────
 export type WSEventType =
+	| 'latency'
 	| 'message'
 	| 'message_update'
 	| 'message_delete'
@@ -273,6 +274,7 @@ function setupDirectConnection() {
 				console.warn(`[ws-direct] closed (${code}), reconnecting...`);
 			}
 		},
+		onLatency: (ms) => handleWorkerMessage({ type: 'WS_LATENCY', ms }),
 		onError: (err) => {
 			// Previously missing entirely on this path (used by the desktop app
 			// and any browser without SharedWorker support) — connection errors
@@ -296,8 +298,10 @@ function setupDirectConnection() {
 }
 
 function handleWorkerMessage(data: any) {
-	const { type, payload, code } = data;
-	if (type === 'WS_OPEN') {
+	const { type, payload, code, ms } = data;
+	if (type === 'WS_LATENCY') {
+		emit('latency', typeof ms === 'number' ? ms : null);
+	} else if (type === 'WS_OPEN') {
 		emit('open', null);
 	} else if (type === 'WS_CLOSE') {
 		// 1008 = the server ended this session (terminated from another device, password change, reset).
