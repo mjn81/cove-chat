@@ -50,7 +50,9 @@ android {
     buildTypes {
         release {
             signingConfig = if (System.getenv("COVE_KEYSTORE_FILE").isNullOrBlank()) signingConfigs.getByName("debug") else signingConfigs.getByName("release")
-            isMinifyEnabled = false
+            // R8 shrinks and optimises the ~17 MB of unminified dex and drops unused resources; see proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
