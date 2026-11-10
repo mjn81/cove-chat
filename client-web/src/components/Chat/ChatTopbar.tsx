@@ -1,4 +1,4 @@
-import { useState, Profiler } from 'react';
+import { lazy, Suspense, useState, Profiler } from 'react';
 import { EmojiText } from '@/domains/emoji/components/emoji';
 import { statusDotClass } from '@/domains/users/utils/status';
 import { logProfiler } from '@/utils/profiler';
@@ -27,7 +27,7 @@ import {
 	useChannelStore,
 	useWhisperStore,
 } from '@/store/store';
-import { GroupSettingsModal } from './GroupSettingsModal';
+const GroupSettingsModal = lazy(() => import('./GroupSettingsModal').then((m) => ({ default: m.GroupSettingsModal })));
 import { ChannelInfoModal } from './ChannelInfoModal';
 import { isDirectMessage, isSystemChannel } from '@/utils/channel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -425,10 +425,12 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 				</div>
 
 				{showSettings && (
-					<GroupSettingsModal
-						channel={liveChannel}
-						onClose={() => setShowSettings(false)}
-					/>
+					<Suspense fallback={null}>
+						<GroupSettingsModal
+							channel={liveChannel}
+							onClose={() => setShowSettings(false)}
+						/>
+					</Suspense>
 				)}
 
 				{showUserProfile && (
