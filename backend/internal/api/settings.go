@@ -18,6 +18,8 @@ type SettingsInit struct {
 	// Emoji and Packs are the live emoji-style and sticker-pack settings (zero values mean the config defaults).
 	Emoji config.EmojiConfig
 	Packs config.PacksConfig
+	// Bots is the live Bot API policy (zero value means the safe defaults).
+	Bots config.BotsConfig
 }
 
 // Settings holds the configuration values that can change while the server
@@ -115,4 +117,32 @@ func (h *Handler) limits() (maxFileMB, maxVideoMB, maxVideoSec int) {
 		return h.Settings.Limits()
 	}
 	return h.MaxFileSizeMB, h.MaxVideoSizeMB, h.MaxVideoDurationSec
+}
+
+// Bots returns the live Bot API policy; a Settings built without one reports the safe defaults.
+func (s *Settings) Bots() config.BotsConfig {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.init.Bots.Creation == "" {
+		return config.DefaultBots()
+	}
+	return s.init.Bots
+}
+
+// SetBots replaces the Bot API policy. An invalid policy is ignored so a bad value never opens the API wider.
+func (s *Settings) SetBots(b config.BotsConfig) {
+	if config.ValidateBots(b) != nil {
+		return
+	}
+	s.mu.Lock()
+	s.init.Bots = b
+	s.mu.Unlock()
+}
+
+// botSettings is the policy the handlers use; a Handler built without live settings gets the defaults.
+func (h *Handler) botSettings() config.BotsConfig {
+	if h.Settings == nil {
+		return config.DefaultBots()
+	}
+	return h.Settings.Bots()
 }

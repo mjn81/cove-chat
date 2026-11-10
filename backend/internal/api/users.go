@@ -64,6 +64,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, UserResponse{
 		ID:                      u.ID,
 		Username:                u.Username,
+		IsBot:                   u.IsBot(),
 		Domain:                  u.Domain,
 		Status:                  u.Status,
 		StatusPreference:        u.StatusPreference,
@@ -304,6 +305,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, UserResponse{
 		ID:                      u.ID,
 		Username:                u.Username,
+		IsBot:                   u.IsBot(),
 		Domain:                  u.Domain,
 		Status:                  u.Status,
 		StatusPreference:        u.StatusPreference,
@@ -353,6 +355,7 @@ func validateProfileEnums(b *UpdateUserRequest) string {
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users [get]
 func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
 	limit, cursor, ok := pageParams(w, r)
 	if !ok {
 		return
@@ -373,9 +376,13 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	res := make([]UserResponse, 0, len(users))
 	for _, u := range users {
+		if u.IsBot() && !h.botSearchable(u, session.UserID) {
+			continue
+		}
 		res = append(res, UserResponse{
 			ID:          u.ID,
 			Username:    u.Username,
+			IsBot:       u.IsBot(),
 			Domain:      u.Domain,
 			Status:      u.Status,
 			AvatarID:    u.AvatarID,
@@ -414,6 +421,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	resp := UserResponse{
 		ID:               u.ID,
 		Username:         u.Username,
+		IsBot:            u.IsBot(),
 		Domain:           u.Domain,
 		Status:           u.Status,
 		StatusPreference: u.StatusPreference,

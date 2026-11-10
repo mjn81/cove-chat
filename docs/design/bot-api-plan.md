@@ -14,7 +14,7 @@ Goal: third parties (and server admins) can run bots on a Cove server the way th
 | 4 | RBAC tier | New tier **Bot** in the access table: `Authorization: Bot <token>` only, resolved by `protectBot(...)`. `Sessions.Require` keeps accepting only `Bearer`/cookie, so **a bot token can reach nothing that is not explicitly wrapped in `protectBot` or `protectBotChannel`** (deny by default). A user session never satisfies `protectBot`. | Both directions are tested: bot token on a user route is 401, user token on a bot route is 401. |
 | 5 | Bot permissions in a channel | A bot is always a plain channel **member** (`RoleMember`), never admin/owner, no matter what. Capability is controlled by **scopes** granted at install time by a channel admin: `messages.read` (see all message content, not just mentions), `messages.send` (default), `members.read`. No moderation scopes in v1. | No privilege escalation by construction: nothing a bot does is authorised by a role, only by an explicit scope, and the strongest scope is "read the channel". Trade-off: no moderation bots until a later `members.manage`. |
 | 6 | Install | A channel **admin or owner** installs a bot into a group channel: `PUT /api/channels/{id}/bots/{bot_id}` with the scopes. Installing creates the bot's membership and a `BotInstall` row. Only bots that are `public` (listed) or owned by the installer can be installed; admins of the server can install any. Uninstall removes both. Bots are never added through the normal add-member route (rejected with `bot_install_required`) and never join through invite links. | One explicit, audited consent step per channel. |
-| 7 | Bot DMs | A user may open a DM with a bot (normal `POST /api/channels` with the bot as the only other member); that records a `BotContact` (`bc:{bot}:{user}`). Interacting with a bot (command, button) also records one. A bot may only message a user who has a `BotContact` with it, and may not create a channel with a user otherwise: `POST /api/bots/@me/dm` is 403 `bot_contact_required`. Users can block a bot with the existing block action. | "Bots cannot DM users who have not interacted." |
+| 7 | Bot DMs | A user may open a DM with a bot (normal `POST /api/channels` with the bot as the only other member); that records a `BotContact` (`bc:{bot}:{user}`). Interacting with a bot (command, button) also records one. A bot may only message a user who has a `BotContact` with it, and may not create a channel with a user otherwise: `POST /api/bots/me/dm` is 403 `bot_contact_required`. Users can block a bot with the existing block action. | "Bots cannot DM users who have not interacted." |
 | 8 | Encryption | **Server-side crypto for bots.** The bot sends and receives plaintext over TLS; the server encrypts/decrypts with the channel key, which it already holds (server-trusted model). The bot **never receives the channel key**; this is stricter than "key only for installed channels" and removes the need for every bot SDK to implement AES. The server only decrypts for channels where the bot is installed, and only delivers what scopes allow. Whispers never involve bots (bots cannot be whisper participants; `whisper_init` already needs friendship and bots cannot be friends). | The message bodies of installed channels are readable by the bot owner's code, and, for webhook bots, travel to the owner's HTTPS endpoint. That is the intended deal and the UI says so in the install dialog. Plaintext is never logged (only ids). |
 | 9 | Rich messages | New message type `bot` (additive; old clients show the existing "needs a newer version" placeholder card). Plaintext body is versioned JSON `{v:1, text, buttons:[[{label,style,custom_id\|url}]], embed?}`, encrypted like any message, **validated by the server when the bot sends it**. Plain bot text uses type `text`. Only the author bot can edit; users cannot edit it. | Old clients lose a bot's buttons but never crash. Keeping plain text as `text` keeps search/notifications working. |
 | 10 | Gateway | A **separate** WebSocket at `/gateway/bot` (mounted next to `/ws`, same origin/rate-limit wrap), authenticated by `Authorization: Bot`. Not the user hub: different auth, different payloads (plaintext), different rate limits, and bots must never see presence/key/whisper/call events. The hub and REST handlers publish into a small `bots.Dispatcher`. | Keeps the user socket protocol untouched. Cost: one more listener to harden; it reuses the existing origin and per-IP limiter wrappers. |
@@ -64,19 +64,19 @@ Bot API (`Authorization: Bot`, tier **Bot**; channel routes additionally require
 
 | Route | Scope | Purpose |
 |---|---|---|
-| `GET /api/bots/@me` | - | the bot's own profile |
-| `PUT /api/bots/@me/commands` (+ `GET`, `DELETE /{name}`) | - | register global commands (bulk replace) |
-| `PUT /api/bots/@me/channels/{id}/commands` | install | per-channel commands |
-| `GET /api/bots/@me/channels` | - | installed channels (paged) |
-| `POST /api/bots/@me/channels/{id}/messages` | `messages.send` | send text / rich message |
-| `PATCH/DELETE /api/bots/@me/channels/{id}/messages/{mid}` | `messages.send` | edit/delete **own** messages only |
-| `GET /api/bots/@me/channels/{id}/messages` | `messages.read` | paged history (decrypted) |
-| `GET /api/bots/@me/channels/{id}/members` | `members.read` | paged members (with `is_bot`) |
-| `PUT/DELETE /api/bots/@me/channels/{id}/keyboard` | `messages.send` | action menu |
-| `POST /api/bots/@me/dm` | contact | open a DM with a user who interacted |
+| `GET /api/bots/me` | - | the bot's own profile |
+| `PUT /api/bots/me/commands` (+ `GET`, `DELETE /{name}`) | - | register global commands (bulk replace) |
+| `PUT /api/bots/me/channels/{id}/commands` | install | per-channel commands |
+| `GET /api/bots/me/channels` | - | installed channels (paged) |
+| `POST /api/bots/me/channels/{id}/messages` | `messages.send` | send text / rich message |
+| `PATCH/DELETE /api/bots/me/channels/{id}/messages/{mid}` | `messages.send` | edit/delete **own** messages only |
+| `GET /api/bots/me/channels/{id}/messages` | `messages.read` | paged history (decrypted) |
+| `GET /api/bots/me/channels/{id}/members` | `members.read` | paged members (with `is_bot`) |
+| `PUT/DELETE /api/bots/me/channels/{id}/keyboard` | `messages.send` | action menu |
+| `POST /api/bots/me/dm` | contact | open a DM with a user who interacted |
 | `POST /api/interactions/{id}/{token}/callback` | token | answer an interaction |
 
-A bot reads the path `{id}` as a channel id and the resolver checks the install; there is no way to name another bot (`@me` only), so there is no IDOR on bot identity.
+A bot reads the path `{id}` as a channel id and the resolver checks the install; there is no way to name another bot (only `me`), so there is no IDOR on bot identity.
 
 ## 3. Gateway events (`/gateway/bot`)
 

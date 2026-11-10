@@ -102,6 +102,9 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 		senderID:  c.UserID,
 		msg:       outMsg,
 	})
+	if c.hub.bots != nil {
+		c.hub.bots.EmitMessage("message_create", msg)
+	}
 	return nil
 }
 
@@ -164,6 +167,9 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 		senderID:  c.UserID,
 		msg:       outMsg,
 	})
+	if c.hub.bots != nil {
+		c.hub.bots.EmitMessage("message_update", msg)
+	}
 	return nil
 }
 
@@ -208,6 +214,9 @@ func (c *Client) handleDeleteMessage(raw *models.WSMessage) error {
 		senderID:  c.UserID,
 		msg:       outMsg,
 	})
+	if c.hub.bots != nil {
+		c.hub.bots.EmitMessageDelete(body.ChannelID, body.MessageID, c.UserID)
+	}
 	return nil
 }
 

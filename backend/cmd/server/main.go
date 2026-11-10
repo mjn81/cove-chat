@@ -18,6 +18,11 @@
 //	@in                         header
 //	@name                       Authorization
 //	@description               Format: Bearer <token>
+//
+//	@securityDefinitions.apikey BotAuth
+//	@in                         header
+//	@name                       Authorization
+//	@description               Bot tier: "Bot <bot_id>.<secret>". Accepted only on /api/bots/me/... and the interaction callback.
 
 package main
 
@@ -36,6 +41,7 @@ import (
 	_ "cove/backend/docs" // Swagger generated docs — run 'swag init' to regenerate
 
 	"cove/backend/internal/api"
+	"cove/backend/internal/bots"
 	"cove/backend/internal/auth"
 	"cove/backend/internal/captcha"
 	"cove/backend/internal/config"
@@ -193,6 +199,7 @@ func main() {
 			MaxVideoDurationSec: cfg.Server.MaxVideoDurationSec,
 			Emoji:               cfg.Emoji,
 			Packs:               cfg.Packs,
+			Bots:                cfg.Bots,
 		}),
 		Demo:         cfg.Demo,
 		LoginNotifications: cfg.Sessions.LoginNotifications,
@@ -218,6 +225,28 @@ func main() {
 	hub := ws.NewHub(dataStore, sessions, kek, cfg.Server.Dev, cfg.Server.FrontendOrigin)
 	apiHandler.Hub = hub
 	hub.SetMinClientVersion(cfg.Server.MinClientVersion)
+
+	// Bot API: events from chat reach bots (gateway and webhooks) through this dispatcher. The enable switch and the
+	// webhook address policy are read live from the admin settings.
+	botDispatcher := bots.NewDispatcher(bots.Config{
+		Store:        dataStore,
+		KEK:          kek,
+		Enabled:      func() bool { return apiHandler.Settings.Bots().Enabled },
+		AllowPrivate: func() bool { return apiHandler.Settings.Bots().WebhookAllowPrivate },
+	})
+	defer botDispatcher.Close()
+	apiHandler.Bots = botDispatcher
+	hub.SetBotSink(botDispatcher)
+	go func() {
+		// Interactions are valid for 15 minutes; expired rows are only dead weight.
+		t := time.NewTicker(30 * time.Minute)
+		defer t.Stop()
+		for range t.C {
+			if _, err := dataStore.PurgeExpiredInteractions(time.Now()); err != nil {
+				logger.Warnf("bots: purging expired interactions failed: %v", err)
+			}
+		}
+	}()
 	if _, err := apiHandler.NotifyAdminsOfDatabaseRepair(repaired); err != nil {
 		logger.Warnf("could not tell the admins about the database repair: %v", err)
 	}
@@ -233,6 +262,8 @@ func main() {
 	rootMux.Handle("/", api.NewRouter(apiHandler, float64(cfg.RateLimit.GlobalRPS), float64(cfg.RateLimit.AuthRPS)))
 	// Mounted after NewRouter so the upgrade shares the API's per-IP rate limiter and carries the version headers.
 	rootMux.Handle("/ws", apiHandler.WrapWS(hub))
+	// The bot gateway authenticates with a bot token during the handshake; same rate limit and version headers.
+	rootMux.Handle("/gateway/bot", apiHandler.WrapWS(botDispatcher.GatewayHandler()))
 
 	// ── 7. HTTP server ─────────────────────────────────────────────────────
 	addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)
