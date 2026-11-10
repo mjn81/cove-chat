@@ -79,15 +79,15 @@ func TestSecurityReview_UsernameRules(t *testing.T) {
 	defer srv.Close()
 	registerAndLogin(t, srv, "Founder", testPassword)
 	cases := map[string]int{
-		"   ":                           http.StatusBadRequest,
-		strings.Repeat("a", 200):         http.StatusBadRequest,
-		"adm‮in":                    http.StatusBadRequest, // right-to-left override
-		"bob​":                      http.StatusBadRequest, // zero-width space
-		"line\nbreak":                    http.StatusBadRequest,
-		" padded ":                       http.StatusBadRequest,
-		"founder":                        http.StatusConflict, // differs from "Founder" only by case
-		"ماهان": http.StatusCreated,  // a real Persian name is fine
-		"alice_01":                       http.StatusCreated,
+		"   ":                    http.StatusBadRequest,
+		strings.Repeat("a", 200): http.StatusBadRequest,
+		"adm‮in":                 http.StatusBadRequest, // right-to-left override
+		"bob​":                   http.StatusBadRequest, // zero-width space
+		"line\nbreak":            http.StatusBadRequest,
+		" padded ":               http.StatusBadRequest,
+		"founder":                http.StatusConflict, // differs from "Founder" only by case
+		"ماهان":                  http.StatusCreated,  // a real Persian name is fine
+		"alice_01":               http.StatusCreated,
 	}
 	for name, want := range cases {
 		r := jsonReq(t, http.MethodPost, srv.URL+"/api/register", "", api.RegisterRequest{Username: name, Password: testPassword})

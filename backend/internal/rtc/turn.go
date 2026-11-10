@@ -116,8 +116,12 @@ func AllowTURNPeer(peerIP net.IP) bool {
 	if peerIP == nil {
 		return false
 	}
-	return !(peerIP.IsLoopback() || peerIP.IsUnspecified() || peerIP.IsLinkLocalUnicast() || peerIP.IsLinkLocalMulticast() ||
-		peerIP.IsMulticast() || peerIP.IsInterfaceLocalMulticast())
+	switch {
+	case peerIP.IsLoopback(), peerIP.IsUnspecified(), peerIP.IsLinkLocalUnicast(), peerIP.IsLinkLocalMulticast(),
+		peerIP.IsMulticast(), peerIP.IsInterfaceLocalMulticast():
+		return false
+	}
+	return true
 }
 
 // turnPermissionHandler adapts AllowTURNPeer to pion/turn's callback shape.
