@@ -216,6 +216,9 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		_ = h.Store.SetPresence(session.UserID, "offline")
 	}
 	h.Sessions.Delete(token)
+	if session != nil {
+		h.disconnectSessions(session.ID) // a signed-out device must not keep receiving live events
+	}
 	auth.ClearSessionCookies(w, !h.IsDev)
 
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})

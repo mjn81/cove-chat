@@ -260,7 +260,9 @@ func (h *Hub) DisconnectSession(sessionID string) {
 	}
 	h.mu.Unlock()
 	for _, c := range drop {
-		_ = c.conn.Close(websocket.StatusPolicyViolation, "session terminated")
+		// Close waits for the peer's close frame (up to 5 s); doing it inline would stall the sign-out request
+		// of an unresponsive client.
+		go func(c *Client) { _ = c.conn.Close(websocket.StatusPolicyViolation, "session terminated") }(c)
 	}
 }
 
@@ -440,6 +442,12 @@ func (c *Client) writePump(ctx context.Context) {
 				return
 			}
 		case <-ticker.C:
+			// A revoked or expired session must not keep a live socket: the token is never sent again after the
+			// handshake, so this is the only place the server can notice.
+			if !c.hub.sessions.Alive(c.SessionID) {
+				_ = c.conn.Close(websocket.StatusPolicyViolation, "session ended")
+				return
+			}
 			// Heartbeat
 			writeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			err := c.conn.Ping(writeCtx)

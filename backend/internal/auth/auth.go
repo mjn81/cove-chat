@@ -294,6 +294,26 @@ func (ss *SessionStore) DeleteByID(userID, id string) bool {
 	return true
 }
 
+// DeleteAllForUser ends every session of userID (account deletion) and returns the public ids it removed, so the
+// caller can also close their live WebSockets.
+func (ss *SessionStore) DeleteAllForUser(userID string) []string {
+	return ss.DeleteOthers(userID, "")
+}
+
+// Alive reports whether the session with the given public id still exists and has not expired. Long-lived
+// connections use it to notice a revoked or expired session, which they cannot learn from a token they never resend.
+func (ss *SessionStore) Alive(sessionID string) bool {
+	now := time.Now()
+	ss.mu.RLock()
+	defer ss.mu.RUnlock()
+	for _, s := range ss.sessions {
+		if s.ID == sessionID {
+			return now.Before(s.ExpiresAt)
+		}
+	}
+	return false
+}
+
 // DeleteOthers ends every session of userID except keepID and returns the ids it removed, so the caller can
 // also close their live WebSockets.
 func (ss *SessionStore) DeleteOthers(userID, keepID string) []string {

@@ -135,7 +135,10 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	// Their sticker packs and installs go with the account, and so do the stored images.
 	h.cleanupUserPacks(session.UserID)
 
+	// Every device of the deleted account goes, not only the one asking: an anonymized account must not stay usable.
 	h.Sessions.Delete(token)
+	h.disconnectSessions(h.Sessions.DeleteAllForUser(session.UserID)...)
+	h.disconnectSessions(session.ID)
 	auth.ClearSessionCookies(w, !h.IsDev)
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }
