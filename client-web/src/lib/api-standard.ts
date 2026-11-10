@@ -49,7 +49,8 @@ export type Capability =
 	| 'emoji_packs'
 	| 'custom_emoji'
 	| 'stickers'
-	| 'animated_emoji';
+	| 'animated_emoji'
+	| 'bots';
 
 /** Payload of {@link CLIENT_OUTDATED_EVENT}. */
 export interface ClientOutdatedDetail {

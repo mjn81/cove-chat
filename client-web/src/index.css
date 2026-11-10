@@ -319,3 +319,68 @@ input::-ms-clear {
     stroke-dashoffset: 0;
   }
 }
+
+/*
+ * Bot glass: a subtle translucent, blurred surface used ONLY by the buttons on bot messages and the bot action
+ * menu (the user asked for glassy bot controls; everything else stays flat). It is built purely from theme tokens,
+ * so it follows every theme in light and dark. Falls back to a solid muted surface where backdrop-filter is missing
+ * or the user prefers reduced transparency.
+ */
+@layer components {
+  .bot-glass {
+    background-color: hsl(var(--background) / 0.45);
+    -webkit-backdrop-filter: blur(10px) saturate(1.25);
+    backdrop-filter: blur(10px) saturate(1.25);
+    border: 1px solid hsl(var(--border) / 0.75);
+    box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.08);
+    color: hsl(var(--foreground));
+    transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+  }
+  .bot-glass:hover:not(:disabled) {
+    background-color: hsl(var(--accent) / 0.6);
+  }
+  .bot-glass:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .bot-glass:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  .bot-glass:disabled,
+  .bot-glass[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .bot-glass[data-style='primary'] {
+    background-color: hsl(var(--primary) / 0.28);
+    border-color: hsl(var(--primary) / 0.65);
+  }
+  .bot-glass[data-style='primary']:hover:not(:disabled) {
+    background-color: hsl(var(--primary) / 0.4);
+  }
+  .bot-glass[data-style='danger'] {
+    background-color: hsl(var(--destructive) / 0.22);
+    border-color: hsl(var(--destructive) / 0.65);
+  }
+  .bot-glass[data-style='danger']:hover:not(:disabled) {
+    background-color: hsl(var(--destructive) / 0.35);
+  }
+  /* The menu panel behind the glass buttons, so the blur has something to work on in every theme. */
+  .bot-glass-panel {
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.25));
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bot-glass {
+    background-color: hsl(var(--muted));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .bot-glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: hsl(var(--muted));
+  }
+}

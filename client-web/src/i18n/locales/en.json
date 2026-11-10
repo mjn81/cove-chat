@@ -366,7 +366,8 @@
 		"notifications_custom": "Use Cove notification popups",
 		"notifications_custom_desc": "Show notifications as small Cove popups in the screen corner instead of system notifications.",
 		"default_device": "Default",
-		"microphone_n": "Microphone {{id}}"
+		"microphone_n": "Microphone {{id}}",
+		"bots": "Bots"
 	},
 	"image_editor": {
 		"title": "Edit photo",
@@ -731,6 +732,16 @@
 						"check": "checked for server updates",
 						"upload": "uploaded a server update"
 					}
+				},
+				"bot": {
+					"create": "created bot",
+					"delete": "deleted bot",
+					"rotate_token": "rotated the token of bot",
+					"disable": "disabled bot",
+					"enable": "enabled bot",
+					"install": "added a bot to a channel:",
+					"uninstall": "removed a bot from a channel:",
+					"webhook_set": "changed the webhook of bot"
 				}
 			}
 		},
@@ -784,7 +795,8 @@
 				"calls": "Calls",
 				"network": "Network",
 				"security": "Security",
-				"updates": "Updates"
+				"updates": "Updates",
+				"bots": "Bots"
 			},
 			"keys": {
 				"server": {
@@ -818,6 +830,13 @@
 					"manifest_url": "Update manifest URL",
 					"github_fallback": "Fall back to GitHub",
 					"notify_admins": "Tell admins about new versions"
+				},
+				"bots": {
+					"enabled": "Bot API enabled",
+					"creation": "Who can create bots",
+					"max_per_user": "Max bots per user",
+					"webhook_allow_private": "Allow webhooks to private networks",
+					"rate_limit_rps": "Bot requests per second"
 				}
 			}
 		},
@@ -1654,6 +1673,118 @@
 			"send": "Send",
 			"sent": "Shared in {{count}} chats",
 			"failed": "Could not share the pack."
+		}
+	},
+	"bots": {
+		"badge": "Bot",
+		"settings": {
+			"tab": "Bots"
+		},
+		"list": {
+			"title": "Your bots",
+			"subtitle": "Bots are programs that read and write chat messages for you. Create one, copy its token and run it anywhere.",
+			"empty": "You have no bots yet.",
+			"create": "Create bot",
+			"all_toggle": "Show every bot on the server",
+			"cannot_create": "Only server admins can create bots on this server.",
+			"disabled_server": "Bots are switched off on this server.",
+			"limit_reached": "You have reached the limit of {{count}} bots.",
+			"installs": "In {{count}} channels",
+			"manage": "Manage"
+		},
+		"status": {
+			"online": "Online",
+			"offline": "Offline",
+			"disabled": "Disabled",
+			"public": "Public",
+			"private": "Private"
+		},
+		"create": {
+			"title": "Create a bot",
+			"username": "Bot name",
+			"username_hint": "2-32 lowercase letters, digits, _ . or -",
+			"description": "Description",
+			"public": "Public",
+			"public_hint": "Public bots can be found and added to channels by any channel admin.",
+			"webhook": "Webhook URL",
+			"webhook_hint": "Optional. Events are POSTed here (https only) when the bot is not connected to the gateway.",
+			"submit": "Create"
+		},
+		"secret": {
+			"title": "Save your bot token",
+			"token": "Bot token",
+			"webhook": "Webhook signing secret",
+			"warning": "This is the only time it is shown. Anyone with the token can act as the bot, so keep it private. If it leaks, rotate it.",
+			"copy": "Copy",
+			"copied": "Copied",
+			"done": "I have saved it"
+		},
+		"manage": {
+			"title": "Manage {{name}}",
+			"description": "Description",
+			"public": "Public (listed for channel admins)",
+			"enabled": "Enabled",
+			"webhook": "Webhook URL",
+			"webhook_empty": "No webhook. The bot must connect to the gateway.",
+			"save": "Save",
+			"saved": "Bot updated",
+			"rotate_token": "Rotate token",
+			"rotate_token_hint": "Issues a new token and disconnects the bot immediately.",
+			"rotate_webhook": "New signing secret",
+			"delete": "Delete bot",
+			"delete_confirm": "Delete {{name}}? It is removed from every channel and its token stops working. Its past messages stay.",
+			"deleted": "Bot deleted"
+		},
+		"channel": {
+			"title": "Bots",
+			"empty": "No bots in this channel.",
+			"add": "Add a bot",
+			"remove": "Remove {{name}}",
+			"remove_confirm": "Remove {{name}} from this channel?",
+			"removed": "Bot removed",
+			"installed": "Bot added",
+			"updated": "Permissions updated",
+			"install_title": "Add a bot to this channel",
+			"search": "Search public bots",
+			"none_found": "No bots found.",
+			"permissions": "Permissions",
+			"consent": "The bot's owner (and the server their bot runs on) will receive, as plain text, everything these permissions allow. Only add bots you trust. Bots are never admins.",
+			"submit": "Add bot",
+			"mine": "Mine",
+			"public": "Public"
+		},
+		"scope": {
+			"messages_send": {
+				"label": "Send messages",
+				"hint": "Post, edit and delete its own messages; show buttons and the action menu."
+			},
+			"messages_read": {
+				"label": "Read all messages",
+				"hint": "See every message in the channel. Without it the bot only sees messages that mention or reply to it, and commands."
+			},
+			"members_read": {
+				"label": "See members",
+				"hint": "List who is in the channel and get told when someone joins or leaves."
+			}
+		},
+		"composer": {
+			"commands": "Commands",
+			"usage": "Usage: {{usage}}",
+			"offline": "{{bot}} is offline and cannot answer right now.",
+			"error_missing": "Missing value for “{{option}}”.",
+			"error_invalid": "“{{option}}” has an invalid value.",
+			"error_unknown": "Unexpected value “{{option}}”.",
+			"error_choice": "“{{option}}” must be one of its listed choices.",
+			"failed": "Couldn't send that to the bot."
+		},
+		"keyboard": {
+			"label": "Bot menu from {{bot}}",
+			"default_placeholder": "Choose an option",
+			"type": "Type a message",
+			"show": "Show bot menu"
+		},
+		"message": {
+			"open_link": "Opens a link"
 		}
 	}
 }

@@ -11,8 +11,20 @@ function truncate(text: string): string {
 		: singleLine;
 }
 
+/** The text of a `bot` message body (JSON); empty when it is not one. */
+function botText(body: string): string {
+	try {
+		const parsed: unknown = JSON.parse(body);
+		if (typeof parsed === 'object' && parsed !== null && 'text' in parsed && typeof parsed.text === 'string') return parsed.text;
+	} catch {
+		// Not JSON: nothing to show.
+	}
+	return '';
+}
+
 function bodyForType(type: string, text: string): string {
 	if (type === 'text') return truncate(text);
+	if (type === 'bot') return truncate(botText(text)) || '[bot]';
 	return `[${type}]`;
 }
 
@@ -26,7 +38,7 @@ export async function buildMessagePreview(
 	nonce: string,
 	currentUserId: string,
 ): Promise<string> {
-	const text = type === 'text' ? await decryptText(channel.id, ciphertext, nonce) : '';
+	const text = type === 'text' || type === 'bot' ? await decryptText(channel.id, ciphertext, nonce) : '';
 	const body = bodyForType(type, text);
 
 	const prefix =

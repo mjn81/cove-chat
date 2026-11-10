@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Smile } from 'lucide-react';
+import { Keyboard, Smile } from 'lucide-react';
 
 import VoiceRecorder from '@/domains/recording/components/voice-recorder';
 import { ComposerActionButton } from '@/domains/recording/components/composer-action-button';
@@ -35,6 +35,10 @@ import { useServerCapabilities } from '@/domains/system/api/use-server-capabilit
 import { useShortcodeAutocomplete } from '@/domains/emoji/hooks/use-shortcode-autocomplete';
 import { ShortcodePopup } from '@/domains/emoji/components/shortcode-popup';
 import type { PackItem } from '@/domains/stickers/types/stickers.types';
+import { ActionMenu } from '@/domains/bots/components/action-menu';
+import { SlashPopup } from '@/domains/bots/components/slash-popup';
+import { useChannelKeyboard } from '@/domains/bots/hooks/use-channel-keyboard';
+import { useSlashCommands } from '@/domains/bots/hooks/use-slash-commands';
 
 interface ChatInputAreaProps {
 	channel: Channel;
@@ -100,6 +104,8 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 	const sendText = useSendText(channel.id);
 	const sendSticker = useSendSticker(channel.id);
 	const shortcodes = useShortcodeAutocomplete();
+	const slash = useSlashCommands(channel, inputText);
+	const botKeyboard = useChannelKeyboard(channel.id);
 	const isDragging = useFileDrop(attachments.add);
 	const { sendVoice, sendVideo } = useSendMedia({
 		channel,
@@ -124,6 +130,12 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		setShowEmoji(false);
 
 		try {
+			// A known /command goes to its bot as an interaction instead of being posted as a message.
+			const asCommand = attachments.files.length === 0 && text.startsWith('/') ? await slash.run(text) : 'none';
+			if (asCommand === 'handled') {
+				setInputText('');
+				return;
+			}
 			await attachments.sendAll(channel.id, channelKey);
 			if (text) sendText(text, replyTo?.id);
 
@@ -136,7 +148,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 			setSending(false);
 			inputRef.current?.focus();
 		}
-	}, [inputText, attachments, sending, channel.id, channelKey, replyTo, onCancelReply, sendText, setInputText, t]);
+	}, [inputText, attachments, sending, channel.id, channelKey, replyTo, onCancelReply, sendText, setInputText, t, slash]);
 
 	const retryFile = useCallback(
 		(id: string) => {
@@ -167,7 +179,22 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 		}, 0);
 	};
 
+	const insertCommand = (c: Parameters<typeof slash.pick>[0]) => {
+		const text = slash.pick(c);
+		setInputText(text);
+		setTimeout(() => {
+			inputRef.current?.focus();
+			inputRef.current?.setSelectionRange(text.length, text.length);
+		}, 0);
+	};
+
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+		const command = slash.handleKey(e);
+		if (command === 'handled') return;
+		if (command) {
+			insertCommand(command.pick);
+			return;
+		}
 		const shortcode = shortcodes.handleKey(e);
 		if (shortcode === 'handled') return;
 		if (shortcode) {
@@ -271,12 +298,27 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 				/>
 			)}
 
+			{botKeyboard.keyboard && botKeyboard.view.showMenu ? (
+				// The bot's action menu REPLACES the input area until the user switches back to typing.
+				<ActionMenu
+					keyboard={botKeyboard.keyboard}
+					channelId={channel.id}
+					onSwitchToTyping={botKeyboard.switchToTyping}
+					onPressed={botKeyboard.onPressed}
+					className={cn(replyTo && 'rounded-t-none border-t-0')}
+				/>
+			) : (
 			<div
 				className={cn(
 					'relative flex flex-col overflow-hidden rounded-lg border border-border bg-secondary text-flat transition-all',
 					replyTo && 'rounded-t-none border-t-0',
 				)}
 			>
+			{slash.hint && (
+				<div className="border-b border-border/60 px-4 py-1 text-xs text-muted-foreground" dir="auto">
+					{t('bots.composer.usage', { usage: slash.hint })}
+				</div>
+			)}
 				{attachments.files.length > 0 && (
 					<AttachmentPreviews
 						items={attachments.files}
@@ -301,6 +343,18 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 					/>
 
 					<div className={cn('flex shrink-0 items-center', isTiny ? 'gap-0' : isSmall ? 'gap-1' : 'gap-1.5')}>
+						{botKeyboard.view.showToggle && (
+							<button
+								type="button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={botKeyboard.showMenu}
+								className={iconButtonClass}
+								title={t('bots.keyboard.show')}
+								aria-label={t('bots.keyboard.show')}
+							>
+								<Keyboard size={iconSize} />
+							</button>
+						)}
 						<button
 								type="button"
 								data-emoji-toggle
@@ -341,6 +395,11 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 						</div>
 				</div>
 			</div>
+			)}
+
+			{slash.isOpen && (
+				<SlashPopup items={slash.matches} selectedIndex={slash.selectedIndex} onHover={slash.setSelectedIndex} onPick={insertCommand} />
+			)}
 
 			{mentions.isOpen && (
 				<MentionPopup

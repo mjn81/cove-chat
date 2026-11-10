@@ -8,6 +8,7 @@ vi.mock('../Avatar', () => ({ Avatar: () => null }));
 vi.mock('./FileBubble', () => ({ FileBubble: () => null }));
 vi.mock('./VideoMessageBubble', () => ({ VideoMessageBubble: () => null }));
 vi.mock('./JoinPreview', () => ({ JoinPreview: () => null }));
+vi.mock('@/domains/bots/components/bot-message', () => ({ BotMessage: () => null }));
 vi.mock('../ConfirmModal', () => ({ ConfirmModal: () => null }));
 vi.mock('../UserProfileModal', () => ({
 	UserProfileModal: ({ userId }: { userId: string }) => <div data-testid="profile-modal">{userId}</div>,
