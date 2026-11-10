@@ -47,6 +47,7 @@
 			"invite_required": "This server is invite-only. Enter an invitation code.",
 			"invite_invalid": "That invitation code is not valid.",
 			"username_reserved": "That name is reserved.",
+			"username_invalid": "Usernames are 3-32 characters, with no leading or trailing spaces and no invisible or control characters.",
 			"captcha_required": "Please complete the human check first.",
 			"captcha_failed": "The human check failed. Please try again."
 		},
@@ -1258,6 +1259,8 @@
 		"user_load_failed": "Couldn't load the user.",
 		"user_not_found": "User not found.",
 		"username_reserved": "That username is reserved.",
+		"username_invalid": "That username is not allowed. Use 3-32 characters without invisible or control characters.",
+		"profile_text_too_long": "That text is too long.",
 		"username_taken": "That username is already taken.",
 		"username_too_short": "Username is too short.",
 		"video_too_large": "The video exceeds the maximum size of {{detail}} MB.",

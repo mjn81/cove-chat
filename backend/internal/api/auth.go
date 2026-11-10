@@ -43,6 +43,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "auth.errors.invalid_length")
 		return
 	}
+	if !store.ValidUsername(body.Username) {
+		writeError(w, http.StatusBadRequest, "auth.errors.username_invalid")
+		return
+	}
 	if store.IsReservedUsername(body.Username) {
 		writeError(w, http.StatusBadRequest, "auth.errors.username_reserved")
 		return

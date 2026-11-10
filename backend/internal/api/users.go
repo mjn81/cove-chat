@@ -143,6 +143,13 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }
 
+// Bounds for the free-text profile fields. Both are broadcast to every connected user with the presence event, so an
+// unbounded value would be a storage and bandwidth amplifier.
+const (
+	maxCustomMsgRunes   = 190
+	maxBannerColorRunes = 32
+)
+
 // UpdateProfile godoc
 //
 //	@Summary     Update current user profile
@@ -176,6 +183,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if (body.CustomMsg != nil && utf8.RuneCountInString(*body.CustomMsg) > maxCustomMsgRunes) ||
+		(body.BannerColor != nil && utf8.RuneCountInString(*body.BannerColor) > maxBannerColorRunes) {
+		writeError(w, http.StatusBadRequest, "apiErrors.profile_text_too_long")
+		return
+	}
+
 	u, err := h.Store.GetUser(session.UserID)
 	if err != nil {
 		userNotFoundOr(w, "update profile", err)
@@ -188,6 +201,10 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "apiErrors.username_too_short")
 			return
 		}
+		if !store.ValidUsername(body.Username) {
+			writeError(w, http.StatusBadRequest, "apiErrors.username_invalid")
+			return
+		}
 		if store.IsReservedUsername(body.Username) {
 			writeError(w, http.StatusBadRequest, "apiErrors.username_reserved")
 			return
@@ -198,7 +215,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, "update profile: username lookup", lerr, "failed to update profile")
 			return
 		}
-		if existing != nil && existing.ID != u.ID {
+		taken, terr := h.Store.UsernameTaken(body.Username, u.ID)
+		if terr != nil {
+			writeInternal(w, "update profile: username lookup", terr, "failed to update profile")
+			return
+		}
+		if (existing != nil && existing.ID != u.ID) || taken {
 			writeError(w, http.StatusConflict, "apiErrors.username_taken")
 			return
 		}

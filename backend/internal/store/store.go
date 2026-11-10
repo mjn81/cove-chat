@@ -55,6 +55,11 @@ func (s *Store) CreateUser(username, password, domain string) (*models.User, err
 	if existing, _ := s.GetUserByUsername(username); existing != nil {
 		return nil, ErrUsernameTaken
 	}
+	if taken, err := s.UsernameTaken(username, ""); err != nil {
+		return nil, fmt.Errorf("store: username check failed: %w", err)
+	} else if taken {
+		return nil, ErrUsernameTaken
+	}
 
 	id := uuid.New().String()
 	pwdHash, err := crypto.HashPassword(password)
