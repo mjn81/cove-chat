@@ -281,12 +281,11 @@ private fun ReleaseNotes(info: ServerUpdateInfo) {
     var expanded by remember { mutableStateOf(false) }
     AdminCard {
         Text(adm("admin.update.notes", "version" to info.latestVersion), color = c.textPrimary, style = CoveType.label, fontWeight = FontWeight.Medium)
-        SelectionContainer {
-            Text(
-                if (expanded) previewReleaseNotes(info.releaseNotes, 4000) else previewReleaseNotes(info.releaseNotes),
-                color = c.textMuted, style = CoveType.caption, modifier = Modifier.padding(top = Spacing.xs)
-            )
-        }
+        com.cove.chat.ui.components.MarkdownDocument(
+            if (expanded) previewReleaseNotes(info.releaseNotes, 4000) else previewReleaseNotes(info.releaseNotes),
+            color = c.textMuted, linkColor = MaterialTheme.colorScheme.primary, fontSize = CoveType.caption.fontSize,
+            modifier = Modifier.padding(top = Spacing.xs)
+        )
         if (info.releaseNotes.trim().length > 280) {
             CoveButton(if (expanded) "▲" else "▼", { expanded = !expanded }, variant = ButtonVariant.Ghost, size = ButtonSize.Sm)
         }

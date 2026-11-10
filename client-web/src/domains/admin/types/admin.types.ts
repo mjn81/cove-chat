@@ -103,7 +103,7 @@ export interface ServerUpdateInfo {
 	/** Empty when no release could be determined. */
 	latest_version: string;
 	update_available: boolean;
-	/** GitHub release body (Markdown source, shown as plain text). */
+	/** GitHub release body (Markdown source, rendered with `MarkdownText`). */
 	release_notes: string;
 	release_url?: string;
 	prerelease: boolean;
