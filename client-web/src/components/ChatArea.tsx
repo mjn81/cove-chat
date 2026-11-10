@@ -297,7 +297,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 								disabled={isConnecting}
 								className="px-3.5 py-1 bg-foreground text-background font-medium rounded-lg hover:opacity-90 active:scale-98 transition text-xs cursor-pointer shadow-xs disabled:opacity-50"
 							>
-								{isConnecting ? 'Connecting...' : 'Accept'}
+								{isConnecting ? t('chat.connecting') : t('chat.accept')}
 							</button>
 							<button
 								type="button"
@@ -305,7 +305,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 								disabled={isConnecting}
 								className="px-3.5 py-1 bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground font-medium rounded-lg active:scale-98 transition text-xs cursor-pointer disabled:opacity-50"
 							>
-								Decline
+								{t('chat.decline')}
 							</button>
 						</div>
 					</div>

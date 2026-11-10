@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Download } from 'lucide-react';
 import type { WhisperMessageFile } from '@/store/whisperStore';
+import { useTranslation } from 'react-i18next';
 
 interface WhisperVoiceBubbleProps {
 	file: WhisperMessageFile;
 }
 
 export const WhisperVoiceBubble: React.FC<WhisperVoiceBubbleProps> = ({ file }) => {
+		const { t } = useTranslation();
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(file.duration || 0);
@@ -119,7 +121,7 @@ export const WhisperVoiceBubble: React.FC<WhisperVoiceBubbleProps> = ({ file }) 
 							type="button"
 							onClick={handleDownload}
 							className="text-muted-foreground hover:text-foreground transition p-0.5 cursor-pointer"
-							title="Download Voice Note"
+							title={t('chat.download_voice')}
 						>
 							<Download size={14} />
 						</button>

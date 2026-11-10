@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, HelpCircle, Compass } from 'lucide-react';
 import { APP_NAME } from '@/lib/brand';
+import { useTranslation } from 'react-i18next';
 
 export default function NotFoundPage() {
+		const { t } = useTranslation();
 	return (
 		<div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground relative overflow-hidden">
 			{/* Subtle background icons with reduced opacity and no weird rotations */}
@@ -21,26 +23,25 @@ export default function NotFoundPage() {
 						404
 					</span>
 					<div className="mt-[-20px] bg-primary text-primary-foreground px-5 py-1.5 rounded-full font-black text-sm uppercase tracking-[0.2em]">
-						Wrong Turn
+						{t('notfound.badge')}
 					</div>
 				</div>
 
-				<h2 className="text-2xl font-bold mb-3 tracking-tight">You're lost in the void.</h2>
+				<h2 className="text-2xl font-bold mb-3 tracking-tight">{t('notfound.title')}</h2>
 				<p className="text-[15px] text-muted-foreground/80 mb-10 leading-relaxed font-medium">
-					This page doesn't exist or has been moved to a different dimension. 
-					Don't worry, even the best explorers get lost sometimes.
+					{t('notfound.body')}
 				</p>
 
 				<div className="flex flex-col sm:flex-row gap-3 w-full">
 					<Button asChild className="flex-1 h-11 text-[14px] font-bold bg-primary hover:bg-primary/90 rounded-md transition-all active:scale-95 shadow-none">
 						<Link to="/">
 							<Home className="me-2 h-4 w-4" />
-							Take me home
+							{t('notfound.home')}
 						</Link>
 					</Button>
 					<Button asChild variant="secondary" className="flex-1 h-11 text-[14px] font-bold bg-secondary hover:bg-secondary/80 rounded-md transition-all active:scale-95 shadow-none">
 						<a href="https://github.com/mjn81/cove-chat" target="_blank" rel="noreferrer">
-							Report a bug
+							{t('notfound.report')}
 						</a>
 					</Button>
 				</div>

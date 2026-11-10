@@ -184,8 +184,8 @@ export const VoiceTab = () => {
 						})}
 					</div>
 					<div className="flex justify-between mt-1 px-1">
-						<span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Silent</span>
-						<span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Loud</span>
+						<span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">{t('voice_settings.silent')}</span>
+						<span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">{t('voice_settings.loud')}</span>
 					</div>
 				</section>
 

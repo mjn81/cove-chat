@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/context-menu';
 import { useRef } from 'react';
 import { ChannelRole, isAdmin, isOwner } from '@/utils/role';
+import { useTranslation } from 'react-i18next';
 
 interface Member {
 	id: string;
@@ -46,6 +47,7 @@ export default function RightSidebar({
 	isCollapsed = false,
 	onToggleCollapse,
 }: RightSidebarProps) {
+		const { t } = useTranslation();
 	const activeChannel = useChannelStore((state) => state.activeChannel);
 	const refreshChannels = useChannelStore((state) => state.refreshChannels);
 	const setActiveChannel = useChannelStore((state) => state.setActiveChannel);
@@ -185,7 +187,7 @@ export default function RightSidebar({
 								type="button"
 								onClick={onToggleCollapse}
 								className="w-8 h-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition"
-								title="Expand members"
+								title={t('members.expand')}
 							>
 								<Users size={20} className="opacity-70" />
 							</button>
@@ -196,7 +198,7 @@ export default function RightSidebar({
 						)}
 						{!isCollapsed && (
 							<h2 className="text-[15px] font-bold text-foreground leading-tight truncate">
-								Members
+								{t('members.title')}
 							</h2>
 						)}
 					</div>
@@ -205,7 +207,7 @@ export default function RightSidebar({
 							type="button"
 							onClick={onToggleCollapse}
 							className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition"
-							title="Collapse members"
+							title={t('members.collapse')}
 						>
 							<ChevronRight size={16} />
 						</button>
@@ -217,7 +219,7 @@ export default function RightSidebar({
 						className={`flex flex-col ${isCollapsed ? 'pt-4 items-center' : 'pt-5 pb-4'}`}
 					>
 						<Section
-							title="Owner"
+							title={t('members.owner')}
 							count={owners.length}
 							list={owners}
 							user={user}
@@ -229,7 +231,7 @@ export default function RightSidebar({
 							isCollapsed={isCollapsed}
 						/>
 						<Section
-							title="Admins"
+							title={t('members.admins')}
 							count={admins.length}
 							list={admins}
 							user={user}
@@ -241,7 +243,7 @@ export default function RightSidebar({
 							isCollapsed={isCollapsed}
 						/>
 						<Section
-							title="Online"
+							title={t('members.online')}
 							count={onlineMembers.length}
 							list={onlineMembers}
 							user={user}
@@ -253,7 +255,7 @@ export default function RightSidebar({
 							isCollapsed={isCollapsed}
 						/>
 						<Section
-							title="Offline"
+							title={t('members.offline')}
 							count={offlineMembers.length}
 							list={offlineMembers}
 							user={user}
@@ -279,7 +281,7 @@ export default function RightSidebar({
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<IconButton
-											label="Leave Channel"
+											label={t('members.leave')}
 											tone="destructive"
 											disabled={loading}
 											onClick={() => setShowLeaveConfirm(true)}
@@ -288,7 +290,7 @@ export default function RightSidebar({
 										</IconButton>
 									</TooltipTrigger>
 									<TooltipContent side="left" className="font-bold text-destructive">
-										Leave Channel
+										{t('members.leave')}
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
@@ -300,7 +302,7 @@ export default function RightSidebar({
 								className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md px-2 text-[13px] font-bold text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								<LogOut className="pointer-events-none h-4 w-4 shrink-0" />
-								<span className="truncate whitespace-nowrap">Leave Channel</span>
+								<span className="truncate whitespace-nowrap">{t('members.leave')}</span>
 							</button>
 						)}
 					</div>
@@ -310,9 +312,9 @@ export default function RightSidebar({
 					isOpen={showLeaveConfirm}
 					onClose={() => setShowLeaveConfirm(false)}
 					onConfirm={handleLeave}
-					title="Leave Channel"
-					message={`Are you sure you want to leave "${activeChannel.name}"? You will need an invite link to join back later.`}
-					confirmText="Leave Channel"
+					title={t('members.leave')}
+					message={t('members.leave_confirm', { name: activeChannel.name })}
+					confirmText={t('members.leave')}
 					variant="danger"
 				/>
 
@@ -320,9 +322,9 @@ export default function RightSidebar({
 					isOpen={!!showKickConfirm}
 					onClose={() => setShowKickConfirm(null)}
 					onConfirm={handleKick}
-					title="Kick Member"
-					message={`Are you sure you want to kick ${showKickConfirm?.username} from the channel? They will need a new invite to rejoin.`}
-					confirmText="Kick Member"
+					title={t('members.kick')}
+					message={t('members.kick_confirm', { name: showKickConfirm?.username })}
+					confirmText={t('members.kick')}
 					variant="danger"
 				/>
 
@@ -406,6 +408,7 @@ const MemberRow = memo(
 		onViewProfile,
 		isCollapsed,
 	}: MemberRowProps) => {
+		const { t } = useTranslation();
 		const isMe = member.id === user?.id;
 		const canKick = !isDM && isAdmin(myRole) && myRole > member.role && !isMe;
 		const canPromote =
@@ -467,7 +470,7 @@ const MemberRow = memo(
 						onClick={() => onViewProfile(member.id)}
 					>
 						<User size={16} />
-						View Profile
+						{t('members.view_profile')}
 					</ContextMenuItem>
 					{(canKick || canPromote || canDemote) && (
 						<>
@@ -478,7 +481,7 @@ const MemberRow = memo(
 									onClick={() => onUpdateRole(member.id, ChannelRole.ADMIN)}
 								>
 									<Shield size={16} className="text-primary" />
-									Promote to Admin
+									{t('members.promote')}
 								</ContextMenuItem>
 							)}
 							{canDemote && (
@@ -487,7 +490,7 @@ const MemberRow = memo(
 									onClick={() => onUpdateRole(member.id, ChannelRole.MEMBER)}
 								>
 									<UserMinus size={16} className="text-muted-foreground" />
-									Demote to Member
+									{t('members.demote')}
 								</ContextMenuItem>
 							)}
 							{canKick && (
@@ -498,7 +501,7 @@ const MemberRow = memo(
 										onClick={() => onKick(member)}
 									>
 										<UserMinus size={16} />
-										Kick Member
+										{t('members.kick')}
 									</ContextMenuItem>
 								</>
 							)}

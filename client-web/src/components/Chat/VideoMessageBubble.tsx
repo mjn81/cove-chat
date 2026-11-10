@@ -185,7 +185,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 			<div
 				className="relative w-64 h-64 rounded-[32px] overflow-hidden bg-black shadow-lg cursor-pointer group border border-border/50 hover:border-primary/50 transition-all hover:scale-[1.01]"
 				onClick={handleBubbleClick}
-				title="Click to play in video player"
+				title={t('chat.play_video')}
 			>
 				{videoUrl ? (
 					<video
@@ -219,7 +219,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 						) : isProcessing ? (
 							<div className="flex flex-col items-center gap-2 text-muted-foreground p-4 text-center">
 								<Loader2 size={28} className="animate-spin text-primary" />
-								<span className="text-xs font-medium">Processing video...</span>
+								<span className="text-xs font-medium">{t('chat.processing_video')}</span>
 							</div>
 						) : (
 							<div className="w-14 h-14 rounded-2xl bg-primary/90 flex items-center justify-center text-primary-foreground shadow-lg group-hover:scale-110 transition">

@@ -10,6 +10,7 @@ import {
 	Minimize,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { useTranslation } from 'react-i18next';
 
 interface CustomVideoPlayerProps {
 	src: string;
@@ -26,6 +27,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 	onEnded,
 	className = '',
 }) => {
+	const { t } = useTranslation();
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -341,7 +343,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 					type="button"
 					onClick={togglePlay}
 					className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-background/90 hover:bg-background text-foreground shadow-2xl backdrop-blur-md flex items-center justify-center border border-white/10 hover:scale-110 active:scale-95 transition-all z-20 cursor-pointer"
-					title="Play"
+					title={t('chat.play')}
 				>
 					<Play size={22} fill="currentColor" />
 				</button>
@@ -477,7 +479,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 									type="button"
 									onClick={() => setShowSpeedSlider((prev) => !prev)}
 									className="flex items-center justify-center w-12 h-7 rounded-md hover:bg-white/15 transition-colors cursor-pointer text-white"
-									title="Playback speed"
+									title={t('chat.playback_speed')}
 								>
 									<span className="text-xs font-bold font-mono tabular-nums text-primary">
 										{playbackRate.toFixed(1)}x

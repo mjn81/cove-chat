@@ -132,7 +132,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 								type="button"
 								onClick={() => setShowUserProfile(true)}
 								className="flex items-center gap-3 text-start hover:opacity-85 transition min-w-0 cursor-pointer group"
-								title="View profile"
+								title={t('topbar.view_profile')}
 							>
 								<div className="relative shrink-0 pointer-events-none">
 									<Avatar
@@ -158,7 +158,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 								type="button"
 								onClick={() => setShowChannelInfo(true)}
 								className="flex items-center gap-3 text-start hover:opacity-85 transition min-w-0 cursor-pointer group"
-								title="View channel info"
+								title={t('topbar.view_channel_info')}
 							>
 								{liveChannel.avatar_id ? (
 									<div className="w-[30px] h-[30px] rounded-full overflow-hidden bg-secondary border border-border/40 shrink-0 pointer-events-none">
@@ -198,7 +198,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						isRequested ? (
 							<div
 								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-muted-foreground select-none"
-								title="Friend request pending"
+								title={t('topbar.friend_pending')}
 							>
 								<Clock size={20} className="text-warning opacity-80" />
 							</div>
@@ -217,7 +217,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									}
 								}}
 								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-success text-success transition-colors cursor-pointer"
-								title="Accept Friend Request"
+								title={t('topbar.accept_friend')}
 							>
 								{isSendingFriendReq ? (
 									<Loader2 size={20} className="animate-spin" />
@@ -240,7 +240,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									}
 								}}
 								className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
-								title="Add Friend"
+								title={t('topbar.add_friend')}
 							>
 								{isSendingFriendReq ? (
 									<Loader2 size={20} className="animate-spin" />
@@ -260,14 +260,14 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									if (!searchQuery) setIsSearching(false);
 								}}
 								className="hover:text-foreground text-primary transition-colors p-1"
-								title="Search"
+								title={t('topbar.search')}
 							>
 								<Search size={18} />
 							</button>
 							<input
 								autoFocus
 								type="text"
-								placeholder="Search..."
+								placeholder={t('topbar.search_placeholder')}
 								value={searchQuery}
 								onChange={(e) => onSearchChange(e.target.value)}
 								onKeyDown={(e) => {
@@ -300,7 +300,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							type="button"
 							onClick={() => setIsSearching(true)}
 							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-							title="Search"
+							title={t('topbar.search')}
 						>
 							<Search size={20} className="opacity-70 hover:opacity-100" />
 						</button>
@@ -343,14 +343,14 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							}`}
 							title={
 								!isFriend
-									? 'Whisper requires mutual friendship'
+									? t('topbar.whisper_need_friend')
 									: hasIncomingInviteForPeer
-									? `Incoming Whisper request from ${incomingInvite?.initiatorUsername} - click to accept`
+									? t('topbar.whisper_incoming', { name: incomingInvite?.initiatorUsername })
 									: isWhisperActiveHere
-									? 'Exit Whisper Mode'
+									? t('topbar.whisper_exit')
 									: hasSessionForPeer
-									? 'Enter Whisper Mode (E2EE)'
-									: 'Start Secure Whisper (E2EE)'
+									? t('topbar.whisper_enter')
+									: t('topbar.whisper_start')
 							}
 						>
 							<Drama size={19} className={isWhisperActiveHere || hasIncomingInviteForPeer ? 'text-current' : 'opacity-80 hover:opacity-100'} />
@@ -367,7 +367,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 hover:text-foreground transition-colors cursor-pointer ${
 								isRightSidebarOpen ? 'text-primary bg-primary/10' : 'text-muted-foreground'
 							}`}
-							title="Show Members"
+							title={t('topbar.show_members')}
 						>
 							<Users size={20} />
 						</button>
@@ -378,7 +378,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							type="button"
 							onClick={() => setShowSettings(true)}
 							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-							title="Channel Settings"
+							title={t('topbar.channel_settings')}
 						>
 							<SlidersHorizontal
 								size={20}
@@ -393,7 +393,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							type="button"
 							onClick={() => stopVoice()}
 							className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:text-destructive hover:bg-secondary/60 transition-colors cursor-pointer group"
-							title="Connected to voice call (Click to disconnect)"
+							title={t('topbar.voice_disconnect')}
 						>
 							<PhoneCall size={18} className="animate-pulse group-hover:hidden" />
 							<PhoneOff size={18} className="hidden group-hover:block" />
@@ -404,7 +404,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							onClick={() => startVoice(liveChannel.id)}
 							aria-disabled={callsBlocked}
 							className={`relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-success hover:bg-secondary/60 transition-colors animate-in fade-in ${callsBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-							title={callsBlocked ? t('calls.nativeRequiredTitle') : `Join ongoing voice call (${participantCount} active)`}
+							title={callsBlocked ? t('calls.nativeRequiredTitle') : t('topbar.voice_join', { count: participantCount })}
 						>
 							<PhoneCall size={18} className="animate-pulse" />
 							<span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-success text-success-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background tabular-nums">
@@ -417,7 +417,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 							onClick={() => startVoice(liveChannel.id)}
 							aria-disabled={callsBlocked}
 							className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors ${callsBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-							title={callsBlocked ? t('calls.nativeRequiredTitle') : 'Start Voice Call'}
+							title={callsBlocked ? t('calls.nativeRequiredTitle') : t('topbar.voice_start')}
 						>
 							<Phone size={18} className="opacity-80 hover:opacity-100" />
 						</button>
