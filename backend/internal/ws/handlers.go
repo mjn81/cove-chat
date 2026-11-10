@@ -9,6 +9,13 @@ import (
 	"cove/backend/internal/store"
 )
 
+// Size caps for one chat event. The socket itself allows 20 MB frames (encrypted voice and whisper payloads), so
+// without these a member could store 20 MB per message at the per-connection event rate.
+const (
+	maxMessageCiphertextBytes = 1 << 20
+	maxMessageNonceBytes      = 64
+)
+
 // handleChatMessage persists and broadcasts an incoming encrypted chat message.
 func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 	var body struct {
@@ -24,6 +31,9 @@ func (c *Client) handleChatMessage(raw *models.WSMessage) error {
 	}
 	if body.ChannelID == "" || body.Ciphertext == nil {
 		return fmt.Errorf("missing channel_id or ciphertext")
+	}
+	if len(body.Ciphertext) > maxMessageCiphertextBytes || len(body.Nonce) > maxMessageNonceBytes {
+		return fmt.Errorf("message too large")
 	}
 	if body.Type == "" {
 		body.Type = models.MessageTypeText
@@ -126,6 +136,9 @@ func (c *Client) handleEditMessage(raw *models.WSMessage) error {
 
 	if body.ChannelID == "" || body.MessageID == "" {
 		return fmt.Errorf("missing channel_id or message_id")
+	}
+	if len(body.Ciphertext) > maxMessageCiphertextBytes || len(body.Nonce) > maxMessageNonceBytes {
+		return fmt.Errorf("message too large")
 	}
 	// A sender who was kicked, banned or left must not keep editing (and broadcasting into) the channel.
 	if !c.isActiveMember(body.ChannelID) {
