@@ -1,6 +1,8 @@
 module cove/backend
 
-go 1.25.5
+go 1.26.0
+
+toolchain go1.26.10
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -16,7 +18,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
-	golang.org/x/crypto v0.48.0
+	golang.org/x/crypto v0.57.0
 	golang.org/x/time v0.15.0
 )
 
@@ -35,7 +37,7 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.20.2 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/oschwald/geoip2-golang v1.11.0
 	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
@@ -61,9 +63,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	golang.org/x/mod v0.26.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.7
 	gopkg.in/yaml.v2 v2.4.0 // indirect
