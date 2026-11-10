@@ -27,10 +27,10 @@ func IsReservedUsername(name string) bool {
 // Username limits, in characters (not bytes), so a Persian or Arabic name is not penalized for its encoding.
 const (
 	MinUsernameRunes = 3
-	MaxUsernameRunes = 32
+	MaxUsernameRunes = 64
 )
 
-// ValidUsername reports whether name is acceptable for a NEW account or a rename: 3 to 32 characters, no leading or
+// ValidUsername reports whether name is acceptable for a NEW account or a rename: 3 to 64 characters, no leading or
 // trailing space, and no control, line-break or invisible formatting characters (zero-width joiners, right-to-left
 // overrides). Those let one account pass for another or hide text in the member list. Existing accounts are not
 // re-checked, so nobody is locked out by a rule that arrived after they signed up.

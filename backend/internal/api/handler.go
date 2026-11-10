@@ -77,6 +77,8 @@ type Handler struct {
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 
+	logins loginGuard // per-account throttle on wrong passwords at sign-in
+
 	// globalLimiter is the per-IP limiter NewRouter builds for the API; WrapWS reuses it so the WebSocket upgrade
 	// shares the same bucket. Ephemeral by design, like every rate limiter.
 	globalLimiter *middleware.RateLimiter
