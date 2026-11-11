@@ -149,6 +149,8 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
+      # A publishing run must be signed with the release key; a manual dry run may use the debug key.
+      COVE_REQUIRE_RELEASE_SIGNING: ${{ needs.prepare.outputs.publish == 'true' && 'true' || 'false' }}
       COVE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       COVE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       COVE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -167,8 +169,11 @@ jobs:
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/cove.jks"
             echo "COVE_KEYSTORE_FILE=$RUNNER_TEMP/cove.jks" >> "$GITHUB_ENV"
             echo "Signing with the release keystore."
+          elif [ "$COVE_REQUIRE_RELEASE_SIGNING" = "true" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set; refusing to publish an APK signed with the debug key."
+            exit 1
           else
-            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; the APK is signed with the debug key and must not be shipped as a stable release."
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; the APK is signed with the debug key (dry run only, never publish it)."
           fi
       - name: Build APK and AAB
         working-directory: client-android
