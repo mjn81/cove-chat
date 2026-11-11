@@ -142,29 +142,7 @@ describe('createSocketManager', () => {
 		sock.open();
 
 		vi.advanceTimersByTime(25_000);
-		const ping = JSON.stringify({ type: 'ping', payload: null });
-		// One immediately on open (for the quality indicator), one per interval after.
-		expect(sock.sent).toEqual([ping, ping]);
-	});
-
-	it('reports the ping→pong round trip through onLatency', () => {
-		const onLatency = vi.fn();
-		const mgr = createSocketManager({
-			onOpen: vi.fn(),
-			onMessage: vi.fn(),
-			onClose: vi.fn(),
-			onError: vi.fn(),
-			onLatency,
-		});
-		mgr.connect('ws://test/ws');
-		const sock = FakeWebSocket.instances[0];
-		sock.open();
-		vi.advanceTimersByTime(40);
-		sock.message('{"type":"pong","payload":null}');
-		expect(onLatency).toHaveBeenCalledWith(40);
-		// A second pong without a ping in flight is not a measurement.
-		sock.message('{"type":"pong"}');
-		expect(onLatency).toHaveBeenCalledTimes(1);
+		expect(sock.sent).toEqual([JSON.stringify({ type: 'ping', payload: null })]);
 	});
 
 	it('disconnect() stops the heartbeat and does not schedule a reconnect', () => {
@@ -223,8 +201,6 @@ describe('createSocketManager', () => {
 
 		sock.open();
 		mgr.send({ type: 'ping', payload: null });
-		// The first ping is the manager's own latency probe sent on open.
-		const ping = JSON.stringify({ type: 'ping', payload: null });
-		expect(sock.sent).toEqual([ping, ping]);
+		expect(sock.sent).toEqual([JSON.stringify({ type: 'ping', payload: null })]);
 	});
 });

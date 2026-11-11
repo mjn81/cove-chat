@@ -43,9 +43,6 @@ export interface AppSlice {
 
 	fetchVersion: () => Promise<void>;
 	setWsState: (s: AppSlice['wsState']) => void;
-	/** Latest WebSocket heartbeat round trip in ms; `null` while unknown (not connected / not measured yet). */
-	wsLatency: number | null;
-	setWsLatency: (ms: number | null) => void;
 	/** Sets the light/dark preference. */
 	setMode: (mode: ThemeMode) => void;
 	/** Selects a theme (built-in, or an installed one whose validated definition is passed in). */
@@ -70,7 +67,6 @@ export const useAppStore = create<AppSlice>()(
 		(set, get) => ({
 			appVersion: 'V...',
 			wsState: 'disconnected',
-			wsLatency: null,
 			theme: 'dark',
 			mode: 'dark',
 			themeId: 'cove',
@@ -83,9 +79,7 @@ export const useAppStore = create<AppSlice>()(
 			enableNotificationSounds: true,
 			preferredMicId: 'default',
 
-			// A new state invalidates the old sample: after a drop the number would be a lie.
-			setWsState: (wsState) => set({ wsState, wsLatency: null }),
-			setWsLatency: (wsLatency) => set({ wsLatency }),
+			setWsState: (wsState) => set({ wsState }),
 			setMode: (mode) => {
 				const { themeId, customTheme } = get();
 				set({ mode, theme: effectiveMode(mode, themeId, customTheme) });

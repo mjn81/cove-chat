@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { connectionLevel, formatPing, pingLevel } from './ping';
+import { formatPing, pingLevel } from './ping';
 
 describe('pingLevel', () => {
 	it('is "measuring" until a value arrives', () => {
@@ -25,19 +25,5 @@ describe('formatPing', () => {
 	it('shows regular values with the unit', () => {
 		expect(formatPing(48)).toBe('48 ms');
 		expect(formatPing(48, true)).toBe('48ms');
-	});
-});
-
-describe('connectionLevel', () => {
-	it('puts the socket state before latency', () => {
-		expect(connectionLevel('disconnected', 20)).toBe('offline');
-		expect(connectionLevel('connecting', 20)).toBe('connecting');
-	});
-
-	it('falls through to the latency bucket once connected', () => {
-		expect(connectionLevel('connected', null)).toBe('measuring');
-		expect(connectionLevel('connected', 30)).toBe('good');
-		expect(connectionLevel('connected', 180)).toBe('average');
-		expect(connectionLevel('connected', 900)).toBe('poor');
 	});
 });

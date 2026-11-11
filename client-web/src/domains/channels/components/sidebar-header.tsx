@@ -5,7 +5,6 @@ import { IconButton } from '@/components/icon-button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP_NAME } from '@/lib/brand';
 import { cn } from '@/lib/utils';
-import { ConnectionSignal } from '@/domains/voice/components/connection-signal';
 
 interface SidebarHeaderProps {
 	isCollapsed: boolean;
@@ -72,7 +71,7 @@ export const SidebarHeader = ({
 					</h2>
 					<span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
 						{appVersion}
-						<ConnectionSignal />
+						<span className={cn('h-2 w-2 rounded-full', wsDotClass(wsState))} title={wsState} />
 						{canCollapse && onToggleCollapse && (
 							<IconButton
 								label={t('sidebar.collapse')}

@@ -95,12 +95,6 @@ class WebSocketManager(private val prefs: PreferencesManager) {
     private val _connectionState = MutableSharedFlow<Boolean>(replay = 1)
     val connectionState: SharedFlow<Boolean> = _connectionState.asSharedFlow()
 
-    private val _latencyMs = kotlinx.coroutines.flow.MutableStateFlow<Int?>(null)
-
-    /** Round trip of the latest heartbeat (ping to pong) in ms; null while not connected or not yet measured. */
-    val latencyMs: kotlinx.coroutines.flow.StateFlow<Int?> = _latencyMs
-    @Volatile private var pingSentAt = 0L
-
     /** Starts the reconnect loop. Safe to call repeatedly; only one loop ever runs. */
     fun connect() {
         if (connectionJob?.isActive == true) return
@@ -124,11 +118,9 @@ class WebSocketManager(private val prefs: PreferencesManager) {
 
                         // App-level heartbeat: the hub tracks presence through "ping" frames.
                         val heartbeat = launch {
-                            // Ping straight away so the quality indicator has a value right after (re)connecting.
                             while (isActive) {
-                                pingSentAt = System.currentTimeMillis()
-                                sendRaw("""{"type":"ping","payload":{}}""")
                                 delay(20_000)
+                                sendRaw("""{"type":"ping","payload":{}}""")
                             }
                         }
                         try {
@@ -146,7 +138,6 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                     if (e.message?.contains("401") == true) sessionEnded = true
                 } finally {
                     activeSession = null
-                    _latencyMs.value = null
                     _connectionState.emit(false)
                 }
                 if (sessionEnded) {
@@ -173,10 +164,6 @@ class WebSocketManager(private val prefs: PreferencesManager) {
             val payload = root["payload"] ?: JsonObject(emptyMap())
 
             when (type) {
-                "pong" -> if (pingSentAt != 0L) {
-                    _latencyMs.value = (System.currentTimeMillis() - pingSentAt).toInt().coerceAtLeast(0)
-                    pingSentAt = 0L
-                }
                 "channel_key" -> {
                     val keyPayload = json.decodeFromJsonElement<ChannelKeyPayload>(payload)
                     CryptoManager.setChannelKeyBase64(keyPayload.channelId, keyPayload.aesKey)

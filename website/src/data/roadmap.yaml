@@ -179,8 +179,8 @@ phases:
         date: "2026-11-10"
       - id: net-indicator
         area: calls
-        title: "Connection quality indicator"
-        note: "Signal bars for the server connection on web, desktop and Android, and for the call you are in."
+        title: "Connection indicator"
+        note: "A small status dot for the server connection, and a signal indicator inside calls."
         date: "2026-11-10"
       - id: persian
         area: i18n

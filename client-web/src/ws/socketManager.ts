@@ -14,8 +14,6 @@ export interface SocketManagerCallbacks {
 	onMessage: (raw: string) => void;
 	onClose: (code: number) => void;
 	onError: (err: unknown) => void;
-	/** Round-trip time of the latest heartbeat (ping → pong), in ms. Optional: only the UI path cares. */
-	onLatency?: (ms: number) => void;
 }
 
 export interface SocketManager {
@@ -32,8 +30,6 @@ const HEARTBEAT_INTERVAL_MS = 25_000;
 // otherwise) for two full heartbeat cycles is treated as dead — some
 // proxies/NATs drop a connection without ever sending a close frame, leaving
 // it stuck in a zombie `OPEN` state that silently swallows sends forever.
-// Cheap check on the raw frame so a pong does not need a JSON.parse just to be timed.
-const PONG_RE = /^\s*\{\s*"type"\s*:\s*"pong"/;
 const LIVENESS_TIMEOUT_MS = HEARTBEAT_INTERVAL_MS * 2;
 
 export function createSocketManager(callbacks: SocketManagerCallbacks): SocketManager {
@@ -46,8 +42,6 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 	let lastProtocols: string[] | undefined;
 	let disconnected = false;
 	let lastInboundAt = 0;
-	// Send time of the ping still waiting for its pong; one in flight at a time keeps the sample unambiguous.
-	let pingSentAt = 0;
 
 	function stopHeartbeat() {
 		if (heartbeatTimer) clearInterval(heartbeatTimer);
@@ -59,15 +53,11 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 	function startHeartbeat() {
 		stopHeartbeat();
 		lastInboundAt = Date.now();
-		const sendPing = () => {
+		heartbeatTimer = setInterval(() => {
 			if (socket?.readyState === WebSocket.OPEN) {
-				pingSentAt = Date.now();
 				socket.send(JSON.stringify({ type: 'ping', payload: null }));
 			}
-		};
-		// Immediate first ping so the quality indicator has a value right after (re)connecting.
-		sendPing();
-		heartbeatTimer = setInterval(sendPing, HEARTBEAT_INTERVAL_MS);
+		}, HEARTBEAT_INTERVAL_MS);
 		livenessTimer = setInterval(() => {
 			if (socket?.readyState === WebSocket.OPEN && Date.now() - lastInboundAt > LIVENESS_TIMEOUT_MS) {
 				// Force-close so the browser fires a real close event and the
@@ -110,10 +100,6 @@ export function createSocketManager(callbacks: SocketManagerCallbacks): SocketMa
 
 		socket.onmessage = (event) => {
 			lastInboundAt = Date.now();
-			if (pingSentAt && typeof event.data === 'string' && PONG_RE.test(event.data)) {
-				callbacks.onLatency?.(Math.max(0, lastInboundAt - pingSentAt));
-				pingSentAt = 0;
-			}
 			callbacks.onMessage(event.data);
 		};
 

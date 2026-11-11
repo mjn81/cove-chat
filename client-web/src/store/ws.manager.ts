@@ -60,10 +60,6 @@ export function initWebSocket() {
 		retryFailedMessages();
 	});
 
-	onWS('latency', (ms) => {
-		useAppStore.getState().setWsLatency(typeof ms === 'number' ? ms : null);
-	});
-
 	onWS('close', () => {
 		useAppStore.getState().setWsState('disconnected');
 	});
