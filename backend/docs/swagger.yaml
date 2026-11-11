@@ -147,22 +147,22 @@ definitions:
     type: object
   cove_backend_internal_models.MessageType:
     enum:
+    - bot
     - text
     - file
     - voice
     - video
     - invite
     - sticker
-    - bot
     type: string
     x-enum-varnames:
+    - MessageTypeBot
     - MessageTypeText
     - MessageTypeFile
     - MessageTypeVoice
     - MessageTypeVideo
     - MessageTypeInvite
     - MessageTypeSticker
-    - MessageTypeBot
   internal_api.AddMembersRequest:
     properties:
       user_ids:
@@ -5558,7 +5558,8 @@ paths:
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "429":
-          description: Too Many Requests
+          description: too many requests, or too many wrong passwords for this account
+            (auth.errors.too_many_attempts)
           schema:
             $ref: '#/definitions/internal_api.ErrorResponse'
         "500":

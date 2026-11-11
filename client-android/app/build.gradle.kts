@@ -47,6 +47,13 @@ android {
         }
     }
 
+    // A published release must never fall back to the debug key (anyone can sign an APK with it, and Android would
+    // treat it as an update of the same app). The release workflow sets COVE_REQUIRE_RELEASE_SIGNING when it
+    // publishes; local and dry-run builds keep the debug fallback.
+    if (System.getenv("COVE_REQUIRE_RELEASE_SIGNING") == "true" && System.getenv("COVE_KEYSTORE_FILE").isNullOrBlank()) {
+        throw GradleException("COVE_REQUIRE_RELEASE_SIGNING is set but no release keystore was provided (COVE_KEYSTORE_FILE).")
+    }
+
     buildTypes {
         release {
             signingConfig = if (System.getenv("COVE_KEYSTORE_FILE").isNullOrBlank()) signingConfigs.getByName("debug") else signingConfigs.getByName("release")

@@ -453,6 +453,15 @@ func (s *Store) DeleteChannel(id string) error {
 		}
 	}
 
+	// 1b. Bot installs, channel commands and keyboards of the channel
+	if installs, ierr := s.ListChannelInstalls(id); ierr == nil {
+		for _, in := range installs {
+			if rerr := s.RemoveBotFromChannel(id, in.BotID); rerr != nil {
+				logger.Warnf("store: DeleteChannel(%s): failed to remove bot install of %s: %v", id, in.BotID, rerr)
+			}
+		}
+	}
+
 	// 2. Delete all messages
 	if err := s.db.DeleteChannelMessages(id); err != nil {
 		logger.Warnf("store: DeleteChannel(%s): failed to delete messages: %v", id, err)

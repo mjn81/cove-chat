@@ -11,12 +11,12 @@ No secret values appear in this document; it only refers to locations.
 | Critical | 0 | 0 | 0 |
 | High | 2 | 2 | 0 |
 | Medium | 9 | 6 | 3 |
-| Low | 11 | 4 | 7 |
+| Low | 11 | 7 | 4 |
 | Info | 5 | 1 | 4 |
 
 No finding allows an unauthenticated attacker to read or change data. The access model held up: every route is either public on purpose or answers 401 to an anonymous caller, channel-scoped routes answer the same 404 for a channel you are not in as for one that does not exist, and every mutation made with the cookie needs the CSRF header. The two High findings were an account-deletion bug that kept the account usable, and untrusted input reaching ffmpeg.
 
-**The Bot API (new auth tier, endpoints, gateway) was being built in parallel and is not covered.** It needs its own review once merged: token format and hashing, scopes, per-bot channel membership checks, rate limits, and the gateway's origin/frame limits.
+The Bot API was reviewed after it merged; see the Bot API section below.
 
 ## Scope and method
 
@@ -56,17 +56,17 @@ Status: **fixed** (commit on this branch), **open**, **accepted** (with reason).
 | OP-04 | Low | `config/config.go` | The generated master password is stored in plain text in `config.toml` next to the data it protects (file mode 0600), and printed once at first start. The KEK uses a fixed Argon2 salt, which is fine for a random master password and weak for a chosen one. | **accepted**: documented model. Recommend `COVE_MASTER_PASSWORD` from a secret store in production and an operator-chosen passphrase of 20+ characters. |
 | OP-05 | Low | `go.mod` | `govulncheck` still reports GO-2026-4479 (`pion/dtls/v2` 2.2.7, random-nonce AES-GCM), pulled in by `pion/turn/v3` via `pion/stun`. No fix exists in v2. The embedded TURN relay speaks UDP and TCP only, not DTLS, and WebRTC itself uses dtls v3. | **open, low**. Migrate `rtc/turn.go` to `pion/turn/v5` (already an indirect dependency). |
 | OP-06 | Low | `middleware/middleware.go` realIP | With `trust_proxy_headers` on, the first `X-Forwarded-For` hop is used, which a client can set when the proxy appends instead of overwriting. `CF-Connecting-IP` and `X-Real-IP` win first, so behind Cloudflare/nginx-proxy-manager with those set this is not reachable. | **accepted**, documented in the config comment; revisit with the proxy topology. |
-| OP-07 | Low | `config/schema.go` | A non-owner admin may edit `rate_limit.*` and `voice.*` (restart required), which lets a malicious admin weaken limits. | **open**. Make those keys `OwnerOnly`. |
-| OP-08 | Low | `auth/auth.go` | No cap on live sessions per user (sign-in is rate limited, so growth is slow). | **open**. Evict the oldest above ~50. |
+| OP-07 | Low | `config/schema.go` | A non-owner admin could edit `rate_limit.*` and `voice.*` (restart required), which lets a malicious admin weaken limits. | **fixed** (owner-only) |
+| OP-08 | Low | `auth/auth.go` | No cap on live sessions per user (sign-in is rate limited, so growth is slow). | **fixed** (50 per account, oldest evicted) |
 | OP-09 | Low | `client-desktop/files.go` | The webview can call `SaveFile` (any file name, sanitized, into `Downloads/Cove`), `RevealFile`, `SetUpdateSettings`, `InstallUpdateAndRestart`. Only the embedded build runs in the webview, so these are reachable only through an XSS in `client-web` (none found: no `dangerouslySetInnerHTML`, no markdown renderer, links limited to `http(s)`/`mailto`). | **accepted**, with OP-03 for the update calls. |
-| OP-10 | Low | `.github/workflows`, `client-android/app/build.gradle.kts` | Actions are pinned by tag, not commit SHA. The Android release build falls back to the debug keystore when the signing secrets are missing, and R8 is off. | **open**. Pin by SHA (Dependabot, added here, keeps them current); fail the release job when the keystore is missing. |
+| OP-10 | Low | `.github/workflows`, `client-android/app/build.gradle.kts` | Actions are pinned by tag, not commit SHA. The Android release build fell back to the debug keystore when the signing secrets were missing. | **partly fixed**: a publishing run now fails without the keystore (dry runs and local builds keep the fallback). Actions are still pinned by tag; pin by SHA (Dependabot, added here, keeps them current). |
 | OP-11 | Info | design | No channel-key rotation when a member is removed: the removed member keeps the keys they already received (cannot fetch new ciphertext or files, server enforces that). Whisper public keys are relayed by the server without authentication, so a malicious server could man-in-the-middle a Whisper. Both follow from "server-trusted" and are documented. | **accepted** |
 | OP-12 | Info | `docs`, `ops` | Android dependencies (Ktor 3.0.1, OkHttp, WebRTC 1.3.10, security-crypto) were not machine-scanned. | **open**: run OSV-scanner in CI; Dependabot added. |
 | OP-13 | Info | `api/users.go` GetUser | Any signed-in user can read another user's `status_preference` (for example `dnd`). | **accepted** |
 | OP-14 | Info | `backend/internal/federation` | Federation router exists but is not mounted; no exposure today. | **accepted**; review before enabling. |
 | OP-15 | Info | repo history | `client-web/.env` and `frontend/.env` were committed once. They held only local API/WebSocket URLs, no secrets. Keys and tokens grep: none found in the working tree or history. | **fixed** earlier |
 
-Counts: High 2 (both fixed), Medium 9 (SR-03..SR-08 fixed; OP-01..03 open), Low 11 (SR-09..SR-12 fixed; OP-04..OP-10 open or accepted), Info 5.
+Counts: High 2 (both fixed), Medium 9 (SR-03..SR-08 fixed; OP-01..03 open), Low 11 (SR-09..SR-12, OP-07, OP-08 and part of OP-10 fixed; the rest open or accepted), Info 5. The Bot API review adds the findings in its own section.
 
 ## What was checked and held
 
@@ -101,6 +101,31 @@ WebSocket events (after an authenticated, origin-checked upgrade, 30 events/s pe
 
 The tests that enforce this: `access_matrix_test.go` (anonymous 401 on every non-public route, CSRF on every cookie mutation, outsider 404 on every channel route), `admin_rbac_test.go` (role matrix for admin routes), `security_test.go`, `ws_security_test.go`, `rtc_signal_membership_test.go`.
 
+## Bot API review
+
+Reviewed after the Bot API merged into `next` (`docs/design/bot-api-plan.md`, `internal/api/bots*.go`, `internal/bots`, `internal/store/bots.go`, the `/gateway/bot` socket, `client-web/src/domains/bots`). The design holds up: the Bot tier is its own credential (`Authorization: Bot <id>.<secret>`) that only `protectBot` and `protectBotChannel` accept, the secret is 256 bits and stored as a SHA-256 hash, compared in constant time with the same cost for unknown ids, and rotation, disabling and deleting a bot close its gateway sockets. The existing tests already covered most of the checklist; this review confirmed it by reading and added the cases below.
+
+| ID | Sev | Where | Impact | Status |
+|---|---|---|---|---|
+| BOT-01 | Medium | `store/bots.go` CreateBot | Bot names are lowercase while the system account is "Cove", and uniqueness was an exact match, so a bot could be named `cove` (the account that sends sign-in and update notices) or differ from a person only by case. | **fixed** (reserved name and case-insensitive check, test `TestBotSecurity_NamesCannotImpersonate`) |
+| BOT-02 | Low | `store/store.go` DeleteChannel | Deleting a channel left bot installs, channel commands and keyboards behind; a bot's gateway `hello` still listed the dead channel. | **fixed** |
+| BOT-03 | Low | `middleware/middleware.go` | The access log printed the path of `POST /api/interactions/{id}/{token}/callback`, i.e. the one-time interaction token (useless without the bot token, but still a credential in a log). | **fixed** (`LogPath` redacts it) |
+| BOT-04 | Info | design | A bot with `messages.read` can read the channel history from before it was installed (`GET /api/bots/me/channels/{id}/messages`). The install dialog should say so. | **accepted**, documented behaviour |
+| BOT-05 | Info | design | The URL of a link button is visible only on hover/title, so a label can hide the target. The web client allows only `http(s)` links and uses `noopener noreferrer nofollow`. Consider showing the host on the button. | **accepted** |
+| BOT-06 | Info | `api/bots_auth.go` | Per-bot and per-user rate-limit buckets (`sync.Map`) are never evicted; they are bounded by the number of bots, users and installs. | **accepted** |
+
+Checked and holding:
+
+- **Tier and IDOR.** `access_matrix_test.go` now has a Bot tier: every `/api/bots/me/*` and `/api/interactions/*` route answers 401 to no credential, a user Bearer token and a user session cookie, and a bot token gets 401 on every user route. Bot routes address only `me`, so there is no way to name another bot; channel routes answer 404 (not 403) when the bot has no active install there, and 403 only when the install lacks the scope. A bot can edit and delete only its own messages. Bots are always `RoleMember`; role changes, kicks and "add member" reject bot targets, bots cannot be friends, cannot log in with a password and cannot open a user socket.
+- **Interactions.** Tokens are random, stored hashed, bound to one bot, expire after 15 minutes and take two answers at most; the acting user always comes from the session. Button and keyboard presses are matched against the real message or keyboard of that bot in that channel.
+- **Commands and payloads.** Definitions are validated (name charset, counts, option types and choices, bounds); an invocation is validated against the registered definition before the bot sees it; messages, buttons (5x5, label, `custom_id`, URL `http(s)` only, no userinfo), keyboards and rich bodies are bounded. People cannot send the `bot` message type over the socket (test added), so a crafted button grid cannot be passed off as a bot's.
+- **Webhooks.** HTTPS only (loopback `http` in dev). The address check runs in the dialer's `Control` hook on the address actually connected to, so DNS rebinding and IPv4-mapped IPv6 cannot slip past it; redirects are never followed; no proxy; the response body is discarded after 4 KiB. Private ranges need the owner-only `bots.webhook_allow_private`. Deliveries are signed with HMAC-SHA256 over `timestamp.body`; per-bot queue and retry counts are capped; errors are logged without bodies.
+- **Data access.** The bot never receives a channel key or ciphertext: the server decrypts only for channels with an active install (or a DM the person opened), and delivers a message to a bot only with `messages.read`, a mention, a reply to the bot or in its own DM. Whispers never reach bots (no friendship, separate hub); a bot not in a DM cannot see it. Deleting an owner deletes their bots.
+- **Clients.** Bot text, command descriptions, labels and names are rendered as React text (no HTML sink); button URLs are re-checked on the client (`isSafeButtonUrl`); the BOT badge comes from the account's `is_bot` flag, which people cannot set.
+- **Capability.** `bots` is advertised only when enabled (`TestBots_AuditTrailAndCapability`).
+
+Not verified: the Android and desktop clients have no bot UI yet, so there was nothing to review there.
+
 ## Proposed Android network security config (OP-01)
 
 Release builds should trust only system CAs and refuse cleartext, with a debug overlay for development. Self-hosters on a plain-HTTP LAN or with their own CA need an in-app choice instead of a global allowance, which is the product decision to make.
@@ -133,7 +158,7 @@ Then, for users who must reach `http://192.168.x.x` or a private CA: warn on the
 2. **Decide the Android network policy** (OP-01) and ship the release config above.
 3. **Run the server container unprivileged** (OP-02) with a tested entrypoint; keep `no-new-privileges` (added).
 4. **Review the Bot API** when merged (new token tier, scopes, gateway).
-5. Make `rate_limit.*` and `voice.*` owner-only (OP-07), cap sessions per user (OP-08), migrate to `pion/turn` v5 (OP-05).
+5. Migrate to `pion/turn` v5 (OP-05) and pin GitHub Actions by commit SHA (OP-10).
 6. Keep Dependabot (added) and add `govulncheck`, `pnpm audit` and an OSV scan of the Android lockfile to CI.
 7. Fuzz `pkg/udpmedia` header and fragment parsing (`go test -fuzz`) before enabling `raw_udp` on untrusted networks.
 8. Operators: set `COVE_MASTER_PASSWORD` from a secret store, put the server behind TLS (cookies are `Secure` outside dev), and set `trust_proxy_headers` only behind a proxy that overwrites the forwarding headers.

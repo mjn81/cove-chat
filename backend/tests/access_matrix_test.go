@@ -45,6 +45,12 @@ func registeredRoutes(t *testing.T) []string {
 
 var pathParam = regexp.MustCompile(`\{[a-z]+\}`)
 
+// isBotTier reports whether a route authenticates with `Authorization: Bot` instead of a user session. Those routes
+// have no cookie, so the cookie/CSRF assumptions below do not apply to them; TestAccessMatrix_BotTier covers them.
+func isBotTier(route string) bool {
+	return strings.Contains(route, " /api/bots/me") || strings.Contains(route, " /api/interactions/")
+}
+
 func concretePath(route string) (method, path string) {
 	method, path, _ = strings.Cut(route, " ")
 	return method, pathParam.ReplaceAllString(path, "x")
@@ -75,7 +81,7 @@ func TestAccessMatrix_CookieMutationsNeedCSRFEverywhere(t *testing.T) {
 	client, _ := loginWithCookies(t, srv, "csrfowner", "password123!")
 	for _, route := range registeredRoutes(t) {
 		method, path := concretePath(route)
-		if publicRoutes[route] || method == http.MethodGet {
+		if publicRoutes[route] || isBotTier(route) || method == http.MethodGet {
 			continue
 		}
 		req, _ := http.NewRequest(method, srv.URL+path, strings.NewReader("{}"))
@@ -126,6 +132,52 @@ func TestAccessMatrix_NonMemberSeesNothingOfAPrivateChannel(t *testing.T) {
 		b.Body.Close()
 		if a.StatusCode != http.StatusNotFound || b.StatusCode != http.StatusNotFound {
 			t.Errorf("%s outsider: real channel=%d, missing channel=%d, both must be 404", route, a.StatusCode, b.StatusCode)
+		}
+	}
+}
+
+// The Bot tier is deny-by-default in both directions: a user session (cookie or Bearer) never satisfies a bot route,
+// and a bot-shaped Authorization header never satisfies a user route. Both answer a plain 401.
+func TestAccessMatrix_BotTier(t *testing.T) {
+	srv := testServer(t)
+	defer srv.Close()
+	user := registerAndLogin(t, srv, "bt_user", "password123!")
+	client, csrf := loginWithCookies(t, srv, "bt_cookie", "password123!")
+	for _, route := range registeredRoutes(t) {
+		method, path := concretePath(route)
+		if publicRoutes[route] {
+			continue
+		}
+		if isBotTier(route) {
+			// no credential, a user Bearer token and a user session cookie are all refused
+			for name, do := range map[string]func() *http.Response{
+				"anonymous":   func() *http.Response { return mustDo(t, newJSONReq(t, method, srv.URL+path, "", nil)) },
+				"user bearer": func() *http.Response { return mustDo(t, newJSONReq(t, method, srv.URL+path, user, nil)) },
+				"user cookie": func() *http.Response {
+					req, _ := http.NewRequest(method, srv.URL+path, strings.NewReader("{}"))
+					req.Header.Set("X-CSRF-Token", csrf)
+					resp, err := client.Do(req)
+					if err != nil {
+						t.Fatal(err)
+					}
+					return resp
+				},
+			} {
+				resp := do()
+				resp.Body.Close()
+				if resp.StatusCode != http.StatusUnauthorized {
+					t.Errorf("%s as %s = %d, want 401", route, name, resp.StatusCode)
+				}
+			}
+			continue
+		}
+		// a bot token on a user route
+		req := newJSONReq(t, method, srv.URL+path, "", nil)
+		req.Header.Set("Authorization", "Bot someid.somesecret")
+		resp := mustDo(t, req)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Errorf("%s with a bot token = %d, want 401", route, resp.StatusCode)
 		}
 	}
 }

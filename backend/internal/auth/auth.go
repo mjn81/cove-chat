@@ -49,6 +49,8 @@ type Session struct {
 	ExpiresAt    time.Time
 	LastActiveAt time.Time
 	Meta         SessionMeta
+	// seq orders sessions by creation even when two share a timestamp (eviction picks the lowest).
+	seq uint64
 }
 
 // SessionPersister defines optional persistence for sessions across server restarts.
@@ -57,6 +59,10 @@ type SessionPersister interface {
 	DeleteSession(token string) error
 	ListSessions() ([]*models.Session, error)
 }
+
+// MaxSessionsPerUser bounds the live sessions of one account. Signing in is rate limited, but without a cap a
+// patient client still grows the session table (memory and database) without limit; the oldest session is evicted.
+const MaxSessionsPerUser = 50
 
 const (
 	// lastActiveGranularity bounds how often a request refreshes LastActiveAt in memory.
@@ -122,6 +128,7 @@ type SessionStore struct {
 	persistAt map[string]time.Time
 	ttl       time.Duration
 	persister SessionPersister
+	nextSeq   uint64
 }
 
 // NewSessionStore creates a new SessionStore, hydrates valid sessions if a persister is provided,
@@ -183,14 +190,52 @@ func (ss *SessionStore) CreateWithMeta(userID, username string, meta SessionMeta
 	}
 	key := hashToken(token)
 	ss.mu.Lock()
+	ss.nextSeq++
+	s.seq = ss.nextSeq
 	ss.sessions[key] = s
 	ss.persistAt[key] = now
+	evicted := ss.evictOldestLocked(userID, key)
 	ss.mu.Unlock()
 
 	if ss.persister != nil {
 		_ = ss.persister.SetSession(s.toModel(key))
+		for _, k := range evicted {
+			_ = ss.persister.DeleteSession(k)
+		}
 	}
 	return token, *s, nil
+}
+
+// evictOldestLocked drops the user's oldest sessions (never keep) until at most MaxSessionsPerUser remain and
+// returns their keys. The caller holds ss.mu. A socket of an evicted session notices on its next heartbeat.
+func (ss *SessionStore) evictOldestLocked(userID, keep string) []string {
+	var mine []string
+	for k, s := range ss.sessions {
+		if s.UserID == userID {
+			mine = append(mine, k)
+		}
+	}
+	var evicted []string
+	for len(mine) > MaxSessionsPerUser {
+		oldest := -1
+		for i, k := range mine {
+			if k == keep {
+				continue
+			}
+			if oldest < 0 || ss.sessions[k].seq < ss.sessions[mine[oldest]].seq {
+				oldest = i
+			}
+		}
+		if oldest < 0 {
+			break
+		}
+		k := mine[oldest]
+		delete(ss.sessions, k)
+		delete(ss.persistAt, k)
+		evicted = append(evicted, k)
+		mine = append(mine[:oldest], mine[oldest+1:]...)
+	}
+	return evicted
 }
 
 // Validate returns a copy of the session associated with token, or an error if it is invalid or expired.
