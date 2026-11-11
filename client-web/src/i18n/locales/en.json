@@ -678,7 +678,8 @@
 		"hint_navigate": "navigate",
 		"hint_select": "select",
 		"hint_close": "close",
-		"shortcut": "Shortcut:"
+		"shortcut": "Shortcut:",
+		"filter_bots": "Bots"
 	},
 	"calls": {
 		"nativeRequired": "Calls on this server need a native Cove app. Use the Cove desktop or Android app to join or start calls.",
@@ -1900,6 +1901,14 @@
 		},
 		"message": {
 			"open_link": "Opens a link"
+		},
+		"explore": {
+			"title": "Public bots",
+			"empty": "No public bots found.",
+			"no_description": "No description",
+			"commands": "{{count}} commands",
+			"start": "Message",
+			"offline": "{{bot}} is offline right now. It will answer when it is back."
 		}
 	}
 }

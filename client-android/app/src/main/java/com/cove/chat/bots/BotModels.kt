@@ -59,7 +59,9 @@ data class Bot(
     val disabled: Boolean = false,
     @SerialName("webhook_url") val webhookUrl: String? = null,
     val online: Boolean = false,
-    @SerialName("install_count") val installCount: Int = 0
+    @SerialName("install_count") val installCount: Int = 0,
+    /** Global slash commands the bot registered (shown in Explore). */
+    @SerialName("command_count") val commandCount: Int = 0
 )
 
 /** `GET /api/bots`: a page plus what the caller may do. */
@@ -154,6 +156,14 @@ data class InteractionRequest(
 /** [delivered] is false when the bot is offline and has no webhook, so nothing will answer. */
 @Serializable
 data class InteractionResult(val id: String = "", val delivered: Boolean = false)
+
+/** `POST /api/bots/{id}/start`: the DM opened with a bot from Explore. [delivered] is false when the bot is offline. */
+@Serializable
+data class StartBotResult(
+    @SerialName("channel_id") val channelId: String,
+    val created: Boolean = false,
+    val delivered: Boolean = false
+)
 
 /** Install scopes (`messages.send` is the default). */
 object BotScopes {

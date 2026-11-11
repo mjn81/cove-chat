@@ -55,7 +55,17 @@ export interface Bot {
 	webhook_url?: string;
 	online: boolean;
 	install_count: number;
+	/** Global slash commands the bot registered (shown in Explore). */
+	command_count?: number;
 	created_at: string;
+}
+
+/** `POST /api/bots/{id}/start`: the DM opened with a bot from Explore. */
+export interface StartBotResult {
+	channel_id: string;
+	created: boolean;
+	/** False when the bot is offline and has no webhook, so it cannot answer yet. */
+	delivered: boolean;
 }
 
 /** `GET /api/bots`: a page plus what the caller may do. */

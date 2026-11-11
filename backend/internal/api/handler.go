@@ -243,6 +243,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("PATCH /api/bots/{id}", protect(h.UpdateBot))
 	mux.Handle("DELETE /api/bots/{id}", protect(h.DeleteBot))
 	mux.Handle("POST /api/bots/{id}/token", protect(h.RotateBotToken))
+	mux.Handle("POST /api/bots/{id}/start", protect(h.StartBot))
 	mux.Handle("GET /api/channels/{id}/bots", protectMember(h.ListChannelBots))
 	mux.Handle("PUT /api/channels/{id}/bots/{bot_id}", protectMember(h.InstallBot))
 	mux.Handle("DELETE /api/channels/{id}/bots/{bot_id}", protectMember(h.UninstallBot))

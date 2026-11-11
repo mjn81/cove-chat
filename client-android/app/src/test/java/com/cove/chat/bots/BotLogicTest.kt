@@ -185,3 +185,20 @@ class BotLogicTest {
         assertEquals("messages_send", BotLogic.scopeLabelKey(BotScopes.SEND))
     }
 }
+
+class BotExploreModelsTest {
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+    @Test fun botDecodesCommandCountAndToleratesUnknownFields() {
+        val b = json.decodeFromString<Bot>("""{"id":"b1","username":"dice","public":true,"command_count":3,"future":"x"}""")
+        assertEquals(3, b.commandCount)
+        assertEquals(0, json.decodeFromString<Bot>("""{"id":"b2","username":"old"}""").commandCount)
+    }
+
+    @Test fun startResultDecodes() {
+        val r = json.decodeFromString<StartBotResult>("""{"channel_id":"c1","created":true,"delivered":false}""")
+        assertEquals("c1", r.channelId)
+        assertTrue(r.created)
+        assertFalse(r.delivered)
+    }
+}

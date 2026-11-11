@@ -48,6 +48,9 @@ func (h *Handler) botView(b *models.Bot, u *models.User, private bool) BotRespon
 	if installs, err := h.Store.ListBotInstalls(b.ID); err == nil {
 		resp.InstallCount = len(installs)
 	}
+	if cmds, err := h.Store.ListBotCommands(b.ID, store.GlobalScope); err == nil {
+		resp.CommandCount = len(cmds)
+	}
 	return resp
 }
 

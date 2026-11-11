@@ -7,6 +7,7 @@ import type {
 	ChannelCommand,
 	CreateBotInput,
 	CreateBotResponse,
+	StartBotResult,
 	InteractionInput,
 	InteractionResult,
 	UpdateBotInput,
@@ -32,6 +33,9 @@ export const apiListBots = (all = false) =>
 /** Public bots a channel admin can install, optionally filtered. */
 export const apiDiscoverBots = (q: string) =>
 	request<BotPage>(apiClient.get('/api/bots/discover', { params: { limit: 100, ...(q ? { q } : {}) } }));
+
+/** Starts a chat with a public bot (opens or creates the DM and sends the bot a start event). */
+export const apiStartBot = (id: string) => request<StartBotResult>(apiClient.post(`/api/bots/${enc(id)}/start`));
 
 export const apiCreateBot = (input: CreateBotInput) => request<CreateBotResponse>(apiClient.post('/api/bots', input));
 

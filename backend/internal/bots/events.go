@@ -21,6 +21,8 @@ const (
 	EventMemberLeave       = "member_leave"
 	EventBotInstall        = "bot_install"
 	EventBotUninstall      = "bot_uninstall"
+	// EventBotStart is sent when a person starts a chat with the bot from Explore (like a Start button).
+	EventBotStart = "bot_start"
 )
 
 // Author is the sender of a message as a bot sees them: no avatar ids, status or anything beyond identity.
@@ -69,6 +71,12 @@ type InteractionEvent struct {
 	User      Author          `json:"user"`
 	Data      json.RawMessage `json:"data,omitempty"`
 	ExpiresAt time.Time       `json:"expires_at"`
+}
+
+// StartEvent is the payload of bot_start: the DM that was opened and who opened it.
+type StartEvent struct {
+	ChannelID string `json:"channel_id"`
+	User      Author `json:"user"`
 }
 
 // InstallEvent is the payload of bot_install and bot_uninstall.

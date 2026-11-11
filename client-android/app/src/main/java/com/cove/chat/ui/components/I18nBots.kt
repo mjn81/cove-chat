@@ -32,6 +32,7 @@ internal val BotsFa: Map<String, String> = mapOf(
     "Add bot" to "افزودن ربات", "Bot added" to "ربات افزوده شد", "Bot removed" to "ربات حذف شد", "Choose another bot" to "انتخاب ربات دیگر",
     "Commands" to "دستورها", "Choose an option" to "یک گزینه را انتخاب کنید", "Type a message" to "نوشتن پیام", "Show bot menu" to "نمایش منوی ربات",
     "Couldn't open the link." to "باز کردن پیوند ممکن نشد.", "Opens a link" to "پیوند را باز می‌کند", "This message can't be shown." to "این پیام قابل نمایش نیست.",
+    "Public bots" to "ربات‌های عمومی", "No public bots found." to "رباتی عمومی پیدا نشد.", "No description" to "بدون توضیح", "1 command" to "۱ دستور", "Message" to "پیام",
     "Sent a bot message" to "پیام ربات فرستاد", "Couldn't send that to the bot." to "ارسال به ربات ممکن نشد.", "Manage" to "مدیریت"
 )
 
@@ -66,11 +67,16 @@ internal val BotsAr: Map<String, String> = mapOf(
     "Add bot" to "إضافة الروبوت", "Bot added" to "تمت إضافة الروبوت", "Bot removed" to "تمت إزالة الروبوت", "Choose another bot" to "اختر روبوتًا آخر",
     "Commands" to "الأوامر", "Choose an option" to "اختر خيارًا", "Type a message" to "كتابة رسالة", "Show bot menu" to "عرض قائمة الروبوت",
     "Couldn't open the link." to "تعذّر فتح الرابط.", "Opens a link" to "يفتح رابطًا", "This message can't be shown." to "لا يمكن عرض هذه الرسالة.",
+    "Public bots" to "الروبوتات العامة", "No public bots found." to "لم يتم العثور على روبوتات عامة.", "No description" to "بلا وصف", "1 command" to "أمر واحد", "Message" to "مراسلة",
     "Sent a bot message" to "أرسل رسالة روبوت", "Couldn't send that to the bot." to "تعذّر إرسال ذلك إلى الروبوت.", "Manage" to "إدارة"
 )
 
 /** Strings that carry a name or a number. */
 internal val BotsPatterns: List<Pattern> = listOf(
+    Pattern(Regex("(\\d+) commands")) { m, l -> if (l == "fa") "${m.groupValues[1]} دستور" else "${m.groupValues[1]} أوامر" },
+    Pattern(Regex("(.+) is offline right now\\. It will answer when it is back\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
+        if (l == "fa") "${m.groupValues[1]} اکنون آفلاین است و پس از بازگشت پاسخ می‌دهد." else "${m.groupValues[1]} غير متصل حاليًا وسيرد عند عودته."
+    },
     Pattern(Regex("Manage (.+)", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "مدیریت ${m.groupValues[1]}" else "إدارة ${m.groupValues[1]}" },
     Pattern(Regex("Remove (.+) from this channel\\?", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "${m.groupValues[1]} از این کانال حذف شود؟" else "هل تريد إزالة ${m.groupValues[1]} من هذه القناة؟" },
     Pattern(Regex("Remove (.+)", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "حذف ${m.groupValues[1]}" else "إزالة ${m.groupValues[1]}" },

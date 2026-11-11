@@ -23,6 +23,8 @@ type BotResponse struct {
 	// Online is true while the bot has an open gateway connection.
 	Online       bool      `json:"online"`
 	InstallCount int       `json:"install_count"`
+	// CommandCount is the number of global slash commands the bot registered (Explore shows it).
+	CommandCount int       `json:"command_count"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

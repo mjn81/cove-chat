@@ -51,6 +51,7 @@ import com.cove.chat.bots.InteractionRequest
 import com.cove.chat.bots.InteractionResult
 import com.cove.chat.bots.KeyboardsResponse
 import com.cove.chat.bots.UpdateBotRequest
+import com.cove.chat.bots.StartBotResult
 import com.cove.chat.bots.UpdateBotResponse
 import kotlinx.serialization.json.JsonElement
 import com.cove.chat.data.model.Channel
@@ -385,6 +386,11 @@ class ApiClient(private val prefs: PreferencesManager) {
     /** Public bots a channel admin can install, filtered by [query]. */
     suspend fun discoverBots(query: String = ""): Result<BotPage> = runCatching {
         client.get(url("/api/bots/discover")) { bearer(); parameter("limit", MAX_PAGE_LIMIT); if (query.isNotBlank()) parameter("q", query) }.ok().body()
+    }
+
+    /** Starts a chat with a public bot: opens or creates the DM and sends the bot a start event. */
+    suspend fun startBot(id: String): Result<StartBotResult> = runCatching {
+        client.post(url("/api/bots/${id.encodeURLPath()}/start")) { bearer() }.ok().body()
     }
 
     suspend fun createBot(req: CreateBotRequest): Result<CreateBotResponse> = runCatching {

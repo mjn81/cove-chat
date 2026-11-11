@@ -11,6 +11,7 @@ import {
 	apiListChannelCommands,
 	apiListChannelKeyboards,
 	apiRotateBotToken,
+	apiStartBot,
 	apiSendInteraction,
 	apiUninstallBot,
 	apiUpdateBot,
@@ -37,6 +38,11 @@ export function useGetBots(all = false) {
 export function useDiscoverBots(q: string, enabled = true) {
 	const supported = useBotsSupported();
 	return useQuery({ queryKey: botKeys.discover(q), queryFn: () => apiDiscoverBots(q), enabled: supported && enabled });
+}
+
+/** Starts a chat with a bot from Explore; resolves to the DM's channel id. */
+export function useStartBot() {
+	return useMutation({ mutationFn: (id: string) => apiStartBot(id) });
 }
 
 export function useCreateBot() {
