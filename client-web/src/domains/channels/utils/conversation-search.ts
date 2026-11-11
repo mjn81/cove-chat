@@ -2,7 +2,7 @@ import type { Channel, ExploreChannel, User } from '@/types/api';
 import { isDirectMessage } from '@/utils/channel';
 
 /** Tabs of the global conversation search (Ctrl/Cmd+K). */
-export type SearchFilter = 'all' | 'dms' | 'channels' | 'explore';
+export type SearchFilter = 'all' | 'dms' | 'channels' | 'explore' | 'bots';
 
 /** A selectable row: one of the user's conversations, a public channel they could join, or a person to start a DM with. */
 export type SearchItem =
@@ -84,7 +84,9 @@ export function buildSearchItems({
 	const asUsers = (list: User[]): SearchItem[] => list.map((user) => ({ type: 'user', user }));
 
 	let items: SearchItem[];
-	if (filter === 'explore') items = asExplore(publicChannels);
+	// The bots tab has its own list (public bots from the server), so it has no keyboard-selectable rows here.
+	if (filter === 'bots') items = [];
+	else if (filter === 'explore') items = asExplore(publicChannels);
 	else if (filter === 'dms') items = [...asChannels(dms), ...asUsers(people)];
 	else if (filter === 'channels') items = asChannels(groupChannels);
 	else

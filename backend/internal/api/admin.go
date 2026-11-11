@@ -88,6 +88,12 @@ type ConfigChanges struct {
 	PacksMaxPerUser       *int      `json:"packs.max_packs_per_user,omitempty"`
 	PacksMaxStickers      *int      `json:"packs.max_stickers_per_pack,omitempty"`
 	PacksMaxUserStorageMB *int      `json:"packs.max_user_storage_mb,omitempty"`
+
+	BotsEnabled             *bool   `json:"bots.enabled,omitempty"`
+	BotsCreation            *string `json:"bots.creation,omitempty" enums:"admins,users,disabled"`
+	BotsMaxPerUser          *int    `json:"bots.max_per_user,omitempty"`
+	BotsWebhookAllowPrivate *bool   `json:"bots.webhook_allow_private,omitempty"`
+	BotsRateLimitRPS        *int    `json:"bots.rate_limit_rps,omitempty"`
 }
 
 // UnmarshalJSON decodes strictly: a key that is not an editable setting, or a value of the wrong type, is an error.
@@ -384,6 +390,7 @@ func (h *Handler) applyLiveSettings() {
 	h.Settings.SetCaptcha(cfg.Captcha.Enabled, cfg.Captcha.Difficulty)
 	h.Settings.SetEmoji(cfg.Emoji)
 	h.Settings.SetPacks(cfg.Packs)
+	h.Settings.SetBots(cfg.Bots)
 }
 
 // ---- Invites ---------------------------------------------------------------- //

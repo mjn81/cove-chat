@@ -66,6 +66,9 @@ func sniffUploadContentType(file io.Reader) (string, io.Reader, error) {
 	return sniffed, io.MultiReader(bytes.NewReader(head), file), nil
 }
 
+// maxUploadMemoryBytes is how much of one multipart upload is buffered in RAM before the rest goes to disk.
+const maxUploadMemoryBytes = 8 << 20
+
 const (
 	// ffmpegTimeout bounds one transcode (and one probe): a corrupt or hostile video must not pin a CPU forever.
 	ffmpegTimeout = 10 * time.Minute
@@ -75,6 +78,11 @@ const (
 	maxConcurrentTranscodes = 2
 )
 
+// ffmpegInputProtocols is the only protocol an uploaded file may make ffmpeg open. Without it, a text playlist
+// (HLS/concat) uploaded as a "video" can make ffmpeg read other local files or fetch URLs (SSRF) and the result would
+// be served back as the transcoded file.
+const ffmpegInputProtocols = "file"
+
 // transcodeSlots is a counting semaphore for ffmpeg. It is process-local runtime state with no persistent
 // counterpart: the pending work itself is recorded on each file (processing_status), only the throttle is in RAM.
 var transcodeSlots = make(chan struct{}, maxConcurrentTranscodes)
@@ -82,7 +90,7 @@ var transcodeSlots = make(chan struct{}, maxConcurrentTranscodes)
 func getVideoDuration(path string) (float64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), ffprobeTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path)
+	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "error", "-protocol_whitelist", ffmpegInputProtocols, "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path)
 	out, err := cmd.Output()
 	if err != nil {
 		return 0, err
@@ -125,7 +133,8 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	maxBytes := int64(maxFileMB) << 20
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
-	if err := r.ParseMultipartForm(maxBytes); err != nil {
+	// Only a small part of the form is held in memory; the rest of a large upload spools to a temp file.
+	if err := r.ParseMultipartForm(min(maxBytes, maxUploadMemoryBytes)); err != nil {
 		// Only a body over the limit is "too large"; a malformed form is the client's mistake, not a size problem.
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
@@ -174,6 +183,12 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "apiErrors.upload_read_failed")
 		return
+	}
+
+	// Only bytes that really are a video reach ffmpeg, whatever the uploader claims with is_video or the part's
+	// Content-Type: anything else is stored as an opaque blob and never probed or transcoded.
+	if isVideo && !strings.HasPrefix(contentType, "video/") {
+		isVideo = false
 	}
 
 	fileID := uuid.New().String()
@@ -244,7 +259,7 @@ func (h *Handler) transcodeVideo(targetFile *models.File) {
 	defer cancel()
 
 	outputPath := targetFile.StoragePath + ".transcoded.mp4"
-	cmd := exec.CommandContext(ctx, ffmpegBin, "-y", "-i", targetFile.StoragePath, "-c:v", "libx264", "-preset", "fast", "-crf", "28", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath)
+	cmd := exec.CommandContext(ctx, ffmpegBin, "-y", "-protocol_whitelist", ffmpegInputProtocols, "-i", targetFile.StoragePath, "-c:v", "libx264", "-preset", "fast", "-crf", "28", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath)
 	if err := cmd.Run(); err == nil {
 		if fi, err := os.Stat(outputPath); err == nil {
 			_ = os.Rename(outputPath, targetFile.StoragePath)

@@ -129,12 +129,12 @@ export default function LoginPage() {
 					</form>
 
 					<div className="text-sm text-muted-foreground mt-4 text-center">
-						Need an account?{' '}
+						{t('auth.need_account')}{' '}
 						<Link
 							to="/register"
 							className="text-primary hover:underline font-medium"
 						>
-							Register
+							{t('auth.register_link')}
 						</Link>
 					</div>
 				</CardContent>
@@ -142,12 +142,12 @@ export default function LoginPage() {
 				{isWails() && (
 					<CardFooter className="flex flex-col items-start gap-2 pt-2">
 						<div className="mt-4 pt-4 border-t border-border/10 w-full flex items-center justify-between text-[11px] text-muted-foreground/60 italic">
-							<span>Connecting to: {BASE_URL}</span>
+							<span>{t('auth.connecting_to', { url: BASE_URL })}</span>
 							<Link
 								to="/connect"
 								className="text-primary hover:underline not-italic font-medium"
 							>
-								Change
+								{t('auth.change_server')}
 							</Link>
 						</div>
 					</CardFooter>

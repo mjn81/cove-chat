@@ -408,6 +408,11 @@ export async function apiDeleteChannel(id: string, forBoth: boolean = false) {
 	});
 }
 
+/** Clears a direct message's history for the caller only; the chat stays in their list. */
+export async function apiClearHistory(id: string) {
+	return apiClient.post(`/api/channels/${id}/clear`);
+}
+
 export async function apiLeaveChannel(channelId: string, userId: string) {
 	return apiClient.delete(`/api/channels/${channelId}/members/${userId}`);
 }

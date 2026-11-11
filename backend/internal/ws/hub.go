@@ -47,6 +47,14 @@ type RTCSignalHandler interface {
 	ActiveRooms() map[string][]string
 }
 
+// BotSink receives the chat events bots may be interested in. It is declared here so ws does not depend on the
+// bot package; *bots.Dispatcher implements it and is wired in with SetBotSink.
+type BotSink interface {
+	EmitMessage(eventType string, msg *models.Message)
+	EmitMessageDelete(channelID, messageID, senderID string)
+	EmitMember(eventType, channelID, userID string)
+}
+
 // Hub manages all active WebSocket connections and broadcasts messages.
 type Hub struct {
 	mu      sync.RWMutex
@@ -60,6 +68,8 @@ type Hub struct {
 	kek      []byte
 
 	rtc         RTCSignalHandler
+	// bots, when set, is told about messages and membership changes so bots receive them (set once before serving).
+	bots BotSink
 	// voiceMode is the configured calling engine; "raw_udp" makes the hello event advertise the encrypted UDP media
 	// capability instead of inferring the engine from whether rtc is set (the UDP media router is also an RTCSignalHandler).
 	voiceMode string
@@ -147,6 +157,25 @@ func (h *Hub) capabilities() []string {
 // SetVoiceMode records the configured voice.mode so the hello event matches GET /api/version. Call before serving.
 func (h *Hub) SetVoiceMode(mode string) {
 	h.voiceMode = mode
+}
+
+// SetBotSink wires the bot event dispatcher in after construction. Call before serving.
+func (h *Hub) SetBotSink(b BotSink) { h.bots = b }
+
+// PublishMessage broadcasts a message created or changed outside a user's socket (a bot posting over REST) to the
+// members of its channel as eventType ("message" or "message_update"). Bots are told by the caller.
+func (h *Hub) PublishMessage(eventType string, msg *models.Message) {
+	payload, _ := json.Marshal(msg)
+	h.enqueue(&envelope{channelID: msg.ChannelID, senderID: msg.SenderID, msg: &models.WSMessage{Type: eventType, Payload: payload}})
+}
+
+// PublishChannelEvent broadcasts an arbitrary JSON event to every member of the channel.
+func (h *Hub) PublishChannelEvent(channelID, eventType string, payload any) {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	h.enqueue(&envelope{channelID: channelID, msg: &models.WSMessage{Type: eventType, Payload: raw}})
 }
 
 // SetRTCManager wires the WebRTC group-calling SFU in after construction.
@@ -260,7 +289,9 @@ func (h *Hub) DisconnectSession(sessionID string) {
 	}
 	h.mu.Unlock()
 	for _, c := range drop {
-		_ = c.conn.Close(websocket.StatusPolicyViolation, "session terminated")
+		// Close waits for the peer's close frame (up to 5 s); doing it inline would stall the sign-out request
+		// of an unresponsive client.
+		go func(c *Client) { _ = c.conn.Close(websocket.StatusPolicyViolation, "session terminated") }(c)
 	}
 }
 
@@ -440,6 +471,12 @@ func (c *Client) writePump(ctx context.Context) {
 				return
 			}
 		case <-ticker.C:
+			// A revoked or expired session must not keep a live socket: the token is never sent again after the
+			// handshake, so this is the only place the server can notice.
+			if !c.hub.sessions.Alive(c.SessionID) {
+				_ = c.conn.Close(websocket.StatusPolicyViolation, "session ended")
+				return
+			}
 			// Heartbeat
 			writeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			err := c.conn.Ping(writeCtx)
@@ -604,6 +641,9 @@ func (h *Hub) BroadcastMemberJoined(channelID string, userID string) {
 	})
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
 	h.enqueue(&envelope{channelID: channelID, msg: msg})
+	if h.bots != nil {
+		h.bots.EmitMember("member_join", channelID, userID)
+	}
 
 	// Also send the AES key to the joining user immediately.
 	h.SendChannelKey(channelID, userID)
@@ -623,6 +663,9 @@ func (h *Hub) BroadcastMemberLeft(channelID string, userID string) {
 	msg := &models.WSMessage{Type: "channel_update", Payload: payload}
 	// Broadcast to remaining members
 	h.enqueue(&envelope{channelID: channelID, msg: msg})
+	if h.bots != nil {
+		h.bots.EmitMember("member_leave", channelID, userID)
+	}
 
 	// Also send targeted notification to the user who left/was kicked
 	// so their UI can react (e.g. remove channel from sidebar)

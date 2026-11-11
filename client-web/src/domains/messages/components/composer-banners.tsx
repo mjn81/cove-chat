@@ -4,6 +4,7 @@ import { AlertCircle, Plus, Reply as ReplyIcon, X } from 'lucide-react';
 import { IconButton } from '@/components/icon-button';
 import type { Message } from '@/types/api';
 import { EmojiText } from '@/domains/emoji/components/emoji';
+import { stripMarkdown } from '@/lib/markdown';
 
 /** Full-screen "drop files to upload" overlay shown while dragging over the window. */
 export const DropOverlay = ({ target, compact }: { target: string; compact: boolean }) => {
@@ -58,7 +59,7 @@ export const ReplyPreview = ({ message, senderName, onCancel }: ReplyPreviewProp
 					{t('composer.replying_to')} <span className="font-bold text-foreground">{senderName}</span>
 				</span>
 				<span className="truncate border-s border-border ps-2 text-[13px] italic text-muted-foreground/70">
-					{message.text ? <EmojiText text={message.text} em={1.25} /> : `[${message.type}]`}
+					{message.text ? <EmojiText text={stripMarkdown(message.text)} em={1.25} /> : `[${message.type}]`}
 				</span>
 			</div>
 			<IconButton label={t('composer.cancel_reply')} tone="destructive" onClick={onCancel} className="h-6 w-6 rounded-full">

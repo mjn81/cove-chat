@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { User, Users, Shield, Palette, Bell, LogOut, Mic, HardDrive, ServerCog, Smile } from 'lucide-react';
+import { User, Users, Shield, Palette, Bell, LogOut, Mic, HardDrive, ServerCog, Smile, Bot } from 'lucide-react';
 import { useAuthStore } from '@/store/store';
 import { TabButton } from './TabButton';
 import type { SettingsTab } from './types';
@@ -12,12 +12,14 @@ interface SidebarProps {
 
 import { useState } from 'react';
 import { ConfirmModal } from '../ConfirmModal';
+import { useBotsSupported } from '@/domains/bots/hooks/use-bots';
 
 export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => {
 	const { t } = useTranslation();
 	const logout = useAuthStore((state) => state.logout);
 	const incomingRequests = useAuthStore((state) => state.incomingRequests);
 	const serverRole = useAuthStore((state) => state.user?.server_role);
+	const botsSupported = useBotsSupported();
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 	return (
@@ -37,7 +39,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 						/>
 						<TabButton
 							id="friends"
-							label="Friends"
+							label={t('settings_nav.friends')}
 							icon={Users}
 							activeTab={activeTab}
 							setActiveTab={setActiveTab}
@@ -72,6 +74,15 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 							activeTab={activeTab}
 							setActiveTab={setActiveTab}
 						/>
+						{botsSupported && (
+							<TabButton
+								id="bots"
+								label={t('settings.bots')}
+								icon={Bot}
+								activeTab={activeTab}
+								setActiveTab={setActiveTab}
+							/>
+						)}
 						<TabButton
 							id="notifications"
 							label={t('settings.notifications')}
@@ -128,9 +139,9 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 						isOpen={showLogoutConfirm}
 						onClose={() => setShowLogoutConfirm(false)}
 						onConfirm={logout}
-						title="Logout"
-						message="Are you sure you want to log out? You will need to sign in again to access your messages."
-						confirmText="Logout"
+						title={t('settings_nav.logout_title')}
+						message={t('settings_nav.logout_message')}
+						confirmText={t('settings_nav.logout_title')}
 						variant="danger"
 					/>
 				</div>

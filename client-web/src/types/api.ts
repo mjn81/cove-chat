@@ -28,7 +28,7 @@ export interface InvitePreview {
 }
 
 /** Message types a server may send; the client renders the ones in message-types.ts and shows a placeholder for others. */
-export type MessageType = 'text' | 'file' | 'voice' | 'video' | 'invite' | 'sticker';
+export type MessageType = 'text' | 'file' | 'voice' | 'video' | 'invite' | 'sticker' | 'bot';
 
 export interface Channel {
 	id: string;
@@ -46,6 +46,8 @@ export interface Channel {
 	member_statuses?: Record<string, string>;
 	/** Flags built-in system accounts (this server's Cove account) among the members. */
 	member_system?: Record<string, boolean>;
+	/** Flags bot accounts among the members (they get a BOT badge). */
+	member_bots?: Record<string, boolean>;
 	member_roles?: Record<string, number>;
 	created_at: string;
 	unread_count?: number;
@@ -123,6 +125,8 @@ export interface User {
   allow_channel_adds?: 'everyone' | 'friends' | 'nobody';
   dm_permission?: 'everyone' | 'friends' | 'nobody';
   friend_request_permission?: 'everyone' | 'nobody';
+  /** True for bot accounts. */
+  is_bot?: boolean;
 }
 
 export type RelationshipType = 'none' | 'requested' | 'friend' | 'blocked';

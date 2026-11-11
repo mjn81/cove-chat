@@ -3,12 +3,15 @@ package api
 
 import (
 	"net/http"
+	"sync"
 	"time"
+
+	"cove/backend/internal/bots"
 
 	"cove/backend/internal/auth"
 	"cove/backend/internal/captcha"
-	"cove/backend/internal/geoip"
 	"cove/backend/internal/config"
+	"cove/backend/internal/geoip"
 	"cove/backend/internal/middleware"
 	"cove/backend/internal/models"
 	"cove/backend/internal/packs"
@@ -27,15 +30,19 @@ type ChannelBroadcaster interface {
 	BroadcastVideoReady(fileID string, channelID string)
 	BroadcastChannelDeleted(channelID string, targetUserIDs []string)
 	SendChannelKey(channelID, userID string)
+	// PublishMessage broadcasts a message created or changed over REST (by a bot) to the channel's members.
+	PublishMessage(eventType string, msg *models.Message)
+	// PublishChannelEvent broadcasts a JSON event (keyboard updates) to the channel's members.
+	PublishChannelEvent(channelID, eventType string, payload any)
 }
 
 // Handler bundles all HTTP handler dependencies.
 type Handler struct {
-	Store               *store.Store
-	Sessions            *auth.SessionStore
-	Hub                 ChannelBroadcaster
+	Store    *store.Store
+	Sessions *auth.SessionStore
+	Hub      ChannelBroadcaster
 	// Geo resolves login IPs to a city/country for the active-devices list. Optional: nil means IP only.
-	Geo                 geoip.Resolver
+	Geo geoip.Resolver
 	// LoginNotifications makes the Cove account message a user when they sign in from a new device.
 	LoginNotifications  bool
 	KEK                 []byte
@@ -77,6 +84,8 @@ type Handler struct {
 
 	stepUp stepUpGuard // wrong-password lockout for dangerous admin actions
 
+	logins loginGuard // per-account throttle on wrong passwords at sign-in
+
 	// globalLimiter is the per-IP limiter NewRouter builds for the API; WrapWS reuses it so the WebSocket upgrade
 	// shares the same bucket. Ephemeral by design, like every rate limiter.
 	globalLimiter *middleware.RateLimiter
@@ -85,6 +94,13 @@ type Handler struct {
 	Updater *Updater
 	// NotifyUpdates makes the update notifier message the owner and admins about each new release.
 	NotifyUpdates bool
+
+	// Bots delivers events to bots (gateway and webhooks) and tracks which bots are online. Nil means no bot ever
+	// receives an event (older tests); the REST side of the Bot API still works.
+	Bots *bots.Dispatcher
+
+	// botLimiters holds the per-bot (and per-bot-per-channel) token buckets. Ephemeral by design, like every limiter.
+	botLimiters sync.Map
 
 	// Packs overrides the built-in emoji and sticker assets (tests); nil means the ones embedded in the binary.
 	Packs *packs.Catalog
@@ -102,6 +118,15 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	}
 	protectMember := func(handler http.HandlerFunc) http.Handler {
 		return globalLimiter.Limit(h.Sessions.Require(h.RequireMember(handler)))
+	}
+
+	// Bot access tier: only `Authorization: Bot <token>` is accepted (see bots_auth.go). A route is reachable by a
+	// bot only if it is wrapped in one of these two; every other wrapper rejects bot tokens.
+	protectBot := func(handler http.HandlerFunc) http.Handler {
+		return globalLimiter.Limit(h.requireBot(handler))
+	}
+	protectBotChannel := func(scope string, handler http.HandlerFunc) http.Handler {
+		return globalLimiter.Limit(h.requireBotChannel(scope, handler))
 	}
 
 	// Admin panel. The role is checked against the database on every request;
@@ -181,6 +206,7 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("GET /api/channels/{id}", protectMember(h.GetChannel))
 	mux.Handle("PATCH /api/channels/{id}", protectMember(h.UpdateChannel))
 	mux.Handle("DELETE /api/channels/{id}", protectMember(h.DeleteChannel))
+	mux.Handle("POST /api/channels/{id}/clear", protectMember(h.ClearHistory))
 	mux.Handle("GET /api/join/{link}", protect(h.PreviewInvite))
 	mux.Handle("POST /api/join/{link}", protect(h.JoinChannel))
 	mux.Handle("POST /api/channels/{id}/invite/regenerate", protectMember(h.RegenerateInvite))
@@ -209,6 +235,37 @@ func NewRouter(h *Handler, globalRPS, authRPS float64) http.Handler {
 	mux.Handle("DELETE /api/packs/{id}/items/{item}", protect(h.DeletePackItem))
 	mux.Handle("GET /api/packs/{id}/items/{item}/file", protect(h.GetPackItemFile))
 	mux.Handle("PUT /api/packs/{id}/order", protect(h.ReorderPackItems))
+
+	// Bots (docs/bots-api.md). Management uses the user's session; /api/bots/me/... is the Bot tier.
+	mux.Handle("POST /api/bots", protect(h.CreateBot))
+	mux.Handle("GET /api/bots", protect(h.ListBots))
+	mux.Handle("GET /api/bots/discover", protect(h.DiscoverBots))
+	mux.Handle("GET /api/bots/{id}", protect(h.GetBot))
+	mux.Handle("PATCH /api/bots/{id}", protect(h.UpdateBot))
+	mux.Handle("DELETE /api/bots/{id}", protect(h.DeleteBot))
+	mux.Handle("POST /api/bots/{id}/token", protect(h.RotateBotToken))
+	mux.Handle("POST /api/bots/{id}/start", protect(h.StartBot))
+	mux.Handle("GET /api/channels/{id}/bots", protectMember(h.ListChannelBots))
+	mux.Handle("PUT /api/channels/{id}/bots/{bot_id}", protectMember(h.InstallBot))
+	mux.Handle("DELETE /api/channels/{id}/bots/{bot_id}", protectMember(h.UninstallBot))
+	mux.Handle("GET /api/channels/{id}/commands", protectMember(h.ListChannelCommands))
+	mux.Handle("GET /api/channels/{id}/keyboards", protectMember(h.ListChannelKeyboards))
+	mux.Handle("POST /api/channels/{id}/interactions", protectMember(h.CreateInteraction))
+	mux.Handle("GET /api/bots/me", protectBot(h.GetBotMe))
+	mux.Handle("GET /api/bots/me/commands", protectBot(h.ListGlobalCommands))
+	mux.Handle("PUT /api/bots/me/commands", protectBot(h.SetGlobalCommands))
+	mux.Handle("DELETE /api/bots/me/commands/{name}", protectBot(h.DeleteGlobalCommand))
+	mux.Handle("GET /api/bots/me/channels", protectBot(h.ListBotChannels))
+	mux.Handle("PUT /api/bots/me/channels/{id}/commands", protectBotChannel("", h.SetChannelCommands))
+	mux.Handle("POST /api/bots/me/channels/{id}/messages", protectBotChannel(models.ScopeMessagesSend, h.PostBotMessage))
+	mux.Handle("GET /api/bots/me/channels/{id}/messages", protectBotChannel(models.ScopeMessagesRead, h.ListBotMessages))
+	mux.Handle("PATCH /api/bots/me/channels/{id}/messages/{mid}", protectBotChannel(models.ScopeMessagesSend, h.EditBotMessage))
+	mux.Handle("DELETE /api/bots/me/channels/{id}/messages/{mid}", protectBotChannel(models.ScopeMessagesSend, h.DeleteBotMessage))
+	mux.Handle("GET /api/bots/me/channels/{id}/members", protectBotChannel(models.ScopeMembersRead, h.ListBotMembers))
+	mux.Handle("PUT /api/bots/me/channels/{id}/keyboard", protectBotChannel(models.ScopeMessagesSend, h.SetKeyboard))
+	mux.Handle("DELETE /api/bots/me/channels/{id}/keyboard", protectBotChannel(models.ScopeMessagesSend, h.DeleteKeyboard))
+	mux.Handle("POST /api/bots/me/dm", protectBot(h.OpenBotDM))
+	mux.Handle("POST /api/interactions/{id}/{token}/callback", protectBot(h.InteractionCallback))
 
 	mux.Handle("POST /api/files", protect(h.UploadFile))
 	mux.Handle("GET /api/files/{id}", protect(h.DownloadFile))

@@ -20,7 +20,9 @@ sealed interface MessageToken {
 
 // Emails first so `me@example.com` is not split into a mention; only http(s)/www/email forms ever become links.
 private val TOKEN_RE = Regex("""([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?://|www\.)[^\s<>"']+)|(@\w+)""")
-private val TRAILING_PUNCT = Regex("""[.,!?;:'"\]}]$""")
+// `*_~` are included so `**https://x.com**` keeps the emphasis markers out of the link.
+private val TRAILING_PUNCT = Regex("""[.,!?;:'"\]}*_~]$""")
+private val STICKY_TOKEN = java.util.regex.Pattern.compile(TOKEN_RE.pattern)
 
 /** Trims sentence punctuation (and an unbalanced `)`) from the end of a URL match. */
 private fun trimUrl(raw: String): Pair<String, String> {
@@ -33,6 +35,22 @@ private fun trimUrl(raw: String): Pair<String, String> {
         }
     }
     return url to raw.substring(url.length)
+}
+
+/**
+ * Matches a link, email or @mention starting exactly at [index] (callers ensure it is at a word start).
+ * Returns the token and the number of characters it consumed, or null.
+ */
+fun matchAutoLinkAt(text: String, index: Int): Pair<MessageToken, Int>? {
+    val m = STICKY_TOKEN.matcher(text).region(index, text.length)
+    if (!m.lookingAt()) return null
+    m.group(1)?.let { return MessageToken.Link(it, "mailto:$it") to it.length }
+    m.group(2)?.let {
+        val (url, _) = trimUrl(it)
+        if (url.isEmpty()) return null
+        return MessageToken.Link(url, if (url.startsWith("www.", ignoreCase = true)) "https://$url" else url) to url.length
+    }
+    return MessageToken.Mention(m.group(3)!!) to m.group(3)!!.length
 }
 
 /** Splits [text] into plain text, `@mentions`, URLs and emails; the tokens concatenate back to [text]. */

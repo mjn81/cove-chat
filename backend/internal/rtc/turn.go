@@ -53,7 +53,8 @@ func newTURNServer(cfg Config) (*turnServer, error) {
 		AuthHandler: authHandler,
 		PacketConnConfigs: []pionturn.PacketConnConfig{
 			{
-				PacketConn: udpConn,
+				PacketConn:        udpConn,
+				PermissionHandler: turnPermissionHandler,
 				RelayAddressGenerator: &pionturn.RelayAddressGeneratorStatic{
 					RelayAddress: relayIP,
 					Address:      "0.0.0.0",
@@ -73,7 +74,8 @@ func newTURNServer(cfg Config) (*turnServer, error) {
 		tcpListener = l
 		serverConfig.ListenerConfigs = []pionturn.ListenerConfig{
 			{
-				Listener: tcpListener,
+				Listener:          tcpListener,
+				PermissionHandler: turnPermissionHandler,
 				RelayAddressGenerator: &pionturn.RelayAddressGeneratorStatic{
 					RelayAddress: relayIP,
 					Address:      "0.0.0.0",
@@ -105,6 +107,25 @@ func (t *turnServer) Close() error {
 	}
 	return t.srv.Close()
 }
+
+// AllowTURNPeer decides whether a client may open a relay permission towards peerIP. pion/turn admits every peer when
+// no handler is set, which would let any call participant send relayed UDP to the host's loopback services or a cloud
+// metadata address. Loopback, unspecified, link-local and multicast peers are refused; public and private-LAN peers
+// stay allowed because clients on one LAN legitimately relay to each other.
+func AllowTURNPeer(peerIP net.IP) bool {
+	if peerIP == nil {
+		return false
+	}
+	switch {
+	case peerIP.IsLoopback(), peerIP.IsUnspecified(), peerIP.IsLinkLocalUnicast(), peerIP.IsLinkLocalMulticast(),
+		peerIP.IsMulticast(), peerIP.IsInterfaceLocalMulticast():
+		return false
+	}
+	return true
+}
+
+// turnPermissionHandler adapts AllowTURNPeer to pion/turn's callback shape.
+func turnPermissionHandler(_ net.Addr, peerIP net.IP) bool { return AllowTURNPeer(peerIP) }
 
 // mintCredentials generates a short-lived (TURNCredentialTTL) username/
 // password pair scoped to userID, per the TURN REST API convention used by

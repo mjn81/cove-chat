@@ -32,7 +32,15 @@ type User struct {
 	// password and cannot be messaged, befriended or invited.
 	IsSystem  bool      `json:"is_system,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
+	// Kind is "" for a person and UserKindBot for a bot account. A bot has no password and no session; it signs in
+	// only with its bot token (see Bot). Only the server sets it.
+	Kind string `json:"kind,omitempty"`
+	// OwnerID is the account that created the bot (bots only).
+	OwnerID string `json:"owner_id,omitempty"`
 }
+
+// IsBot reports whether the account is a bot.
+func (u *User) IsBot() bool { return u != nil && u.Kind == UserKindBot }
 
 // The built-in Cove system account.
 const (
@@ -97,6 +105,8 @@ type UserChannel struct {
 	JoinedAt   time.Time `json:"joined_at"`
 	LastReadAt time.Time `json:"last_read_at"`
 	ClearedAt  time.Time `json:"cleared_at,omitempty"`
+	// KeepListed keeps a cleared DM in the list ("Clear history"), unlike "delete for me" which hides it until a newer message arrives.
+	KeepListed bool `json:"keep_listed,omitempty"`
 }
 
 // ---- Message --------------------------------------------------------------- //

@@ -17,7 +17,8 @@
 		"hour": "Hour",
 		"minute": "Minute",
 		"done": "Done",
-		"clear": "Clear"
+		"clear": "Clear",
+		"switch_language": "Switch to {{language}}"
 	},
 	"auth": {
 		"login": "Sign In",
@@ -47,10 +48,17 @@
 			"invite_required": "This server is invite-only. Enter an invitation code.",
 			"invite_invalid": "That invitation code is not valid.",
 			"username_reserved": "That name is reserved.",
+			"username_invalid": "Usernames are 3-64 characters, with no leading or trailing spaces and no invisible or control characters.",
+			"too_many_attempts": "Too many failed attempts for this account. Try again in a few minutes.",
 			"captcha_required": "Please complete the human check first.",
 			"captcha_failed": "The human check failed. Please try again."
 		},
-		"invite_code": "Invitation code"
+		"invite_code": "Invitation code",
+		"need_account": "Need an account?",
+		"register_link": "Register",
+		"create_account": "Create an account",
+		"connecting_to": "Connecting to: {{url}}",
+		"change_server": "Change"
 	},
 	"sidebar": {
 		"groups": "Groups",
@@ -89,6 +97,8 @@
 		"ping_good": "Good connection",
 		"ping_average": "Average connection",
 		"ping_poor": "Poor connection",
+		"connection_offline": "Offline",
+		"connection_connecting": "Reconnecting…",
 		"my_profile": "My profile",
 		"settings": "Settings",
 		"log_out": "Log out",
@@ -96,6 +106,7 @@
 	},
 	"chat": {
 		"copied": "Copied",
+		"copy_code": "Copy code",
 		"message_placeholder": "Message…",
 		"today": "Today",
 		"yesterday": "Yesterday",
@@ -163,7 +174,27 @@
 			"file": "File",
 			"download": "Download",
 			"image_alt": "Image"
-		}
+		},
+		"sending": "Sending…",
+		"send_failed": "Failed to send",
+		"retry": "Retry",
+		"edited": "(edited)",
+		"unknown_user": "Unknown user",
+		"reply_missing": "Original message not found",
+		"encrypted_placeholder": "[encrypted]",
+		"processing_video": "Processing video…",
+		"decline": "Decline",
+		"accept": "Accept",
+		"connecting": "Connecting…",
+		"action_reply": "Reply",
+		"action_select": "Select",
+		"action_edit": "Edit message",
+		"action_delete": "Delete message",
+		"download_voice": "Download voice note",
+		"play_video": "Click to play in video player",
+		"playback_speed": "Playback speed",
+		"play": "Play",
+		"close_player": "Close player"
 	},
 	"channel": {
 		"new_conversation": "New Conversation",
@@ -295,7 +326,10 @@
 		"image_too_large": "The image must be under {{size}} MB",
 		"microphone": "Microphone error: {{message}}. Please check permissions.",
 		"unknown": "Unknown error",
-		"notification_denied": "Notification permission was denied"
+		"notification_denied": "Notification permission was denied",
+		"boundary_title": "Something went wrong",
+		"boundary_in": "Something went wrong in {{label}}",
+		"try_again": "Try again"
 	},
 	"settings": {
 		"title": "User Settings",
@@ -366,7 +400,8 @@
 		"notifications_custom": "Use Cove notification popups",
 		"notifications_custom_desc": "Show notifications as small Cove popups in the screen corner instead of system notifications.",
 		"default_device": "Default",
-		"microphone_n": "Microphone {{id}}"
+		"microphone_n": "Microphone {{id}}",
+		"bots": "Bots"
 	},
 	"image_editor": {
 		"title": "Edit photo",
@@ -643,7 +678,8 @@
 		"hint_navigate": "navigate",
 		"hint_select": "select",
 		"hint_close": "close",
-		"shortcut": "Shortcut:"
+		"shortcut": "Shortcut:",
+		"filter_bots": "Bots"
 	},
 	"calls": {
 		"nativeRequired": "Calls on this server need a native Cove app. Use the Cove desktop or Android app to join or start calls.",
@@ -731,6 +767,16 @@
 						"check": "checked for server updates",
 						"upload": "uploaded a server update"
 					}
+				},
+				"bot": {
+					"create": "created bot",
+					"delete": "deleted bot",
+					"rotate_token": "rotated the token of bot",
+					"disable": "disabled bot",
+					"enable": "enabled bot",
+					"install": "added a bot to a channel:",
+					"uninstall": "removed a bot from a channel:",
+					"webhook_set": "changed the webhook of bot"
 				}
 			}
 		},
@@ -784,7 +830,8 @@
 				"calls": "Calls",
 				"network": "Network",
 				"security": "Security",
-				"updates": "Updates"
+				"updates": "Updates",
+				"bots": "Bots"
 			},
 			"keys": {
 				"server": {
@@ -818,6 +865,13 @@
 					"manifest_url": "Update manifest URL",
 					"github_fallback": "Fall back to GitHub",
 					"notify_admins": "Tell admins about new versions"
+				},
+				"bots": {
+					"enabled": "Bot API enabled",
+					"creation": "Who can create bots",
+					"max_per_user": "Max bots per user",
+					"webhook_allow_private": "Allow webhooks to private networks",
+					"rate_limit_rps": "Bot requests per second"
 				}
 			}
 		},
@@ -1258,10 +1312,55 @@
 		"user_load_failed": "Couldn't load the user.",
 		"user_not_found": "User not found.",
 		"username_reserved": "That username is reserved.",
+		"username_invalid": "That username is not allowed. Use 3-64 characters without invisible or control characters.",
+		"profile_text_too_long": "That text is too long.",
 		"username_taken": "That username is already taken.",
 		"username_too_short": "Username is too short.",
 		"video_too_large": "The video exceeds the maximum size of {{detail}} MB.",
-		"video_too_long": "Video messages can't exceed {{detail}} seconds."
+		"video_too_long": "Video messages can't exceed {{detail}} seconds.",
+		"avatar_invalid": "That image can't be used as an avatar.",
+		"bot_channel_limit": "This channel already has the maximum number of bots.",
+		"bot_contact_required": "A bot can only message people who have used it first.",
+		"bot_create_failed": "Couldn't create the bot.",
+		"bot_creation_not_allowed": "You are not allowed to create bots on this server.",
+		"bot_delete_failed": "Couldn't delete the bot.",
+		"bot_description_too_long": "The description is too long (400 characters at most).",
+		"bot_disabled": "This bot is disabled.",
+		"bot_install_admin_only": "Only channel admins can add or remove bots.",
+		"bot_install_dm": "Bots can't be added to direct messages. Start a chat with the bot instead.",
+		"bot_install_failed": "Couldn't change the bot's installation.",
+		"bot_install_required": "Bots can only be added to a channel through the Bots tab.",
+		"bot_limit_reached": "You have reached the maximum number of bots.",
+		"bot_name_invalid": "Bot names use 2-32 lowercase letters, digits, _ . or -.",
+		"bot_no_roles": "Bots can't be given a role.",
+		"bot_not_found": "Bot not found.",
+		"bot_not_friendable": "Bots can't be added as friends.",
+		"bot_scope_invalid": "Unknown permission requested for the bot.",
+		"bot_scope_missing": "This bot was not given that permission in the channel.",
+		"bot_uninstall_required": "Remove bots from the Bots tab, not from the member list.",
+		"bot_update_failed": "Couldn't update the bot.",
+		"bots_disabled": "Bots are switched off on this server.",
+		"bots_load_failed": "Couldn't load bots.",
+		"button_unknown": "That button no longer exists.",
+		"cannot_delete_others_message": "You can only delete your own messages.",
+		"cannot_edit_others_message": "You can only edit your own messages.",
+		"channels_load_failed": "Couldn't load channels.",
+		"command_options_invalid": "The command options are not valid.",
+		"command_save_failed": "Couldn't save the commands.",
+		"command_unknown": "That command doesn't exist.",
+		"dm_not_allowed": "Direct messages are not allowed here.",
+		"interaction_expired": "This action has expired.",
+		"interaction_failed": "Couldn't send that to the bot.",
+		"interaction_no_message": "That action has no message to update.",
+		"interaction_type_unknown": "Unknown action type.",
+		"keyboard_save_failed": "Couldn't save the keyboard.",
+		"message_delete_failed": "Couldn't delete the message.",
+		"message_not_found": "Message not found.",
+		"message_send_failed": "Couldn't send the message.",
+		"rate_limited": "Too many requests. Please slow down.",
+		"reply_not_found": "The message you replied to was not found.",
+		"webhook_url_invalid": "The webhook address must be a valid https:// URL.",
+		"clear_dm_only": "Only direct messages can be cleared."
 	},
 	"themes": {
 		"title": "Themes",
@@ -1612,6 +1711,217 @@
 			"send": "Send",
 			"sent": "Shared in {{count}} chats",
 			"failed": "Could not share the pack."
+		}
+	},
+	"connection": {
+		"reconnecting": "Reconnecting…",
+		"lost": "Connection lost — reconnecting…"
+	},
+	"topbar": {
+		"view_profile": "View profile",
+		"view_channel_info": "View channel info",
+		"friend_pending": "Friend request pending",
+		"accept_friend": "Accept friend request",
+		"add_friend": "Add friend",
+		"search": "Search",
+		"search_placeholder": "Search…",
+		"show_members": "Show members",
+		"channel_settings": "Channel settings",
+		"voice_disconnect": "Connected to the call (click to disconnect)",
+		"voice_join": "Join the ongoing call ({{count}} active)",
+		"voice_start": "Start a call",
+		"whisper_need_friend": "Whisper requires mutual friendship",
+		"whisper_incoming": "Incoming Whisper request from {{name}} – click to accept",
+		"whisper_exit": "Exit Whisper mode",
+		"whisper_enter": "Enter Whisper mode (E2EE)",
+		"whisper_start": "Start a secure Whisper (E2EE)"
+	},
+	"members": {
+		"title": "Members",
+		"expand": "Expand members",
+		"collapse": "Collapse members",
+		"owner": "Owner",
+		"admins": "Admins",
+		"online": "Online",
+		"offline": "Offline",
+		"leave": "Leave channel",
+		"leave_confirm": "Are you sure you want to leave \"{{name}}\"? You will need an invite link to join back later.",
+		"kick": "Remove member",
+		"kick_confirm": "Are you sure you want to remove {{name}} from the channel? They will need a new invite to rejoin.",
+		"view_profile": "View profile",
+		"promote": "Promote to admin",
+		"demote": "Demote to member"
+	},
+	"privacy": {
+		"saved": "Saved",
+		"saving": "Saving…",
+		"who_add": "Who can add me to channels",
+		"who_dm": "Who can send me direct messages",
+		"who_friend": "Who can send me friend requests"
+	},
+	"voice_settings": {
+		"silent": "Silent",
+		"loud": "Loud"
+	},
+	"whisper_toast": {
+		"incoming": "Incoming Whisper request",
+		"dismiss": "Dismiss"
+	},
+	"notfound": {
+		"badge": "Wrong turn",
+		"title": "You're lost in the void.",
+		"body": "This page doesn't exist or has moved. Don't worry, even the best explorers get lost sometimes.",
+		"home": "Take me home",
+		"report": "Report a bug"
+	},
+	"storage_stats": {
+		"images": "Images: {{size}}",
+		"videos": "Videos: {{size}}",
+		"voices": "Voice notes: {{size}}",
+		"files": "Files: {{size}}",
+		"messages": "Messages: {{size}}",
+		"refresh": "Refresh"
+	},
+	"settings_nav": {
+		"friends": "Friends",
+		"logout_title": "Log out",
+		"logout_message": "Are you sure you want to log out? You will need to sign in again to access your messages."
+	},
+	"files_ui": {
+		"preview_failed": "Failed to load file preview",
+		"download_failed": "Download failed",
+		"load_failed": "Failed to load full content"
+	},
+	"bots": {
+		"badge": "Bot",
+		"settings": {
+			"tab": "Bots"
+		},
+		"list": {
+			"title": "Your bots",
+			"subtitle": "Bots are programs that read and write chat messages for you. Create one, copy its token and run it anywhere.",
+			"empty": "You have no bots yet.",
+			"create": "Create bot",
+			"all_toggle": "Show every bot on the server",
+			"cannot_create": "Only server admins can create bots on this server.",
+			"disabled_server": "Bots are switched off on this server.",
+			"limit_reached": "You have reached the limit of {{count}} bots.",
+			"installs": "In {{count}} channels",
+			"manage": "Manage"
+		},
+		"status": {
+			"online": "Online",
+			"offline": "Offline",
+			"disabled": "Disabled",
+			"public": "Public",
+			"private": "Private"
+		},
+		"create": {
+			"title": "Create a bot",
+			"username": "Bot name",
+			"username_hint": "2-32 lowercase letters, digits, _ . or -",
+			"description": "Description",
+			"public": "Public",
+			"public_hint": "Public bots can be found and added to channels by any channel admin.",
+			"webhook": "Webhook URL",
+			"webhook_hint": "Optional. Events are POSTed here (https only) when the bot is not connected to the gateway.",
+			"submit": "Create"
+		},
+		"secret": {
+			"title": "Save your bot token",
+			"token": "Bot token",
+			"webhook": "Webhook signing secret",
+			"warning": "This is the only time it is shown. Anyone with the token can act as the bot, so keep it private. If it leaks, rotate it.",
+			"copy": "Copy",
+			"copied": "Copied",
+			"done": "I have saved it"
+		},
+		"manage": {
+			"title": "Manage {{name}}",
+			"description": "Description",
+			"public": "Public (listed for channel admins)",
+			"enabled": "Enabled",
+			"webhook": "Webhook URL",
+			"webhook_empty": "No webhook. The bot must connect to the gateway.",
+			"save": "Save",
+			"saved": "Bot updated",
+			"rotate_token": "Rotate token",
+			"rotate_token_hint": "Issues a new token and disconnects the bot immediately.",
+			"rotate_webhook": "New signing secret",
+			"delete": "Delete bot",
+			"delete_confirm": "Delete {{name}}? It is removed from every channel and its token stops working. Its past messages stay.",
+			"deleted": "Bot deleted"
+		},
+		"channel": {
+			"title": "Bots",
+			"empty": "No bots in this channel.",
+			"add": "Add a bot",
+			"remove": "Remove {{name}}",
+			"remove_confirm": "Remove {{name}} from this channel?",
+			"removed": "Bot removed",
+			"installed": "Bot added",
+			"updated": "Permissions updated",
+			"install_title": "Add a bot to this channel",
+			"search": "Search public bots",
+			"none_found": "No bots found.",
+			"permissions": "Permissions",
+			"consent": "The bot's owner (and the server their bot runs on) will receive, as plain text, everything these permissions allow. Only add bots you trust. Bots are never admins.",
+			"submit": "Add bot",
+			"mine": "Mine",
+			"public": "Public"
+		},
+		"scope": {
+			"messages_send": {
+				"label": "Send messages",
+				"hint": "Post, edit and delete its own messages; show buttons and the action menu."
+			},
+			"messages_read": {
+				"label": "Read all messages",
+				"hint": "See every message in the channel. Without it the bot only sees messages that mention or reply to it, and commands."
+			},
+			"members_read": {
+				"label": "See members",
+				"hint": "List who is in the channel and get told when someone joins or leaves."
+			}
+		},
+		"composer": {
+			"commands": "Commands",
+			"usage": "Usage: {{usage}}",
+			"offline": "{{bot}} is offline and cannot answer right now.",
+			"error_missing": "Missing value for “{{option}}”.",
+			"error_invalid": "“{{option}}” has an invalid value.",
+			"error_unknown": "Unexpected value “{{option}}”.",
+			"error_choice": "“{{option}}” must be one of its listed choices.",
+			"failed": "Couldn't send that to the bot."
+		},
+		"keyboard": {
+			"label": "Bot menu from {{bot}}",
+			"default_placeholder": "Choose an option",
+			"type": "Type a message",
+			"show": "Show bot menu"
+		},
+		"message": {
+			"open_link": "Opens a link"
+		},
+		"explore": {
+			"title": "Public bots",
+			"empty": "No public bots found.",
+			"no_description": "No description",
+			"commands": "{{count}} commands",
+			"start": "Message",
+			"offline": "{{bot}} is offline right now. It will answer when it is back."
+		},
+		"chat": {
+			"menu": "Bot chat options",
+			"clear": "Clear history",
+			"clear_message": "Clear your messages with {{bot}}? This only affects your side; {{bot}} keeps its own copy. The chat stays in your list.",
+			"cleared": "History cleared",
+			"remove": "Remove conversation",
+			"remove_message": "Remove the chat with {{bot}} from your list? You can start it again from Explore > Bots; the old messages stay hidden.",
+			"removed": "Conversation removed",
+			"block": "Block bot",
+			"block_message": "Block {{bot}}? It can no longer message you or be started until you unblock it.",
+			"blocked": "{{bot}} blocked"
 		}
 	}
 }

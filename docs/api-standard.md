@@ -75,6 +75,13 @@ Registry (`backend/internal/apistd`):
 | `emoji_name_taken` | 409 | Another custom emoji already uses the shortcode. |
 | `pack_uploads_disabled` | 403 | The admin switched user sticker uploads off. |
 | `image_invalid` | 400 | An uploaded sticker or emoji image is not an allowed raster image or is out of bounds. |
+| `bots_disabled` | 403 | The admin switched the Bot API off. |
+| `bot_limit_reached` | 409 | The account already owns the most bots the admin allows. |
+| `bot_install_required` | 400/403 | A bot cannot be added like an ordinary member; it must be installed with scopes (see `docs/bots-api.md`). |
+| `bot_contact_required` | 403 | A bot may only message users who used it first. |
+| `command_invalid` | 400 | A slash command definition, or an invocation, does not match its definition. |
+| `webhook_url_invalid` | 400 | A bot webhook URL is not an acceptable HTTPS address. |
+| `interaction_expired` | 404 | A bot answered an interaction with an unknown, expired or used-up token. |
 | `internal` | 5xx | Server fault; details are logged, never returned. |
 
 New codes are additive. Never reuse or repurpose a code.
@@ -84,7 +91,7 @@ New codes are additive. Never reuse or repurpose a code.
 - New JSON fields, new endpoints, new WebSocket events and new message types are **non-breaking**.
 - Clients MUST ignore unknown JSON fields, and tolerate missing optional fields and unknown enum values.
 - Clients MUST ignore unknown WebSocket event types (no crash, no disconnect).
-- Message types so far: `text`, `file`, `voice`, `video`, `invite` and `sticker` (body `{pack_id, sticker_id, file_id}`, validated by the server, never edited; see `docs/packs-api.md`). Custom emoji are not a type: they travel as `:name:` in ordinary text.
+- Message types so far: `text`, `file`, `voice`, `video`, `invite` and `sticker` (body `{pack_id, sticker_id, file_id}`, validated by the server, never edited; see `docs/packs-api.md`) and `bot` (an encrypted JSON body `{v, text, buttons}` that only a bot can send and only that bot can edit; see `docs/bots-api.md`). Custom emoji are not a type: they travel as `:name:` in ordinary text.
 - Clients MUST render an unknown message type as a placeholder card ("This message needs a newer version of Cove") instead of failing; the message keeps its place in the timeline.
 - Servers MUST accept requests with missing optional fields and ignore unknown ones, and MUST ignore unknown WebSocket event types from clients (logged at Debug; the connection stays open).
 - A change that cannot satisfy these rules is breaking: bump `api_version` and follow the deprecation policy (section 10).
@@ -93,7 +100,7 @@ New codes are additive. Never reuse or repurpose a code.
 
 The server advertises `capabilities: string[]` in `/api/version` and in the WebSocket `hello` event. Clients gate UI on `capabilities.includes("x")`, never on version comparisons. A client MUST treat a missing `capabilities` field (old server) as "none of the optional features", and unknown capability names as irrelevant.
 
-Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (UDP calls, air-gapped mode), `raw_udp_media` (air-gapped calls use the encrypted UDP media protocol of `docs/udp-media.md`: audio, video and screen share, native clients only; web clients must disable call buttons). In `raw_udp` mode the server reports `raw_udp_voice` and `raw_udp_media` and not `webrtc_sfu`. `emoji_packs` (emoji styles at `/api/emoji/styles`), `custom_emoji` (`:name:` shortcodes, `/api/emoji/custom`), `stickers` (sticker packs and the `sticker` message type) and `animated_emoji` (the big single-emoji table at `/api/emoji/animated`) are described in `docs/packs-api.md`.
+Current names: `invite_messages` (invite cards in chat), `whisper` (E2EE whisper chats), `webrtc_sfu` (WebRTC group calls and screen share), `raw_udp_voice` (UDP calls, air-gapped mode), `raw_udp_media` (air-gapped calls use the encrypted UDP media protocol of `docs/udp-media.md`: audio, video and screen share, native clients only; web clients must disable call buttons). In `raw_udp` mode the server reports `raw_udp_voice` and `raw_udp_media` and not `webrtc_sfu`. `emoji_packs` (emoji styles at `/api/emoji/styles`), `custom_emoji` (`:name:` shortcodes, `/api/emoji/custom`), `stickers` (sticker packs and the `sticker` message type) and `animated_emoji` (the big single-emoji table at `/api/emoji/animated`) are described in `docs/packs-api.md`. `bots` means the Bot API exists (bot accounts, slash commands, interactive messages, the bot gateway); see `docs/bots-api.md`.
 
 ## 7. Minimum client version
 

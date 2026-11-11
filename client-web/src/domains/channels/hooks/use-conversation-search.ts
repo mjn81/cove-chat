@@ -109,6 +109,16 @@ export function useConversationSearch(onDone: () => void) {
 		[joiningId, onDone],
 	);
 
+	/** A DM with a bot was started from Explore: show it and close the dialog. */
+	const onBotOpened = useCallback(
+		(channelId: string) => {
+			const ch = useChannelStore.getState().channels.find((c) => c.id === channelId);
+			if (ch) useChannelStore.getState().setActiveChannel(ch);
+			onDone();
+		},
+		[onDone],
+	);
+
 	/** Arrow keys move the selection, Enter opens/joins the highlighted row. */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
@@ -148,5 +158,6 @@ export function useConversationSearch(onDone: () => void) {
 		joinChannel,
 		startDm,
 		handleKeyDown,
+		onBotOpened,
 	};
 }

@@ -72,6 +72,10 @@ class WebSocketManager(private val prefs: PreferencesManager) {
     private val _whisperFlow = MutableSharedFlow<Pair<String, JsonElement>>(extraBufferCapacity = 64)
     val whisperFlow: SharedFlow<Pair<String, JsonElement>> = _whisperFlow.asSharedFlow()
 
+    /** `keyboard_update`: a bot set or removed its action menu in a channel. */
+    private val _keyboardFlow = MutableSharedFlow<com.cove.chat.bots.KeyboardUpdate>(extraBufferCapacity = 16)
+    val keyboardFlow: SharedFlow<com.cove.chat.bots.KeyboardUpdate> = _keyboardFlow.asSharedFlow()
+
     /** Fires when the channel list changed server-side (joined, kicked, renamed, ...). */
     private val _channelsChangedFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
     val channelsChangedFlow: SharedFlow<Unit> = _channelsChangedFlow.asSharedFlow()
@@ -168,6 +172,7 @@ class WebSocketManager(private val prefs: PreferencesManager) {
                 "message_update" -> _messageUpdateFlow.emit(json.decodeFromJsonElement<Message>(payload))
                 "message_delete" -> _messageDeleteFlow.emit(json.decodeFromJsonElement<MessageDeletePayload>(payload))
                 "channel_update", "channel_delete" -> _channelsChangedFlow.emit(Unit)
+                "keyboard_update" -> _keyboardFlow.emit(json.decodeFromJsonElement<com.cove.chat.bots.KeyboardUpdate>(payload))
                 "voice_update" -> {
                     val obj = payload.jsonObject
                     val ch = obj["channel_id"]?.jsonPrimitive?.content ?: return

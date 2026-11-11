@@ -3,6 +3,7 @@ export type SettingsTab =
 	| 'friends'
 	| 'appearance'
 	| 'emoji'
+	| 'bots'
 	| 'privacy'
 	| 'notifications'
 	| 'voice'

@@ -1,4 +1,5 @@
 import React from 'react';
+import i18n from '@/i18n';
 
 interface ErrorBoundaryProps {
 	children: React.ReactNode;
@@ -37,7 +38,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 			return (
 				<div className="flex h-full w-full flex-col items-center justify-center gap-3 p-8 text-center">
 					<p className="text-sm font-medium text-foreground">
-						Something went wrong{this.props.label ? ` in ${this.props.label}` : ''}.
+						{this.props.label ? i18n.t('errors.boundary_in', { label: this.props.label }) : i18n.t('errors.boundary_title')}.
 					</p>
 					<p className="max-w-md text-xs text-muted-foreground">
 						{this.state.error.message}
@@ -47,7 +48,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 						onClick={this.reset}
 						className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
 					>
-						Try again
+						{i18n.t('errors.try_again')}
 					</button>
 				</div>
 			);

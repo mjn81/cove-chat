@@ -89,7 +89,7 @@ export default function RegisterPage() {
 			<Card className="w-full max-w-[480px] bg-background border-0 sm:border sm:border-border sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
 				<CardHeader className="text-center space-y-2 pb-6">
 					<CardTitle className="text-2xl font-bold text-foreground tracking-wide">
-						Create an account
+						{t('auth.create_account')}
 					</CardTitle>
 					<CardDescription className="text-muted-foreground text-base">
 						Join {APP_NAME} and start chatting.
@@ -215,12 +215,12 @@ export default function RegisterPage() {
 				{isWails() && (
 					<CardFooter className="flex flex-col items-start gap-2 pt-2">
 						<div className="mt-4 pt-4 border-t border-border/10 w-full flex items-center justify-between text-[11px] text-muted-foreground/60 italic">
-							<span>Connecting to: {BASE_URL}</span>
+							<span>{t('auth.connecting_to', { url: BASE_URL })}</span>
 							<Link
 								to="/connect"
 								className="text-primary hover:underline not-italic font-medium"
 							>
-								Change
+								{t('auth.change_server')}
 							</Link>
 						</div>
 					</CardFooter>

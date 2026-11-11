@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"cove/backend/internal/crypto"
 	"cove/backend/internal/db"
@@ -20,6 +22,47 @@ const maxKnownDevices = 20
 // so nobody can register or rename themselves into impersonating it.
 func IsReservedUsername(name string) bool {
 	return strings.EqualFold(strings.TrimSpace(name), models.SystemUsername)
+}
+
+// Username limits, in characters (not bytes), so a Persian or Arabic name is not penalized for its encoding.
+const (
+	MinUsernameRunes = 3
+	MaxUsernameRunes = 64
+)
+
+// ValidUsername reports whether name is acceptable for a NEW account or a rename: 3 to 64 characters, no leading or
+// trailing space, and no control, line-break or invisible formatting characters (zero-width joiners, right-to-left
+// overrides). Those let one account pass for another or hide text in the member list. Existing accounts are not
+// re-checked, so nobody is locked out by a rule that arrived after they signed up.
+func ValidUsername(name string) bool {
+	n := utf8.RuneCountInString(name)
+	if n < MinUsernameRunes || n > MaxUsernameRunes || name != strings.TrimSpace(name) {
+		return false
+	}
+	for _, r := range name {
+		if r == ' ' {
+			continue
+		}
+		if unicode.IsControl(r) || unicode.IsSpace(r) || unicode.Is(unicode.Cf, r) || unicode.Is(unicode.Zl, r) || unicode.Is(unicode.Zp, r) || !unicode.IsPrint(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// UsernameTaken reports whether another account (not exceptID) already uses name, ignoring case, so "Alice" cannot be
+// registered next to "alice" to impersonate it. Sign-in still matches the name exactly.
+func (s *Store) UsernameTaken(name, exceptID string) (bool, error) {
+	users, err := s.db.ListUsers()
+	if err != nil {
+		return false, err
+	}
+	for _, u := range users {
+		if u.ID != exceptID && u.Status != "deleted" && strings.EqualFold(u.Username, name) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // EnsureSystemUser creates the Cove system account if it does not exist yet. It has no password hash, so it can

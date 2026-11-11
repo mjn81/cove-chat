@@ -62,6 +62,8 @@ type ChannelResponse struct {
 	MemberStatuses        map[string]string `json:"member_statuses,omitempty"`
 	// MemberSystem flags built-in system accounts (the server's Cove account) among the members.
 	MemberSystem          map[string]bool   `json:"member_system,omitempty"`
+	// MemberBots flags bot accounts among the members (clients show a BOT badge).
+	MemberBots map[string]bool `json:"member_bots,omitempty"`
 	MemberRoles           map[string]int    `json:"member_roles,omitempty"`
 	CreatedAt             time.Time         `json:"created_at"`
 	UnreadCount           int               `json:"unread_count,omitempty"`
@@ -116,6 +118,8 @@ type UserResponse struct {
 	FriendRequestPermission string   `json:"friend_request_permission,omitempty"`
 	// ServerRole is only filled in for the caller's own account (/api/me), never for other users.
 	ServerRole string `json:"server_role,omitempty"`
+	// IsBot marks bot accounts; clients show a BOT badge next to the name.
+	IsBot bool `json:"is_bot,omitempty"`
 }
 
 type UpdateUserRequest struct {

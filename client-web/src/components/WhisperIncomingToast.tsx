@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock } from 'lucide-react';
 import { useWhisperStore } from '@/store/whisperStore';
 import { Avatar } from './Avatar';
+import { useTranslation } from 'react-i18next';
 
 export const WhisperIncomingToast: React.FC = () => {
+		const { t } = useTranslation();
 	const { incomingInvite, acceptInvite, rejectInvite, dismissInvite, isConnecting } =
 		useWhisperStore();
 
@@ -52,7 +54,7 @@ export const WhisperIncomingToast: React.FC = () => {
 							)}
 						</div>
 						<p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-							Incoming Whisper request
+							{t('whisper_toast.incoming')}
 						</p>
 					</div>
 
@@ -61,7 +63,7 @@ export const WhisperIncomingToast: React.FC = () => {
 						type="button"
 						onClick={dismissInvite}
 						className="absolute top-3.5 end-3.5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition cursor-pointer"
-						title="Dismiss"
+						title={t('whisper_toast.dismiss')}
 					>
 						<X size={14} />
 					</button>
@@ -75,7 +77,7 @@ export const WhisperIncomingToast: React.FC = () => {
 						disabled={isConnecting}
 						className="flex-1 py-1.5 px-3 bg-foreground text-background font-medium text-xs rounded-lg hover:opacity-90 active:scale-98 transition shadow-xs disabled:opacity-50 cursor-pointer"
 					>
-						{isConnecting ? 'Connecting...' : 'Accept'}
+						{isConnecting ? t('chat.connecting') : t('chat.accept')}
 					</button>
 					<button
 						type="button"
@@ -83,7 +85,7 @@ export const WhisperIncomingToast: React.FC = () => {
 						disabled={isConnecting}
 						className="py-1.5 px-3 bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground font-medium text-xs rounded-lg active:scale-98 transition cursor-pointer disabled:opacity-50"
 					>
-						Decline
+						{t('chat.decline')}
 					</button>
 				</div>
 			</motion.div>

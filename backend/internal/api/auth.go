@@ -43,6 +43,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "auth.errors.invalid_length")
 		return
 	}
+	if !store.ValidUsername(body.Username) {
+		writeError(w, http.StatusBadRequest, "auth.errors.username_invalid")
+		return
+	}
 	if store.IsReservedUsername(body.Username) {
 		writeError(w, http.StatusBadRequest, "auth.errors.username_reserved")
 		return
@@ -147,7 +151,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 //	@Failure     400 {object} ErrorResponse
 //	@Failure     401 {object} ErrorResponse
 //	@Failure     413 {object} ErrorResponse
-//	@Failure     429 {object} ErrorResponse
+//	@Failure     429 {object} ErrorResponse "too many requests, or too many wrong passwords for this account (auth.errors.too_many_attempts)"
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/login [post]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -155,9 +159,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &body, "auth.errors.invalid_json") {
 		return
 	}
+	if h.logins.locked(body.Username, time.Now()) {
+		writeError(w, http.StatusTooManyRequests, "auth.errors.too_many_attempts")
+		return
+	}
 	u, err := h.Store.AuthenticateUser(body.Username, body.Password)
 	if err != nil {
 		if errors.Is(err, store.ErrInvalidCredentials) {
+			h.logins.fail(body.Username, time.Now())
 			writeError(w, http.StatusUnauthorized, "auth.errors.invalid_credentials")
 			return
 		}
@@ -165,6 +174,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, "login", err, "auth.errors.session_failed")
 		return
 	}
+	h.logins.reset(body.Username)
 	meta := h.sessionMetaFor(r)
 	token, _, err := h.Sessions.CreateWithMeta(u.ID, u.Username, meta)
 	if err != nil {
@@ -216,6 +226,9 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		_ = h.Store.SetPresence(session.UserID, "offline")
 	}
 	h.Sessions.Delete(token)
+	if session != nil {
+		h.disconnectSessions(session.ID) // a signed-out device must not keep receiving live events
+	}
 	auth.ClearSessionCookies(w, !h.IsDev)
 
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})

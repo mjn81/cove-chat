@@ -71,7 +71,7 @@ private fun previewFor(ch: Channel, me: String?): String {
     val cipher = ch.lastMessageCiphertext ?: return ""
     val nonce = ch.lastMessageNonce ?: return ""
     val type = ch.lastMessageType ?: "text"
-    val body = when (type) { "text" -> CryptoManager.decryptMessage(ch.id, cipher, nonce); "invite" -> "Sent an invitation"; else -> "Sent a $type" }
+    val body = when (type) { "text" -> CryptoManager.decryptMessage(ch.id, cipher, nonce); "bot" -> com.cove.chat.bots.BotLogic.preview(CryptoManager.decryptMessage(ch.id, cipher, nonce)).ifBlank { "Sent a bot message" }; "invite" -> "Sent an invitation"; else -> "Sent a $type" }
     val sender = ch.lastMessageSenderId
     val prefix = when {
         sender == null -> ""
@@ -226,6 +226,8 @@ fun ChannelListScreen(
                         subtitle = preview,
                         titleColor = if (ch.unreadCount > 0) CoveTheme.extendedColors.textPrimary else CoveTheme.extendedColors.textMuted,
                         onClick = { onChannelSelected(ch.id, name) },
+                        // A DM with a bot shows the BOT badge next to the name.
+                        titleBadge = if (ch.isDirectMessage && ch.members.any { it != me && ch.memberBots[it] == true }) ({ com.cove.chat.ui.components.BotBadge() }) else null,
                         leading = {
                             if (ch.isDirectMessage) {
                                 val other = ch.members.firstOrNull { it != CoveApp.instance.preferencesManager.userId } ?: ch.id

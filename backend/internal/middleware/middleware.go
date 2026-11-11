@@ -62,6 +62,19 @@ func Recover(next http.Handler) http.Handler {
 // setting them directly. Set once at startup from config.
 var TrustProxyHeaders = false
 
+// LogPath is the request path as the access log prints it. The interaction callback carries its one-time token in
+// the path (/api/interactions/{id}/{token}/callback); the token is replaced so a log reader cannot answer for a bot.
+func LogPath(path string) string {
+	if rest, ok := strings.CutPrefix(path, "/api/interactions/"); ok {
+		parts := strings.Split(rest, "/")
+		if len(parts) >= 2 {
+			parts[1] = "***"
+			return "/api/interactions/" + strings.Join(parts, "/")
+		}
+	}
+	return path
+}
+
 // Logger returns a middleware that logs incoming requests.
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +87,7 @@ func Logger(next http.Handler) http.Handler {
 		logger.Infof(
 			"[%s] %s %s | %d | %v",
 			r.Method,
-			r.URL.Path,
+			LogPath(r.URL.Path),
 			realIP(r),
 			rw.status,
 			duration,

@@ -1,3 +1,4 @@
+import { MarkdownText } from '@/components/markdown-text';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -138,9 +139,11 @@ export function ServerUpdatePanel() {
 					<summary className="cursor-pointer font-medium text-foreground">
 						{t('admin.update.notes', { version: info.latest_version })}
 					</summary>
-					<p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">
-						{previewReleaseNotes(info.release_notes, 4000)}
-					</p>
+					<MarkdownText
+						mode="document"
+						text={previewReleaseNotes(info.release_notes, 4000)}
+						className="mt-2 break-words text-muted-foreground"
+					/>
 					{info.release_url && (
 						<a
 							href={info.release_url}

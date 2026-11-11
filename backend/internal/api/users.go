@@ -64,6 +64,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, UserResponse{
 		ID:                      u.ID,
 		Username:                u.Username,
+		IsBot:                   u.IsBot(),
 		Domain:                  u.Domain,
 		Status:                  u.Status,
 		StatusPreference:        u.StatusPreference,
@@ -134,11 +135,23 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	// Their sticker packs and installs go with the account, and so do the stored images.
 	h.cleanupUserPacks(session.UserID)
+	// A bot belongs to its owner: without one it would run unsupervised, so the owner's bots go too.
+	h.deleteOwnedBots(session.UserID)
 
+	// Every device of the deleted account goes, not only the one asking: an anonymized account must not stay usable.
 	h.Sessions.Delete(token)
+	h.disconnectSessions(h.Sessions.DeleteAllForUser(session.UserID)...)
+	h.disconnectSessions(session.ID)
 	auth.ClearSessionCookies(w, !h.IsDev)
 	writeJSON(w, http.StatusOK, StatusResponse{Status: "success"})
 }
+
+// Bounds for the free-text profile fields. Both are broadcast to every connected user with the presence event, so an
+// unbounded value would be a storage and bandwidth amplifier.
+const (
+	maxCustomMsgRunes   = 190
+	maxBannerColorRunes = 32
+)
 
 // UpdateProfile godoc
 //
@@ -173,6 +186,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if (body.CustomMsg != nil && utf8.RuneCountInString(*body.CustomMsg) > maxCustomMsgRunes) ||
+		(body.BannerColor != nil && utf8.RuneCountInString(*body.BannerColor) > maxBannerColorRunes) {
+		writeError(w, http.StatusBadRequest, "apiErrors.profile_text_too_long")
+		return
+	}
+
 	u, err := h.Store.GetUser(session.UserID)
 	if err != nil {
 		userNotFoundOr(w, "update profile", err)
@@ -185,6 +204,10 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "apiErrors.username_too_short")
 			return
 		}
+		if !store.ValidUsername(body.Username) {
+			writeError(w, http.StatusBadRequest, "apiErrors.username_invalid")
+			return
+		}
 		if store.IsReservedUsername(body.Username) {
 			writeError(w, http.StatusBadRequest, "apiErrors.username_reserved")
 			return
@@ -195,7 +218,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, "update profile: username lookup", lerr, "failed to update profile")
 			return
 		}
-		if existing != nil && existing.ID != u.ID {
+		taken, terr := h.Store.UsernameTaken(body.Username, u.ID)
+		if terr != nil {
+			writeInternal(w, "update profile: username lookup", terr, "failed to update profile")
+			return
+		}
+		if (existing != nil && existing.ID != u.ID) || taken {
 			writeError(w, http.StatusConflict, "apiErrors.username_taken")
 			return
 		}
@@ -304,6 +332,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, UserResponse{
 		ID:                      u.ID,
 		Username:                u.Username,
+		IsBot:                   u.IsBot(),
 		Domain:                  u.Domain,
 		Status:                  u.Status,
 		StatusPreference:        u.StatusPreference,
@@ -353,6 +382,7 @@ func validateProfileEnums(b *UpdateUserRequest) string {
 //	@Failure     500 {object} ErrorResponse
 //	@Router      /api/users [get]
 func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
+	session := auth.SessionFromContext(r.Context())
 	limit, cursor, ok := pageParams(w, r)
 	if !ok {
 		return
@@ -373,9 +403,13 @@ func (h *Handler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	res := make([]UserResponse, 0, len(users))
 	for _, u := range users {
+		if u.IsBot() && !h.botSearchable(u, session.UserID) {
+			continue
+		}
 		res = append(res, UserResponse{
 			ID:          u.ID,
 			Username:    u.Username,
+			IsBot:       u.IsBot(),
 			Domain:      u.Domain,
 			Status:      u.Status,
 			AvatarID:    u.AvatarID,
@@ -414,6 +448,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	resp := UserResponse{
 		ID:               u.ID,
 		Username:         u.Username,
+		IsBot:            u.IsBot(),
 		Domain:           u.Domain,
 		Status:           u.Status,
 		StatusPreference: u.StatusPreference,

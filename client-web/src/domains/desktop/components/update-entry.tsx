@@ -1,3 +1,4 @@
+import { MarkdownText } from '@/components/markdown-text';
 import { useTranslation } from 'react-i18next';
 import { CircleArrowDown, ExternalLink, Loader2 } from 'lucide-react';
 
@@ -65,9 +66,11 @@ export function UpdateEntry({ collapsed = false }: { collapsed?: boolean }) {
 					{state.release_notes && (
 						<div>
 							<p className="mb-1 text-xs font-medium text-foreground">{t('desktopUpdate.entry.notes')}</p>
-							<p className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
-								{state.release_notes}
-							</p>
+							<MarkdownText
+								mode="document"
+								text={state.release_notes}
+								className="max-h-32 overflow-y-auto break-words text-xs text-muted-foreground"
+							/>
 						</div>
 					)}
 					{kind === 'downloading' && (

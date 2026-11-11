@@ -55,6 +55,11 @@ func (s *Store) CreateUser(username, password, domain string) (*models.User, err
 	if existing, _ := s.GetUserByUsername(username); existing != nil {
 		return nil, ErrUsernameTaken
 	}
+	if taken, err := s.UsernameTaken(username, ""); err != nil {
+		return nil, fmt.Errorf("store: username check failed: %w", err)
+	} else if taken {
+		return nil, ErrUsernameTaken
+	}
 
 	id := uuid.New().String()
 	pwdHash, err := crypto.HashPassword(password)
@@ -117,6 +122,11 @@ func (s *Store) AuthenticateUser(username, password string) (*models.User, error
 		}
 		return nil, fmt.Errorf("store: look up user: %w", err)
 	}
+	if u.IsBot() {
+		// Bots have no password; they sign in with a bot token only. Same cost and answer as a wrong password.
+		crypto.BurnPasswordVerify(password)
+		return nil, ErrInvalidCredentials
+	}
 	ok, err := crypto.VerifyPassword(password, u.PwdHash)
 	if err != nil {
 		return nil, fmt.Errorf("store: password verification error: %w", err)
@@ -145,6 +155,7 @@ func (s *Store) SearchUsers(query string) ([]*models.User, error) {
 				Status:    u.Status,
 				AvatarID:  u.AvatarID,
 				CustomMsg: u.CustomMsg,
+				Kind:      u.Kind,
 			}
 			matched = append(matched, safeUser)
 		}
@@ -335,7 +346,7 @@ func (s *Store) ListUserChannels(userID string) ([]*models.Channel, error) {
 		}
 
 		// If user cleared/deleted this channel (e.g. DM "delete for me"), hide it unless a message arrived after ClearedAt
-		if uc != nil && !uc.ClearedAt.IsZero() {
+		if uc != nil && !uc.ClearedAt.IsZero() && !uc.KeepListed {
 			if !ch.LastMessageAt.After(uc.ClearedAt) {
 				continue
 			}
@@ -368,7 +379,7 @@ func (s *Store) ListUserChannelsPage(userID, after string, limit int) (page []*m
 			continue // orphan membership index entry
 		}
 		s.enrichChannelForUser(ch, uc)
-		if !uc.ClearedAt.IsZero() && !ch.LastMessageAt.After(uc.ClearedAt) {
+		if !uc.ClearedAt.IsZero() && !uc.KeepListed && !ch.LastMessageAt.After(uc.ClearedAt) {
 			continue // cleared DM with nothing newer
 		}
 		if len(page) == limit {
@@ -410,6 +421,32 @@ func (s *Store) ClearChannelForUser(userID, channelID string, clearedAt time.Tim
 	}
 	uc.ClearedAt = clearedAt
 	uc.LastReadAt = clearedAt
+	uc.KeepListed = false
+	return s.db.SetUserChannel(uc)
+}
+
+// ClearHistoryForUser hides the messages before clearedAt for this user only and keeps the conversation in their list.
+func (s *Store) ClearHistoryForUser(userID, channelID string, clearedAt time.Time) error {
+	uc, err := s.db.GetUserChannel(userID, channelID)
+	if err != nil {
+		return err
+	}
+	uc.ClearedAt = clearedAt
+	uc.LastReadAt = clearedAt
+	uc.KeepListed = true
+	return s.db.SetUserChannel(uc)
+}
+
+// RelistChannel puts a DM the user removed back into their list (old messages stay hidden by ClearedAt).
+func (s *Store) RelistChannel(userID, channelID string) error {
+	uc, err := s.db.GetUserChannel(userID, channelID)
+	if err != nil {
+		return err
+	}
+	if uc.KeepListed {
+		return nil
+	}
+	uc.KeepListed = true
 	return s.db.SetUserChannel(uc)
 }
 
@@ -438,6 +475,15 @@ func (s *Store) DeleteChannel(id string) error {
 		for _, m := range members {
 			if derr := s.db.DeleteUserChannel(m.UserID, id); derr != nil {
 				logger.Warnf("store: DeleteChannel(%s): failed to remove membership for user %s: %v", id, m.UserID, derr)
+			}
+		}
+	}
+
+	// 1b. Bot installs, channel commands and keyboards of the channel
+	if installs, ierr := s.ListChannelInstalls(id); ierr == nil {
+		for _, in := range installs {
+			if rerr := s.RemoveBotFromChannel(id, in.BotID); rerr != nil {
+				logger.Warnf("store: DeleteChannel(%s): failed to remove bot install of %s: %v", id, in.BotID, rerr)
 			}
 		}
 	}

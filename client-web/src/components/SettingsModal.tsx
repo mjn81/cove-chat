@@ -18,6 +18,7 @@ import { NotificationsTab } from './SettingsModal/NotificationsTab';
 import { VoiceTab } from './SettingsModal/VoiceTab';
 import { StorageTab } from './SettingsModal/StorageTab';
 import { EmojiStickersTab } from './SettingsModal/EmojiStickersTab';
+import { BotsTab } from '@/domains/bots/components/bots-tab';
 import type { SettingsTab } from './SettingsModal/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -89,6 +90,7 @@ export default function SettingsModal({ onClose, initialTab = 'account' }: Setti
 										{activeTab === 'account' && t('settings.my_account')}
 										{activeTab === 'privacy' && t('settings.privacy')}
 										{activeTab === 'emoji' && t('emoji.settings.tab')}
+										{activeTab === 'bots' && t('settings.bots')}
 										{activeTab === 'appearance' && t('settings.appearance')}
 										{activeTab === 'notifications' &&
 											t('settings.notifications')}
@@ -109,6 +111,7 @@ export default function SettingsModal({ onClose, initialTab = 'account' }: Setti
 								{activeTab === 'appearance' && <AppearanceTab />}
 								{activeTab === 'privacy' && <PrivacyTab />}
 								{activeTab === 'emoji' && <EmojiStickersTab />}
+								{activeTab === 'bots' && <BotsTab />}
 								{activeTab === 'notifications' && <NotificationsTab />}
 								{activeTab === 'voice' && <VoiceTab />}
 								{activeTab === 'storage' && <StorageTab />}

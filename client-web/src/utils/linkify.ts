@@ -8,7 +8,8 @@ export type MessageToken =
 const TOKEN_RE =
 	/([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?:\/\/|www\.)[^\s<>"']+)|(@\w+)/g;
 
-const TRAILING_PUNCT = /[.,!?;:'"\]}]$/;
+// `*_~` are included so `**https://x.com**` keeps the emphasis markers out of the link.
+const TRAILING_PUNCT = /[.,!?;:'"\]}*_~]$/;
 
 /** Counts occurrences of [ch] in [s]. */
 const count = (s: string, ch: string) => s.split(ch).length - 1;
@@ -28,6 +29,31 @@ function trimUrl(raw: string): { url: string; rest: string } {
 		else break;
 	}
 	return { url, rest: raw.slice(url.length) };
+}
+
+const STICKY_RE = new RegExp(TOKEN_RE.source, 'y');
+
+/**
+ * Matches a link, email or @mention that starts exactly at [index] (callers ensure it is at a word start).
+ *
+ * @param text - Text being scanned.
+ * @param index - Position to test.
+ * @returns The token and how many characters it consumed, or `null`.
+ */
+export function matchAutoLinkAt(
+	text: string,
+	index: number,
+): { token: Exclude<MessageToken, { type: 'text' }>; length: number } | null {
+	STICKY_RE.lastIndex = index;
+	const m = STICKY_RE.exec(text);
+	if (!m) return null;
+	if (m[1]) return { token: { type: 'email', value: m[1], href: `mailto:${m[1]}` }, length: m[1].length };
+	if (m[2]) {
+		const { url } = trimUrl(m[2]);
+		if (!url) return null;
+		return { token: { type: 'url', value: url, href: /^www\./i.test(url) ? `https://${url}` : url }, length: url.length };
+	}
+	return { token: { type: 'mention', value: m[3] }, length: m[3].length };
 }
 
 /**

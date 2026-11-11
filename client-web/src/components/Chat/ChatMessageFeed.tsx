@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { formatClockTime, formatDayLabel } from '@/utils/datetime';
+import { formatClockTime } from '@/utils/datetime';
 import { useRef, useMemo, memo, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown } from 'lucide-react';
 import { type Message, type Channel } from '@/types/api';
 import { MessageItem } from './MessageItem';
+import { buildFeedItems } from '@/domains/messages/utils/feed-items';
 import { Avatar } from '../Avatar';
 import { isDirectMessage } from '@/utils/channel';
 import { getChannelDisplayName, useAuthStore } from '@/store/store';
@@ -20,21 +21,6 @@ interface ChatMessageFeedProps {
 	fetchNextPage?: () => void;
 	hasNextPage?: boolean;
 	isFetchingNextPage?: boolean;
-}
-
-// Group consecutive messages from the same sender
-function isGrouped(
-	prev: (Message & { text?: string }) | undefined,
-	curr: Message & { text?: string },
-): boolean {
-	if (!prev) return false;
-	// Replies never get grouped for better UI
-	if (curr.reply_to_id) return false;
-	return (
-		prev.sender_id === curr.sender_id &&
-		Math.abs(new Date(curr.sent_at).getTime() - new Date(prev.sent_at).getTime()) <
-			300_000 // 5 minutes
-	);
 }
 
 export const ChatMessageFeed = memo(
@@ -54,47 +40,12 @@ export const ChatMessageFeed = memo(
 			[t],
 		);
 
-		const renderedItems = useMemo(() => {
-			const items: Array<
-				| { type: 'date'; label: string; id: string }
-				| { type: 'header'; id: string }
-				| {
-						type: 'msg';
-						msg: Message & { text?: string };
-						grouped: boolean;
-						id: string;
-				  }
-			> = [];
-
-			// messages is newest-first. Index 0 is newest.
-			messages.forEach((msg, i) => {
-				const olderMsg = messages[i + 1];
-				const grouped = isGrouped(olderMsg, msg);
-				items.push({ type: 'msg', msg, grouped, id: msg.id });
-
-				const dateLabel = formatDayLabel(msg.sent_at, dayLabels);
-				const nextMsg = messages[i + 1]; // next in array = older in time
-				const nextDateLabel = nextMsg ? formatDayLabel(nextMsg.sent_at, dayLabels) : '';
-
-				if (dateLabel !== nextDateLabel) {
-					items.push({
-						type: 'date',
-						label: dateLabel,
-						id: `date-${dateLabel}`,
-					});
-				}
-			});
-
-			// If no more history, add a welcome header at the end of history (top of feed)
-			if (!hasNextPage && items.length > 0) {
-				items.push({
-					type: 'header',
-					id: 'welcome-header'
-				});
-			}
-
-			return items;
-		}, [messages, hasNextPage, dayLabels]);
+		const renderedItems = useMemo(
+			() => buildFeedItems(messages, Boolean(hasNextPage), dayLabels),
+			[messages, hasNextPage, dayLabels],
+		);
+		// Reply quotes are looked up by id instead of scanning the whole list once per visible row.
+		const messagesById = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
 		const user = useAuthStore((state) => state.user);
 		const isDM = isDirectMessage(channel);
@@ -244,7 +195,7 @@ export const ChatMessageFeed = memo(
 									onForward={onForward}
 									replyTarget={
 										item.msg.reply_to_id
-											? messages.find((m) => m.id === item.msg.reply_to_id)
+											? messagesById.get(item.msg.reply_to_id)
 											: undefined
 									}
 								/>

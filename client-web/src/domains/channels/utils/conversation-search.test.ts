@@ -74,4 +74,8 @@ describe('buildSearchItems', () => {
 		expect(items.every((i) => i.type === 'explore')).toBe(true);
 		expect(items.map(idOf)).toEqual(['p1']);
 	});
+
+	it('leaves the bots tab to its own list (no selectable rows)', () => {
+		expect(run('bots').items).toEqual([]);
+	});
 });

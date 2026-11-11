@@ -78,11 +78,15 @@ import com.cove.chat.ui.components.InitialsAvatar
 import com.cove.chat.ui.components.SectionDivider
 import com.cove.chat.ui.components.Text
 import com.cove.chat.ui.components.UserAvatar
+import com.cove.chat.ui.components.I18nToast
+import android.widget.Toast
+import androidx.compose.material.icons.outlined.SmartToy
+import androidx.compose.ui.platform.LocalContext
 import com.cove.chat.ui.theme.CoveTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal enum class SearchFilter { All, Dms, Channels, Explore }
+internal enum class SearchFilter { All, Dms, Channels, Explore, Bots }
 
 /**
  * Conversation search + public channel explorer, the mobile layout of client-web `ConversationSearchDialog`
@@ -102,6 +106,7 @@ fun ConversationSearchDialog(
     val c = CoveTheme.extendedColors
     val api = CoveApp.instance.apiClient
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val focus = remember { FocusRequester() }
 
     var query by remember { mutableStateOf("") }
@@ -113,8 +118,20 @@ fun ConversationSearchDialog(
     var found by remember { mutableStateOf<List<UserSummary>>(emptyList()) }
     var startingDm by remember { mutableStateOf<String?>(null) }
     var dmError by remember { mutableStateOf<String?>(null) }
+    // Public bots for the Bots tab (only on servers with the Bot API).
+    var botsSupported by remember { mutableStateOf(false) }
+    var bots by remember { mutableStateOf<List<com.cove.chat.bots.Bot>>(emptyList()) }
+    var loadingBots by remember { mutableStateOf(false) }
+    var startingBot by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) { botsSupported = com.cove.chat.data.remote.ApiStandard.supportsBots(api.getVersion().getOrNull()?.capabilities) }
+    LaunchedEffect(debounced, filter, botsSupported) {
+        if (!botsSupported || filter != SearchFilter.Bots) return@LaunchedEffect
+        loadingBots = true
+        api.discoverBots(debounced).onSuccess { bots = it.items }
+        loadingBots = false
+    }
     LaunchedEffect(query) { delay(300); debounced = query.trim() }
     // Same as the web hook: public channels are fetched for the (debounced) query and shown unless already joined.
     LaunchedEffect(debounced) {
@@ -132,7 +149,7 @@ fun ConversationSearchDialog(
     val filtered = channels.filter { ch ->
         if (filter == SearchFilter.Dms && !ch.isDirectMessage) return@filter false
         if (filter == SearchFilter.Channels && ch.isDirectMessage) return@filter false
-        if (filter == SearchFilter.Explore) return@filter false
+        if (filter == SearchFilter.Explore || filter == SearchFilter.Bots) return@filter false
         q.isEmpty() || ch.displayName(me).lowercase().contains(q) || ch.description.lowercase().contains(q)
     }
     val dms = filtered.filter { it.isDirectMessage }
@@ -157,6 +174,22 @@ fun ConversationSearchDialog(
                 onSuccess = { onOpenChannel(it) },
                 onFailure = { dmError = it.message; startingDm = null }
             )
+        }
+    }
+
+    /** Starts a chat with a bot (the server opens or finds the DM and tells the bot) and opens it. */
+    fun startBot(bot: com.cove.chat.bots.Bot) {
+        if (startingBot != null) return
+        startingBot = bot.id
+        scope.launch {
+            api.startBot(bot.id).fold(
+                onSuccess = { res ->
+                    if (!res.delivered) I18nToast.make(context, "${bot.username} is offline right now. It will answer when it is back.", Toast.LENGTH_SHORT).show()
+                    api.getChannels().onSuccess { list -> list.firstOrNull { it.id == res.channelId }?.let(onOpenChannel) }
+                },
+                onFailure = { dmError = it.message }
+            )
+            startingBot = null
         }
     }
 
@@ -202,10 +235,28 @@ fun ConversationSearchDialog(
             CoveChip("Direct Messages", filter == SearchFilter.Dms, { filter = SearchFilter.Dms }, icon = Icons.Outlined.Person, count = channels.count { it.isDirectMessage })
             CoveChip("Channels", filter == SearchFilter.Channels, { filter = SearchFilter.Channels }, icon = Icons.Outlined.Tag, count = channels.count { !it.isDirectMessage })
             CoveChip("Explore Public", filter == SearchFilter.Explore, { filter = SearchFilter.Explore }, icon = Icons.Outlined.Explore)
+            if (botsSupported) CoveChip("Bots", filter == SearchFilter.Bots, { filter = SearchFilter.Bots }, icon = Icons.Outlined.SmartToy)
         }
         SectionDivider()
 
-        if (empty && !(filter == SearchFilter.Explore && exploring)) {
+        if (filter == SearchFilter.Bots) {
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp).padding(Spacing.sm), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                item { SectionHeader("Public bots", loading = loadingBots) }
+                if (bots.isEmpty() && !loadingBots) item { Text("No public bots found.", color = c.textMuted, style = CoveType.label, modifier = Modifier.padding(Spacing.lg)) }
+                items(bots, key = { "bot-" + it.id }) { b ->
+                    CoveListRow(
+                        title = b.username,
+                        subtitle = (b.description.ifBlank { "No description" }) + "\n" + (if (b.commandCount == 1) "1 command" else "${b.commandCount} commands"),
+                        titleBadge = { com.cove.chat.ui.components.BotBadge() },
+                        compact = true, onClick = { startBot(b) },
+                        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
+                        leading = { UserAvatar(b.id, size = 36.dp, avatarId = b.avatarId) },
+                        trailing = { CoveButton("Message", { startBot(b) }, size = ButtonSize.Sm, loading = startingBot == b.id) }
+                    )
+                }
+                dmError?.let { err -> item { Text(err, color = MaterialTheme.colorScheme.error, fontSize = CoveType.caption.fontSize, modifier = Modifier.padding(Spacing.md)) } }
+            }
+        } else if (empty && !(filter == SearchFilter.Explore && exploring)) {
             EmptyState(
                 title = "No conversations found",
                 message = if (query.trim().isNotEmpty()) "No matches found for \"${query.trim()}\". Try another query or explore public channels." else "You have no conversations in this category yet.",

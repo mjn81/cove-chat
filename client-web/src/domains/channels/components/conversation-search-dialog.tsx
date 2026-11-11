@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Compass, Hash, Loader2, Plus, Search, User, X } from 'lucide-react';
+import { Bot, Compass, Hash, Loader2, Plus, Search, User, X } from 'lucide-react';
 
 import { Avatar, ChannelAvatar } from '@/components/Avatar';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import type { Channel } from '@/types/api';
 import { useConversationSearch } from '../hooks/use-conversation-search';
 import type { SearchFilter } from '../utils/conversation-search';
 import { KeyCap, SearchRow, SearchSectionTitle, UnreadBadge } from './search-rows';
+import { BotsExplore } from '@/domains/bots/components/bots-explore';
+import { useBotsSupported } from '@/domains/bots/hooks/use-bots';
 
 interface ConversationSearchDialogProps {
 	open: boolean;
@@ -57,6 +59,7 @@ const FILTERS: { id: SearchFilter; labelKey: string; icon?: React.ElementType }[
 	{ id: 'dms', labelKey: 'search.filter_dms', icon: User },
 	{ id: 'channels', labelKey: 'search.filter_channels', icon: Hash },
 	{ id: 'explore', labelKey: 'search.filter_explore', icon: Compass },
+	{ id: 'bots', labelKey: 'search.filter_bots', icon: Bot },
 ];
 
 const SearchPanel = ({
@@ -77,7 +80,8 @@ const SearchPanel = ({
 		items.findIndex((it) => it.type === type && it.channel.id === id);
 	const indexOfUser = (id: string) => items.findIndex((it) => it.type === 'user' && it.user.id === id);
 
-	const counts: Record<SearchFilter, number | null> = { ...s.counts, explore: null };
+	const counts: Record<SearchFilter, number | null> = { ...s.counts, explore: null, bots: null };
+	const botsSupported = useBotsSupported();
 
 	const newEntry = () => {
 		onClose();
@@ -111,7 +115,7 @@ const SearchPanel = ({
 			</div>
 
 			<div className="flex items-center gap-1.5 border-b border-border/40 bg-secondary/15 px-4 py-2 text-xs" role="tablist">
-				{FILTERS.map(({ id, labelKey, icon: Icon }) => (
+				{FILTERS.filter((f) => f.id !== 'bots' || botsSupported).map(({ id, labelKey, icon: Icon }) => (
 					<button
 						key={id}
 						type="button"
@@ -133,7 +137,9 @@ const SearchPanel = ({
 			</div>
 
 			<ScrollArea className="max-h-[380px] overflow-y-auto px-2 py-2 sm:max-h-[420px]">
-				{items.length === 0 ? (
+				{s.filter === 'bots' ? (
+					<BotsExplore query={s.search.trim()} onOpened={s.onBotOpened} />
+				) : items.length === 0 ? (
 					<EmptyState
 						icon={<Search />}
 						title={t('search.empty_title')}

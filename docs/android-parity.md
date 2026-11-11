@@ -79,3 +79,19 @@ default style: the device font only appears when the user picks "Device emoji". 
 `cacheDir/cove` (wiped on sign-out) and drawn immediately on the next start while the network refresh and socket connect run
 in parallel; `CryptoManager` also keeps the imported `SecretKey` per channel and answers repeat decrypts from the body cache
 (keyed by channel and nonce). Channel keys are still never persisted. Timings: unmeasured (emulator unusable).
+
+## Bot API (Android)
+
+Implemented in `client-android` (`bots/`, `ui/screens/{BotUi,BotsPages}.kt`, `ui/components/{BotBadge,I18nBots}.kt`), mirroring `client-web/src/domains/bots`:
+BOT badge on messages, the members list and DM rows (`member_bots`); `bot` messages with a glass button grid (callback buttons post
+`POST /api/channels/{id}/interactions` and show a spinner, then a check; URL buttons open only http/https links); slash-command
+autocomplete when typing `/` and `/name option:value` parsed into typed interactions (choices and types validated client side, the
+server validates again); the action menu that replaces the composer input (persistent and one-time variants, a dismiss button that
+switches back to typing, a strip to bring a persistent menu back), live through the `keyboard_update` WebSocket event; Settings > Bots
+(create, copy the token once, rotate, enable/disable, webhook, delete; follows the admin policy `can_create`) and a Bots section in the
+channel settings (install with a permission consent text, remove, installed commands). Everything is hidden without the `bots`
+capability, and older servers are unaffected. Pure logic is unit tested (`BotLogicTest`).
+
+The glass style uses theme tokens only (translucent background, accent or primary or error tint, hairline border); Compose has no cheap
+backdrop blur, so it is translucency without blur, which is also the web fallback. Not verified on a device or emulator.
+Not done: per-option pickers for command options (typed text only), ephemeral replies, and the gateway `subscribe` event (not in v1).

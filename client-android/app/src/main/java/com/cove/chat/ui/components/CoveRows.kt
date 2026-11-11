@@ -57,6 +57,8 @@ fun CoveListRow(
     titleColor: Color = Color.Unspecified,
     titleIcon: ImageVector? = null,
     titleIconTint: Color = Color.Unspecified,
+    /** Optional chip after the title (the BOT badge). */
+    titleBadge: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.sm),
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null
@@ -84,8 +86,10 @@ fun CoveListRow(
                     color = if (titleColor != Color.Unspecified) titleColor else c.textPrimary,
                     style = if (compact) CoveType.label else CoveType.body,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+                titleBadge?.let { Spacer(Modifier.width(6.dp)); it() }
             }
             if (!subtitle.isNullOrBlank()) {
                 Text(

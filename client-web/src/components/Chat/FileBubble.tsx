@@ -128,7 +128,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 				}
 			} catch (err) {
 				console.error('FileBubble error:', err);
-				setError('Failed to load file preview');
+				setError(t('files_ui.preview_failed'));
 			}
 		};
 
@@ -144,7 +144,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 			unsubKey();
 			if (currentThumbUrl) URL.revokeObjectURL(currentThumbUrl);
 		};
-	}, [msg]);
+	}, [msg, t]);
 
 	useEffect(() => {
 		return () => {
@@ -211,7 +211,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 			}
 		} catch (err) {
 			console.error('Download error:', err);
-			setError('Download failed');
+			setError(t('files_ui.download_failed'));
 		} finally {
 			setIsDecrypting(false);
 			setProgress(0);
@@ -272,7 +272,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 			setFullUrl(url);
 		} catch (err) {
 			console.error('Fullscreen error:', err);
-			setError('Failed to load full content');
+			setError(t('files_ui.load_failed'));
 		} finally {
 			setIsDecrypting(false);
 			setProgress(0);
