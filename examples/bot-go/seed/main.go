@@ -20,7 +20,9 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -113,6 +115,35 @@ func writeKV(path string, kv map[string]string, order []string) {
 	}
 }
 
+// solveCaptcha answers the sign-up proof-of-work (an ALTCHA challenge) the way the web client does: find n in
+// 0..maxnumber with sha256(salt + n) == challenge and send base64(JSON{algorithm, challenge, number, salt, signature}).
+// It returns "" when the server asks for no check.
+func solveCaptcha(a *api) string {
+	var ch struct {
+		Algorithm string `json:"algorithm"`
+		Challenge string `json:"challenge"`
+		Salt      string `json:"salt"`
+		MaxNumber int    `json:"maxnumber"`
+		Signature string `json:"signature"`
+	}
+	if status, err := a.do(http.MethodGet, "/api/captcha/challenge", nil, &ch); err != nil || status != http.StatusOK || ch.Challenge == "" {
+		return ""
+	}
+	started := time.Now()
+	for n := 0; n <= ch.MaxNumber; n++ {
+		sum := sha256.Sum256([]byte(ch.Salt + fmt.Sprint(n)))
+		if hex.EncodeToString(sum[:]) == ch.Challenge {
+			raw, _ := json.Marshal(map[string]any{
+				"algorithm": ch.Algorithm, "challenge": ch.Challenge, "number": n, "salt": ch.Salt,
+				"signature": ch.Signature, "took": time.Since(started).Milliseconds(),
+			})
+			return base64.StdEncoding.EncodeToString(raw)
+		}
+	}
+	fail("could not solve the sign-up check within %d attempts", ch.MaxNumber)
+	return ""
+}
+
 func randomPassword() string {
 	raw := make([]byte, 18)
 	if _, err := rand.Read(raw); err != nil {
@@ -141,8 +172,12 @@ func signIn(base *url.URL) *api {
 		return out.Token, err
 	}
 	if generated {
-		if _, err := a.do(http.MethodPost, "/api/register", map[string]string{"username": user, "password": pass}, nil); err != nil {
-			fail("could not register the dev account %q (%v).\nIf it already exists, put its credentials in %s as username=... and password=..., or set COVE_SEED_USER / COVE_SEED_PASSWORD.", user, err, seedFile)
+		reg := map[string]string{"username": user, "password": pass}
+		if cp := solveCaptcha(a); cp != "" {
+			reg["captcha"] = cp
+		}
+		if _, err := a.do(http.MethodPost, "/api/register", reg, nil); err != nil {
+			fail("could not register the dev account %q (%v).\nIf it already exists, put its credentials in %s as username=... and password=..., or set COVE_SEED_USER / COVE_SEED_PASSWORD (use the owner or an admin).", user, err, seedFile)
 		}
 		writeKV(seedFile, map[string]string{"username": user, "password": pass}, []string{"username", "password"})
 		fmt.Printf("Created the dev account %q with password %s\n(shown once; also saved to %s, which is git-ignored)\n", user, pass, seedFile)
@@ -177,12 +212,17 @@ func main() {
 
 	// 1. The bot.
 	var mine struct {
-		Items []botDTO `json:"items"`
+		Items     []botDTO `json:"items"`
+		CanCreate bool     `json:"can_create"`
+		Enabled   bool     `json:"enabled"`
 	}
 	if _, err := user.do(http.MethodGet, "/api/bots?limit=100", nil, &mine); err != nil {
 		fail("%v", err)
 	}
 	var bot *botDTO
+	if !mine.Enabled {
+		fail("bots are switched off on this server (admin panel > Bots > \"Bot API enabled\", or [bots] enabled = true in backend/config.toml)")
+	}
 	for i := range mine.Items {
 		if mine.Items[i].Username == botspec.Name {
 			bot = &mine.Items[i]
@@ -190,6 +230,9 @@ func main() {
 	}
 	env := readKV(envFile)
 	token := env["COVE_BOT_TOKEN"]
+	if bot == nil && !mine.CanCreate {
+		fail("this account may not create bots. By default only the server owner and admins can.\nEither run the seed with the owner's (or an admin's) credentials: COVE_SEED_USER=<name> COVE_SEED_PASSWORD=<password> make dev-seed-bots\nor let everyone create bots: admin panel > Bots > \"Who can create bots\" = users (or bots.creation = \"users\" in backend/config.toml).")
+	}
 	if bot == nil {
 		var created struct {
 			Bot   botDTO `json:"bot"`
