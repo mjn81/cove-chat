@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.11.3](https://github.com/mjn81/cove-chat/compare/v0.11.2...v0.11.3) (2026-11-11)
+
+
+### Features
+
+* **android:** bot API parity (badge, bot messages, slash commands, action menu, management) ([4687e8d](https://github.com/mjn81/cove-chat/commit/4687e8d697f254e6a102c698ef9e985a9e087593))
+* **backend:** bot API (accounts, tokens, install, commands, interactions, keyboards, gateway, webhooks) ([8c566da](https://github.com/mjn81/cove-chat/commit/8c566dab359a3d242e17fe698b9ea11772231245))
+* Bot API, security audit, markdown, performance ([b1b9b07](https://github.com/mjn81/cove-chat/commit/b1b9b0705598cb73c317d3bf18af0cc5da17c29c))
+* bots in Explore (discover with command count, start a chat) on web and Android ([0a78582](https://github.com/mjn81/cove-chat/commit/0a785826cd4674b1da5a49575ed0c94f909c8fb9))
+* **chat:** safe Markdown rendering and text selection on web and Android ([7a603b2](https://github.com/mjn81/cove-chat/commit/7a603b2a3472dc91063361f44faba12b2e586623))
+* clear history and remove conversation in bot DMs (web, Android, backend) ([701719b](https://github.com/mjn81/cove-chat/commit/701719b258bba0f1fbc0000cb47184ebcfa027ad))
+* **clients:** connection quality signal bars for the WebSocket link ([cd7ba14](https://github.com/mjn81/cove-chat/commit/cd7ba14c49dd6569ee360c5f7cfbb24370dfef34))
+* **dev:** sample bot seed and runnable example (make dev-seed-bots, make dev-bot) ([dd6289d](https://github.com/mjn81/cove-chat/commit/dd6289db4253a91d91c5ad5fd276dc8ff79994d5))
+* **web:** bot UI (badge, glass buttons, bot messages, slash commands, action menu, management) ([57711fa](https://github.com/mjn81/cove-chat/commit/57711fa36930ed83c5e238be08ca9cfe84d207b5))
+* **web:** register the bot error codes in the API standard list ([038d799](https://github.com/mjn81/cove-chat/commit/038d799cbb9204a2155c284f2d9416c4466cb541))
+
+
+### Bug Fixes
+
+* **backend:** delete a user's bots when their account is deleted ([ea2db87](https://github.com/mjn81/cove-chat/commit/ea2db87029564c88336ce1ce3871c777bab79acd))
+* **dev:** seed solves the sign-up captcha and explains the admin requirement ([439d286](https://github.com/mjn81/cove-chat/commit/439d286fcda839db68ef39a93199a4b26a0f8c07))
+* **i18n:** translate remaining hard-coded English in web chat, members, settings and sign-in; Android strings ([69da1de](https://github.com/mjn81/cove-chat/commit/69da1de497805479c20499515c69b249578c56a6))
+* **security:** add a header read deadline and header size cap to the HTTP server ([449e8fd](https://github.com/mjn81/cove-chat/commit/449e8fdcbc80c34cda4646774d61280eb6e94ceb))
+* **security:** cap live sessions per account at 50 ([9a74fc3](https://github.com/mjn81/cove-chat/commit/9a74fc3736db29c95878d2e039c4e7008cb00920))
+* **security:** cap the size of a chat message ciphertext ([447c4b8](https://github.com/mjn81/cove-chat/commit/447c4b884fd3bd95b633e842cd40d67049ef6c7b))
+* **security:** end every session and live socket on account deletion, sign-out and expiry ([b0677d3](https://github.com/mjn81/cove-chat/commit/b0677d3d2df5479758843ec9d6234c1844077d7d))
+* **security:** keep non-video uploads away from ffmpeg and tighten upload storage ([f1f49e8](https://github.com/mjn81/cove-chat/commit/f1f49e88be3b01005e52432bc9339bfee50e0191))
+* **security:** make rate-limit and calling settings owner-only ([dc4cfd3](https://github.com/mjn81/cove-chat/commit/dc4cfd3ce8eee8a7ec0768706db71c1995fa581e))
+* **security:** move to Go 1.26.10 and patched x/net and compress ([d4f8103](https://github.com/mjn81/cove-chat/commit/d4f810301dda09be527f1e7422951acec91fda4b))
+* **security:** never publish an Android release signed with the debug key ([35dbb72](https://github.com/mjn81/cove-chat/commit/35dbb72a6f8b0e1beca3548fb10f9b93bb319747))
+* **security:** send security headers from the web image and drop privilege gain in compose ([194fa6d](https://github.com/mjn81/cove-chat/commit/194fa6d8086cbffd94de0b034702da24a4fc0168))
+* **security:** stop bots impersonating accounts, drop installs with a deleted channel, redact interaction tokens from the access log ([c38a97d](https://github.com/mjn81/cove-chat/commit/c38a97d34c3ac59f8ff50dc74e970e2bc3b4fab0))
+* **security:** stop the embedded TURN relay reaching loopback and link-local peers ([33894d8](https://github.com/mjn81/cove-chat/commit/33894d8a53f5f0b11175b9cc0cabab2d2fba68f5))
+* **security:** throttle wrong passwords per account at sign-in ([d9ab9c6](https://github.com/mjn81/cove-chat/commit/d9ab9c65aab564624b1d87c9b81779911708f5af))
+* **security:** update axios and react-router to patched releases ([95d6942](https://github.com/mjn81/cove-chat/commit/95d69424d6a7ad5156353a2f15e0f14cb013e10f))
+* **security:** validate usernames and bound profile text ([ed486eb](https://github.com/mjn81/cove-chat/commit/ed486eb15dcc1bd2a83253a8191cc4d3bfc91ca9))
+* **updates:** render GitHub release notes as Markdown on web, desktop and Android ([17bfe04](https://github.com/mjn81/cove-chat/commit/17bfe049b221818eaae40a68e03177249dcbdce6))
+
+
+### Performance Improvements
+
+* **android:** cache decrypted preferences and enable R8 for release builds ([69c4e90](https://github.com/mjn81/cove-chat/commit/69c4e90c1389e15208e5e73c521205f4530849e8))
+* **web:** trim first-load bundle and cheapen the message feed ([cdf5d0c](https://github.com/mjn81/cove-chat/commit/cdf5d0c96f8506eb5d3fc69897bf2a18590a1c43))
+
+
+### Reverts
+
+* remove the connection signal bars from the sidebar header ([984b765](https://github.com/mjn81/cove-chat/commit/984b765b8570530995224af96b16b052bcf48d29))
+
 ## [0.11.2](https://github.com/mjn81/cove-chat/compare/v0.11.1...v0.11.2) (2026-11-09)
 
 
