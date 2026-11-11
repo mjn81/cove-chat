@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NavStrip } from '@/components/Layout/NavStrip';
-import NewChannelModal from '@/components/NewChannelModal';
-import SettingsModal from '@/components/SettingsModal';
 import { ConversationSearchDialog } from './conversation-search-dialog';
 import { DeleteChatModal } from '@/components/Chat/DeleteChatModal';
 import { UserProfileModal } from '@/components/UserProfileModal';
+// Opened on demand; kept out of the first bundle (settings alone pulls in admin, themes, the date picker and the image cropper).
+const NewChannelModal = lazy(() => import('@/components/NewChannelModal'));
+const SettingsModal = lazy(() => import('@/components/SettingsModal'));
 import { SidebarUserFooter } from '@/domains/users/components/sidebar-user-footer';
 import { CollapsedVoiceButton, VoiceConnectedBar } from '@/domains/voice/components/voice-connected';
 import { UpdateEntry } from '@/domains/desktop/components/update-entry';
@@ -204,10 +205,10 @@ export default function LeftSidebar({ isCollapsed = false, onToggleCollapse }: L
 				}
 			/>
 
-			{showNewChannel && (
-				<NewChannelModal onClose={() => setShowNewChannel(false)} />
-			)}
-			{showSettings && <SettingsModal initialTab={settingsTab} onClose={() => setShowSettings(false)} />}
+			<Suspense fallback={null}>
+				{showNewChannel && <NewChannelModal onClose={() => setShowNewChannel(false)} />}
+				{showSettings && <SettingsModal initialTab={settingsTab} onClose={() => setShowSettings(false)} />}
+			</Suspense>
 			{deleteDmTarget && (
 				<DeleteChatModal
 					channel={deleteDmTarget}
