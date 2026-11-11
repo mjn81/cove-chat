@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.Icon
@@ -90,6 +91,7 @@ private enum class SettingsPage(val title: String, val icon: ImageVector) {
     Appearance("Appearance", Icons.Outlined.Palette),
     Notifications("Notifications", Icons.Outlined.Notifications),
     Voice("Voice & Video", Icons.Outlined.GraphicEq),
+    Bots("Bots", Icons.Outlined.SmartToy),
     Storage("Data & Storage", Icons.Outlined.Storage),
     Admin("Server admin", Icons.Outlined.AdminPanelSettings),
     Updates("App updates", Icons.Outlined.SystemUpdate)
@@ -107,6 +109,9 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
     var page by remember { mutableStateOf<SettingsPage?>(null) }
     // Cosmetic gate only: the server re-checks the role on every admin request.
     var serverRole by remember { mutableStateOf(app.preferencesManager.serverRole) }
+    // The Bots page exists only on servers with the Bot API (capability `bots`).
+    var botsSupported by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { app.apiClient.getVersion().onSuccess { botsSupported = com.cove.chat.data.remote.ApiStandard.supportsBots(it.capabilities) } }
     LaunchedEffect(Unit) { app.apiClient.getMe().onSuccess { serverRole = app.preferencesManager.serverRole } }
 
     BackHandler(enabled = page != null) { page = null }
@@ -154,7 +159,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     )
                 }
                 Text("GROUPS", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, top = 24.dp, bottom = 8.dp))
-                listOf(SettingsPage.Appearance, SettingsPage.Notifications, SettingsPage.Voice, SettingsPage.Storage).plus(if (app.updateManager.enabled) listOf(SettingsPage.Updates) else emptyList()).forEach { item ->
+                listOf(SettingsPage.Appearance, SettingsPage.Notifications, SettingsPage.Voice, SettingsPage.Storage).plus(if (botsSupported) listOf(SettingsPage.Bots) else emptyList()).plus(if (app.updateManager.enabled) listOf(SettingsPage.Updates) else emptyList()).forEach { item ->
                     CoveListRow(
                         title = item.title,
                         selected = item == SettingsPage.Account,
@@ -207,6 +212,7 @@ fun SettingsScreen(onClose: () -> Unit, onLogout: () -> Unit, onOpenChat: (Strin
                     SettingsPage.Notifications -> NotificationSettings()
                     SettingsPage.Voice -> VoiceSettings()
                     SettingsPage.Storage -> StorageSettings()
+                    SettingsPage.Bots -> BotsSettings()
                     SettingsPage.Admin -> AdminPage(onLogout = { logout() })
                     SettingsPage.Updates -> UpdatePage()
                     else -> Text("This section isn't available on mobile yet.", color = c.textMuted, fontSize = CoveType.body.fontSize)

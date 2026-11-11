@@ -37,6 +37,21 @@ import com.cove.chat.data.model.TransferOwnerRequest
 import com.cove.chat.data.model.UpdateConfigRequest
 import com.cove.chat.data.model.UpdateConfigResult
 import io.ktor.http.encodeURLPath
+import com.cove.chat.bots.BotPage
+import com.cove.chat.bots.BotKeyboard
+import com.cove.chat.bots.BotTokenResponse
+import com.cove.chat.bots.ChannelBot
+import com.cove.chat.bots.ChannelBotsResponse
+import com.cove.chat.bots.ChannelCommand
+import com.cove.chat.bots.CommandsResponse
+import com.cove.chat.bots.CreateBotRequest
+import com.cove.chat.bots.CreateBotResponse
+import com.cove.chat.bots.InstallBotRequest
+import com.cove.chat.bots.InteractionRequest
+import com.cove.chat.bots.InteractionResult
+import com.cove.chat.bots.KeyboardsResponse
+import com.cove.chat.bots.UpdateBotRequest
+import com.cove.chat.bots.UpdateBotResponse
 import kotlinx.serialization.json.JsonElement
 import com.cove.chat.data.model.Channel
 import com.cove.chat.data.model.CreateChannelRequest
@@ -358,6 +373,60 @@ class ApiClient(private val prefs: PreferencesManager) {
     /** Raw bytes of a server-relative asset path (sprite sheets, sticker images, animated emoji); needs the session. */
     suspend fun getBytes(path: String): Result<ByteArray> = runCatching {
         client.get(url(path)) { bearer() }.ok().body<ByteArray>()
+    }
+
+    // ── Bots (docs/bots-api.md) ─────────────────────────────────────────────────────────────────────────────────────
+
+    /** My bots plus what the caller may do (`can_create`); server admins may ask for every bot with [all]. */
+    suspend fun getBots(all: Boolean = false): Result<BotPage> = runCatching {
+        client.get(url("/api/bots")) { bearer(); parameter("limit", MAX_PAGE_LIMIT); if (all) parameter("all", 1) }.ok().body()
+    }
+
+    /** Public bots a channel admin can install, filtered by [query]. */
+    suspend fun discoverBots(query: String = ""): Result<BotPage> = runCatching {
+        client.get(url("/api/bots/discover")) { bearer(); parameter("limit", MAX_PAGE_LIMIT); if (query.isNotBlank()) parameter("q", query) }.ok().body()
+    }
+
+    suspend fun createBot(req: CreateBotRequest): Result<CreateBotResponse> = runCatching {
+        client.post(url("/api/bots")) { contentType(ContentType.Application.Json); bearer(); setBody(req) }.ok().body()
+    }
+
+    suspend fun updateBot(id: String, req: UpdateBotRequest): Result<UpdateBotResponse> = runCatching {
+        client.patch(url("/api/bots/${id.encodeURLPath()}")) { contentType(ContentType.Application.Json); bearer(); setBody(req) }.ok().body()
+    }
+
+    suspend fun deleteBot(id: String): Result<Unit> = runCatching { client.delete(url("/api/bots/${id.encodeURLPath()}")) { bearer() }.ok(); Unit }
+
+    /** Issues a new token (shown once) and invalidates the old one at once. */
+    suspend fun rotateBotToken(id: String): Result<BotTokenResponse> = runCatching {
+        client.post(url("/api/bots/${id.encodeURLPath()}/token")) { bearer() }.ok().body()
+    }
+
+    suspend fun getChannelBots(channelId: String): Result<List<ChannelBot>> = runCatching {
+        client.get(url("/api/channels/$channelId/bots")) { bearer() }.ok().body<ChannelBotsResponse>().items
+    }
+
+    suspend fun installBot(channelId: String, botId: String, scopes: List<String>): Result<ChannelBot> = runCatching {
+        client.put(url("/api/channels/$channelId/bots/${botId.encodeURLPath()}")) { contentType(ContentType.Application.Json); bearer(); setBody(InstallBotRequest(scopes)) }.ok().body()
+    }
+
+    suspend fun uninstallBot(channelId: String, botId: String): Result<Unit> = runCatching {
+        client.delete(url("/api/channels/$channelId/bots/${botId.encodeURLPath()}")) { bearer() }.ok(); Unit
+    }
+
+    /** Slash commands usable in the channel (autocomplete). */
+    suspend fun getChannelCommands(channelId: String): Result<List<ChannelCommand>> = runCatching {
+        client.get(url("/api/channels/$channelId/commands")) { bearer() }.ok().body<CommandsResponse>().items
+    }
+
+    /** Action menus bots show in the channel. */
+    suspend fun getChannelKeyboards(channelId: String): Result<List<BotKeyboard>> = runCatching {
+        client.get(url("/api/channels/$channelId/keyboards")) { bearer() }.ok().body<KeyboardsResponse>().items
+    }
+
+    /** Sends a slash command, a button press or an action-menu key to a bot. */
+    suspend fun sendInteraction(channelId: String, req: InteractionRequest): Result<InteractionResult> = runCatching {
+        client.post(url("/api/channels/$channelId/interactions")) { contentType(ContentType.Application.Json); bearer(); setBody(req) }.ok().body()
     }
 
     suspend fun getEmojiStyles(): Result<EmojiStylesResponse> = runCatching { client.get(url("/api/emoji/styles")) { bearer() }.ok().body() }

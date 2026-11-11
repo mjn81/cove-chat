@@ -19,7 +19,7 @@ object ApiStandard {
     const val RELEASES_URL = "https://github.com/mjn81/cove-chat/releases/latest"
 
     /** Message types this build can render; anything else is shown as a placeholder. */
-    private val KNOWN_MESSAGE_TYPES = setOf("text", "file", "voice", "video", "invite", "sticker")
+    private val KNOWN_MESSAGE_TYPES = setOf("text", "file", "voice", "video", "invite", "sticker", "bot")
 
     /** `android/0.10.0 (api 2)`. */
     fun clientHeader(version: String): String = "android/$version (api $API_VERSION)"
@@ -47,6 +47,9 @@ object ApiStandard {
         if (minClientVersion.isNullOrBlank()) return false
         return compareVersions(current, minClientVersion) == -1
     }
+
+    /** Whether the server has the Bot API (capability "bots"); all bot UI is hidden without it. */
+    fun supportsBots(capabilities: List<String>?): Boolean = hasCapability(capabilities, "bots")
 
     /** Whether a server advertises [name]. A missing list (old server) means no optional features. */
     fun hasCapability(capabilities: List<String>?, name: String): Boolean = capabilities?.contains(name) == true

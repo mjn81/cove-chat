@@ -80,13 +80,18 @@ default style: the device font only appears when the user picks "Device emoji". 
 in parallel; `CryptoManager` also keeps the imported `SecretKey` per channel and answers repeat decrypts from the body cache
 (keyed by channel and nonce). Channel keys are still never persisted. Timings: unmeasured (emulator unusable).
 
-## Bot API (Android, not done)
+## Bot API (Android)
 
-The server and the web client have the Bot API (`docs/bots-api.md`, capability `bots`). The Android client has none of it yet
-and degrades safely: a `bot` message shows the existing "needs a newer version" placeholder, `member_bots` and `is_bot`
-are ignored, and `keyboard_update` is an unknown event. To do, in order: parse `member_bots` / `is_bot` and show a BOT
-badge; render `bot` messages (text and a button grid that posts `POST /api/channels/{id}/interactions`); the slash-command
-autocomplete from `GET /api/channels/{id}/commands`; the action menu from `GET /api/channels/{id}/keyboards` and the
-`keyboard_update` event, replacing the input row; Settings > Bots and the channel Bots section. Buttons use the same
-translucent surface as the web (`bot-glass`): a surface of `background` at 45 percent alpha with a 1 px `border` at 75 percent
-(Compose has no cheap backdrop blur; a solid `muted` fallback is acceptable).
+Implemented in `client-android` (`bots/`, `ui/screens/{BotUi,BotsPages}.kt`, `ui/components/{BotBadge,I18nBots}.kt`), mirroring `client-web/src/domains/bots`:
+BOT badge on messages, the members list and DM rows (`member_bots`); `bot` messages with a glass button grid (callback buttons post
+`POST /api/channels/{id}/interactions` and show a spinner, then a check; URL buttons open only http/https links); slash-command
+autocomplete when typing `/` and `/name option:value` parsed into typed interactions (choices and types validated client side, the
+server validates again); the action menu that replaces the composer input (persistent and one-time variants, a dismiss button that
+switches back to typing, a strip to bring a persistent menu back), live through the `keyboard_update` WebSocket event; Settings > Bots
+(create, copy the token once, rotate, enable/disable, webhook, delete; follows the admin policy `can_create`) and a Bots section in the
+channel settings (install with a permission consent text, remove, installed commands). Everything is hidden without the `bots`
+capability, and older servers are unaffected. Pure logic is unit tested (`BotLogicTest`).
+
+The glass style uses theme tokens only (translucent background, accent or primary or error tint, hairline border); Compose has no cheap
+backdrop blur, so it is translucency without blur, which is also the web fallback. Not verified on a device or emulator.
+Not done: per-option pickers for command options (typed text only), ephemeral replies, and the gateway `subscribe` event (not in v1).

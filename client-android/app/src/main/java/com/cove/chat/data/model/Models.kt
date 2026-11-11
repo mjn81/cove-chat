@@ -41,7 +41,9 @@ data class UserSummary(
     @SerialName("avatar_id") val avatarId: String? = null,
     @SerialName("avatar_ids") val avatarIds: List<String>? = null,
     @SerialName("custom_msg") val customMsg: String? = null,
-    @SerialName("banner_color") val bannerColor: String? = null
+    @SerialName("banner_color") val bannerColor: String? = null,
+    /** True for bot accounts (they get a BOT badge). */
+    @SerialName("is_bot") val isBot: Boolean = false
 )
 
 @Serializable
@@ -94,6 +96,8 @@ data class Channel(
     @SerialName("member_statuses") val memberStatuses: Map<String, String> = emptyMap(),
     /** Flags the server's built-in Cove account among the members (login notices, owner announcements). */
     @SerialName("member_system") val memberSystem: Map<String, Boolean> = emptyMap(),
+    /** Flags bot accounts among the members (BOT badge). */
+    @SerialName("member_bots") val memberBots: Map<String, Boolean> = emptyMap(),
     /** Group photo (a file id), empty when the group has none. */
     @SerialName("avatar_id") val avatarId: String? = null,
     @SerialName("created_at") val createdAt: String = "",

@@ -128,6 +128,7 @@ fun MembersDialog(channel: Channel, me: String, onDismiss: () -> Unit, onChanged
                         Box {
                             CoveListRow(
                                 title = (channel.memberNames[id] ?: "Unknown") + if (id == me) " (you)" else "",
+                                titleBadge = if (channel.memberBots[id] == true) ({ com.cove.chat.ui.components.BotBadge() }) else null,
                                 onClick = if (id != me) ({ menuFor = id }) else null,
                                 contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = 6.dp),
                                 leading = {
@@ -313,6 +314,9 @@ fun ChannelSettingsDialog(
                     if (isAdmin) CoveButton("New link", variant = ButtonVariant.Ghost, size = ButtonSize.Sm, onClick = { confirmRegenerate = true })
                 }
             }
+
+            // Installed bots with their permissions; admins add and remove them.
+            ChannelBotsSection(channel, isAdmin)
 
             if (isAdmin) {
                 FieldLabel("Add members")

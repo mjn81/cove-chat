@@ -204,6 +204,37 @@ fun ChatScreen(
 
     fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
 
+    // ── Bots (docs/bots-api.md): slash commands, the action menu and button presses ──
+    var botsSupported by remember { mutableStateOf(false) }
+    var commands by remember(channelId) { mutableStateOf<List<com.cove.chat.bots.ChannelCommand>>(emptyList()) }
+    var keyboards by remember(channelId) { mutableStateOf<List<com.cove.chat.bots.BotKeyboard>>(emptyList()) }
+    // The user's choice (menu or typing) for the keyboard with this signature, per channel.
+    var keyboardChoice by remember(channelId) { mutableStateOf<Pair<String, com.cove.chat.bots.BotLogic.KeyboardMode>?>(null) }
+    var botPending by remember(channelId) { mutableStateOf<String?>(null) }
+    var botDone by remember(channelId) { mutableStateOf<String?>(null) }
+    val activeKeyboard = com.cove.chat.bots.BotLogic.pickActiveKeyboard(keyboards)
+    val keyboardSig = activeKeyboard?.let { com.cove.chat.bots.BotLogic.keyboardSignature(it) }
+    val keyboardMode = keyboardChoice?.takeIf { it.first == keyboardSig }?.second
+    val keyboardView = com.cove.chat.bots.BotLogic.keyboardView(activeKeyboard, keyboardMode)
+    suspend fun loadBots() {
+        val caps = api.getVersion().getOrNull()?.capabilities
+        botsSupported = com.cove.chat.data.remote.ApiStandard.supportsBots(caps)
+        if (!botsSupported) { commands = emptyList(); keyboards = emptyList(); return }
+        api.getChannelCommands(channelId).onSuccess { commands = it }
+        api.getChannelKeyboards(channelId).onSuccess { keyboards = it }
+    }
+    /** Sends an interaction to a bot; tells the user when it fails or the bot is offline. [key] marks the pressed button. */
+    suspend fun interact(req: com.cove.chat.bots.InteractionRequest, botName: String, key: String? = null): Boolean {
+        botPending = key
+        val res = api.sendInteraction(channelId, req)
+        botPending = null
+        val ok = res.getOrNull()?.delivered == true
+        res.onFailure { toast(it.message ?: "Couldn't send that to the bot.") }
+        if (res.isSuccess && !ok) toast("$botName is offline and cannot answer right now.")
+        if (ok && key != null) { botDone = key; scope.launch { delay(1500); if (botDone == key) botDone = null } }
+        return ok
+    }
+
     // Opening a chat marks it read and silences its notification; the chat counts as "active" while shown.
     DisposableEffect(channelId) {
         ActiveChat.channelId = channelId
@@ -221,7 +252,11 @@ fun ChatScreen(
             hasMore = it.hasMore
         }
     }
-    LaunchedEffect(channelId) { ws.channelsChangedFlow.collect { api.getChannels().onSuccess { l -> channel = l.firstOrNull { it.id == channelId } } } }
+    LaunchedEffect(channelId) { ws.channelsChangedFlow.collect { api.getChannels().onSuccess { l -> channel = l.firstOrNull { it.id == channelId } }; loadBots() } }
+    LaunchedEffect(channelId) { loadBots() }
+    LaunchedEffect(channelId) {
+        ws.keyboardFlow.collect { u -> if (u.channelId == channelId) keyboards = com.cove.chat.bots.BotLogic.applyKeyboardUpdate(keyboards, u) }
+    }
     LaunchedEffect(channelId) {
         ws.messageFlow.collect { m ->
             if (m.channelId == channelId && messages.none { it.id == m.id }) {
@@ -389,6 +424,36 @@ fun ChatScreen(
         if (text.isEmpty()) return
         val edit = editing
         val reply = replyTo
+        // A known /command goes to its bot as an interaction instead of being posted as a message.
+        if (edit == null && botsSupported && text.startsWith("/")) {
+            val parsed = com.cove.chat.bots.BotLogic.parseSlashInput(text, commands) { name ->
+                mentionMembers.firstOrNull { it.username.equals(name, ignoreCase = true) }?.id
+            }
+            when (parsed) {
+                is com.cove.chat.bots.BotLogic.Parsed.Ok -> {
+                    input = ""
+                    scope.launch {
+                        interact(
+                            com.cove.chat.bots.InteractionRequest(
+                                type = "command", botId = parsed.command.botId, command = parsed.command.name, options = parsed.options.ifEmpty { null }
+                            ), parsed.command.botUsername
+                        )
+                    }
+                    return
+                }
+                is com.cove.chat.bots.BotLogic.Parsed.Error -> {
+                    val what = when (parsed.reason) {
+                        com.cove.chat.bots.BotLogic.Reason.Missing -> "Missing value for \"${parsed.option}\"."
+                        com.cove.chat.bots.BotLogic.Reason.Invalid -> "\"${parsed.option}\" has an invalid value."
+                        com.cove.chat.bots.BotLogic.Reason.UnknownOption -> "Unexpected value \"${parsed.option}\"."
+                        com.cove.chat.bots.BotLogic.Reason.NotAChoice -> "\"${parsed.option}\" must be one of its listed choices."
+                    }
+                    toast(com.cove.chat.ui.components.t(what) + " " + com.cove.chat.bots.BotLogic.usageLine(parsed.command))
+                    return
+                }
+                com.cove.chat.bots.BotLogic.Parsed.None -> Unit
+            }
+        }
         scope.launch {
             val ok = if (edit != null) ws.editMessage(channelId, edit.id, text)
             else ws.sendChatMessage(channelId, text, replyToId = reply?.id)
@@ -476,6 +541,17 @@ fun ChatScreen(
                     MessageRow(
                         m = m,
                         author = nameOf(m.senderId),
+                        isBot = channel?.memberBots?.get(m.senderId) == true,
+                        botPendingId = botPending,
+                        botDoneId = botDone,
+                        onBotPress = { customId ->
+                            scope.launch {
+                                interact(
+                                    com.cove.chat.bots.InteractionRequest(type = "button", botId = m.senderId, messageId = m.id, customId = customId),
+                                    nameOf(m.senderId), customId
+                                )
+                            }
+                        },
                         avatarId = channel?.memberAvatars?.get(m.senderId),
                         showHeader = !sameBlock,
                         selected = m.id in selectedIds,
@@ -526,6 +602,17 @@ fun ChatScreen(
             )
         }
 
+        // Slash-command suggestions: tapping one inserts it.
+        val slashTyped = if (botsSupported && mentionQuery == null) com.cove.chat.bots.BotLogic.slashQuery(input) else null
+        val slashMatches = slashTyped?.let { com.cove.chat.bots.BotLogic.filterCommands(commands, it) }.orEmpty()
+        if (slashMatches.isNotEmpty()) {
+            SlashSuggestions(slashMatches, onPick = { input = com.cove.chat.bots.BotLogic.commandInsertText(it, commands) })
+        }
+        // A persistent action menu the user closed comes back from this strip.
+        if (keyboardView.showToggle && activeKeyboard != null) {
+            ActionMenuToggle(activeKeyboard.botUsername, onShow = { keyboardChoice = keyboardSig?.let { it to com.cove.chat.bots.BotLogic.KeyboardMode.Menu } })
+        }
+
         if (channel?.isSystemChat == true) {
             androidx.compose.foundation.layout.Box(
                 Modifier.fillMaxWidth().background(CoveTheme.extendedColors.card).navigationBarsPadding().padding(16.dp),
@@ -533,6 +620,19 @@ fun ChatScreen(
             ) {
                 Text("This is an automated account. Replies aren't delivered.", color = CoveTheme.extendedColors.textMuted, fontSize = CoveType.label.fontSize)
             }
+        } else if (keyboardView.showMenu && activeKeyboard != null) {
+            // The bot's action menu REPLACES the composer's input area until the user switches back to typing.
+            ActionMenu(
+                keyboard = activeKeyboard,
+                pendingId = botPending,
+                onTyping = { keyboardChoice = keyboardSig?.let { it to com.cove.chat.bots.BotLogic.KeyboardMode.Typing } },
+                onPress = { id ->
+                    scope.launch {
+                        val ok = interact(com.cove.chat.bots.InteractionRequest(type = "keyboard", botId = activeKeyboard.botId, customId = id), activeKeyboard.botUsername, id)
+                        if (ok) com.cove.chat.bots.BotLogic.modeAfterPress(activeKeyboard, keyboardMode)?.let { m -> keyboardChoice = keyboardSig?.let { it to m } }
+                    }
+                }
+            )
         } else ChatInputBar(
             onSendSticker = { p, i -> sendSticker(p, i) },
             input = input,
@@ -708,6 +808,10 @@ private fun WelcomeHeader(title: String, isDm: Boolean) {
 private fun MessageRow(
     m: Message,
     author: String,
+    isBot: Boolean,
+    botPendingId: String?,
+    botDoneId: String?,
+    onBotPress: (customId: String) -> Unit,
     avatarId: String?,
     showHeader: Boolean,
     selected: Boolean,
@@ -791,6 +895,7 @@ private fun MessageRow(
                 if (showHeader) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(author, color = c.textPrimary, fontSize = CoveType.body.fontSize, fontWeight = FontWeight.Bold)
+                        if (isBot) { Spacer(Modifier.width(6.dp)); com.cove.chat.ui.components.BotBadge(Modifier.align(Alignment.CenterVertically)) }
                         Spacer(Modifier.width(8.dp))
                         Text(m.timeLabel(), color = c.textMuted, fontSize = CoveType.caption.fontSize)
                     }
@@ -833,6 +938,11 @@ private fun MessageRow(
                     val inviteCode = remember(m.id, m.ciphertext, keyVersion) { parseInviteCode(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (inviteCode != null) InviteCard(inviteCode, onOpenChat, Modifier.padding(top = 6.dp))
                     else Text("This invitation can't be shown.", color = c.textMuted, fontSize = CoveType.label.fontSize)
+                } else if (m.type == "bot") {
+                    // Text plus a glass button grid; callback buttons become interactions for the bot.
+                    val botBody = remember(m.id, m.ciphertext, m.editedAt, keyVersion) { CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce) }
+                    BotMessageView(botBody, onBotPress, botPendingId, botDoneId, Modifier.padding(top = 2.dp), onLongPress = onLongPress)
+                    if (m.editedAt != null) Text("(edited)", color = c.textMuted, fontSize = 10.sp)
                 } else if (m.type == "sticker") {
                     val sticker = remember(m.id, m.ciphertext, keyVersion) { com.cove.chat.emoji.StickerLogic.parse(CryptoManager.decryptMessage(m.channelId, m.ciphertext, m.nonce)) }
                     if (sticker != null) StickerBubble(sticker, Modifier.padding(top = 4.dp))
