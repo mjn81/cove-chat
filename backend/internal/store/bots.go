@@ -57,7 +57,13 @@ func NewWebhookSecret() (string, error) {
 // token is returned only here and on rotation; only its hash is stored. The per-owner cap is checked in the same
 // transaction as the write so two concurrent requests cannot both pass it.
 func (s *Store) CreateBot(ownerID, username, description, domain string, maxPerOwner int) (*models.User, *models.Bot, string, error) {
-	if existing, _ := s.GetUserByUsername(username); existing != nil {
+	if existing, _ := s.GetUserByUsername(username); existing != nil || IsReservedUsername(username) {
+		return nil, nil, "", ErrUsernameTaken
+	}
+	// Also refuse a name that differs from a person's only by case: the BOT badge is the only other tell.
+	if taken, err := s.UsernameTaken(username, ""); err != nil {
+		return nil, nil, "", fmt.Errorf("store: username check failed: %w", err)
+	} else if taken {
 		return nil, nil, "", ErrUsernameTaken
 	}
 	secret, err := newSecret()

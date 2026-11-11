@@ -81,8 +81,8 @@ func TestSecurityReview_UsernameRules(t *testing.T) {
 	cases := map[string]int{
 		"   ":                    http.StatusBadRequest,
 		strings.Repeat("a", 200): http.StatusBadRequest,
-		"adm‮in":                 http.StatusBadRequest, // right-to-left override
-		"bob​":                   http.StatusBadRequest, // zero-width space
+		"adm\u202ein":                 http.StatusBadRequest, // right-to-left override
+		"bob\u200b":                   http.StatusBadRequest, // zero-width space
 		"line\nbreak":            http.StatusBadRequest,
 		" padded ":               http.StatusBadRequest,
 		"founder":                http.StatusConflict, // differs from "Founder" only by case
