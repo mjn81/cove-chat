@@ -84,13 +84,13 @@ export const PrivacyTab = () => {
 				{savedRecently && (
 					<div className="flex items-center gap-1.5 text-success bg-success/10 border border-success/30 px-3 py-1 rounded-full text-xs font-medium animate-in fade-in zoom-in-95">
 						<Check size={14} />
-						<span>Saved</span>
+						<span>{t('privacy.saved')}</span>
 					</div>
 				)}
 				{isSaving && (
 					<div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium">
 						<Loader2 size={14} className="animate-spin text-primary" />
-						<span>Saving...</span>
+						<span>{t('privacy.saving')}</span>
 					</div>
 				)}
 			</div>
@@ -104,7 +104,7 @@ export const PrivacyTab = () => {
 						</div>
 						<div className="flex-1">
 							<span className="text-sm font-bold text-foreground block">
-								Who can add me to channels
+								{t('privacy.who_add')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
 								Decide who can add you directly to channels. If restricted, others must send you an invite link.
@@ -155,7 +155,7 @@ export const PrivacyTab = () => {
 						</div>
 						<div className="flex-1">
 							<span className="text-sm font-bold text-foreground block">
-								Who can send me direct messages
+								{t('privacy.who_dm')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
 								Filter incoming direct conversations. Blocked users can never message you regardless of this setting.
@@ -206,7 +206,7 @@ export const PrivacyTab = () => {
 						</div>
 						<div className="flex-1">
 							<span className="text-sm font-bold text-foreground block">
-								Who can send me friend requests
+								{t('privacy.who_friend')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
 								Control incoming friend invitations from other users on the platform.

@@ -39,7 +39,12 @@
       "captcha_required": "لطفاً ابتدا بررسی انسان بودن را کامل کنید.",
       "captcha_failed": "بررسی انسان بودن ناموفق بود. دوباره تلاش کنید."
     },
-    "invite_code": "کد دعوت"
+    "invite_code": "کد دعوت",
+    "need_account": "حساب ندارید؟",
+    "register_link": "ثبت‌نام",
+    "create_account": "ایجاد حساب",
+    "connecting_to": "اتصال به: {{url}}",
+    "change_server": "تغییر"
   },
   "sidebar": {
     "groups": "گروه‌ها",
@@ -78,6 +83,8 @@
     "ping_good": "اتصال خوب",
     "ping_average": "اتصال متوسط",
     "ping_poor": "اتصال ضعیف",
+    "connection_offline": "آفلاین",
+    "connection_connecting": "در حال اتصال مجدد…",
     "my_profile": "پروفایل من",
     "settings": "تنظیمات",
     "log_out": "خروج",
@@ -85,6 +92,7 @@
   },
   "chat": {
     "copied": "کپی شد",
+    "copy_code": "کپی کد",
     "message_placeholder": "پیام…",
     "today": "امروز",
     "yesterday": "دیروز",
@@ -152,7 +160,27 @@
       "file": "فایل",
       "download": "دانلود",
       "image_alt": "تصویر"
-    }
+    },
+    "sending": "در حال ارسال…",
+    "send_failed": "ارسال ناموفق بود",
+    "retry": "تلاش مجدد",
+    "edited": "(ویرایش‌شده)",
+    "unknown_user": "کاربر ناشناس",
+    "reply_missing": "پیام اصلی پیدا نشد",
+    "encrypted_placeholder": "[رمزگذاری‌شده]",
+    "processing_video": "در حال پردازش ویدیو…",
+    "decline": "رد کردن",
+    "accept": "پذیرفتن",
+    "connecting": "در حال اتصال…",
+    "action_reply": "پاسخ",
+    "action_select": "انتخاب",
+    "action_edit": "ویرایش پیام",
+    "action_delete": "حذف پیام",
+    "download_voice": "دانلود پیام صوتی",
+    "play_video": "برای پخش در پخش‌کننده ویدیو کلیک کنید",
+    "playback_speed": "سرعت پخش",
+    "play": "پخش",
+    "close_player": "بستن پخش‌کننده"
   },
   "channel": {
     "new_conversation": "مکالمه جدید",
@@ -284,7 +312,10 @@
     "image_too_large": "حجم تصویر باید کمتر از {{size}} مگابایت باشد",
     "microphone": "خطای میکروفون: {{message}}. لطفاً دسترسی‌ها را بررسی کنید.",
     "unknown": "خطای ناشناخته",
-    "notification_denied": "دسترسی اعلان‌ها رد شد"
+    "notification_denied": "دسترسی اعلان‌ها رد شد",
+    "boundary_title": "مشکلی پیش آمد",
+    "boundary_in": "در {{label}} مشکلی پیش آمد",
+    "try_again": "تلاش دوباره"
   },
   "common": {
     "load_more": "بارگذاری بیشتر",
@@ -297,7 +328,8 @@
     "hour": "ساعت",
     "minute": "دقیقه",
     "done": "تأیید",
-    "clear": "پاک کردن"
+    "clear": "پاک کردن",
+    "switch_language": "تغییر به {{language}}"
   },
   "settings": {
     "title": "تنظیمات کاربر",
@@ -1617,5 +1649,84 @@
       "sent": "در {{count}} گفتگو به اشتراک گذاشته شد",
       "failed": "اشتراک‌گذاری بسته ممکن نبود."
     }
+  },
+  "connection": {
+    "reconnecting": "در حال اتصال مجدد…",
+    "lost": "اتصال قطع شد — در حال اتصال مجدد…"
+  },
+  "topbar": {
+    "view_profile": "مشاهده پروفایل",
+    "view_channel_info": "مشاهده اطلاعات کانال",
+    "friend_pending": "درخواست دوستی در انتظار است",
+    "accept_friend": "پذیرفتن درخواست دوستی",
+    "add_friend": "افزودن دوست",
+    "search": "جستجو",
+    "search_placeholder": "جستجو…",
+    "show_members": "نمایش اعضا",
+    "channel_settings": "تنظیمات کانال",
+    "voice_disconnect": "به تماس متصل هستید (برای قطع کلیک کنید)",
+    "voice_join": "پیوستن به تماس جاری ({{count}} نفر فعال)",
+    "voice_start": "شروع تماس",
+    "whisper_need_friend": "ویسپر به دوستی دوطرفه نیاز دارد",
+    "whisper_incoming": "درخواست ویسپر از {{name}} – برای پذیرش کلیک کنید",
+    "whisper_exit": "خروج از حالت ویسپر",
+    "whisper_enter": "ورود به حالت ویسپر (E2EE)",
+    "whisper_start": "شروع ویسپر امن (E2EE)"
+  },
+  "members": {
+    "title": "اعضا",
+    "expand": "باز کردن اعضا",
+    "collapse": "بستن اعضا",
+    "owner": "مالک",
+    "admins": "مدیران",
+    "online": "آنلاین",
+    "offline": "آفلاین",
+    "leave": "ترک کانال",
+    "leave_confirm": "آیا مطمئنید که می‌خواهید «{{name}}» را ترک کنید؟ برای بازگشت به لینک دعوت نیاز خواهید داشت.",
+    "kick": "حذف عضو",
+    "kick_confirm": "آیا مطمئنید که می‌خواهید {{name}} را از کانال حذف کنید؟ برای بازگشت به دعوت‌نامه جدید نیاز دارد.",
+    "view_profile": "مشاهده پروفایل",
+    "promote": "ارتقا به مدیر",
+    "demote": "تنزل به عضو"
+  },
+  "privacy": {
+    "saved": "ذخیره شد",
+    "saving": "در حال ذخیره…",
+    "who_add": "چه کسی می‌تواند مرا به کانال‌ها اضافه کند",
+    "who_dm": "چه کسی می‌تواند به من پیام مستقیم بفرستد",
+    "who_friend": "چه کسی می‌تواند به من درخواست دوستی بفرستد"
+  },
+  "voice_settings": {
+    "silent": "بی‌صدا",
+    "loud": "بلند"
+  },
+  "whisper_toast": {
+    "incoming": "درخواست ویسپر ورودی",
+    "dismiss": "بستن"
+  },
+  "notfound": {
+    "badge": "مسیر اشتباه",
+    "title": "در خلأ گم شده‌اید.",
+    "body": "این صفحه وجود ندارد یا جابه‌جا شده است. نگران نباشید، بهترین کاشفان هم گاهی گم می‌شوند.",
+    "home": "مرا به خانه ببر",
+    "report": "گزارش خطا"
+  },
+  "storage_stats": {
+    "images": "تصاویر: {{size}}",
+    "videos": "ویدیوها: {{size}}",
+    "voices": "پیام‌های صوتی: {{size}}",
+    "files": "فایل‌ها: {{size}}",
+    "messages": "پیام‌ها: {{size}}",
+    "refresh": "بازآوری"
+  },
+  "settings_nav": {
+    "friends": "دوستان",
+    "logout_title": "خروج",
+    "logout_message": "آیا مطمئنید که می‌خواهید خارج شوید؟ برای دسترسی به پیام‌هایتان باید دوباره وارد شوید."
+  },
+  "files_ui": {
+    "preview_failed": "بارگذاری پیش‌نمایش فایل ناموفق بود",
+    "download_failed": "دانلود ناموفق بود",
+    "load_failed": "بارگذاری محتوای کامل ناموفق بود"
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, memo, useEffect, useCallback } from 'react';
+import { useState, useRef, useMemo, memo, useEffect, useCallback, type Key } from 'react';
 
 import { useAuthStore } from '@/store/store';
 import { Avatar } from '../Avatar';
@@ -15,7 +15,8 @@ import { isKnownMessageType } from '@/domains/messages/utils/message-types';
 import { ConfirmModal } from '../ConfirmModal';
 import { useSelectionStore } from '@/domains/messages/store/selection.store';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { tokenizeMessage } from '@/utils/linkify';
+import { MarkdownText } from '@/components/markdown-text';
+import { stripMarkdown } from '@/lib/markdown';
 import { useLongPress } from '@/hooks/use-long-press';
 import { UserProfileModal } from '../UserProfileModal';
 import { EmojiText } from '@/domains/emoji/components/emoji';
@@ -188,57 +189,47 @@ export const MessageItem = memo(
 		const memberIdForMention = (username: string) =>
 			Object.entries(channel.member_names ?? {}).find(([, name]) => name.toLowerCase() === username.toLowerCase())?.[0] ?? null;
 
-		const renderText = (text: string) => {
-			if (!text) return text;
-			return tokenizeMessage(text).map((token, i) => {
-				if (token.type === 'mention') {
-					const isMe = user?.username === token.value.substring(1);
-					return (
-						<span
-							key={i}
-							role="button"
-							tabIndex={0}
-							onClick={() => {
-								const id = memberIdForMention(token.value.substring(1));
-								if (id) setProfileUserId(id);
-							}}
-							onKeyDown={(e) => {
-								if (e.key !== 'Enter') return;
-								const id = memberIdForMention(token.value.substring(1));
-								if (id) setProfileUserId(id);
-							}}
-							className={`rounded-[3px] px-[2px] font-medium transition-colors cursor-pointer ${
-								isMe
-									? 'bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground'
-									: 'text-primary hover:underline'
-							}`}
-						>
-							{token.value}
-						</span>
-					);
-				}
-				if (token.type === 'url' || token.type === 'email') {
-					// noopener/noreferrer: the target page must not reach window.opener or learn which chat linked it.
-					return (
-						<a
-							key={i}
-							href={token.href}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="text-primary hover:underline break-all"
-						>
-							{token.value}
-						</a>
-					);
-				}
-				// Plain text: emoji and known :name: shortcodes become images, everything else is left as typed.
-				return <EmojiText key={i} text={token.value} />;
-			});
+		/** Mentions open the member's profile; everything else (links, code, emphasis) comes from the Markdown renderer. */
+		const renderMention = (value: string, key: Key) => {
+			const isMe = user?.username === value.substring(1);
+			const open = () => {
+				const id = memberIdForMention(value.substring(1));
+				if (id) setProfileUserId(id);
+			};
+			return (
+				<span
+					key={key}
+					role="button"
+					tabIndex={0}
+					onClick={open}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter') open();
+					}}
+					className={`rounded-[3px] px-[2px] font-medium transition-colors cursor-pointer ${
+						isMe
+							? 'bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground'
+							: 'text-primary hover:underline'
+					}`}
+				>
+					{value}
+				</span>
+			);
 		};
+
+		// Plain runs: emoji and known :name: shortcodes become images, everything else is left as typed.
+		const renderPlain = (value: string, key: Key) => <EmojiText key={key} text={value} />;
+
+		const renderText = (text: string) => (
+			<MarkdownText text={text} renderPlain={renderPlain} renderMention={renderMention} />
+		);
 
 		return (
 			<div
-				onMouseDown={(e) => handleDragStart(e.clientX)}
+				onMouseDown={(e) => {
+					// Dragging inside message text is a text selection, not a swipe-to-reply gesture.
+					if ((e.target as Element).closest?.('[data-selectable]')) return;
+					handleDragStart(e.clientX);
+				}}
 				onMouseMove={(e) => handleDragMove(e.clientX)}
 				onMouseUp={handleDragEnd}
 				onMouseLeave={handleDragEnd}
@@ -324,7 +315,7 @@ export const MessageItem = memo(
 								if (isMobile) setShowMobileMenu(false);
 							}}
 							className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-							title="Reply"
+							title={t('chat.action_reply')}
 						>
 							<Reply size={14} />
 						</button>
@@ -335,7 +326,7 @@ export const MessageItem = memo(
 								if (isMobile) setShowMobileMenu(false);
 							}}
 							className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors border-s border-border"
-							title="Select"
+							title={t('chat.action_select')}
 						>
 							<CheckCircle2 size={14} />
 						</button>
@@ -348,7 +339,7 @@ export const MessageItem = memo(
 									if (isMobile) setShowMobileMenu(false);
 								}}
 								className="p-1.5 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors border-s border-border"
-								title="Edit Message"
+								title={t('chat.action_edit')}
 							>
 								<Pencil size={14} />
 							</button>
@@ -361,7 +352,7 @@ export const MessageItem = memo(
 									if (isMobile) setShowMobileMenu(false);
 								}}
 								className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors border-s border-border"
-								title="Delete Message"
+								title={t('chat.action_delete')}
 							>
 								<Trash2 size={14} />
 							</button>
@@ -373,7 +364,7 @@ export const MessageItem = memo(
 					isOpen={showDeleteConfirm}
 					onClose={() => setShowDeleteConfirm(false)}
 					onConfirm={handleDelete}
-					title="Delete Message"
+					title={t('chat.action_delete')}
 					message="Are you sure you want to delete this message? This action cannot be undone."
 					confirmText="Delete"
 					variant="danger"
@@ -420,14 +411,14 @@ export const MessageItem = memo(
 									{replyTarget
 										? channel.member_names?.[replyTarget.sender_id] ||
 											replyTarget.sender_id
-										: 'Unknown User'}
+										: t('chat.unknown_user')}
 								</span>
 								<span className="text-[13px] truncate text-muted-foreground/80 hover:text-foreground cursor-pointer italic max-w-[60%]">
 									{replyTarget
 										? replyTarget.type === 'text'
-											? <EmojiText text={replyTarget.text ?? ''} em={1.25} />
+											? <EmojiText text={stripMarkdown(replyTarget.text ?? '')} em={1.25} />
 											: `[${replyTarget.type}]`
-										: 'Original message not found'}
+										: t('chat.reply_missing')}
 								</span>
 							</div>
 						</div>
@@ -500,8 +491,9 @@ export const MessageItem = memo(
 								</div>
 							) : (
 								<div
-									className={`relative text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 rounded-sm ${msg.pending ? 'opacity-60' : ''} ${copied ? 'animate-copy-flash' : ''}`}
+									className={`relative text-[15px] text-foreground/90 leading-[22px] whitespace-pre-wrap break-words flex-1 min-w-0 rounded-sm ${isMobile ? '' : 'select-text cursor-text'} ${msg.pending ? 'opacity-60' : ''} ${copied ? 'animate-copy-flash' : ''}`}
 									dir="auto"
+									data-selectable={isMobile ? undefined : ''}
 									{...longPress}
 								>
 									{copied && (
@@ -513,10 +505,10 @@ export const MessageItem = memo(
 											{t('chat.copied')}
 										</span>
 									)}
-									{msg.text ? renderText(msg.text) : '[encrypted]'}
+									{msg.text ? renderText(msg.text) : t('chat.encrypted_placeholder')}
 									{msg.edited_at && (
 										<span className="text-[10px] text-muted-foreground ms-1 inline-block select-none">
-											(edited)
+											{t('chat.edited')}
 										</span>
 									)}
 								</div>
@@ -524,19 +516,19 @@ export const MessageItem = memo(
 							{msg.pending === 'sending' && (
 								<div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
 									<Loader2 size={10} className="animate-spin" />
-									<span>Sending…</span>
+									<span>{t('chat.sending')}</span>
 								</div>
 							)}
 							{msg.pending === 'failed' && (
 								<div className="flex items-center gap-1.5 text-[10px] text-destructive mt-0.5">
 									<AlertCircle size={10} />
-									<span>Failed to send</span>
+									<span>{t('chat.send_failed')}</span>
 									<button
 										type="button"
 										onClick={() => (msg as any)._retry?.()}
 										className="underline hover:no-underline font-semibold"
 									>
-										Retry
+										{t('chat.retry')}
 									</button>
 								</div>
 							)}

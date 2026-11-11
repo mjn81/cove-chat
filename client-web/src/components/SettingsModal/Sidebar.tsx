@@ -37,7 +37,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 						/>
 						<TabButton
 							id="friends"
-							label="Friends"
+							label={t('settings_nav.friends')}
 							icon={Users}
 							activeTab={activeTab}
 							setActiveTab={setActiveTab}
@@ -128,9 +128,9 @@ export const Sidebar = ({ activeTab, setActiveTab, isMobile }: SidebarProps) => 
 						isOpen={showLogoutConfirm}
 						onClose={() => setShowLogoutConfirm(false)}
 						onConfirm={logout}
-						title="Logout"
-						message="Are you sure you want to log out? You will need to sign in again to access your messages."
-						confirmText="Logout"
+						title={t('settings_nav.logout_title')}
+						message={t('settings_nav.logout_message')}
+						confirmText={t('settings_nav.logout_title')}
 						variant="danger"
 					/>
 				</div>

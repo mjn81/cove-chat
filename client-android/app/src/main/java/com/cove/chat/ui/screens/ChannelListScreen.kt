@@ -3,6 +3,7 @@ package com.cove.chat.ui.screens
 import com.cove.chat.ui.theme.CoveShapes
 import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
+import com.cove.chat.ui.components.ConnectionSignal
 import com.cove.chat.ui.components.CoveListRow
 import com.cove.chat.ui.components.CoveBadge
 import androidx.compose.foundation.background
@@ -108,6 +109,7 @@ fun ChannelListScreen(
     var showMyProfile by remember { mutableStateOf(false) }
     var version by remember { mutableStateOf("") }
     val connected by ws.connectionState.collectAsState(initial = false)
+    val latency by ws.latencyMs.collectAsState()
     val keyVersion by CryptoManager.keyVersion.collectAsState()
     var refreshTick by remember { mutableStateOf(0) }
 
@@ -152,12 +154,7 @@ fun ChannelListScreen(
             Text("Cove Client", color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Text(version, color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Medium)
             Spacer(Modifier.width(8.dp))
-            Box(
-                Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(if (connected) c.statusOnline else c.statusOffline)
-            )
+            ConnectionSignal(connected, latency)
         }
         SectionDivider()
 

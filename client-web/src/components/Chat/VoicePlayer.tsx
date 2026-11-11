@@ -137,7 +137,7 @@ export const VoicePlayer: React.FC = () => {
 					type="button"
 					onClick={() => setShowSpeedSlider((v) => !v)}
 					className="flex items-center justify-center w-12 h-7 rounded-md hover:bg-muted transition-colors cursor-pointer shrink-0"
-					title="Playback speed"
+					title={t('chat.playback_speed')}
 				>
 					<span className="text-xs font-bold font-mono tabular-nums text-primary">
 						{speed.toFixed(1)}x
@@ -296,7 +296,7 @@ export const VoicePlayer: React.FC = () => {
 				type="button"
 				onClick={close}
 				className="text-muted-foreground hover:text-foreground transition shrink-0 p-1"
-				title="Close player"
+				title={t('chat.close_player')}
 			>
 				<X size={14} />
 			</button>

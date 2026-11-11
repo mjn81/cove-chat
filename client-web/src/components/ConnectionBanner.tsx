@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { WifiOff, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/store';
 
 // Avoids a flash of the banner on the very first connect (wsState starts as
 // 'disconnected' before the initial handshake completes) — only shows once
 // we've actually been connected before and then dropped.
 export function ConnectionBanner() {
+	const { t } = useTranslation();
 	const wsState = useAppStore((state) => state.wsState);
 	const [everConnected, setEverConnected] = useState(false);
 
@@ -19,12 +21,12 @@ export function ConnectionBanner() {
 			{wsState === 'connecting' ? (
 				<>
 					<Loader2 size={13} className="animate-spin" />
-					<span>Reconnecting…</span>
+					<span>{t('connection.reconnecting')}</span>
 				</>
 			) : (
 				<>
 					<WifiOff size={13} />
-					<span>Connection lost — reconnecting…</span>
+					<span>{t('connection.lost')}</span>
 				</>
 			)}
 		</div>

@@ -17,7 +17,8 @@
 		"hour": "Hour",
 		"minute": "Minute",
 		"done": "Done",
-		"clear": "Clear"
+		"clear": "Clear",
+		"switch_language": "Switch to {{language}}"
 	},
 	"auth": {
 		"login": "Sign In",
@@ -52,7 +53,12 @@
 			"captcha_required": "Please complete the human check first.",
 			"captcha_failed": "The human check failed. Please try again."
 		},
-		"invite_code": "Invitation code"
+		"invite_code": "Invitation code",
+		"need_account": "Need an account?",
+		"register_link": "Register",
+		"create_account": "Create an account",
+		"connecting_to": "Connecting to: {{url}}",
+		"change_server": "Change"
 	},
 	"sidebar": {
 		"groups": "Groups",
@@ -91,6 +97,8 @@
 		"ping_good": "Good connection",
 		"ping_average": "Average connection",
 		"ping_poor": "Poor connection",
+		"connection_offline": "Offline",
+		"connection_connecting": "Reconnecting…",
 		"my_profile": "My profile",
 		"settings": "Settings",
 		"log_out": "Log out",
@@ -98,6 +106,7 @@
 	},
 	"chat": {
 		"copied": "Copied",
+		"copy_code": "Copy code",
 		"message_placeholder": "Message…",
 		"today": "Today",
 		"yesterday": "Yesterday",
@@ -165,7 +174,27 @@
 			"file": "File",
 			"download": "Download",
 			"image_alt": "Image"
-		}
+		},
+		"sending": "Sending…",
+		"send_failed": "Failed to send",
+		"retry": "Retry",
+		"edited": "(edited)",
+		"unknown_user": "Unknown user",
+		"reply_missing": "Original message not found",
+		"encrypted_placeholder": "[encrypted]",
+		"processing_video": "Processing video…",
+		"decline": "Decline",
+		"accept": "Accept",
+		"connecting": "Connecting…",
+		"action_reply": "Reply",
+		"action_select": "Select",
+		"action_edit": "Edit message",
+		"action_delete": "Delete message",
+		"download_voice": "Download voice note",
+		"play_video": "Click to play in video player",
+		"playback_speed": "Playback speed",
+		"play": "Play",
+		"close_player": "Close player"
 	},
 	"channel": {
 		"new_conversation": "New Conversation",
@@ -297,7 +326,10 @@
 		"image_too_large": "The image must be under {{size}} MB",
 		"microphone": "Microphone error: {{message}}. Please check permissions.",
 		"unknown": "Unknown error",
-		"notification_denied": "Notification permission was denied"
+		"notification_denied": "Notification permission was denied",
+		"boundary_title": "Something went wrong",
+		"boundary_in": "Something went wrong in {{label}}",
+		"try_again": "Try again"
 	},
 	"settings": {
 		"title": "User Settings",
@@ -1617,5 +1649,84 @@
 			"sent": "Shared in {{count}} chats",
 			"failed": "Could not share the pack."
 		}
+	},
+	"connection": {
+		"reconnecting": "Reconnecting…",
+		"lost": "Connection lost — reconnecting…"
+	},
+	"topbar": {
+		"view_profile": "View profile",
+		"view_channel_info": "View channel info",
+		"friend_pending": "Friend request pending",
+		"accept_friend": "Accept friend request",
+		"add_friend": "Add friend",
+		"search": "Search",
+		"search_placeholder": "Search…",
+		"show_members": "Show members",
+		"channel_settings": "Channel settings",
+		"voice_disconnect": "Connected to the call (click to disconnect)",
+		"voice_join": "Join the ongoing call ({{count}} active)",
+		"voice_start": "Start a call",
+		"whisper_need_friend": "Whisper requires mutual friendship",
+		"whisper_incoming": "Incoming Whisper request from {{name}} – click to accept",
+		"whisper_exit": "Exit Whisper mode",
+		"whisper_enter": "Enter Whisper mode (E2EE)",
+		"whisper_start": "Start a secure Whisper (E2EE)"
+	},
+	"members": {
+		"title": "Members",
+		"expand": "Expand members",
+		"collapse": "Collapse members",
+		"owner": "Owner",
+		"admins": "Admins",
+		"online": "Online",
+		"offline": "Offline",
+		"leave": "Leave channel",
+		"leave_confirm": "Are you sure you want to leave \"{{name}}\"? You will need an invite link to join back later.",
+		"kick": "Remove member",
+		"kick_confirm": "Are you sure you want to remove {{name}} from the channel? They will need a new invite to rejoin.",
+		"view_profile": "View profile",
+		"promote": "Promote to admin",
+		"demote": "Demote to member"
+	},
+	"privacy": {
+		"saved": "Saved",
+		"saving": "Saving…",
+		"who_add": "Who can add me to channels",
+		"who_dm": "Who can send me direct messages",
+		"who_friend": "Who can send me friend requests"
+	},
+	"voice_settings": {
+		"silent": "Silent",
+		"loud": "Loud"
+	},
+	"whisper_toast": {
+		"incoming": "Incoming Whisper request",
+		"dismiss": "Dismiss"
+	},
+	"notfound": {
+		"badge": "Wrong turn",
+		"title": "You're lost in the void.",
+		"body": "This page doesn't exist or has moved. Don't worry, even the best explorers get lost sometimes.",
+		"home": "Take me home",
+		"report": "Report a bug"
+	},
+	"storage_stats": {
+		"images": "Images: {{size}}",
+		"videos": "Videos: {{size}}",
+		"voices": "Voice notes: {{size}}",
+		"files": "Files: {{size}}",
+		"messages": "Messages: {{size}}",
+		"refresh": "Refresh"
+	},
+	"settings_nav": {
+		"friends": "Friends",
+		"logout_title": "Log out",
+		"logout_message": "Are you sure you want to log out? You will need to sign in again to access your messages."
+	},
+	"files_ui": {
+		"preview_failed": "Failed to load file preview",
+		"download_failed": "Download failed",
+		"load_failed": "Failed to load full content"
 	}
 }

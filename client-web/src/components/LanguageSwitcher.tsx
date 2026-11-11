@@ -8,7 +8,7 @@ const LANGUAGES = [
 ];
 
 export default function LanguageSwitcher() {
-	const { i18n } = useTranslation();
+	const { t, i18n } = useTranslation();
 
 	const handleChange = (code: string) => {
 		i18n.changeLanguage(code);
@@ -23,7 +23,7 @@ export default function LanguageSwitcher() {
 					id={`lang-btn-${lang.code}`}
 					onClick={() => handleChange(lang.code)}
 					title={lang.label}
-					aria-label={`Switch to ${lang.label}`}
+					aria-label={t('common.switch_language', { language: lang.label })}
 					style={{
 						background:
 							i18n.language === lang.code

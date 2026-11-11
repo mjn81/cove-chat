@@ -99,7 +99,7 @@ export const WhisperVideoBubble: React.FC<WhisperVideoBubbleProps> = ({ file }) 
 			<div
 				className="relative w-64 h-64 rounded-[32px] overflow-hidden bg-black shadow-lg cursor-pointer group border border-border/50 hover:border-primary/50 transition-all hover:scale-[1.01]"
 				onClick={() => setIsPlayerOpen(true)}
-				title="Click to play in video player"
+				title={t('chat.play_video')}
 			>
 				{file.blobUrl ? (
 					<video

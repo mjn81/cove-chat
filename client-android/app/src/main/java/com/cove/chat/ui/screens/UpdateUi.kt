@@ -156,7 +156,11 @@ fun UpdatePage() {
             )
         } else {
             Text("Cove ${offer.version}", color = c.textPrimary, fontSize = CoveType.title.fontSize, fontWeight = FontWeight.Bold)
-            if (offer.notes.isNotBlank()) Text(offer.notes.take(1200), color = c.textMuted, fontSize = CoveType.label.fontSize)
+            if (offer.notes.isNotBlank()) {
+                com.cove.chat.ui.components.MarkdownDocument(
+                    offer.notes.take(4000), color = c.textMuted, linkColor = MaterialTheme.colorScheme.primary, fontSize = CoveType.label.fontSize
+                )
+            }
             when (val s = state) {
                 is UpdateUi.Downloading -> {
                     LinearProgressIndicator(progress = { s.percent / 100f }, modifier = Modifier.fillMaxWidth().height(6.dp))

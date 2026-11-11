@@ -6,6 +6,7 @@ import { Avatar } from '@/components/Avatar';
 import { WhisperVoiceBubble } from '@/components/Chat/File/WhisperVoiceBubble';
 import { WhisperVideoBubble } from '@/components/Chat/File/WhisperVideoBubble';
 import { cn } from '@/lib/utils';
+import { MarkdownText } from '@/components/markdown-text';
 import { formatClockTime } from '@/utils/datetime';
 import { formatFileSize } from '@/utils/file';
 import type { WhisperMessageFile, WhisperMessageItem } from '@/store/whisperStore';
@@ -192,7 +193,7 @@ export const WhisperMessageRow = ({
 						className="min-w-0 flex-1 select-text whitespace-pre-wrap break-words text-[15px] leading-[22px] text-foreground/90"
 						dir="auto"
 					>
-						<EmojiText text={message.text} />
+						<MarkdownText text={message.text} renderPlain={(v, k) => <EmojiText key={k} text={v} />} />
 					</div>
 				)}
 

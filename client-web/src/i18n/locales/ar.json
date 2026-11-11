@@ -39,7 +39,12 @@
       "captcha_required": "يرجى إكمال التحقق من أنك إنسان أولًا.",
       "captcha_failed": "فشل التحقق من أنك إنسان. حاول مرة أخرى."
     },
-    "invite_code": "رمز الدعوة"
+    "invite_code": "رمز الدعوة",
+    "need_account": "ليس لديك حساب؟",
+    "register_link": "إنشاء حساب",
+    "create_account": "إنشاء حساب",
+    "connecting_to": "الاتصال بـ: {{url}}",
+    "change_server": "تغيير"
   },
   "sidebar": {
     "groups": "المجموعات",
@@ -78,6 +83,8 @@
     "ping_good": "اتصال جيد",
     "ping_average": "اتصال متوسط",
     "ping_poor": "اتصال ضعيف",
+    "connection_offline": "غير متصل",
+    "connection_connecting": "جارٍ إعادة الاتصال…",
     "my_profile": "ملفي الشخصي",
     "settings": "الإعدادات",
     "log_out": "تسجيل الخروج",
@@ -85,6 +92,7 @@
   },
   "chat": {
     "copied": "تم النسخ",
+    "copy_code": "نسخ الشيفرة",
     "message_placeholder": "رسالة…",
     "today": "اليوم",
     "yesterday": "أمس",
@@ -152,7 +160,27 @@
       "file": "ملف",
       "download": "تنزيل",
       "image_alt": "صورة"
-    }
+    },
+    "sending": "جارٍ الإرسال…",
+    "send_failed": "فشل الإرسال",
+    "retry": "إعادة المحاولة",
+    "edited": "(معدّلة)",
+    "unknown_user": "مستخدم غير معروف",
+    "reply_missing": "الرسالة الأصلية غير موجودة",
+    "encrypted_placeholder": "[مشفّرة]",
+    "processing_video": "جارٍ معالجة الفيديو…",
+    "decline": "رفض",
+    "accept": "قبول",
+    "connecting": "جارٍ الاتصال…",
+    "action_reply": "رد",
+    "action_select": "تحديد",
+    "action_edit": "تعديل الرسالة",
+    "action_delete": "حذف الرسالة",
+    "download_voice": "تنزيل الرسالة الصوتية",
+    "play_video": "انقر للتشغيل في مشغّل الفيديو",
+    "playback_speed": "سرعة التشغيل",
+    "play": "تشغيل",
+    "close_player": "إغلاق المشغّل"
   },
   "channel": {
     "new_conversation": "محادثة جديدة",
@@ -284,7 +312,10 @@
     "image_too_large": "يجب أن تكون الصورة أقل من {{size}} ميغابايت",
     "microphone": "خطأ في الميكروفون: {{message}}. يرجى التحقق من الأذونات.",
     "unknown": "خطأ غير معروف",
-    "notification_denied": "تم رفض إذن الإشعارات"
+    "notification_denied": "تم رفض إذن الإشعارات",
+    "boundary_title": "حدث خطأ ما",
+    "boundary_in": "حدث خطأ في {{label}}",
+    "try_again": "حاول مرة أخرى"
   },
   "common": {
     "load_more": "تحميل المزيد",
@@ -297,7 +328,8 @@
     "hour": "الساعة",
     "minute": "الدقيقة",
     "done": "تم",
-    "clear": "مسح"
+    "clear": "مسح",
+    "switch_language": "التبديل إلى {{language}}"
   },
   "settings": {
     "title": "إعدادات المستخدم",
@@ -1617,5 +1649,84 @@
       "sent": "تمت المشاركة في {{count}} محادثات",
       "failed": "تعذّرت مشاركة الحزمة."
     }
+  },
+  "connection": {
+    "reconnecting": "جارٍ إعادة الاتصال…",
+    "lost": "انقطع الاتصال — جارٍ إعادة الاتصال…"
+  },
+  "topbar": {
+    "view_profile": "عرض الملف الشخصي",
+    "view_channel_info": "عرض معلومات القناة",
+    "friend_pending": "طلب الصداقة قيد الانتظار",
+    "accept_friend": "قبول طلب الصداقة",
+    "add_friend": "إضافة صديق",
+    "search": "بحث",
+    "search_placeholder": "بحث…",
+    "show_members": "عرض الأعضاء",
+    "channel_settings": "إعدادات القناة",
+    "voice_disconnect": "متصل بالمكالمة (انقر لقطع الاتصال)",
+    "voice_join": "الانضمام إلى المكالمة الجارية ({{count}} نشط)",
+    "voice_start": "بدء مكالمة",
+    "whisper_need_friend": "يتطلب الهمس صداقة متبادلة",
+    "whisper_incoming": "طلب همس وارد من {{name}} – انقر للقبول",
+    "whisper_exit": "الخروج من وضع الهمس",
+    "whisper_enter": "دخول وضع الهمس (E2EE)",
+    "whisper_start": "بدء همس آمن (E2EE)"
+  },
+  "members": {
+    "title": "الأعضاء",
+    "expand": "توسيع الأعضاء",
+    "collapse": "طيّ الأعضاء",
+    "owner": "المالك",
+    "admins": "المشرفون",
+    "online": "متصل",
+    "offline": "غير متصل",
+    "leave": "مغادرة القناة",
+    "leave_confirm": "هل تريد حقًا مغادرة «{{name}}»؟ ستحتاج إلى رابط دعوة للعودة لاحقًا.",
+    "kick": "إزالة العضو",
+    "kick_confirm": "هل تريد حقًا إزالة {{name}} من القناة؟ سيحتاج إلى دعوة جديدة للعودة.",
+    "view_profile": "عرض الملف الشخصي",
+    "promote": "ترقية إلى مشرف",
+    "demote": "خفض إلى عضو"
+  },
+  "privacy": {
+    "saved": "تم الحفظ",
+    "saving": "جارٍ الحفظ…",
+    "who_add": "من يمكنه إضافتي إلى القنوات",
+    "who_dm": "من يمكنه مراسلتي مباشرة",
+    "who_friend": "من يمكنه إرسال طلبات صداقة إليّ"
+  },
+  "voice_settings": {
+    "silent": "صامت",
+    "loud": "عالٍ"
+  },
+  "whisper_toast": {
+    "incoming": "طلب همس وارد",
+    "dismiss": "إغلاق"
+  },
+  "notfound": {
+    "badge": "منعطف خاطئ",
+    "title": "لقد تهتَ في الفراغ.",
+    "body": "هذه الصفحة غير موجودة أو نُقلت. لا تقلق، حتى أفضل المستكشفين يضيعون أحيانًا.",
+    "home": "خذني إلى الرئيسية",
+    "report": "الإبلاغ عن خطأ"
+  },
+  "storage_stats": {
+    "images": "الصور: {{size}}",
+    "videos": "الفيديوهات: {{size}}",
+    "voices": "الرسائل الصوتية: {{size}}",
+    "files": "الملفات: {{size}}",
+    "messages": "الرسائل: {{size}}",
+    "refresh": "تحديث"
+  },
+  "settings_nav": {
+    "friends": "الأصدقاء",
+    "logout_title": "تسجيل الخروج",
+    "logout_message": "هل تريد تسجيل الخروج؟ ستحتاج إلى تسجيل الدخول مجددًا للوصول إلى رسائلك."
+  },
+  "files_ui": {
+    "preview_failed": "فشل تحميل معاينة الملف",
+    "download_failed": "فشل التنزيل",
+    "load_failed": "فشل تحميل المحتوى الكامل"
   }
 }

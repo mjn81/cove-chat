@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Pause, Loader2, Download } from 'lucide-react';
 import { voicePlayer } from '@/lib/voicePlayer';
 import { useVoicePlayer } from '@/hooks/useVoicePlayer';
+import { useTranslation } from 'react-i18next';
 
 interface FileMetadata {
 	file_id: string;
@@ -27,6 +28,7 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 	waveform,
 	handleDownload,
 }) => {
+		const { t } = useTranslation();
 	const { track, isPlaying, isLoading, currentTime, duration } =
 		useVoicePlayer();
 
@@ -118,7 +120,7 @@ export const VoiceBubble: React.FC<VoiceBubbleProps> = ({
 								handleDownload();
 							}}
 							className="text-muted-foreground hover:text-foreground transition p-0.5"
-							title="Download Voice Note"
+							title={t('chat.download_voice')}
 						>
 							<Download size={14} />
 						</button>

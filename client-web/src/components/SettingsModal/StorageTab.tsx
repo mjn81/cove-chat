@@ -91,7 +91,7 @@ export const StorageTab = () => {
 					}}
 					disabled={isLoading}
 					className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition cursor-pointer"
-					title="Refresh"
+					title={t('storage_stats.refresh')}
 				>
 					<RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
 				</button>
@@ -137,35 +137,35 @@ export const StorageTab = () => {
 							<div
 								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.images.bytes)}%` }}
-								title={`Images: ${formatBytes(stats.images.bytes)}`}
+								title={t('storage_stats.images', { size: formatBytes(stats.images.bytes) })}
 							/>
 						)}
 						{stats.videos.bytes > 0 && (
 							<div
 								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.videos.bytes)}%` }}
-								title={`Videos: ${formatBytes(stats.videos.bytes)}`}
+								title={t('storage_stats.videos', { size: formatBytes(stats.videos.bytes) })}
 							/>
 						)}
 						{stats.voices.bytes > 0 && (
 							<div
 								className="bg-warning h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.voices.bytes)}%` }}
-								title={`Voice Notes: ${formatBytes(stats.voices.bytes)}`}
+								title={t('storage_stats.voices', { size: formatBytes(stats.voices.bytes) })}
 							/>
 						)}
 						{stats.otherFiles.bytes > 0 && (
 							<div
 								className="bg-success h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.otherFiles.bytes)}%` }}
-								title={`Files: ${formatBytes(stats.otherFiles.bytes)}`}
+								title={t('storage_stats.files', { size: formatBytes(stats.otherFiles.bytes) })}
 							/>
 						)}
 						{stats.messages.bytes > 0 && (
 							<div
 								className="bg-primary h-full rounded-full transition-all duration-300"
 								style={{ width: `${getPercentage(stats.messages.bytes)}%` }}
-								title={`Messages: ${formatBytes(stats.messages.bytes)}`}
+								title={t('storage_stats.messages', { size: formatBytes(stats.messages.bytes) })}
 							/>
 						)}
 					</div>

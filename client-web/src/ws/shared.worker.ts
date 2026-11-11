@@ -28,6 +28,7 @@ const socketManager = createSocketManager({
 			console.warn(`[SharedWorker] closed (${code}), reconnecting...`);
 		}
 	},
+	onLatency: (ms) => broadcast({ type: 'WS_LATENCY', ms }),
 	onError: (err) => {
 		console.error('[SharedWorker] websocket error', err);
 	},

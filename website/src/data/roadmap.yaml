@@ -46,7 +46,7 @@ phases:
       - id: raw-udp
         area: calls
         title: "Air-gapped UDP voice"
-        note: "Audio-only mode for isolated LANs."
+        note: "The first, audio-only mode for isolated LANs. It was replaced by the encrypted UDP media router listed under In progress."
       - id: whisper
         area: privacy
         title: "Whisper chats"
@@ -167,42 +167,46 @@ phases:
         title: "Stickers and animated emoji"
         note: "Two default sticker packs, packs you make yourself (with admin limits) and big animated emoji when a message is a single emoji, on web, desktop and Android."
         date: "2026-11-09"
+      - id: markdown
+        area: chat
+        title: "Markdown and link rendering"
+        note: "Bold, italic, strikethrough, inline and fenced code with a copy button, quotes and safe links, on web, desktop and Android. Raw HTML is never rendered, and release notes use the same renderer."
+        date: "2026-11-10"
+      - id: copy-select
+        area: chat
+        title: "Text selection and copy"
+        note: "Select and copy message text on web and desktop, copy code blocks and links with one tap or long-press. On Android a long-press copies the whole message."
+        date: "2026-11-10"
+      - id: net-indicator
+        area: calls
+        title: "Connection quality indicator"
+        note: "Signal bars for the server connection on web, desktop and Android, and for the call you are in."
+        date: "2026-11-10"
+      - id: persian
+        area: i18n
+        title: "Complete Persian and Arabic translations"
+        note: "Every string in the web and Android clients is translated; the remaining hard-coded English in chat, members, settings and sign-in is gone."
+        date: "2026-11-10"
 
   - id: now
     title: In progress
     subtitle: Being worked on right now
     status: progress
     items:
-      - id: markdown
-        area: chat
-        title: "Markdown and link rendering"
-        note: "Custom renderer with link highlighting."
-      - id: persian
-        area: i18n
-        title: "Complete Persian translations"
-        note: "100% coverage across the web client."
       - id: ui-perf
         area: chat
         title: "UI performance"
-        note: "Fewer re-renders and smoother message lists."
-      - id: copy-select
-        area: chat
-        title: "Text selection and copy"
-        note: "Select and copy message text everywhere."
-      - id: net-indicator
-        area: calls
-        title: "Connection quality indicator"
-        note: "Signal bars for WebSocket and calls."
-        status: planned
+        note: "Cold start from cache on web and Android and memoised message rows are in; smoother long message lists are still being worked on."
+        date: "2026-12-15"
       - id: udp-media
         area: calls
         title: "UDP video and screen sharing"
-        note: "Server router and encrypted protocol are built and tested; native client capture and rendering are still to do."
+        note: "The server router and the desktop and Android clients are built and unit tested. Still to do: a run on real devices. Browsers cannot open raw UDP, so the web client keeps its call buttons off in this mode."
         date: "2026-12-31"
       - id: secure-udp
         area: calls
         title: "Encrypted UDP for closed networks"
-        note: "AES-256-GCM sessions with replay protection and key rotation are built and tested; waiting on native clients."
+        note: "AES-256-GCM sessions with replay protection and key rotation are built and tested on the server, desktop and Android. Still to do: verification on real devices and networks."
         date: "2026-12-31"
 
   - id: next
@@ -259,7 +263,7 @@ phases:
       - id: rich-markdown
         area: chat
         title: "Advanced markdown"
-        note: "Telegram-style formatting."
+        note: "Spoilers, underline and a formatting toolbar on top of today's bold, italic, code and quotes."
       - id: in-app-calls
         area: calls
         title: "In-app and server-wide calls"
