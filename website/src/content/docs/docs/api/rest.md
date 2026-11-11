@@ -109,6 +109,7 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/channels/{id}` | Get a channel by ID | Channel Member. |
 | `PATCH` | `/api/channels/{id}` | Update channel settings | Channel Admin. |
 | `DELETE` | `/api/channels/{id}` | Delete or clear a channel/direct message | Channel Member (group channels: Channel Owner). |
+| `POST` | `/api/channels/{id}/clear` | Clear a direct message's history for yourself | Channel Member (own side only). |
 | `POST` | `/api/channels/{id}/invite/regenerate` | Replace a channel's invite link | Channel Admin. |
 | `GET` | `/api/channels/{id}/members` | List members of a channel | Channel Member. |
 | `POST` | `/api/channels/{id}/members` | Add multiple members to a channel by user id | Channel Admin. |

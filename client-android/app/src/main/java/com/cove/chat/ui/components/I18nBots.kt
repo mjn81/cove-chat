@@ -33,6 +33,9 @@ internal val BotsFa: Map<String, String> = mapOf(
     "Commands" to "دستورها", "Choose an option" to "یک گزینه را انتخاب کنید", "Type a message" to "نوشتن پیام", "Show bot menu" to "نمایش منوی ربات",
     "Couldn't open the link." to "باز کردن پیوند ممکن نشد.", "Opens a link" to "پیوند را باز می‌کند", "This message can't be shown." to "این پیام قابل نمایش نیست.",
     "Public bots" to "ربات‌های عمومی", "No public bots found." to "رباتی عمومی پیدا نشد.", "No description" to "بدون توضیح", "1 command" to "۱ دستور", "Message" to "پیام",
+    "Bot chat options" to "گزینه‌های گفتگو با ربات", "Clear history" to "پاک کردن تاریخچه", "Remove conversation" to "حذف گفتگو", "Block bot" to "مسدود کردن ربات",
+    "History cleared" to "تاریخچه پاک شد", "Conversation removed" to "گفتگو حذف شد", "Couldn't clear the history." to "پاک کردن تاریخچه ممکن نشد.",
+    "Couldn't remove the conversation." to "حذف گفتگو ممکن نشد.", "Couldn't block the bot." to "مسدود کردن ربات ممکن نشد.",
     "Sent a bot message" to "پیام ربات فرستاد", "Couldn't send that to the bot." to "ارسال به ربات ممکن نشد.", "Manage" to "مدیریت"
 )
 
@@ -68,11 +71,27 @@ internal val BotsAr: Map<String, String> = mapOf(
     "Commands" to "الأوامر", "Choose an option" to "اختر خيارًا", "Type a message" to "كتابة رسالة", "Show bot menu" to "عرض قائمة الروبوت",
     "Couldn't open the link." to "تعذّر فتح الرابط.", "Opens a link" to "يفتح رابطًا", "This message can't be shown." to "لا يمكن عرض هذه الرسالة.",
     "Public bots" to "الروبوتات العامة", "No public bots found." to "لم يتم العثور على روبوتات عامة.", "No description" to "بلا وصف", "1 command" to "أمر واحد", "Message" to "مراسلة",
+    "Bot chat options" to "خيارات محادثة الروبوت", "Clear history" to "مسح السجل", "Remove conversation" to "إزالة المحادثة", "Block bot" to "حظر الروبوت",
+    "History cleared" to "تم مسح السجل", "Conversation removed" to "تمت إزالة المحادثة", "Couldn't clear the history." to "تعذّر مسح السجل.",
+    "Couldn't remove the conversation." to "تعذّرت إزالة المحادثة.", "Couldn't block the bot." to "تعذّر حظر الروبوت.",
     "Sent a bot message" to "أرسل رسالة روبوت", "Couldn't send that to the bot." to "تعذّر إرسال ذلك إلى الروبوت.", "Manage" to "إدارة"
 )
 
 /** Strings that carry a name or a number. */
 internal val BotsPatterns: List<Pattern> = listOf(
+    Pattern(Regex("Clear your messages with (.+)\\? This only affects your side; (.+) keeps its own copy\\. The chat stays in your list\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
+        if (l == "fa") "پیام‌های شما با ${m.groupValues[1]} پاک شود؟ این فقط روی سمت شما اثر دارد و ${m.groupValues[2]} نسخهٔ خودش را نگه می‌دارد. گفتگو در فهرست شما می‌ماند."
+        else "هل تريد مسح رسائلك مع ${m.groupValues[1]}؟ يؤثر هذا على جانبك فقط ويحتفظ ${m.groupValues[2]} بنسخته. تبقى المحادثة في قائمتك."
+    },
+    Pattern(Regex("Remove the chat with (.+) from your list\\? You can start it again from Explore > Bots; the old messages stay hidden\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
+        if (l == "fa") "گفتگو با ${m.groupValues[1]} از فهرست شما حذف شود؟ می‌توانید دوباره از کاوش > ربات‌ها آن را شروع کنید؛ پیام‌های قبلی پنهان می‌مانند."
+        else "هل تريد إزالة المحادثة مع ${m.groupValues[1]} من قائمتك؟ يمكنك بدءها مجددًا من استكشاف > الروبوتات؛ تبقى الرسائل القديمة مخفية."
+    },
+    Pattern(Regex("Block (.+)\\? It can no longer message you or be started until you unblock it\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
+        if (l == "fa") "${m.groupValues[1]} مسدود شود؟ تا زمانی که رفع انسداد نکنید نمی‌تواند به شما پیام بدهد یا شروع شود."
+        else "هل تريد حظر ${m.groupValues[1]}؟ لن يتمكن من مراسلتك ولا يمكن بدؤه حتى تلغي الحظر."
+    },
+    Pattern(Regex("(.+) blocked")) { m, l -> if (l == "fa") "${m.groupValues[1]} مسدود شد" else "تم حظر ${m.groupValues[1]}" },
     Pattern(Regex("(\\d+) commands")) { m, l -> if (l == "fa") "${m.groupValues[1]} دستور" else "${m.groupValues[1]} أوامر" },
     Pattern(Regex("(.+) is offline right now\\. It will answer when it is back\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
         if (l == "fa") "${m.groupValues[1]} اکنون آفلاین است و پس از بازگشت پاسخ می‌دهد." else "${m.groupValues[1]} غير متصل حاليًا وسيرد عند عودته."

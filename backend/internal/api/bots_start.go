@@ -69,7 +69,17 @@ func (h *Handler) StartBot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	created := false
-	ch := h.findDM(caller.ID, botUser.ID)
+	// FindDM also sees a DM the person removed from their list, so Start brings the same conversation back.
+	ch, _ := h.Store.FindDM(caller.ID, botUser.ID)
+	if ch != nil {
+		if err := h.Store.RelistChannel(caller.ID, ch.ID); err != nil {
+			writeInternal(w, "relist bot DM", err, "apiErrors.channel_create_failed")
+			return
+		}
+		if h.Hub != nil {
+			h.Hub.BroadcastChannelCreated(ch)
+		}
+	}
 	if ch == nil {
 		ch, err = h.Store.CreateChannel("", caller.ID, true, []string{caller.ID, botUser.ID}, h.KEK)
 		if err != nil {

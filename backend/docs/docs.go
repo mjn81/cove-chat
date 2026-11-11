@@ -4159,6 +4159,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/channels/{id}/clear": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hides every message sent so far from the caller only and keeps the conversation in their list. The\nother side (a person or a bot) keeps everything, and nobody else can clear your side. Direct messages\nonly; to remove the conversation from your list use ` + "`" + `DELETE /api/channels/{id}` + "`" + `.\n**Access:** Channel Member (own side only).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Clear a direct message's history for yourself",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Channel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/channels/{id}/commands": {
             "get": {
                 "security": [
@@ -7548,22 +7612,22 @@ const docTemplate = `{
         "cove_backend_internal_models.MessageType": {
             "type": "string",
             "enum": [
-                "bot",
                 "text",
                 "file",
                 "voice",
                 "video",
                 "invite",
-                "sticker"
+                "sticker",
+                "bot"
             ],
             "x-enum-varnames": [
-                "MessageTypeBot",
                 "MessageTypeText",
                 "MessageTypeFile",
                 "MessageTypeVoice",
                 "MessageTypeVideo",
                 "MessageTypeInvite",
-                "MessageTypeSticker"
+                "MessageTypeSticker",
+                "MessageTypeBot"
             ]
         },
         "internal_api.AddMembersRequest": {

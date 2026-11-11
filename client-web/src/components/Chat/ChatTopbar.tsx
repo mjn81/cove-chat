@@ -38,6 +38,7 @@ import { useVoiceStore } from '@/store/voiceStore';
 
 import { UserProfileModal } from '../UserProfileModal';
 import { getFileUrl } from '@/api/client';
+import { BotChatMenu } from '@/domains/bots/components/bot-chat-menu';
 
 interface ChatTopbarProps {
 	channel: Channel;
@@ -76,6 +77,8 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 
 	// Only show settings icon for admins/owners of group channels
 	const canManage = !isDM && isAdmin(liveChannel.user_role);
+	// A DM with a bot gets its own menu: clear history, remove the conversation, block.
+	const isBotDM = isDM && liveChannel.member_bots?.[otherMemberId] === true;
 
 	const relationships = useAuthStore((state) => state.relationships);
 	const incomingRequests = useAuthStore((state) => state.incomingRequests);
@@ -371,6 +374,10 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 						>
 							<Users size={20} />
 						</button>
+					)}
+
+					{isBotDM && (
+						<BotChatMenu channel={liveChannel} botId={otherMemberId} botName={liveChannel.member_names?.[otherMemberId] ?? ''} />
 					)}
 
 					{canManage && (

@@ -63,6 +63,7 @@ import androidx.compose.material.icons.outlined.HowToReg
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Tune
@@ -205,6 +206,9 @@ fun ChatScreen(
     fun toast(msg: String) = I18nToast.make(context, msg, Toast.LENGTH_SHORT).show()
 
     // ── Bots (docs/bots-api.md): slash commands, the action menu and button presses ──
+    // Menu of a DM with a bot (clear history / remove conversation / block) and the action awaiting confirmation.
+    var botMenuOpen by remember { mutableStateOf(false) }
+    var botConfirm by remember { mutableStateOf<String?>(null) }
     var botsSupported by remember { mutableStateOf(false) }
     var commands by remember(channelId) { mutableStateOf<List<com.cove.chat.bots.ChannelCommand>>(emptyList()) }
     var keyboards by remember(channelId) { mutableStateOf<List<com.cove.chat.bots.BotKeyboard>>(emptyList()) }
@@ -508,6 +512,15 @@ fun ChatScreen(
                 }
                 }
                 CoveIconButton(Icons.Outlined.Search, "Search", { searching = !searching; if (!searching) search = "" }, iconSize = 21.dp)
+                val botPeer = channel?.takeIf { it.isDirectMessage }?.members?.firstOrNull { it != me }?.takeIf { channel?.memberBots?.get(it) == true }
+                if (botPeer != null) Box {
+                    CoveIconButton(Icons.Outlined.MoreVert, "Bot chat options", { botMenuOpen = true }, size = 48.dp, iconSize = 21.dp)
+                    DropdownMenu(expanded = botMenuOpen, onDismissRequest = { botMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Clear history") }, onClick = { botMenuOpen = false; botConfirm = "clear" })
+                        DropdownMenuItem(text = { Text("Remove conversation") }, onClick = { botMenuOpen = false; botConfirm = "remove" })
+                        DropdownMenuItem(text = { Text("Block bot", color = MaterialTheme.colorScheme.error) }, onClick = { botMenuOpen = false; botConfirm = "block" })
+                    }
+                }
                 // Members, settings and calling live in the profile (tap the header), so the bar is just search and a
                 // stray tap cannot start a call.
             }
@@ -661,6 +674,38 @@ fun ChatScreen(
             onSendPendingVoice = { sendPending(it) },
             onDiscardPendingVoice = { pendingVoice?.file?.delete(); pendingVoice = null },
             onVideo = { if (!uploading) showVideoRecorder = true }
+        )
+    }
+
+    botConfirm?.let { action ->
+        val botPeerId = channel?.members?.firstOrNull { it != me }.orEmpty()
+        val botName = channel?.memberNames?.get(botPeerId) ?: "the bot"
+        com.cove.chat.ui.components.CoveConfirmDialog(
+            title = when (action) { "clear" -> "Clear history"; "remove" -> "Remove conversation"; else -> "Block bot" },
+            message = when (action) {
+                "clear" -> "Clear your messages with $botName? This only affects your side; $botName keeps its own copy. The chat stays in your list."
+                "remove" -> "Remove the chat with $botName from your list? You can start it again from Explore > Bots; the old messages stay hidden."
+                else -> "Block $botName? It can no longer message you or be started until you unblock it."
+            },
+            confirmLabel = when (action) { "clear" -> "Clear history"; "remove" -> "Remove conversation"; else -> "Block bot" },
+            destructive = true,
+            onDismiss = { botConfirm = null },
+            onConfirm = {
+                botConfirm = null
+                scope.launch {
+                    when (action) {
+                        "clear" -> api.clearHistory(channelId).onSuccess {
+                            messages = emptyList(); olderCursor = null; hasMore = false
+                            com.cove.chat.data.local.ClientCache.writeMessages(channelId, emptyList())
+                            toast("History cleared")
+                        }.onFailure { toast(it.message ?: "Couldn't clear the history.") }
+                        "remove" -> api.deleteChannel(channelId).onSuccess { toast("Conversation removed"); onBack() }
+                            .onFailure { toast(it.message ?: "Couldn't remove the conversation.") }
+                        else -> api.relationshipAction(botPeerId, "block").onSuccess { toast("$botName blocked") }
+                            .onFailure { toast(it.message ?: "Couldn't block the bot.") }
+                    }
+                }
+            }
         )
     }
 

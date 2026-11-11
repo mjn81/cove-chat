@@ -1359,7 +1359,8 @@
 		"message_send_failed": "Couldn't send the message.",
 		"rate_limited": "Too many requests. Please slow down.",
 		"reply_not_found": "The message you replied to was not found.",
-		"webhook_url_invalid": "The webhook address must be a valid https:// URL."
+		"webhook_url_invalid": "The webhook address must be a valid https:// URL.",
+		"clear_dm_only": "Only direct messages can be cleared."
 	},
 	"themes": {
 		"title": "Themes",
@@ -1909,6 +1910,18 @@
 			"commands": "{{count}} commands",
 			"start": "Message",
 			"offline": "{{bot}} is offline right now. It will answer when it is back."
+		},
+		"chat": {
+			"menu": "Bot chat options",
+			"clear": "Clear history",
+			"clear_message": "Clear your messages with {{bot}}? This only affects your side; {{bot}} keeps its own copy. The chat stays in your list.",
+			"cleared": "History cleared",
+			"remove": "Remove conversation",
+			"remove_message": "Remove the chat with {{bot}} from your list? You can start it again from Explore > Bots; the old messages stay hidden.",
+			"removed": "Conversation removed",
+			"block": "Block bot",
+			"block_message": "Block {{bot}}? It can no longer message you or be started until you unblock it.",
+			"blocked": "{{bot}} blocked"
 		}
 	}
 }

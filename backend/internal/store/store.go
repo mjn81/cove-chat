@@ -346,7 +346,7 @@ func (s *Store) ListUserChannels(userID string) ([]*models.Channel, error) {
 		}
 
 		// If user cleared/deleted this channel (e.g. DM "delete for me"), hide it unless a message arrived after ClearedAt
-		if uc != nil && !uc.ClearedAt.IsZero() {
+		if uc != nil && !uc.ClearedAt.IsZero() && !uc.KeepListed {
 			if !ch.LastMessageAt.After(uc.ClearedAt) {
 				continue
 			}
@@ -379,7 +379,7 @@ func (s *Store) ListUserChannelsPage(userID, after string, limit int) (page []*m
 			continue // orphan membership index entry
 		}
 		s.enrichChannelForUser(ch, uc)
-		if !uc.ClearedAt.IsZero() && !ch.LastMessageAt.After(uc.ClearedAt) {
+		if !uc.ClearedAt.IsZero() && !uc.KeepListed && !ch.LastMessageAt.After(uc.ClearedAt) {
 			continue // cleared DM with nothing newer
 		}
 		if len(page) == limit {
@@ -421,6 +421,32 @@ func (s *Store) ClearChannelForUser(userID, channelID string, clearedAt time.Tim
 	}
 	uc.ClearedAt = clearedAt
 	uc.LastReadAt = clearedAt
+	uc.KeepListed = false
+	return s.db.SetUserChannel(uc)
+}
+
+// ClearHistoryForUser hides the messages before clearedAt for this user only and keeps the conversation in their list.
+func (s *Store) ClearHistoryForUser(userID, channelID string, clearedAt time.Time) error {
+	uc, err := s.db.GetUserChannel(userID, channelID)
+	if err != nil {
+		return err
+	}
+	uc.ClearedAt = clearedAt
+	uc.LastReadAt = clearedAt
+	uc.KeepListed = true
+	return s.db.SetUserChannel(uc)
+}
+
+// RelistChannel puts a DM the user removed back into their list (old messages stay hidden by ClearedAt).
+func (s *Store) RelistChannel(userID, channelID string) error {
+	uc, err := s.db.GetUserChannel(userID, channelID)
+	if err != nil {
+		return err
+	}
+	if uc.KeepListed {
+		return nil
+	}
+	uc.KeepListed = true
 	return s.db.SetUserChannel(uc)
 }
 

@@ -533,3 +533,28 @@ func HasScope(scopes []string, want string) bool {
 	}
 	return false
 }
+
+// FindDM returns the two-person unnamed channel between a and b, including one either of them removed from their
+// list (ListUserChannels hides those), so starting a chat again reuses the same conversation and key.
+func (s *Store) FindDM(a, b string) (*models.Channel, error) {
+	memberships, err := s.db.ListActiveMemberships(a)
+	if err != nil {
+		return nil, err
+	}
+	for _, uc := range memberships {
+		ch, err := s.db.GetChannel(uc.ChannelID)
+		if err != nil || strings.TrimSpace(ch.Name) != "" {
+			continue
+		}
+		members, err := s.db.ListChannelMembers(ch.ID)
+		if err != nil || !ch.IsDM(len(members)) {
+			continue
+		}
+		for _, m := range members {
+			if m.UserID == b {
+				return ch, nil
+			}
+		}
+	}
+	return nil, db.ErrNotFound
+}

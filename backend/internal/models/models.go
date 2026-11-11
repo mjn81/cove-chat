@@ -105,6 +105,8 @@ type UserChannel struct {
 	JoinedAt   time.Time `json:"joined_at"`
 	LastReadAt time.Time `json:"last_read_at"`
 	ClearedAt  time.Time `json:"cleared_at,omitempty"`
+	// KeepListed keeps a cleared DM in the list ("Clear history"), unlike "delete for me" which hides it until a newer message arrives.
+	KeepListed bool `json:"keep_listed,omitempty"`
 }
 
 // ---- Message --------------------------------------------------------------- //

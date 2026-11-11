@@ -324,6 +324,12 @@ class ApiClient(private val prefs: PreferencesManager) {
         Unit
     }
 
+    /** Clears a direct message's history for the caller only; the chat stays in their list. */
+    suspend fun clearHistory(channelId: String): Result<Unit> = runCatching {
+        client.post(url("/api/channels/$channelId/clear")) { bearer() }.ok()
+        Unit
+    }
+
     suspend fun addMembers(channelId: String, userIds: List<String>): Result<AddMembersResponse> = runCatching {
         client.post(url("/api/channels/$channelId/members")) {
             contentType(ContentType.Application.Json)
