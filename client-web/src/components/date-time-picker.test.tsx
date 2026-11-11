@@ -25,5 +25,6 @@ describe('DateTimePicker', () => {
 		fireEvent.click(screen.getAllByRole('button')[0]);
 		expect(screen.getByRole('combobox', { name: /minute/i })).toHaveTextContent('59');
 		fireEvent.keyDown(document.body, { key: 'Escape' });
-	});
+		// Opening the Radix popover is slow in jsdom when the whole suite runs in parallel.
+	}, 30_000);
 });
