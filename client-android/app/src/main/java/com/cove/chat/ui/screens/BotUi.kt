@@ -5,11 +5,17 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Keyboard
-import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.ArrowOutward
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -55,41 +61,45 @@ import com.cove.chat.ui.theme.CoveType
 import com.cove.chat.ui.theme.Spacing
 
 /**
- * The glass look of bot controls: a translucent surface of the theme's own tokens (background, accent, primary,
- * destructive) with a hairline border and a soft top highlight. It reads as glass on any theme, in light and dark,
- * without a blur (Compose has no cheap backdrop blur, and a blur-less translucency is the documented fallback of the
- * web style, `.bot-glass`). Used only by bot message buttons and the action menu.
+ * The glass look of bot controls (Telegram-style inline keyboard): a translucent pill that sits on the bubble or the
+ * chat background. The fill is a low-alpha wash of the theme's foreground (dark wash on light themes, light wash on
+ * dark ones) over a faint top highlight, with a hairline low-alpha border. Pressing deepens the wash. Compose has no
+ * cheap backdrop blur (Modifier.blur blurs the node's own content, not what is behind it), so the translucent layered
+ * fill plus the hairline is the glass; it mirrors the web style `.bot-glass`. Only bot message buttons and the action
+ * menu use it.
  */
 @Composable
-private fun glassFill(style: String, enabled: Boolean): Brush {
-    val c = CoveTheme.extendedColors
+private fun glassFill(style: String, pressed: Boolean, active: Boolean): Brush {
     val scheme = MaterialTheme.colorScheme
-    val tint = when (style) {
-        "primary" -> scheme.primary.copy(alpha = 0.30f)
-        "danger" -> scheme.error.copy(alpha = 0.24f)
-        else -> c.accent.copy(alpha = 0.55f)
+    val wash = CoveTheme.extendedColors.textPrimary
+    val base = when (style) {
+        "primary" -> scheme.primary.copy(alpha = if (pressed) 0.46f else 0.26f)
+        "danger" -> scheme.error.copy(alpha = if (pressed) 0.42f else 0.22f)
+        else -> wash.copy(alpha = if (pressed) 0.22f else 0.10f)
     }
-    val base = scheme.background.copy(alpha = 0.45f)
-    val a = if (enabled) 1f else 0.55f
-    return Brush.verticalGradient(listOf(tint.copy(alpha = tint.alpha * a), base.copy(alpha = base.alpha * a)))
+    val a = if (active) 1f else 0.5f
+    val top = base.copy(alpha = base.alpha * a)
+    val bottom = base.copy(alpha = base.alpha * a * 0.85f)
+    return Brush.verticalGradient(listOf(top, bottom))
 }
 
 @Composable
 private fun glassBorder(style: String): Color {
     val scheme = MaterialTheme.colorScheme
     return when (style) {
-        "primary" -> scheme.primary.copy(alpha = 0.65f)
-        "danger" -> scheme.error.copy(alpha = 0.65f)
-        else -> CoveTheme.extendedColors.border.copy(alpha = 0.75f)
+        "primary" -> scheme.primary.copy(alpha = 0.40f)
+        "danger" -> scheme.error.copy(alpha = 0.40f)
+        else -> CoveTheme.extendedColors.textPrimary.copy(alpha = 0.10f)
     }
 }
 
 /**
- * A grid of bot buttons in the glass style. Callback buttons call [onPress] with their `custom_id`; URL buttons open
- * the link (http/https only) in the browser. Every target is at least 44 dp tall. [pendingId] shows a spinner,
- * [doneId] a check for a moment after the bot received the press. [menu] makes the buttons fill their row (action menu).
+ * A grid of bot buttons in the glass style. Every row fills the width evenly (buttons share it equally, labels
+ * ellipsize) with 4 dp gaps, like Telegram's inline keyboard. Callback buttons call [onPress] with their `custom_id`;
+ * URL buttons open the link (http/https only) in the browser and show a small arrow-out icon. Every target is at
+ * least 44 dp tall. [pendingId] shows a spinner and disables the button, [doneId] a check for a moment after the bot
+ * received the press. [menu] only makes the buttons a little roomier (action menu).
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BotButtonGrid(
     rows: List<List<BotButton>>,
@@ -101,16 +111,10 @@ fun BotButtonGrid(
     menu: Boolean = false
 ) {
     val context = LocalContext.current
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         rows.forEach { row ->
-            if (menu) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { b -> GlassButton(b, onPress, context, pendingId, doneId, enabled, Modifier.weight(1f)) }
-                }
-            } else {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { b -> GlassButton(b, onPress, context, pendingId, doneId, enabled, Modifier) }
-                }
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                row.forEach { b -> GlassButton(b, onPress, context, pendingId, doneId, enabled, menu, Modifier.weight(1f).fillMaxHeight()) }
             }
         }
     }
@@ -124,6 +128,7 @@ private fun GlassButton(
     pendingId: String?,
     doneId: String?,
     enabled: Boolean,
+    menu: Boolean,
     modifier: Modifier
 ) {
     val c = CoveTheme.extendedColors
@@ -131,14 +136,16 @@ private fun GlassButton(
     val pending = !isLink && pendingId != null && pendingId == b.customId
     val done = !isLink && doneId != null && doneId == b.customId
     val active = enabled && !b.disabled && !pending
-    val shape = CoveShapes.md
+    val shape = RoundedCornerShape(10.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     Row(
         modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = if (menu) 48.dp else 44.dp)
             .clip(shape)
-            .background(glassFill(b.style, active))
+            .background(glassFill(b.style, pressed && active, active || pending))
             .border(1.dp, glassBorder(b.style), shape)
-            .clickable(enabled = active) {
+            .clickable(interactionSource = interaction, indication = null, enabled = active) {
                 if (isLink) {
                     val url = b.url.orEmpty()
                     if (BotLogic.isSafeButtonUrl(url)) {
@@ -147,7 +154,7 @@ private fun GlassButton(
                     }
                 } else b.customId?.let(onPress)
             }
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -160,11 +167,12 @@ private fun GlassButton(
         }
         Text(
             b.label, color = if (b.disabled) c.textMuted else c.textPrimary, fontSize = CoveType.label.fontSize,
-            fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis
+            fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
         )
         if (isLink) {
-            Spacer(Modifier.width(6.dp))
-            Icon(Icons.Outlined.OpenInNew, "Opens a link", tint = c.textMuted, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
+            Icon(Icons.Outlined.ArrowOutward, "Opens a link", tint = c.textPrimary.copy(alpha = 0.7f), modifier = Modifier.size(14.dp))
         }
     }
 }
@@ -230,7 +238,7 @@ fun ActionMenu(
             BotBadge()
             CoveIconButton(Icons.Outlined.Keyboard, "Type a message", onTyping, size = 44.dp, iconSize = 20.dp)
         }
-        Column(Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState()).padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+        Column(Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState()).padding(start = 6.dp, end = 6.dp, bottom = 6.dp)) {
             BotButtonGrid(keyboard.rows, onPress, pendingId = pendingId, menu = true)
         }
     }
