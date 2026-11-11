@@ -5434,7 +5434,7 @@ const docTemplate = `{
                         }
                     },
                     "429": {
-                        "description": "Too Many Requests",
+                        "description": "too many requests, or too many wrong passwords for this account (auth.errors.too_many_attempts)",
                         "schema": {
                             "$ref": "#/definitions/internal_api.ErrorResponse"
                         }
@@ -7478,22 +7478,22 @@ const docTemplate = `{
         "cove_backend_internal_models.MessageType": {
             "type": "string",
             "enum": [
+                "bot",
                 "text",
                 "file",
                 "voice",
                 "video",
                 "invite",
-                "sticker",
-                "bot"
+                "sticker"
             ],
             "x-enum-varnames": [
+                "MessageTypeBot",
                 "MessageTypeText",
                 "MessageTypeFile",
                 "MessageTypeVoice",
                 "MessageTypeVideo",
                 "MessageTypeInvite",
-                "MessageTypeSticker",
-                "MessageTypeBot"
+                "MessageTypeSticker"
             ]
         },
         "internal_api.AddMembersRequest": {
