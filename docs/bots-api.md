@@ -64,7 +64,7 @@ POST /api/bots            (signed in)
 
 A bot is always a plain member: it cannot kick, promote, ban or call any admin route.
 
-**DMs.** A person opens a DM with a public bot (or one they own) like with any user; that, or using one of its commands or buttons, makes them a **contact**. A bot can write only to its contacts: `POST /api/bots/me/dm { "user_id" }` returns the DM channel, or `403 bot_contact_required` for someone who never used the bot. Blocking a bot (the normal block action) stops it from writing to that person. Bots cannot be befriended.
+**DMs and Explore.** Public bots are listed in **Explore > Bots** (`GET /api/bots/discover`, paged, searchable by name or description; private and disabled bots are never listed) with their description and `command_count`. Pressing **Message** calls `POST /api/bots/{id}/start`: the server opens (or finds) the DM, records the person as a **contact** and sends the bot a **`bot_start`** event, like Telegram's Start button. A person can also open a DM with a public bot (or one they own) like with any user. Starting, using one of its commands or buttons all make them a **contact**. A bot can write only to its contacts: `POST /api/bots/me/dm { "user_id" }` returns the DM channel, or `403 bot_contact_required` for someone who never used the bot. Blocking a bot (the normal block action) stops it from writing to that person. Bots cannot be befriended.
 
 ## 5. Events: gateway and webhook
 
@@ -104,6 +104,7 @@ Verify the signature over the **raw body** with a constant-time compare and reje
 | `interaction_create` | `{id, token, type, channel_id, message_id?, user{id,username}, data, expires_at}` | the addressed bot only |
 | `member_join` / `member_leave` | `{channel_id, user{id,username,is_bot}}` | bots with `members.read` |
 | `bot_install` / `bot_uninstall` | `{channel_id, scopes?}` | the bot that was added or removed |
+| `bot_start` | `{channel_id, user{id,username}}` | the bot a person just started from Explore; `channel_id` is the DM, where the bot may write at once |
 
 A bot never receives its own messages. `content` is the plaintext for `text` and `bot` messages and empty for files, voice, video, stickers and invites (the `type` still tells you what it was). `mentioned` is true when the message mentions the receiving bot or replies to one of its messages. Events for one channel arrive in order. Unknown events must be ignored (a newer server may send more).
 
@@ -125,7 +126,7 @@ All under `Authorization: Bot`. `{id}` is a channel id.
 | `POST /api/bots/me/dm` | contact | open a DM with a user who used the bot |
 | `POST /api/interactions/{id}/{token}/callback` | token | answer an interaction |
 
-Management (a person's session; the bot's owner or a server admin): `POST/GET /api/bots`, `GET/PATCH/DELETE /api/bots/{id}`, `POST /api/bots/{id}/token`, `GET /api/bots/discover` (public bots), `GET /api/channels/{id}/bots`, `PUT/DELETE /api/channels/{id}/bots/{bot_id}`. Used by the web client: `GET /api/channels/{id}/commands`, `GET /api/channels/{id}/keyboards`, `POST /api/channels/{id}/interactions`.
+Management (a person's session; the bot's owner or a server admin): `POST/GET /api/bots`, `POST /api/bots/{id}/start` (any signed-in person, public bots), `GET/PATCH/DELETE /api/bots/{id}`, `POST /api/bots/{id}/token`, `GET /api/bots/discover` (public bots), `GET /api/channels/{id}/bots`, `PUT/DELETE /api/channels/{id}/bots/{bot_id}`. Used by the web client: `GET /api/channels/{id}/commands`, `GET /api/channels/{id}/keyboards`, `POST /api/channels/{id}/interactions`.
 
 ## 7. Messages and buttons
 

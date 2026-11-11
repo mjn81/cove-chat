@@ -36,3 +36,6 @@ Thumbs.db
 desktop.ini
 .vscode/*
 !.vscode/extensions.json
+
+# Dev seed for the sample bot: generated account password (the bot token lives in .env.local, ignored above)
+.dev-seed.local

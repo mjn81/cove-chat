@@ -92,3 +92,17 @@ For everyone in the channel the message box is replaced by that button grid unti
 - **Encryption.** You never handle keys. You send and receive plaintext over TLS; the server encrypts and decrypts for the channels the bot is installed in. The people who install your bot should know you can read what its scopes allow.
 - **Limits.** 5 messages per second per channel, 4000 characters per message, 5x5 buttons, 100 commands. The full table is in [Bots](/docs/api/bots/#3-authentication-errors-limits).
 - **Be ready for restarts.** The gateway is not a queue: after reconnecting, read history (`messages.read`) if you must not miss messages. Webhooks are retried for a few minutes only.
+
+## Try the sample bot on your own machine
+
+The repository ships a working bot (`examples/bot-go`) and a seed that prepares a local server for it, so you can play with bots in two minutes. It never starts a server for you and never commits a secret.
+
+```bash
+make dev-back          # your local server (leave it running)
+make dev-seed-bots     # a public bot "covebot", channels #bot-lab and #bot-lab-2 with the bot installed, welcome messages
+make dev-bot           # starts the bot (reads its token from examples/bot-go/.env.local)
+```
+
+Open **#bot-lab**: the bot's action menu replaces the keyboard, and `/ping`, `/roll 20`, `/poll "Lunch?"`, `/counter` and `/help` all answer. The bot also shows up under **Explore > Bots**; pressing **Message** starts a chat with it (the bot greets you and offers its menu).
+
+How it works: the seed signs in with `COVE_SEED_USER` / `COVE_SEED_PASSWORD` if set, else with the account saved in `.dev-seed.local`, else it registers a new account `botdev` with a random password (printed once, saved to `.dev-seed.local`). On a fresh database that account is the server owner; on an existing one the server must let it create bots (admin panel > Bots, or `bots.creation = "users"`). Running the seed again changes nothing. Both files are git-ignored.

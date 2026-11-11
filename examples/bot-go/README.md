@@ -14,6 +14,17 @@ COVE_URL=https://chat.example.com COVE_BOT_TOKEN='<id>.<secret>' go run .
 
 4. In the channel type `/ping`, `/roll`, `/counter` or `/menu`, or mention the bot with `@yourbot`.
 
+## Local dev: seed and run
+
+```bash
+make dev-back        # your local server
+make dev-seed-bots   # creates the public bot "covebot", #bot-lab and #bot-lab-2 (bot installed), welcome messages; idempotent
+make dev-bot         # runs the bot with the token the seed saved in examples/bot-go/.env.local
+```
+
+The seed uses `COVE_SEED_USER` / `COVE_SEED_PASSWORD` if set, otherwise the account in `.dev-seed.local`, otherwise it registers `botdev` with a random password (printed once and saved there). Both files and `.env.local` are git-ignored. On a server that already has an owner, `botdev` is a normal user: let it create bots (admin panel > Bots, or `bots.creation = "users"`) or seed with an admin account.
+Try `/ping`, `/roll 20`, `/poll "Lunch?"`, `/counter`, `/menu`, press the buttons, or find the bot under Explore > Bots and press Message.
+
 ## Webhook mode
 
 If the bot cannot keep a connection open, give it a public HTTPS address in the bot's settings (the server only calls `https://` addresses, and never private ones unless the server owner allowed it with `bots.webhook_allow_private`). Copy the webhook signing secret shown when you save it, then:

@@ -90,6 +90,7 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `GET` | `/api/bots/{id}` | Get a bot | Authenticated; the bot's owner or a server admin (other people's bots answer 404). |
 | `PATCH` | `/api/bots/{id}` | Update a bot | Authenticated; the bot's owner or a server admin. |
 | `DELETE` | `/api/bots/{id}` | Delete a bot | Authenticated; the bot's owner or a server admin. |
+| `POST` | `/api/bots/{id}/start` | Start a chat with a bot | Authenticated. |
 | `POST` | `/api/bots/{id}/token` | Rotate a bot's token | Authenticated; the bot's owner or a server admin. |
 | `GET` | `/api/channels/{id}/bots` | List the bots installed in a channel | Channel Member. |
 | `PUT` | `/api/channels/{id}/bots/{bot_id}` | Install a bot in a channel | Channel Admin. |

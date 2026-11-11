@@ -1,4 +1,4 @@
-.PHONY: emoji/install emoji/build patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck desktop/test desktop/vet wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
+.PHONY: dev-seed-bots dev-bot emoji/install emoji/build patterns sounds version/sync version/check site/install site/dev site/gen site/build site/typecheck site/lint site/test android/compile android/test android/build android/install help build run dev dev-back dev-front front/dev front/install front/build front/test front/lint front/typecheck desktop/test desktop/vet wails/dev wails/build wails/build/mac wails/build/windows wails/build/linux backend/release release swagger test tidy lint clean docker/build docker/push
 
 release: clean backend/release wails/build/mac wails/build/windows wails/build/linux ## Build and package ALL assets for release
 	./scripts/package_release.sh
@@ -36,6 +36,12 @@ dev-back: ## Run standalone backend in dev mode (go run)
 	cd backend && $(GO) run ./cmd/server
 
 run: dev-back ## Run standalone backend (alias for dev-back)
+
+dev-seed-bots: ## Seed the running local backend (make dev-back) with a sample bot, two test channels and welcome messages (idempotent)
+	cd examples/bot-go && $(GO) run ./seed
+
+dev-bot: ## Run the sample bot against the local backend (token from examples/bot-go/.env.local, see dev-seed-bots)
+	cd examples/bot-go && $(GO) run .
 
 test: ## Run all tests with race detector
 	cd backend && $(GO) test ./... -race -cover -count=1

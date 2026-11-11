@@ -3349,6 +3349,76 @@
                 }
             }
         },
+        "/api/bots/{id}/start": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Opens the DM with a public (or own) bot, creating it if needed, records that the caller used the bot\n(which lets the bot message them) and sends the bot a `bot_start` event, like a Start button. Idempotent.\nPrivate bots of other people, disabled bots and unknown ids answer 404.\n**Access:** Authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bots"
+                ],
+                "summary": "Start a chat with a bot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bot ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StartBotResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.StartBotResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/bots/{id}/token": {
             "post": {
                 "security": [
@@ -7871,6 +7941,10 @@
                 "avatar_id": {
                     "type": "string"
                 },
+                "command_count": {
+                    "description": "CommandCount is the number of global slash commands the bot registered (Explore shows it).",
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -9365,6 +9439,22 @@
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_api.StartBotResponse": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "string"
+                },
+                "created": {
+                    "description": "Created is false when the DM already existed.",
+                    "type": "boolean"
+                },
+                "delivered": {
+                    "description": "Delivered is false when the bot is offline and has no webhook, so nothing will answer the start event.",
+                    "type": "boolean"
                 }
             }
         },
