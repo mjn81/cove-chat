@@ -27,6 +27,7 @@ type Config struct {
 	Update       UpdateConfig       `toml:"update"`
 	Emoji        EmojiConfig        `toml:"emoji"`
 	Packs        PacksConfig        `toml:"packs"`
+	Bots         BotsConfig         `toml:"bots"`
 }
 
 // Registration modes.
@@ -184,6 +185,7 @@ func defaults() *Config {
 	return &Config{
 		Captcha: CaptchaConfig{Difficulty: "medium"},
 		Emoji:   EmojiConfig{EnabledStyles: append([]string(nil), EmojiStyleIDs...), DefaultStyle: DefaultEmojiStyle},
+		Bots:    DefaultBots(),
 		Packs:   PacksConfig{UserUploadsEnabled: true, MaxPacksPerUser: 10, MaxStickersPerPack: 60, MaxUserStorageMB: 20},
 		Sessions: SessionsConfig{LoginNotifications: true},
 		Update:   UpdateConfig{ManifestURL: "https://covechat.dev/releases/manifest.json", GitHubFallback: true, NotifyAdmins: true},
@@ -348,6 +350,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Packs.MaxPacksPerUser < 0 || c.Packs.MaxStickersPerPack < 0 || c.Packs.MaxUserStorageMB < 0 {
 		return fmt.Errorf("config: packs limits cannot be negative")
+	}
+	if err := ValidateBots(c.Bots); err != nil {
+		return err
 	}
 	for i, inv := range c.Registration.Invites {
 		if strings.TrimSpace(inv.Code) == "" {

@@ -79,3 +79,14 @@ default style: the device font only appears when the user picks "Device emoji". 
 `cacheDir/cove` (wiped on sign-out) and drawn immediately on the next start while the network refresh and socket connect run
 in parallel; `CryptoManager` also keeps the imported `SecretKey` per channel and answers repeat decrypts from the body cache
 (keyed by channel and nonce). Channel keys are still never persisted. Timings: unmeasured (emulator unusable).
+
+## Bot API (Android, not done)
+
+The server and the web client have the Bot API (`docs/bots-api.md`, capability `bots`). The Android client has none of it yet
+and degrades safely: a `bot` message shows the existing "needs a newer version" placeholder, `member_bots` and `is_bot`
+are ignored, and `keyboard_update` is an unknown event. To do, in order: parse `member_bots` / `is_bot` and show a BOT
+badge; render `bot` messages (text and a button grid that posts `POST /api/channels/{id}/interactions`); the slash-command
+autocomplete from `GET /api/channels/{id}/commands`; the action menu from `GET /api/channels/{id}/keyboards` and the
+`keyboard_update` event, replacing the input row; Settings > Bots and the channel Bots section. Buttons use the same
+translucent surface as the web (`bot-glass`): a surface of `background` at 45 percent alpha with a 1 px `border` at 75 percent
+(Compose has no cheap backdrop blur; a solid `muted` fallback is acceptable).

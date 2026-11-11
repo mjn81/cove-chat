@@ -122,6 +122,11 @@ func (s *Store) AuthenticateUser(username, password string) (*models.User, error
 		}
 		return nil, fmt.Errorf("store: look up user: %w", err)
 	}
+	if u.IsBot() {
+		// Bots have no password; they sign in with a bot token only. Same cost and answer as a wrong password.
+		crypto.BurnPasswordVerify(password)
+		return nil, ErrInvalidCredentials
+	}
 	ok, err := crypto.VerifyPassword(password, u.PwdHash)
 	if err != nil {
 		return nil, fmt.Errorf("store: password verification error: %w", err)
@@ -150,6 +155,7 @@ func (s *Store) SearchUsers(query string) ([]*models.User, error) {
 				Status:    u.Status,
 				AvatarID:  u.AvatarID,
 				CustomMsg: u.CustomMsg,
+				Kind:      u.Kind,
 			}
 			matched = append(matched, safeUser)
 		}

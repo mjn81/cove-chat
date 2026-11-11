@@ -45,6 +45,7 @@ import { useUserSearch } from '@/hooks/useUsers';
 import { useDebounce } from '@/hooks/use-debounce';
 import { isAdmin as checkAdmin, isOwner as checkOwner } from '@/utils/role';
 import { logger } from '@/utils/logger';
+import { ChannelBotsSection } from '@/domains/bots/components/channel-bots-section';
 
 interface GroupSettingsModalProps {
 	channel: Channel;
@@ -468,6 +469,14 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 									</div>
 								)}
 							</div>
+						</>
+					)}
+
+					{/* Bots: channel admins add and remove them (the server enforces it too) */}
+					{isAdmin && (
+						<>
+							<Separator />
+							<ChannelBotsSection channel={channel} />
 						</>
 					)}
 

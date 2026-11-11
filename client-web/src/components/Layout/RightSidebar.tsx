@@ -28,6 +28,7 @@ import {
 import { useRef } from 'react';
 import { ChannelRole, isAdmin, isOwner } from '@/utils/role';
 import { useTranslation } from 'react-i18next';
+import { BotBadge } from '@/domains/bots/components/bot-badge';
 
 interface Member {
 	id: string;
@@ -36,6 +37,8 @@ interface Member {
 	status: string;
 	avatar_id?: string;
 	role: number;
+	/** Bot accounts get a BOT badge and are managed from the channel's Bots section, not kicked or promoted. */
+	isBot?: boolean;
 }
 
 interface RightSidebarProps {
@@ -85,6 +88,7 @@ export default function RightSidebar({
 			status: activeChannel.member_statuses?.[id] || 'offline',
 			avatar_id: activeChannel.member_avatars?.[id],
 			role: activeChannel.member_roles?.[id] ?? 0,
+			isBot: activeChannel.member_bots?.[id] === true,
 		}));
 	}, [activeChannel]);
 
@@ -410,9 +414,9 @@ const MemberRow = memo(
 	}: MemberRowProps) => {
 		const { t } = useTranslation();
 		const isMe = member.id === user?.id;
-		const canKick = !isDM && isAdmin(myRole) && myRole > member.role && !isMe;
+		const canKick = !isDM && isAdmin(myRole) && myRole > member.role && !isMe && !member.isBot;
 		const canPromote =
-			!isDM && isOwner(myRole) && member.role === ChannelRole.MEMBER && !isMe;
+			!isDM && isOwner(myRole) && member.role === ChannelRole.MEMBER && !isMe && !member.isBot;
 		const canDemote =
 			!isDM && isOwner(myRole) && member.role === ChannelRole.ADMIN && !isMe;
 
@@ -451,6 +455,7 @@ const MemberRow = memo(
 												>
 													{member.username}
 												</span>
+												{member.isBot && <BotBadge />}
 											</div>
 										</div>
 									)}

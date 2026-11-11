@@ -1,5 +1,43 @@
 basePath: /
 definitions:
+  cove_backend_internal_bots.Author:
+    properties:
+      id:
+        type: string
+      is_bot:
+        type: boolean
+      username:
+        type: string
+    type: object
+  cove_backend_internal_bots.MessageDTO:
+    properties:
+      author:
+        $ref: '#/definitions/cove_backend_internal_bots.Author'
+      buttons:
+        items:
+          items:
+            $ref: '#/definitions/cove_backend_internal_models.Button'
+          type: array
+        type: array
+      channel_id:
+        type: string
+      content:
+        type: string
+      edited_at:
+        type: string
+      id:
+        type: string
+      mentioned:
+        description: Mentioned is true when the message mentions the receiving bot
+          by @username or replies to one of its messages.
+        type: boolean
+      reply_to_id:
+        type: string
+      sent_at:
+        type: string
+      type:
+        type: string
+    type: object
   cove_backend_internal_models.AuditEntry:
     properties:
       action:
@@ -15,6 +53,59 @@ definitions:
         type: string
       target:
         description: e.g. a username or invite code (never a secret)
+        type: string
+    type: object
+  cove_backend_internal_models.BotCommand:
+    properties:
+      bot_id:
+        type: string
+      channel_id:
+        description: empty = global
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.CommandOption'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  cove_backend_internal_models.Button:
+    properties:
+      custom_id:
+        type: string
+      disabled:
+        type: boolean
+      label:
+        type: string
+      style:
+        type: string
+      url:
+        type: string
+    type: object
+  cove_backend_internal_models.CommandChoice:
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  cove_backend_internal_models.CommandOption:
+    properties:
+      choices:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.CommandChoice'
+        type: array
+      description:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
+      type:
         type: string
     type: object
   cove_backend_internal_models.Message:
@@ -62,6 +153,7 @@ definitions:
     - video
     - invite
     - sticker
+    - bot
     type: string
     x-enum-varnames:
     - MessageTypeText
@@ -70,6 +162,7 @@ definitions:
     - MessageTypeVideo
     - MessageTypeInvite
     - MessageTypeSticker
+    - MessageTypeBot
   internal_api.AddMembersRequest:
     properties:
       user_ids:
@@ -215,6 +308,144 @@ definitions:
       password:
         type: string
     type: object
+  internal_api.BotChannelPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.BotChannelResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  internal_api.BotChannelResponse:
+    properties:
+      id:
+        type: string
+      is_dm:
+        type: boolean
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api.BotCommandsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.BotCommand'
+        type: array
+    type: object
+  internal_api.BotDMRequest:
+    properties:
+      user_id:
+        type: string
+    type: object
+  internal_api.BotDMResponse:
+    properties:
+      channel_id:
+        type: string
+    type: object
+  internal_api.BotMemberPageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.BotMemberResponse'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  internal_api.BotMemberResponse:
+    properties:
+      id:
+        type: string
+      is_bot:
+        type: boolean
+      username:
+        type: string
+    type: object
+  internal_api.BotMessagePageResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/cove_backend_internal_bots.MessageDTO'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  internal_api.BotMessageRequest:
+    properties:
+      buttons:
+        items:
+          items:
+            $ref: '#/definitions/cove_backend_internal_models.Button'
+          type: array
+        type: array
+      reply_to_id:
+        type: string
+      text:
+        type: string
+    type: object
+  internal_api.BotMessageResponse:
+    properties:
+      channel_id:
+        type: string
+      id:
+        type: string
+      sent_at:
+        type: string
+    type: object
+  internal_api.BotPageResponse:
+    properties:
+      can_create:
+        description: CanCreate tells the UI whether the caller may create a bot now
+          (policy, switch and their own cap).
+        type: boolean
+      enabled:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/internal_api.BotResponse'
+        type: array
+      max_per_user:
+        type: integer
+      next_cursor:
+        type: string
+    type: object
+  internal_api.BotResponse:
+    properties:
+      avatar_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      disabled:
+        type: boolean
+      id:
+        type: string
+      install_count:
+        type: integer
+      online:
+        description: Online is true while the bot has an open gateway connection.
+        type: boolean
+      owner_id:
+        type: string
+      public:
+        type: boolean
+      username:
+        example: pingbot
+        type: string
+      webhook_url:
+        description: WebhookURL is only filled in for the owner and admins.
+        type: string
+    type: object
+  internal_api.BotTokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
   internal_api.CaptchaChallengeResponse:
     properties:
       algorithm:
@@ -238,6 +469,26 @@ definitions:
           checks it when the solution comes back.
         example: c0ffee...
         type: string
+    type: object
+  internal_api.ChannelBotResponse:
+    properties:
+      bot:
+        $ref: '#/definitions/internal_api.BotResponse'
+      installed_at:
+        type: string
+      installed_by:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api.ChannelBotsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.ChannelBotResponse'
+        type: array
     type: object
   internal_api.ChannelPageResponse:
     properties:
@@ -284,6 +535,12 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      member_bots:
+        additionalProperties:
+          type: boolean
+        description: MemberBots flags bot accounts among the members (clients show
+          a BOT badge).
+        type: object
       member_domains:
         additionalProperties:
           type: string
@@ -318,8 +575,44 @@ definitions:
         description: 0=Member, 10=Admin, 20=Owner
         type: integer
     type: object
+  internal_api.CommandResponse:
+    properties:
+      bot_id:
+        type: string
+      bot_username:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.CommandOption'
+        type: array
+    type: object
+  internal_api.CommandsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.CommandResponse'
+        type: array
+    type: object
   internal_api.ConfigChanges:
     properties:
+      bots.creation:
+        enum:
+        - admins
+        - users
+        - disabled
+        type: string
+      bots.enabled:
+        type: boolean
+      bots.max_per_user:
+        type: integer
+      bots.rate_limit_rps:
+        type: integer
+      bots.webhook_allow_private:
+        type: boolean
       captcha.difficulty:
         enum:
         - low
@@ -438,6 +731,29 @@ definitions:
         description: '"enum" | "int" | "bool" | "string"'
         type: string
       value: {}
+    type: object
+  internal_api.CreateBotRequest:
+    properties:
+      description:
+        type: string
+      public:
+        type: boolean
+      username:
+        example: pingbot
+        type: string
+      webhook_url:
+        description: WebhookURL is optional; HTTPS only.
+        type: string
+    type: object
+  internal_api.CreateBotResponse:
+    properties:
+      bot:
+        $ref: '#/definitions/internal_api.BotResponse'
+      token:
+        type: string
+      webhook_secret:
+        description: WebhookSecret is set when a webhook URL was given; shown once.
+        type: string
     type: object
   internal_api.CreateChannelRequest:
     properties:
@@ -636,6 +952,66 @@ definitions:
       name:
         type: string
     type: object
+  internal_api.InstallBotRequest:
+    properties:
+      scopes:
+        description: 'Scopes: messages.read, messages.send, members.read. Empty means
+          messages.send only.'
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api.InteractionCallbackRequest:
+    properties:
+      buttons:
+        items:
+          items:
+            $ref: '#/definitions/cove_backend_internal_models.Button'
+          type: array
+        type: array
+      text:
+        type: string
+      type:
+        description: |-
+          Type is "message" (a new message), "update_message" (edit the message the button was on) or "ack"
+          (acknowledge now, answer with one follow-up message later).
+        enum:
+        - message
+        - update_message
+        - ack
+        type: string
+    type: object
+  internal_api.InteractionRequest:
+    properties:
+      bot_id:
+        type: string
+      command:
+        description: Command and Options are set for type "command".
+        type: string
+      custom_id:
+        type: string
+      message_id:
+        description: MessageID and CustomID are set for type "button"; CustomID alone
+          for "keyboard".
+        type: string
+      options:
+        additionalProperties: {}
+        type: object
+      type:
+        description: Type is "command", "button" or "keyboard".
+        enum:
+        - command
+        - button
+        - keyboard
+        type: string
+    type: object
+  internal_api.InteractionResponse:
+    properties:
+      delivered:
+        type: boolean
+      id:
+        type: string
+    type: object
   internal_api.InviteListResponse:
     properties:
       items:
@@ -692,6 +1068,47 @@ definitions:
         $ref: '#/definitions/internal_api.PackItemResponse'
       pack:
         $ref: '#/definitions/internal_api.PackResponse'
+    type: object
+  internal_api.KeyboardRequest:
+    properties:
+      one_time:
+        type: boolean
+      persistent:
+        type: boolean
+      placeholder:
+        type: string
+      rows:
+        items:
+          items:
+            $ref: '#/definitions/cove_backend_internal_models.Button'
+          type: array
+        type: array
+    type: object
+  internal_api.KeyboardResponse:
+    properties:
+      bot_id:
+        type: string
+      bot_username:
+        type: string
+      one_time:
+        type: boolean
+      persistent:
+        type: boolean
+      placeholder:
+        type: string
+      rows:
+        items:
+          items:
+            $ref: '#/definitions/cove_backend_internal_models.Button'
+          type: array
+        type: array
+    type: object
+  internal_api.KeyboardsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api.KeyboardResponse'
+        type: array
     type: object
   internal_api.LoginRequest:
     properties:
@@ -1049,6 +1466,13 @@ definitions:
         example: Windows
         type: string
     type: object
+  internal_api.SetCommandsRequest:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/cove_backend_internal_models.BotCommand'
+        type: array
+    type: object
   internal_api.SkippedMember:
     properties:
       reason:
@@ -1071,6 +1495,30 @@ definitions:
         type: string
       username:
         example: alice
+        type: string
+    type: object
+  internal_api.UpdateBotRequest:
+    properties:
+      avatar_id:
+        type: string
+      description:
+        type: string
+      disabled:
+        type: boolean
+      public:
+        type: boolean
+      rotate_webhook_secret:
+        description: RotateWebhookSecret issues a new signing secret (returned once).
+        type: boolean
+      webhook_url:
+        description: 'WebhookURL: an empty string removes the webhook.'
+        type: string
+    type: object
+  internal_api.UpdateBotResponse:
+    properties:
+      bot:
+        $ref: '#/definitions/internal_api.BotResponse'
+      webhook_secret:
         type: string
     type: object
   internal_api.UpdateChannelRequest:
@@ -1362,6 +1810,10 @@ definitions:
       id:
         example: user-1
         type: string
+      is_bot:
+        description: IsBot marks bot accounts; clients show a BOT badge next to the
+          name.
+        type: boolean
       server_role:
         description: ServerRole is only filled in for the caller's own account (/api/me),
           never for other users.
@@ -2742,6 +3194,969 @@ paths:
       summary: Upload a server release manually
       tags:
       - admin
+  /api/bots:
+    get:
+      description: |-
+        Paged (`{items, next_cursor}`), oldest first, with what the caller may do (`can_create`). Server admins
+        may pass `all=1` to list every bot on the server.
+        **Access:** Authenticated.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor
+        in: query
+        name: cursor
+        type: string
+      - description: 'Admins only: every bot of the server'
+        in: query
+        name: all
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List my bots
+      tags:
+      - bots
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Creates a bot account owned by the caller and returns its token **once**. Who may create bots is an
+        admin setting (`bots.creation`: admins only by default). The token is `<bot_id>.<secret>`; only a hash is stored.
+        **Access:** Authenticated (policy: Server Admin, or every user when the admin allows it).
+      parameters:
+      - description: Bot
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.CreateBotRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api.CreateBotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a bot
+      tags:
+      - bots
+  /api/bots/{id}:
+    delete:
+      description: |-
+        Removes the bot, its installs, commands and keyboards, and closes its connections. Messages it sent
+        stay in the history.
+        **Access:** Authenticated; the bot's owner or a server admin.
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a bot
+      tags:
+      - bots
+    get:
+      description: '**Access:** Authenticated; the bot''s owner or a server admin
+        (other people''s bots answer 404).'
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a bot
+      tags:
+      - bots
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Changes the description, avatar, visibility, enabled state and webhook. Disabling a bot closes its
+        gateway connections and stops all deliveries. A new webhook secret is returned once.
+        **Access:** Authenticated; the bot's owner or a server admin.
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Changes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.UpdateBotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.UpdateBotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a bot
+      tags:
+      - bots
+  /api/bots/{id}/token:
+    post:
+      description: |-
+        Issues a new token (returned once) and invalidates the old one immediately; the bot's open gateway
+        connections are closed.
+        **Access:** Authenticated; the bot's owner or a server admin.
+      parameters:
+      - description: Bot ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotTokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Rotate a bot's token
+      tags:
+      - bots
+  /api/bots/discover:
+    get:
+      description: |-
+        Paged list of public, enabled bots that channel admins can install, optionally filtered by `q`
+        (substring of the name or description).
+        **Access:** Authenticated.
+      parameters:
+      - description: Filter
+        in: query
+        name: q
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Find public bots
+      tags:
+      - bots
+  /api/bots/me:
+    get:
+      description: '**Access:** Bot (`Authorization: Bot <token>`).'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: The bot's own profile
+      tags:
+      - bot-api
+  /api/bots/me/channels:
+    get:
+      description: |-
+        Paged, ordered by channel id: the group channels it is installed in and the DMs opened with it.
+        **Access:** Bot.
+      parameters:
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotChannelPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Channels the bot is in
+      tags:
+      - bot-api
+  /api/bots/me/channels/{id}/commands:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Replaces the bot's commands scoped to this channel; a channel command wins over a global one of the same name.
+        **Access:** Bot (installed in the channel, or the DM).
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Commands
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.SetCommandsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotCommandsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Register slash commands for one channel
+      tags:
+      - bot-api
+  /api/bots/me/channels/{id}/keyboard:
+    delete:
+      description: '**Access:** Bot with the `messages.send` scope in the channel.'
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Remove the bot's action menu from a channel
+      tags:
+      - bot-api
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Replaces the composer's input area with a grid of buttons (at most 8x8, callback buttons only) for every
+        member until the bot removes it or a member dismisses it. `one_time` hides it after the first press,
+        `persistent` keeps its toggle available. Presses arrive as `keyboard` interactions.
+        **Access:** Bot with the `messages.send` scope in the channel.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Keyboard
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.KeyboardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.KeyboardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Show an action menu in a channel
+      tags:
+      - bot-api
+  /api/bots/me/channels/{id}/members:
+    get:
+      description: |-
+        Paged, ordered by user id. Only id, username and `is_bot`: no roles, avatars or status.
+        **Access:** Bot with the `members.read` scope in the channel.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotMemberPageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Channel members for a bot
+      tags:
+      - bot-api
+  /api/bots/me/channels/{id}/messages:
+    get:
+      description: |-
+        Paged (`{items, next_cursor}`), newest first, with plaintext. Only for bots that were granted
+        `messages.read`.
+        **Access:** Bot with the `messages.read` scope in the channel.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page size (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Opaque cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotMessagePageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Channel history for a bot
+      tags:
+      - bot-api
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Posts text (up to 4000 characters) and optionally up to 5x5 buttons. With buttons the message type is
+        `bot`. The server encrypts it with the channel key; the bot never handles keys. In a DM the bot may only
+        write to a user who interacted with it. At most 5 messages per second per channel.
+        **Access:** Bot with the `messages.send` scope in the channel.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Message
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.BotMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api.BotMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Send a message
+      tags:
+      - bot-api
+  /api/bots/me/channels/{id}/messages/{mid}:
+    delete:
+      description: '**Access:** Bot with the `messages.send` scope; only its own messages
+        (403 otherwise).'
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Message ID
+        in: path
+        name: mid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Delete one of the bot's own messages
+      tags:
+      - bot-api
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Replaces text and buttons; sending no buttons turns a `bot` message back into plain text.
+        **Access:** Bot with the `messages.send` scope; only its own messages (403 otherwise).
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Message ID
+        in: path
+        name: mid
+        required: true
+        type: string
+      - description: New content
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.BotMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Edit one of the bot's own messages
+      tags:
+      - bot-api
+  /api/bots/me/commands:
+    get:
+      description: '**Access:** Bot.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotCommandsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: List the bot's global slash commands
+      tags:
+      - bot-api
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Replaces the whole set. Global commands are usable in every channel the bot is installed in. Names are
+        1-32 characters of a-z 0-9 _ -; at most 100 commands, 25 options each, 25 choices per option.
+        **Access:** Bot.
+      parameters:
+      - description: Commands
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.SetCommandsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotCommandsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Register the bot's global slash commands
+      tags:
+      - bot-api
+  /api/bots/me/commands/{name}:
+    delete:
+      description: '**Access:** Bot.'
+      parameters:
+      - description: Command name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Delete one global slash command
+      tags:
+      - bot-api
+  /api/bots/me/dm:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Only for a user who interacted with the bot first (opened a DM with it, used a command or pressed a
+        button); otherwise 403 `bot_contact_required`. Also 403 when the user blocked the bot or disallows DMs.
+        **Access:** Bot.
+      parameters:
+      - description: User
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.BotDMRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotDMResponse'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_api.BotDMResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Open a DM with a user
+      tags:
+      - bot-api
   /api/captcha/challenge:
     get:
       description: |-
@@ -3007,6 +4422,254 @@ paths:
       summary: Update channel settings
       tags:
       - channels
+  /api/channels/{id}/bots:
+    get:
+      description: |-
+        Bounded by the per-channel install cap (20), so it is not paged.
+        **Access:** Channel Member.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.ChannelBotsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List the bots installed in a channel
+      tags:
+      - bots
+  /api/channels/{id}/bots/{bot_id}:
+    delete:
+      description: |-
+        Removes the bot's membership, install, channel commands and keyboard.
+        **Access:** Channel Admin.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bot ID
+        in: path
+        name: bot_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.StatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove a bot from a channel
+      tags:
+      - bots
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Adds the bot to a group channel as an ordinary member with the granted scopes (`messages.read`,
+        `messages.send`, `members.read`; default `messages.send`). Calling it again changes the scopes. A bot
+        is never an admin. Public bots, the caller's own bots, or any bot for a server admin can be installed.
+        DMs cannot have bots installed. The bot's owner receives the messages the scopes allow in plaintext.
+        **Access:** Channel Admin.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bot ID
+        in: path
+        name: bot_id
+        required: true
+        type: string
+      - description: Scopes
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/internal_api.InstallBotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.ChannelBotResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Install a bot in a channel
+      tags:
+      - bots
+  /api/channels/{id}/commands:
+    get:
+      description: |-
+        The commands of every enabled bot installed in the channel (or the DM): its global commands, with a
+        channel-specific command of the same name taking precedence. Used by the composer's autocomplete.
+        Bounded by the install cap and the 100-command limit per bot and scope, so it is not paged.
+        **Access:** Channel Member.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.CommandsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List the slash commands usable in a channel
+      tags:
+      - bots
+  /api/channels/{id}/interactions:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Creates an interaction for the bot and hands it to the bot's gateway or webhook; the bot answers with
+        `POST /api/interactions/{id}/{token}/callback`. `type: command` is validated against the registered
+        command (types, required options, choices); `button` must name a callback button that exists on that
+        bot message; `keyboard` must name a key of the bot's active keyboard. Using a bot counts as contact, which
+        lets the bot message the user afterwards. `delivered` is false when the bot is offline and has no webhook.
+        **Access:** Channel Member.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Interaction
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.InteractionRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/internal_api.InteractionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Use a slash command, a bot message button or an action-menu key
+      tags:
+      - bots
   /api/channels/{id}/invite/regenerate:
     post:
       description: |-
@@ -3050,6 +4713,46 @@ paths:
       summary: Replace a channel's invite link
       tags:
       - channels
+  /api/channels/{id}/keyboards:
+    get:
+      description: |-
+        The reply keyboards bots set with `PUT /api/bots/me/channels/{id}/keyboard`. The web client shows the
+        latest one in place of the composer's input area.
+        **Access:** Channel Member.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.KeyboardsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List the action menus active in a channel
+      tags:
+      - bots
   /api/channels/{id}/members:
     get:
       description: |-
@@ -3676,6 +5379,69 @@ paths:
       summary: Download a stored file
       tags:
       - files
+  /api/interactions/{id}/{token}/callback:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Answers a command, button press or keyboard key with `message` (a new message), `update_message` (edit
+        the message the button was on) or `ack` (silent acknowledgement; one follow-up `message` may come
+        later). The token comes with the interaction event and is valid for 15 minutes and two answers.
+        A wrong, expired or used-up token is 404 `interaction_expired`.
+        **Access:** Bot (the bot the interaction was addressed to) with the interaction token.
+      parameters:
+      - description: Interaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Interaction token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Answer
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.InteractionCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.BotMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_api.ErrorResponse'
+      security:
+      - BotAuth: []
+      summary: Answer an interaction
+      tags:
+      - bot-api
   /api/join/{link}:
     get:
       description: |-
@@ -5054,6 +6820,12 @@ paths:
 securityDefinitions:
   BearerAuth:
     description: 'Format: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+  BotAuth:
+    description: 'Bot tier: "Bot <bot_id>.<secret>". Accepted only on /api/bots/me/...
+      and the interaction callback.'
     in: header
     name: Authorization
     type: apiKey

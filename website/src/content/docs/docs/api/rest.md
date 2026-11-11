@@ -60,6 +60,44 @@ When the server runs with `server.dev = true`, an interactive Swagger UI is serv
 | `POST` | `/api/logout` | Log out and invalidate session | Authenticated. |
 | `POST` | `/api/register` | Register a new account | Public. |
 
+## bot-api
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/bots/me` | The bot's own profile | Bot (`Authorization: Bot <token>`). |
+| `GET` | `/api/bots/me/channels` | Channels the bot is in | Bot. |
+| `PUT` | `/api/bots/me/channels/{id}/commands` | Register slash commands for one channel | Bot (installed in the channel, or the DM). |
+| `PUT` | `/api/bots/me/channels/{id}/keyboard` | Show an action menu in a channel | Bot with the `messages.send` scope in the channel. |
+| `DELETE` | `/api/bots/me/channels/{id}/keyboard` | Remove the bot's action menu from a channel | Bot with the `messages.send` scope in the channel. |
+| `GET` | `/api/bots/me/channels/{id}/members` | Channel members for a bot | Bot with the `members.read` scope in the channel. |
+| `GET` | `/api/bots/me/channels/{id}/messages` | Channel history for a bot | Bot with the `messages.read` scope in the channel. |
+| `POST` | `/api/bots/me/channels/{id}/messages` | Send a message | Bot with the `messages.send` scope in the channel. |
+| `PATCH` | `/api/bots/me/channels/{id}/messages/{mid}` | Edit one of the bot's own messages | Bot with the `messages.send` scope; only its own messages (403 otherwise). |
+| `DELETE` | `/api/bots/me/channels/{id}/messages/{mid}` | Delete one of the bot's own messages | Bot with the `messages.send` scope; only its own messages (403 otherwise). |
+| `GET` | `/api/bots/me/commands` | List the bot's global slash commands | Bot. |
+| `PUT` | `/api/bots/me/commands` | Register the bot's global slash commands | Bot. |
+| `DELETE` | `/api/bots/me/commands/{name}` | Delete one global slash command | Bot. |
+| `POST` | `/api/bots/me/dm` | Open a DM with a user | Bot. |
+| `POST` | `/api/interactions/{id}/{token}/callback` | Answer an interaction | Bot (the bot the interaction was addressed to) with the interaction token. |
+
+## bots
+
+| Method | Path | Summary | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/bots` | List my bots | Authenticated. |
+| `POST` | `/api/bots` | Create a bot | Authenticated (policy: Server Admin, or every user when the admin allows it). |
+| `GET` | `/api/bots/discover` | Find public bots | Authenticated. |
+| `GET` | `/api/bots/{id}` | Get a bot | Authenticated; the bot's owner or a server admin (other people's bots answer 404). |
+| `PATCH` | `/api/bots/{id}` | Update a bot | Authenticated; the bot's owner or a server admin. |
+| `DELETE` | `/api/bots/{id}` | Delete a bot | Authenticated; the bot's owner or a server admin. |
+| `POST` | `/api/bots/{id}/token` | Rotate a bot's token | Authenticated; the bot's owner or a server admin. |
+| `GET` | `/api/channels/{id}/bots` | List the bots installed in a channel | Channel Member. |
+| `PUT` | `/api/channels/{id}/bots/{bot_id}` | Install a bot in a channel | Channel Admin. |
+| `DELETE` | `/api/channels/{id}/bots/{bot_id}` | Remove a bot from a channel | Channel Admin. |
+| `GET` | `/api/channels/{id}/commands` | List the slash commands usable in a channel | Channel Member. |
+| `POST` | `/api/channels/{id}/interactions` | Use a slash command, a bot message button or an action-menu key | Channel Member. |
+| `GET` | `/api/channels/{id}/keyboards` | List the action menus active in a channel | Channel Member. |
+
 ## channels
 
 | Method | Path | Summary | Access |

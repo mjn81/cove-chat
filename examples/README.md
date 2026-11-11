@@ -11,6 +11,9 @@ A standalone setup using pre-built images from Docker Hub. Ideal for quick produ
 *   **Requirements**: Docker and Docker Compose.
 *   **Setup**: Just copy the `docker-compose.yml` and `config.toml`, then run `docker-compose up -d`.
 
+### 2. [Bot (Go)](./bot-go/)
+A small bot using the [Bot API](../docs/bots-api.md): slash commands, interactions, buttons, the action menu, and both the gateway and signed webhooks.
+
 ---
 
 For development instructions and building from source, refer to the [main README](../README.md) and [DOCKER.md](../DOCKER.md).

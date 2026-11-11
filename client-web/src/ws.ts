@@ -51,6 +51,7 @@ export type WSEventType =
 	| 'presence'
 	| 'channel_key'
 	| 'channel_update'
+	| 'keyboard_update'
 	| 'channel_delete'
 	| 'voice_update'
 	| 'relationship_update'
@@ -354,6 +355,9 @@ function handleInbound(msg: { type: string; payload: unknown }) {
 			break;
 		case 'channel_update':
 			emit('channel_update', msg.payload);
+			break;
+		case 'keyboard_update':
+			emit('keyboard_update', msg.payload);
 			break;
 		case 'channel_delete':
 			emit('channel_delete', msg.payload);

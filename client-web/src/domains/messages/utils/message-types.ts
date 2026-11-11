@@ -1,5 +1,5 @@
 /** Message types this build knows how to render. Anything else is shown as a placeholder (docs/api-standard.md section 5). */
-export const KNOWN_MESSAGE_TYPES = ['text', 'file', 'voice', 'video', 'invite', 'sticker'] as const;
+export const KNOWN_MESSAGE_TYPES = ['text', 'file', 'voice', 'video', 'invite', 'sticker', 'bot'] as const;
 
 /**
  * Whether a message type from the server is one this client can render. A newer server may introduce types an
@@ -11,8 +11,8 @@ export function isKnownMessageType(type: string): boolean {
 	return (KNOWN_MESSAGE_TYPES as readonly string[]).includes(type);
 }
 
-/** Types whose decrypted body is read as text: the message text itself, or the JSON of an invite or sticker. */
-const TEXT_BODY_TYPES = new Set(['text', 'invite', 'sticker']);
+/** Types whose decrypted body is read as text: the message text itself, or the JSON of an invite, sticker or bot message. */
+const TEXT_BODY_TYPES = new Set(['text', 'invite', 'sticker', 'bot']);
 
 /**
  * Whether the message list decrypts this message up front (its body is text). File, voice and video messages

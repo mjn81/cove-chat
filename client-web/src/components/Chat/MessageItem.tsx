@@ -23,6 +23,8 @@ import { EmojiText } from '@/domains/emoji/components/emoji';
 import { BigEmoji } from '@/domains/emoji/components/big-emoji';
 import { StickerMessage } from '@/domains/stickers/components/sticker-message';
 import { PackShareCard } from '@/domains/stickers/components/pack-share-card';
+import { BotBadge } from '@/domains/bots/components/bot-badge';
+import { BotMessage } from '@/domains/bots/components/bot-message';
 import { parsePackShare } from '@/domains/stickers/utils/pack-share';
 import { useEmojiMessageClass } from '@/domains/emoji/hooks/use-emoji-message-class';
 
@@ -432,6 +434,7 @@ export const MessageItem = memo(
 							>
 								{channel.member_names?.[msg.sender_id] || msg.sender_id}
 							</span>
+							{channel.member_bots?.[msg.sender_id] && <BotBadge className="self-center" />}
 							<span
 								className={`text-muted-foreground shrink-0 ${isMobile ? 'text-[9px] whitespace-nowrap' : 'text-xs'}`}
 							>
@@ -537,6 +540,16 @@ export const MessageItem = memo(
 					)}
 					{msg.type === 'invite' && <InviteMessage text={msg.text} />}
 				{msg.type === 'sticker' && <StickerMessage text={msg.text} />}
+					{msg.type === 'bot' && (
+						<BotMessage
+							text={msg.text}
+							messageId={msg.id}
+							channelId={channel.id}
+							botId={msg.sender_id}
+							botName={channel.member_names?.[msg.sender_id] ?? ''}
+							pending={!!msg.pending}
+						/>
+					)}
 					{!isKnownMessageType(msg.type) && <UnknownMessage />}
 					{(msg.type === 'file' || msg.type === 'voice') && (
 						<FileBubble msg={msg} />

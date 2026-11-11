@@ -54,6 +54,20 @@ const (
 	CodeImageInvalid = "image_invalid"
 	// CodeStickerInvalid means a sticker message points at a pack, sticker or file that does not match.
 	CodeStickerInvalid = "sticker_invalid"
+	// CodeBotsDisabled means the admin switched the Bot API off (or, for creation, to a policy that excludes the caller).
+	CodeBotsDisabled = "bots_disabled"
+	// CodeBotLimitReached means the owner already has the most bots the admin allows.
+	CodeBotLimitReached = "bot_limit_reached"
+	// CodeBotInstallRequired means a bot cannot be added to a channel as an ordinary member; it must be installed.
+	CodeBotInstallRequired = "bot_install_required"
+	// CodeBotContactRequired means a bot may not message a user who has not interacted with it.
+	CodeBotContactRequired = "bot_contact_required"
+	// CodeCommandInvalid means a slash command definition or an invocation does not match its definition.
+	CodeCommandInvalid = "command_invalid"
+	// CodeWebhookURLInvalid means a bot webhook URL is not an acceptable HTTPS endpoint.
+	CodeWebhookURLInvalid = "webhook_url_invalid"
+	// CodeInteractionExpired means an interaction token is unknown, expired or already used up.
+	CodeInteractionExpired = "interaction_expired"
 )
 
 // Capability names advertised in GET /api/version and the WebSocket hello event.
@@ -73,6 +87,9 @@ const (
 	CapStickers = "stickers"
 	// CapAnimatedEmoji means the server serves the animated emoji table under /api/emoji/animated.
 	CapAnimatedEmoji = "animated_emoji"
+	// CapBots means the Bot API exists: bot accounts, slash commands, interactive messages and the bot gateway
+	// (docs/bots-api.md). Clients hide bot UI without it.
+	CapBots = "bots"
 )
 
 // CodeForStatus maps an HTTP status to the generic error code used when a handler did not pick a specific one.
@@ -108,7 +125,7 @@ func CodeForStatus(status int) string {
 // Capabilities lists what this server supports. webrtc reports whether the in-process SFU is running; otherwise
 // calls fall back to the audio-only UDP router.
 func Capabilities(webrtc bool) []string {
-	caps := []string{CapInviteMessages, CapWhisper, CapEmojiPacks, CapCustomEmoji, CapStickers, CapAnimatedEmoji}
+	caps := []string{CapInviteMessages, CapWhisper, CapEmojiPacks, CapCustomEmoji, CapStickers, CapAnimatedEmoji, CapBots}
 	if webrtc {
 		caps = append(caps, CapWebRTCSFU)
 	} else {

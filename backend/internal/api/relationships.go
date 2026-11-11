@@ -22,6 +22,7 @@ func publicUser(u *models.User) *UserResponse {
 		AvatarIDs:   u.AvatarIDs,
 		BannerColor: u.BannerColor,
 		CustomMsg:   u.CustomMsg,
+		IsBot:       u.IsBot(),
 	}
 }
 
@@ -203,6 +204,12 @@ func (h *Handler) HandleRelationshipAction(w http.ResponseWriter, r *http.Reques
 	if !relationshipActions[body.Action] {
 		// The unknown value is deliberately not echoed back.
 		writeError(w, http.StatusBadRequest, "apiErrors.relationship_action_unknown")
+		return
+	}
+
+	if targetUser.IsBot() && body.Action != "block" && body.Action != "unblock" {
+		// Bots cannot be friends; users can still block one.
+		writeError(w, http.StatusBadRequest, "apiErrors.bot_not_friendable")
 		return
 	}
 

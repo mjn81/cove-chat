@@ -13,6 +13,8 @@ import { useVoiceStore } from './voiceStore';
 import { buildMessagePreview } from '@/utils/messagePreview';
 import { initWhisperListeners } from './whisperStore';
 import { isDirectMessage } from '@/utils/channel';
+import { botKeys } from '@/domains/bots/api/bots.api';
+import type { BotKeyboard } from '@/domains/bots/types/bots.types';
 
 let initialized = false;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -198,8 +200,26 @@ export function initWebSocket() {
 		}
 	});
 
+	// A bot set or removed its action menu: the composer of that channel swaps its input for the menu (or back).
+	onWS('keyboard_update', (payload: any) => {
+		const { channel_id, bot_id, keyboard } = (payload ?? {}) as { channel_id?: string; bot_id?: string; keyboard?: BotKeyboard | null };
+		const queryClient = (window as any).queryClient;
+		if (!queryClient || !channel_id || !bot_id) return;
+		queryClient.setQueryData(botKeys.keyboards(channel_id), (old?: { items: BotKeyboard[] }) => {
+			const others = (old?.items ?? []).filter((k) => k.bot_id !== bot_id);
+			return { items: keyboard ? [...others, keyboard] : others };
+		});
+	});
+
 	onWS('channel_update', (payload: any) => {
 		const { type, channel_id, name, description, avatar_id, is_private } = payload;
+		// A bot was installed or removed: its commands and keyboard come or go with it.
+		if (channel_id && (type === 'member_joined' || type === 'member_left')) {
+			const qc = (window as any).queryClient;
+			void qc?.invalidateQueries({ queryKey: botKeys.commands(channel_id) });
+			void qc?.invalidateQueries({ queryKey: botKeys.channel(channel_id) });
+			void qc?.invalidateQueries({ queryKey: botKeys.keyboards(channel_id) });
+		}
 		if (type === 'settings_updated' && channel_id) {
 			useChannelStore.getState().updateChannelSettings(channel_id, {
 				name,

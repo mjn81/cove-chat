@@ -75,6 +75,13 @@ Every non-2xx JSON response has this shape:
 | `emoji_name_taken` | 409 | Another custom emoji already uses the shortcode |
 | `pack_uploads_disabled` | 403 | The admin switched user sticker uploads off |
 | `image_invalid` | 400 | An uploaded sticker or emoji image is not an allowed raster image or is out of bounds |
+| `bots_disabled` | 403 | The admin switched the Bot API off |
+| `bot_limit_reached` | 409 | The account already owns the most bots the admin allows |
+| `bot_install_required` | 400/403 | A bot cannot be added like an ordinary member; it must be installed with scopes ([Bots](/docs/api/bots/)) |
+| `bot_contact_required` | 403 | A bot may only message users who used it first |
+| `command_invalid` | 400 | A slash command definition, or an invocation, does not match its definition |
+| `webhook_url_invalid` | 400 | A bot webhook URL is not an acceptable HTTPS address |
+| `interaction_expired` | 404 | A bot answered an interaction with an unknown, expired or used-up token |
 | `internal` | 5xx | Server fault. Details are logged, never returned |
 
 New codes are additive. A code is never reused for another meaning.
@@ -84,7 +91,7 @@ New codes are additive. A code is never reused for another meaning.
 - New JSON fields, endpoints, WebSocket events and message types are **non-breaking**.
 - Clients MUST ignore unknown JSON fields and tolerate missing optional fields and unknown enum values.
 - Clients MUST ignore unknown WebSocket event types (no crash, no disconnect).
-- Message types so far are `text`, `file`, `voice`, `video`, `invite` and `sticker` ([details](/docs/api/packs/#the-sticker-message)). Custom emoji are not a type: they travel as `:name:` in ordinary text.
+- Message types so far are `text`, `file`, `voice`, `video`, `invite`, `sticker` ([details](/docs/api/packs/#the-sticker-message)) and `bot` (buttons from a bot, [details](/docs/api/bots/#7-messages-and-buttons)). Custom emoji are not a type: they travel as `:name:` in ordinary text.
 - Clients MUST show an unknown message type as a placeholder ("This message needs a newer version of Cove") and keep it in the timeline.
 - The server accepts requests with missing optional fields, ignores unknown ones, and ignores unknown WebSocket event types from clients without closing the connection.
 - A change that cannot follow these rules is breaking: raise `api_version` and follow the [deprecation policy](#deprecation-policy).
@@ -103,6 +110,7 @@ The server lists the optional features it supports as `capabilities: string[]`, 
 | `custom_emoji` | Custom emoji sent as `:name:` in ordinary text |
 | `stickers` | Sticker packs and the `sticker` message type |
 | `animated_emoji` | The table behind big animated single-emoji messages |
+| `bots` | The Bot API: bot accounts, slash commands, interactive messages, the bot gateway ([Bots](/docs/api/bots/)) |
 | `raw_udp_media` | Air-gapped calls use the encrypted UDP media protocol (audio, video, screen share) that only native clients speak; web clients disable call buttons |
 
 ## Minimum client version

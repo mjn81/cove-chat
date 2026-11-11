@@ -85,6 +85,9 @@ func (h *Handler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 
 	// DM de-duplication: if this is a DM, check if it already exists
 	isDM := (&models.Channel{Name: body.Name}).IsDM(len(memberSet))
+	if !h.checkBotMembers(w, session.UserID, memberSet, isDM) {
+		return
+	}
 	if isDM {
 		existingByMe, err := h.Store.ListUserChannels(session.UserID)
 		if err != nil {
@@ -654,6 +657,7 @@ func (h *Handler) GetChannelMembers(w http.ResponseWriter, r *http.Request) {
 			Domain:   u.Domain,
 			Status:   u.Status,
 			AvatarID: u.AvatarID,
+			IsBot:    u.IsBot(),
 		})
 	}
 	writeJSON(w, http.StatusOK, UserPageResponse{Items: members, NextCursor: next})
@@ -705,6 +709,11 @@ func (h *Handler) AddMembers(w http.ResponseWriter, r *http.Request) {
 	skipped := []SkippedMember{}
 
 	for _, uid := range uniqueStrings(body.UserIDs) {
+		if h.isBotUser(uid) {
+			// Bots join only through the install flow, which records the scopes the admin grants.
+			skipped = append(skipped, SkippedMember{UserID: uid, Reason: apistd.CodeBotInstallRequired})
+			continue
+		}
 		canAdd, reason := h.Store.CanAddToChannel(session.UserID, uid)
 		if !canAdd {
 			skipped = append(skipped, SkippedMember{UserID: uid, Reason: reason})
@@ -752,6 +761,10 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.isBotUser(targetUID) {
+		writeErrorCode(w, http.StatusBadRequest, apistd.CodeBotInstallRequired, "apiErrors.bot_uninstall_required")
+		return
+	}
 	if session.UserID == targetUID {
 		if err := h.Store.RemoveMemberFromChannel(ch.ID, targetUID, models.StatusLeft); err != nil {
 			writeInternal(w, "leave channel "+ch.ID, err, "apiErrors.channel_leave_failed")
@@ -838,6 +851,11 @@ func (h *Handler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.isBotUser(targetUID) {
+		writeErrorCode(w, http.StatusBadRequest, apistd.CodeBotInstallRequired, "apiErrors.bot_no_roles")
+		return
+	}
+
 	// Cannot change owner's role
 	targetUC, err := h.Store.GetUserChannel(targetUID, ch.ID)
 	if err != nil || targetUC.Status != models.StatusActive {
@@ -913,6 +931,7 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 	memberStatuses := make(map[string]string)
 	memberRoles := make(map[string]int)
 	memberSystem := make(map[string]bool)
+	memberBots := make(map[string]bool)
 	members, err := h.Store.GetChannelMembers(ch.ID)
 
 	userRole := models.RoleMember
@@ -932,6 +951,9 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 					// The system account's name carries this server's domain so users know who is notifying them.
 					memberNames[m.UserID] = h.systemDisplayName()
 					memberSystem[m.UserID] = true
+				}
+				if u.IsBot() {
+					memberBots[m.UserID] = true
 				}
 				memberAvatars[m.UserID] = u.AvatarID
 				memberDomains[m.UserID] = u.Domain
@@ -962,6 +984,7 @@ func (h *Handler) toChannelResponse(ch *models.Channel, userID string) ChannelRe
 		MemberStatuses:        memberStatuses,
 		MemberRoles:           memberRoles,
 		MemberSystem:          memberSystem,
+		MemberBots:            memberBots,
 		CreatedAt:             ch.CreatedAt,
 		UnreadCount:           ch.UnreadCount,
 		LastMessageAt:         lastMessageAt,

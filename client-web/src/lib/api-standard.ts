@@ -34,6 +34,14 @@ export const API_ERROR_CODES = [
 	'pack_uploads_disabled',
 	'image_invalid',
 	'sticker_invalid',
+	// Bot API (docs/bots-api.md).
+	'bots_disabled',
+	'bot_limit_reached',
+	'bot_install_required',
+	'bot_contact_required',
+	'command_invalid',
+	'webhook_url_invalid',
+	'interaction_expired',
 ] as const;
 
 /** One of the registered error codes. */
@@ -49,7 +57,8 @@ export type Capability =
 	| 'emoji_packs'
 	| 'custom_emoji'
 	| 'stickers'
-	| 'animated_emoji';
+	| 'animated_emoji'
+	| 'bots';
 
 /** Payload of {@link CLIENT_OUTDATED_EVENT}. */
 export interface ClientOutdatedDetail {
