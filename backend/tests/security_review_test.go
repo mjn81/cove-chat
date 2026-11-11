@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"cove/backend/internal/api"
+	"cove/backend/internal/auth"
+	"cove/backend/internal/config"
 )
 
 // Regression tests for the findings of the 2026-11 security review (docs/security-review-2026-11.md).
@@ -81,8 +83,8 @@ func TestSecurityReview_UsernameRules(t *testing.T) {
 	cases := map[string]int{
 		"   ":                    http.StatusBadRequest,
 		strings.Repeat("a", 200): http.StatusBadRequest,
-		"adm\u202ein":                 http.StatusBadRequest, // right-to-left override
-		"bob\u200b":                   http.StatusBadRequest, // zero-width space
+		"adm\u202ein":            http.StatusBadRequest, // right-to-left override
+		"bob\u200b":              http.StatusBadRequest, // zero-width space
 		"line\nbreak":            http.StatusBadRequest,
 		" padded ":               http.StatusBadRequest,
 		"founder":                http.StatusConflict, // differs from "Founder" only by case
@@ -184,5 +186,39 @@ func TestSecurityReview_LoginFailuresForOneAccountAreThrottled(t *testing.T) {
 	}
 	if last != http.StatusTooManyRequests {
 		t.Fatalf("30 wrong passwords in a row ended with %d, want 429", last)
+	}
+}
+
+// OP-07: limits and calling settings weaken the server when abused, so only the owner may change them.
+func TestSecurityReview_RateLimitAndVoiceSettingsAreOwnerOnly(t *testing.T) {
+	for _, key := range []string{
+		"rate_limit.global_rps", "rate_limit.auth_rps", "voice.mode", "voice.max_participants_per_call",
+		"voice.public_ip", "voice.embedded_turn_enabled",
+	} {
+		s, ok := config.LookupSetting(key)
+		if !ok || !s.OwnerOnly {
+			t.Errorf("%s must be owner-only (found=%v)", key, ok)
+		}
+	}
+}
+
+// OP-08: one account cannot hold an unbounded number of live sessions; the oldest is evicted.
+func TestSecurityReview_SessionsPerUserAreCapped(t *testing.T) {
+	ss := auth.NewSessionStore(time.Hour)
+	var first string
+	for i := 0; i < auth.MaxSessionsPerUser+5; i++ {
+		tok, err := ss.Create("u1", "user")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if i == 0 {
+			first = tok
+		}
+	}
+	if n := len(ss.ListByUser("u1")); n != auth.MaxSessionsPerUser {
+		t.Fatalf("live sessions = %d, want %d", n, auth.MaxSessionsPerUser)
+	}
+	if _, err := ss.Validate(first); err == nil {
+		t.Fatal("the oldest session should have been evicted")
 	}
 }
