@@ -40,8 +40,8 @@ services:
       # Same origin as the site: the proxy sends /api and /ws to the server, everything else here.
       VITE_API_URL: https://${INSTANCE_HOST}
     networks: [proxy-network]
-    mem_limit: 128m
-    cpus: 0.25
+    mem_limit: ${WEB_MEM:-128m}
+    cpus: ${WEB_CPUS:-0.25}
     security_opt: [no-new-privileges:true]
 
 volumes:

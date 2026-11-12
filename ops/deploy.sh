@@ -11,7 +11,12 @@ dir="instances/$instance"
 [ -f "$dir/.env" ] || { echo "missing ops/$dir/.env (copy .env.example and fill it in)"; exit 1; }
 [ -f "$dir/config.toml" ] || { echo "missing ops/$dir/config.toml"; exit 1; }
 
-compose() { docker compose --env-file "$dir/.env" -f docker-compose.yml "$@"; }
+# Server-local overrides (raised memory/CPU caps, extra mounts) live in docker-compose.override.yml, which the
+# release sync never ships or deletes. Caps can also be set per instance in instances/<name>/.env
+# (SERVER_MEM, SERVER_CPUS, WEB_MEM, WEB_CPUS). Neither is ever reset by a deploy.
+override=()
+[ -f docker-compose.override.yml ] && override=(-f docker-compose.override.yml)
+compose() { docker compose --env-file "$dir/.env" -f docker-compose.yml "${override[@]}" "$@"; }
 export INSTANCE="$instance"
 last_good_file="$dir/.last-good"
 previous="$(cat "$last_good_file" 2>/dev/null || true)"
