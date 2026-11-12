@@ -314,5 +314,5 @@ jobs:
         run: |
           ssh_opts="-i $HOME/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=yes"
           # Only the checked-in files are copied; each instance keeps its own .env on the server.
-          tar -C ops --exclude='.env' --exclude='.last-good' -cf - . | ssh $ssh_opts deploy@"$HOST" 'mkdir -p ~/cove-ops && tar -C ~/cove-ops -xf -'
+          tar -C ops --exclude='.env' --exclude='.last-good' --exclude='docker-compose.override.yml' -cf - . | ssh $ssh_opts deploy@"$HOST" 'mkdir -p ~/cove-ops && tar -C ~/cove-ops -xf -'
           ssh $ssh_opts deploy@"$HOST" "chmod +x ~/cove-ops/*.sh && ~/cove-ops/deploy.sh demo $VERSION"

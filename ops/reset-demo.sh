@@ -12,7 +12,12 @@ set -a
 set +a
 tag="$(cat "$dir/.last-good")"
 export INSTANCE=demo TAG="$tag"
-compose() { docker compose --env-file "$dir/.env" -f docker-compose.yml "$@"; }
+# Server-local overrides (raised memory/CPU caps, extra mounts) live in docker-compose.override.yml, which the
+# release sync never ships or deletes. Caps can also be set per instance in instances/<name>/.env
+# (SERVER_MEM, SERVER_CPUS, WEB_MEM, WEB_CPUS). Neither is ever reset by a deploy.
+override=()
+[ -f docker-compose.override.yml ] && override=(-f docker-compose.override.yml)
+compose() { docker compose --env-file "$dir/.env" -f docker-compose.yml "${override[@]}" "$@"; }
 
 compose down --volumes
 compose up -d

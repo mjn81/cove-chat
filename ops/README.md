@@ -14,6 +14,13 @@ Rules for this box: it also runs other projects. Only touch `cove-*` containers 
    Use long random values for `COVE_MASTER_PASSWORD` and `DEMO_OWNER_PASSWORD`. Back the master password up: losing it makes the database unrecoverable.
 3. Deploy once by hand to check it: `~/cove-ops/deploy.sh demo 0.9.1` (use a tag that has published images).
 
+## Keeping server-side tuning across deploys
+
+Every release overwrites the files it ships (`docker-compose.yml`, `deploy.sh`, `proxy/Caddyfile`, `proxy/docker-compose.yml`, each instance's `config.toml`). Never edit those on the server. Put local changes where the sync does not reach:
+
+- **Memory and CPU caps:** set `SERVER_MEM`, `SERVER_CPUS`, `WEB_MEM`, `WEB_CPUS` in `instances/<name>/.env` (never synced).
+- **Anything else (extra mounts, other limits):** `~/cove-ops/docker-compose.override.yml` and `~/cove-ops/proxy/docker-compose.override.yml`, picked up automatically and never shipped or deleted. The proxy already has one on the live server: it raises Caddy's cap and mounts the other projects' site blocks (the sanaii VPN) next to Cove's Caddyfile, so Cove's deploy only replaces its own file.
+
 ## HTTPS and routing (Caddy)
 
 Caddy (`cove-proxy`, config in `proxy/Caddyfile`) is the only thing on ports 80/443. It requests and renews Let's Encrypt certificates by itself; there is no panel. To add an instance:
