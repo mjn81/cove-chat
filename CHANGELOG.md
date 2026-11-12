@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.4](https://github.com/mjn81/cove-chat/compare/v0.11.3...v0.11.4) (2026-11-12)
+
+
+### Bug Fixes
+
+* **ops:** deploys never reset server-side caps or local overrides ([3b7d884](https://github.com/mjn81/cove-chat/commit/3b7d8849875aff142f51d3847a053d6038742928))
+* **ops:** deploys never reset server-side caps or local overrides ([dc8db12](https://github.com/mjn81/cove-chat/commit/dc8db12948d05e1271802029657981abfcd22f19))
+
 ## [0.11.3](https://github.com/mjn81/cove-chat/compare/v0.11.2...v0.11.3) (2026-11-11)
 
 
