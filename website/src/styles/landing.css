@@ -39,7 +39,7 @@ section.block{padding:104px 0;position:relative}
 .gh-pill svg{width:15px;height:15px}
 @media(max-width:760px){.nav-links{display:none}}
 
-.hero{padding:152px 0 40px;position:relative;z-index:2;overflow-x:clip;overflow-y:visible}
+.hero{padding:152px 0 40px;position:relative;overflow-x:clip;overflow-y:visible}
 .hero-bg{position:absolute;inset:0;pointer-events:none}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:56px 56px;opacity:.32;mask-image:radial-gradient(ellipse 70% 55% at 50% 25%,#000 25%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 55% at 50% 25%,#000 25%,transparent 75%)}
 .hero-orb{position:absolute;width:720px;height:720px;left:50%;top:-300px;transform:translateX(-50%);background:radial-gradient(circle,var(--glow),transparent 62%)}
@@ -83,7 +83,8 @@ section.block{padding:104px 0;position:relative}
 @media(max-width:1100px){.float-call{inset-inline-end:12px}.float-lock{inset-inline-start:12px}}
 @media(max-width:860px){.float-card{display:none}}
 
-.marq{padding:28px 0;border-block:1px solid var(--border);overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marq{position:relative;z-index:3;padding:28px 0;border-block:1px solid var(--border);background:var(--bg)}
+.marq-in{overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
 .track{display:flex;gap:56px;width:max-content;animation:scroll 38s linear infinite;color:var(--muted-fg);font-weight:600;font-size:17px}
 .marq:hover .track{animation-play-state:paused}
 .track span{display:flex;gap:10px;align-items:center;white-space:nowrap;transition:color .2s}
