@@ -20,7 +20,7 @@ export interface DownloadGroup {
   entries: DownloadEntry[];
 }
 
-/** Asset names follow RELEASE_GUIDE.md / scripts/package_release.sh. */
+/** Asset names follow docs/release-guide.md / scripts/package_release.sh. */
 const PATTERNS = {
   'server-windows': /server.*windows.*amd64/i,
   'server-linux': /server.*linux.*amd64/i,

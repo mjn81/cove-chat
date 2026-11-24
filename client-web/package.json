@@ -2,7 +2,7 @@
   "name": "frontend",
   "private": true,
   "version": "0.11.1",
-  "license": "MIT",
+  "license": "SEE LICENSE IN ../LICENSE",
   "author": "mjn",
   "type": "module",
   "scripts": {

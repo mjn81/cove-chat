@@ -25,8 +25,8 @@ In the `data/` directory next to the server: the database in `data/db` and uploa
 
 ## Can servers talk to each other?
 
-Not yet. Federation is on the [roadmap](https://github.com/mjn81/cove-chat/blob/main/TODO.md).
+Not yet. Federation is on the [roadmap](https://github.com/mjn81/cove-chat#roadmap).
 
 ## What license is Cove under?
 
-MIT.
+Cove uses the **Cove Personal Use License**. It is free for personal use: run it for yourself, your family and your friends, read the code and modify it. Commercial use, hosting it as a service for others, or using it for an organization needs written permission from the creator. See the [LICENSE](https://github.com/mjn81/cove-chat/blob/main/LICENSE).

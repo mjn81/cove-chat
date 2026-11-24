@@ -6,7 +6,8 @@
 
 **Self-hosted encrypted chat. Messages, group calls and screen sharing on your own server.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-D9826A.svg)](LICENSE)
+[![License: Personal Use](https://img.shields.io/badge/license-personal%20use%20only-D9826A.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/mjn81/cove-chat?style=flat&color=C4624A)](https://github.com/mjn81/cove-chat/stargazers)
 [![Release](https://img.shields.io/github/v/release/mjn81/cove-chat?color=C4624A)](https://github.com/mjn81/cove-chat/releases)
 [![CI](https://github.com/mjn81/cove-chat/actions/workflows/ci.yml/badge.svg)](https://github.com/mjn81/cove-chat/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](backend)
@@ -116,7 +117,7 @@ make wails/build          # desktop app for your OS
 make android/install      # build and install the Android debug APK
 ```
 
-See [desktop_build_guide.md](desktop_build_guide.md) and the [client docs](https://covechat.dev/docs/clients/connect/).
+See [docs/desktop-build.md](docs/desktop-build.md) and the [client docs](https://covechat.dev/docs/clients/connect/).
 
 ## Architecture
 
@@ -188,7 +189,7 @@ More in the [administration docs](https://covechat.dev/docs/administration/admin
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and look for issues labelled `good first issue`.
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and look for issues labelled `good first issue`. Contributions are accepted under the terms in the [license](LICENSE).
 
 ```bash
 make test             # backend tests (race detector)
@@ -208,11 +209,26 @@ Please also read the [Code of Conduct](CODE_OF_CONDUCT.md). To report a vulnerab
 | 6 | Inter-node federation | 🔜 Planned |
 | 7 | Production hardening: mTLS, audit logs | 🔜 In progress |
 
-The detailed list is in [TODO.md](TODO.md); release history is in the [CHANGELOG](CHANGELOG.md).
+Release history is in the [CHANGELOG](CHANGELOG.md). Ideas and requests are tracked in [issues](https://github.com/mjn81/cove-chat/issues).
+
+## Star history
+
+<a href="https://star-history.com/#mjn81/cove-chat&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=mjn81/cove-chat&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mjn81/cove-chat&type=Date" />
+    <img alt="Star history chart" src="https://api.star-history.com/svg?repos=mjn81/cove-chat&type=Date" width="720" />
+  </picture>
+</a>
 
 ## License
 
-[MIT](LICENSE) © mjn
+Cove is **source-available, not open source**, and is released under the [Cove Personal Use License](LICENSE) © mjn.
+
+- **Allowed:** personal use. Run it for yourself, your family and your friends, read the code, learn from it and modify it.
+- **Not allowed without the creator's written permission:** any commercial use, including use by a company or organization, hosting it as a service for others, selling it, or building paid products or services on it.
+
+Versions up to and including v0.11.4 were published under the MIT License and stay available under it. Third-party assets (emoji, fonts, libraries) keep their own licenses. To ask for a commercial license, open a request through the [repository](https://github.com/mjn81/cove-chat).
 
 <div align="center">
 <sub>Built with care for communities that value control over their own data.</sub>

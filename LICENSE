@@ -1,21 +1,98 @@
-MIT License
+Cove Personal Use License, Version 1.0
 
-Copyright (c) 2026 mjn
+Copyright (c) 2026 mjn (the "Licensor"). All rights reserved except as granted below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This is a source-available license. Cove is NOT open source software as the
+Open Source Definition uses that term.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Definitions
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   "Software" means the Cove source code, binaries, documentation, assets and
+   every other file in this repository, and any copy or modified version of them.
+
+   "You" means a single natural person using the Software.
+
+   "Personal Use" means use by You, as an individual, for Your own private
+   purposes: running Cove for Yourself, Your family and Your friends, learning
+   from the code, hobby projects and non-monetized experimentation. Personal
+   Use does not include any use described in section 3.
+
+2. Grant
+
+   Subject to the terms of this license, You receive a non-exclusive,
+   non-transferable, royalty-free license to run, study, copy and modify the
+   Software for Personal Use. You may share unmodified copies of this
+   repository with other individuals for their Personal Use, provided that You
+   include this license and the copyright notice with every copy.
+
+3. Commercial use is prohibited
+
+   Without the prior written permission of the Licensor, You may NOT:
+
+   a. use the Software, or anything derived from it, in connection with a
+      business, company, employer, agency, or any other organization,
+      including non-profit, educational, governmental and research
+      organizations;
+   b. use the Software to provide a product or service to others, whether paid
+      or free, including hosting it, offering it as a service, or embedding it
+      in another product;
+   c. sell, rent, lease, sublicense or otherwise charge for the Software or for
+      access to it, or distribute it as part of anything that is sold;
+   d. use the Software to generate revenue directly or indirectly, including
+      through advertising, subscriptions, donations tied to access, or
+      support and consulting contracts;
+   e. remove or alter this license, copyright notices or attributions, or use
+      the name "Cove" or its logos to suggest endorsement or origin of a
+      derived work.
+
+   To request permission for commercial use, contact the Licensor through the
+   repository at https://github.com/mjn81/cove-chat.
+
+4. Contributions
+
+   Unless You state otherwise in writing, any contribution You intentionally
+   submit to the Software is licensed to the Licensor under a perpetual,
+   worldwide, irrevocable, royalty-free license to use, modify, sublicense and
+   relicense it under any terms, including commercial ones. You confirm that
+   You have the right to grant this license.
+
+5. Third-party material
+
+   The Software includes and depends on third-party components (for example
+   emoji and sticker artwork, fonts and libraries). Those components remain
+   under their own licenses, listed in their directories (for example
+   backend/internal/packs/assets/ATTRIBUTION.md and the licenses folder next to
+   it) and in each dependency's package. This license does not change them.
+
+6. Versions released earlier
+
+   Copies of the Software that You received under the MIT License before this
+   license took effect (releases up to and including v0.11.4) remain available
+   to You under the MIT License for those versions only. Every later version,
+   and every change made after that point, is governed by this license.
+
+7. Termination
+
+   Your rights end automatically if You breach this license. Your rights are
+   reinstated if You stop the breach and the Licensor does not object within
+   30 days after You first learn of it. Termination does not affect copies
+   already lawfully shared with others for their Personal Use.
+
+8. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+9. Limitation of liability
+
+   IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE.
+
+10. General
+
+   If any provision of this license is unenforceable, the remaining provisions
+   stay in effect. The Licensor may offer the Software under other terms,
+   including commercial licenses, to anyone.

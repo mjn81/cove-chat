@@ -8,8 +8,8 @@
 //	@contact.name  Cove Support
 //	@contact.url   https://github.com/cove/backend/cove-chat
 //
-//	@license.name MIT
-//	@license.url  https://opensource.org/licenses/MIT
+//	@license.name Cove Personal Use License 1.0
+//	@license.url  https://github.com/mjn81/cove-chat/blob/main/LICENSE
 //
 //	@host		localhost:4000
 //	@BasePath /
