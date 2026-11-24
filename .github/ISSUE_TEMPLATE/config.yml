@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/mjn81/cove-chat/security/advisories/new
+    about: Please report vulnerabilities privately. Do not open a public issue.
+  - name: Documentation
+    url: https://covechat.dev/docs/
+    about: Setup, configuration and self-hosting guides.
+  - name: Commercial licensing
+    url: https://github.com/mjn81/cove-chat/blob/main/LICENSE
+    about: Cove is free for individuals and small teams. Large organizations, governments and resale need permission. Read the license first.

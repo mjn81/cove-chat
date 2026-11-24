@@ -1880,8 +1880,8 @@ info:
     url: https://github.com/cove/backend/cove-chat
   description: Self-hosted, end-to-end encrypted communication platform.
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
+    name: Cove Community License 1.0
+    url: https://github.com/mjn81/cove-chat/blob/main/LICENSE
   termsOfService: http://cove-chat.local/terms
   title: Cove API
   version: 0.1.0

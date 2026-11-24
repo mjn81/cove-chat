@@ -53,7 +53,7 @@ const jsonLd: Record<string, unknown>[] = [
     inLanguage: lang,
     softwareVersion: info.tag ?? undefined,
     codeRepository: REPO_URL,
-    license: 'https://opensource.org/licenses/MIT',
+    license: `${REPO_URL}/blob/main/LICENSE`,
     author,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   },

@@ -1,21 +1,129 @@
-MIT License
+Cove Community License, Version 1.0
 
-Copyright (c) 2026 mjn
+Copyright (c) 2026 mjn (the "Licensor"). All rights reserved except as granted below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Cove is source-available, share-alike software. You may use, study, change and
+share it freely, with three conditions: it stays free of resale, it is not used
+by large organizations or governments without permission, and every change you
+distribute or run for others must be published as open source under this same
+license. It is NOT "open source" as the Open Source Initiative defines that
+term, because it restricts who may use it.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Definitions
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   "Software" means the Cove source code, binaries, documentation, assets and
+   every other file in this repository, and any copy, modified version or work
+   based on them (a "Derivative").
+
+   "You" means the person or organization using the Software.
+
+   "Large Organization" means any organization that, in the last twelve months,
+   had more than 50 employees, members of staff or contractors in total
+   (counting affiliates under common control), OR more than USD 1,000,000 in
+   annual revenue, budget or funding. A person using the Software for an
+   employer or client is treated as that organization.
+
+   "Government Body" means any national, regional or local government, any
+   public agency, ministry, court, legislature, military or police body, any
+   state-owned or state-controlled entity, and any contractor acting for one of
+   them in that capacity.
+
+   "Resale" means selling, renting, leasing, sublicensing or otherwise charging
+   for the Software, for access to it, or for a hosted or managed service built
+   on it, or bundling it into anything that is sold.
+
+2. Grant
+
+   Subject to this license, You receive a worldwide, non-exclusive, royalty-free
+   license to use, copy, modify and distribute the Software, including to run it
+   for yourself, your family, a community, a club, a hobby group, a school class
+   or a small team, free of charge.
+
+3. Restrictions
+
+   Without the prior written permission of the Licensor, You may NOT:
+
+   a. engage in Resale, or use the Software to generate revenue directly or
+      through advertising, subscriptions, paid access, or paid support and
+      hosting for others (covering the plain cost of your own servers for a
+      free community is allowed);
+   b. use the Software, or let it be used on your behalf, as or within a Large
+      Organization;
+   c. use the Software, or let it be used on your behalf, as or within a
+      Government Body;
+   d. remove or change this license, copyright notices or attributions;
+   e. use the name "Cove" or its logos to suggest that You or a Derivative are
+      the official project.
+
+   To request permission, contact the Licensor through
+   https://github.com/mjn81/cove-chat. Permission may be refused, limited or
+   made subject to a fee.
+
+4. Share-alike: changes must be published as open source
+
+   If You distribute a Derivative, or let other people interact with a
+   Derivative over a network (for example by hosting a modified server or
+   offering a modified client), You must:
+
+   a. publish the complete corresponding source code of the Derivative,
+      including your changes, build scripts and configuration needed to run it,
+      to the public at no charge, in a form people can freely download;
+   b. license the Derivative to everyone under this same license, with no
+      additional restrictions;
+   c. keep all notices, and mark your changes clearly with the date and your
+      name;
+   d. never close, withhold or make private any part of a Derivative that You
+      have already distributed or run for others.
+
+   Changes You make and keep entirely private, used only by You, do not need to
+   be published. Separate programs that merely talk to Cove through its
+   documented public APIs (for example bots) are not Derivatives.
+
+5. Contributions
+
+   Unless You state otherwise in writing, any contribution You intentionally
+   submit to the Software is licensed to the Licensor under a perpetual,
+   worldwide, irrevocable, royalty-free license to use, modify, sublicense and
+   relicense it, including under commercial terms. You keep your copyright and
+   confirm that You have the right to grant this license.
+
+6. Third-party material
+
+   The Software includes and depends on third-party components (for example
+   emoji and sticker artwork, fonts and libraries). They remain under their own
+   licenses, listed in their directories (for example
+   backend/internal/packs/assets/ATTRIBUTION.md) and in each dependency's
+   package. This license does not change them.
+
+7. Versions released earlier
+
+   Copies You received under the MIT License before this license took effect
+   (releases up to and including v0.11.4) remain available to You under the MIT
+   License for those versions only. Every later version, and every change made
+   after that point, is governed by this license.
+
+8. Termination
+
+   Your rights end automatically if You breach this license. They are reinstated
+   if You stop the breach and the Licensor does not object within 30 days after
+   You first learn of it. Termination does not affect people who received the
+   Software from You in good faith and follow this license.
+
+9. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+10. Limitation of liability
+
+   IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE.
+
+11. General
+
+   If any provision is unenforceable, the rest stays in effect. The Licensor may
+   offer the Software under other terms, including commercial licenses, to
+   anyone.

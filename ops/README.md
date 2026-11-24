@@ -1,6 +1,6 @@
 # Cove ops: demo and staging
 
-Runbook for the shared server. The design and the reasoning are in `docs/design/release-and-demo-plan.md`.
+Runbook for the shared server. Instances live in `ops/instances/`.
 
 Rules for this box: it also runs other projects. Only touch `cove-*` containers and volumes, and keep every Cove container under its CPU and memory cap.
 

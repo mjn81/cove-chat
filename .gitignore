@@ -39,3 +39,16 @@ desktop.ini
 
 # Dev seed for the sample bot: generated account password (the bot token lives in .env.local, ignored above)
 .dev-seed.local
+
+# Local-only: agent configuration, plans and working notes. Kept on disk, never published.
+/.agents/
+/.cursor/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
+/.github/copilot-instructions.md
+/TODO.md
+/webui-checklist.md
+/docs/design/
+/docs/security-review-*.md
+/*-plan.md

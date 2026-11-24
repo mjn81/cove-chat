@@ -115,8 +115,7 @@ client-android/app/src/main/java/com/cove/chat/
 Kotlin symbols use the **Cove** name (`CoveTheme`, `CoveApp`, `Cove*` colours, `CoveFontFamily`); the Gradle
 `applicationId` and the `com.cove.chat` package are deliberately unchanged. The manifest theme is `Theme.Cove`.
 
-Screens are composed from one shared kit whose names and variants mirror the web client (see
-`docs/design/component-cleanup-plan.md`). Do not hand-roll dialogs, buttons or rows in a screen; extend the kit instead.
+Screens are composed from one shared kit whose names and variants mirror the web client. Do not hand-roll dialogs, buttons or rows in a screen; extend the kit instead.
 
 | Piece | Where | Notes |
 |---|---|---|
