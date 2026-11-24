@@ -8,7 +8,7 @@
 //	@contact.name  Cove Support
 //	@contact.url   https://github.com/cove/backend/cove-chat
 //
-//	@license.name Cove Personal Use License 1.0
+//	@license.name Cove Community License 1.0
 //	@license.url  https://github.com/mjn81/cove-chat/blob/main/LICENSE
 //
 //	@host		localhost:4000

@@ -26,7 +26,7 @@ export const en = {
     start: 'Self-host in 5 minutes',
     download: 'Download',
     star: 'Star on GitHub',
-    trust: ['Free for personal use', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
+    trust: ['Free for individuals and small teams', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
     ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!' },
     chat: [
       'The server is up on the new box. Migration took four minutes.',
@@ -153,7 +153,7 @@ export const en = {
     issues: 'Good first issues',
     discussions: 'Discussions',
     contributing: 'Contributing guide',
-    license: 'Personal use license',
+    license: 'Community license',
     starTitle: 'Like Cove? Give it a star.',
     starText: 'A star is free, takes one second, and helps other people find a self-hosted alternative they can run themselves.',
     starCta: 'Star on GitHub',
@@ -169,7 +169,7 @@ export const en = {
       { q: 'Does it work on an isolated network?', a: 'Yes. Set voice.mode to raw_udp for encrypted audio, video and screen-share calls on an air-gapped LAN, with no STUN, TURN or internet access required. It needs a native client, so the web app cannot join those calls.' },
       { q: 'What if I lose the master password?', a: 'The database cannot be recovered without it. Back it up with your data. It is generated on first start and written to config.toml.' },
       { q: 'Can servers talk to each other?', a: 'Not yet. Federation is on the long-term roadmap.' },
-      { q: 'What does it cost?', a: 'Nothing for personal use. Commercial use needs written permission from the creator. You pay only for the hardware you run it on.' },
+      { q: 'What does it cost?', a: 'Nothing for individuals, communities and small teams. Resale, large organizations and governments need written permission from the creator. You pay only for the hardware you run it on.' },
     ],
   },
   final: { title: 'Ready to own your chat?', lead: 'Spin up a Cove server and invite your community today.', start: 'Get started', docs: 'Read the docs' },
@@ -179,7 +179,7 @@ export const en = {
     features: 'Features', download: 'Download', roadmap: 'Roadmap', changelog: 'Changelog',
     quick: 'Quick start', selfHost: 'Self-hosting', config: 'Configuration', api: 'API',
     github: 'GitHub', issues: 'Issues', discussions: 'Discussions', security: 'Security',
-    legal: 'Free for personal use. Made by',
+    legal: 'Free for individuals and small teams. Made by',
   },
 };
 

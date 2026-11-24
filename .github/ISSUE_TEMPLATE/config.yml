@@ -8,4 +8,4 @@ contact_links:
     about: Setup, configuration and self-hosting guides.
   - name: Commercial licensing
     url: https://github.com/mjn81/cove-chat/blob/main/LICENSE
-    about: Cove is free for personal use only. Read the license before asking about commercial use.
+    about: Cove is free for individuals and small teams. Large organizations, governments and resale need permission. Read the license first.

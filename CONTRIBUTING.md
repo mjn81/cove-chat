@@ -12,4 +12,4 @@ Thanks for helping. The full guide lives in the docs: **Contributing > Developme
 
 Look for issues labelled `good first issue`. For larger changes open an issue or discussion first.
 
-Cove is source-available under the [Cove Personal Use License](LICENSE). By submitting a contribution you agree to section 4 of that license: you keep your copyright, and you grant the maintainer the right to use and relicense the contribution, including commercially. Do not submit code you do not have the right to share.
+Cove is source-available under the [Cove Community License](LICENSE). Changes you distribute or run for others must be published under the same license (section 4). By submitting a contribution you also agree to section 5: you keep your copyright, and you grant the maintainer the right to use and relicense the contribution, including commercially. Do not submit code you do not have the right to share.

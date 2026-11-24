@@ -6,7 +6,7 @@
 
 **Self-hosted encrypted chat. Messages, group calls and screen sharing on your own server.**
 
-[![License: Personal Use](https://img.shields.io/badge/license-personal%20use%20only-D9826A.svg)](LICENSE)
+[![License: Cove Community](https://img.shields.io/badge/license-Cove%20Community-D9826A.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/mjn81/cove-chat?style=flat&color=C4624A)](https://github.com/mjn81/cove-chat/stargazers)
 [![Release](https://img.shields.io/github/v/release/mjn81/cove-chat?color=C4624A)](https://github.com/mjn81/cove-chat/releases)
 [![CI](https://github.com/mjn81/cove-chat/actions/workflows/ci.yml/badge.svg)](https://github.com/mjn81/cove-chat/actions/workflows/ci.yml)
@@ -223,12 +223,13 @@ Release history is in the [CHANGELOG](CHANGELOG.md). Ideas and requests are trac
 
 ## License
 
-Cove is **source-available, not open source**, and is released under the [Cove Personal Use License](LICENSE) © mjn.
+Cove is **source-available and share-alike**, released under the [Cove Community License](LICENSE) © mjn. It is not "open source" in the OSI sense, because it limits who can use it.
 
-- **Allowed:** personal use. Run it for yourself, your family and your friends, read the code, learn from it and modify it.
-- **Not allowed without the creator's written permission:** any commercial use, including use by a company or organization, hosting it as a service for others, selling it, or building paid products or services on it.
+- **Allowed, free:** individuals, families, communities, clubs and small teams. Run it, study it, modify it and share it.
+- **Share-alike:** if you fork or change it and distribute it, or run your modified version for other people, you must publish your full source under this same license. No closed-source forks.
+- **Not allowed without the creator's written permission:** reselling it or charging for access or hosting; use by large organizations (more than 50 people or USD 1M revenue/funding); use by governments, public agencies, military or state-owned entities.
 
-Versions up to and including v0.11.4 were published under the MIT License and stay available under it. Third-party assets (emoji, fonts, libraries) keep their own licenses. To ask for a commercial license, open a request through the [repository](https://github.com/mjn81/cove-chat).
+Versions up to and including v0.11.4 were published under the MIT License and stay available under it. Third-party assets (emoji, fonts, libraries) keep their own licenses. To ask for permission, open a request through the [repository](https://github.com/mjn81/cove-chat).
 
 <div align="center">
 <sub>Built with care for communities that value control over their own data.</sub>

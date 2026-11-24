@@ -15,7 +15,7 @@ const docTemplate = `{
             "url": "https://github.com/cove/backend/cove-chat"
         },
         "license": {
-            "name": "Cove Personal Use License 1.0",
+            "name": "Cove Community License 1.0",
             "url": "https://github.com/mjn81/cove-chat/blob/main/LICENSE"
         },
         "version": "{{.Version}}"

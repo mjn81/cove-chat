@@ -29,4 +29,4 @@ Not yet. Federation is on the [roadmap](https://github.com/mjn81/cove-chat#roadm
 
 ## What license is Cove under?
 
-Cove uses the **Cove Personal Use License**. It is free for personal use: run it for yourself, your family and your friends, read the code and modify it. Commercial use, hosting it as a service for others, or using it for an organization needs written permission from the creator. See the [LICENSE](https://github.com/mjn81/cove-chat/blob/main/LICENSE).
+Cove uses the **Cove Community License**. It is free for individuals, communities and small teams, and it is share-alike: if you change it and distribute it or run it for others, you must publish your source under the same license. Reselling it, use by large organizations (more than 50 people or USD 1M revenue) and government use need written permission from the creator. See the [LICENSE](https://github.com/mjn81/cove-chat/blob/main/LICENSE).
