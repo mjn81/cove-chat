@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN ../LICENSE",
   "author": "mjn",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
