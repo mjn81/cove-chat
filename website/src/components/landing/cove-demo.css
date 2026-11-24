@@ -2,6 +2,28 @@
 .cv-wrap { margin: 64px auto 0; max-width: 1000px; position: relative; }
 .cv .ss-stage { overflow: hidden; background: transparent; }
 
+/* The kit's dark and light neutrals are cool grays. Map them to the site's own (warm) tokens so the window,
+   its sidebar and the bubbles match the page in both themes and follow the theme switch. */
+.cv .ss-stage {
+  --ss-surface: var(--card);
+  --ss-canvas: color-mix(in srgb, var(--bg) 55%, var(--card));
+  --ss-well: var(--accent);
+  --ss-line: var(--border);
+  --ss-text: var(--muted-fg);
+  --ss-text-strong: var(--fg);
+  --ss-ink-1: color-mix(in srgb, var(--fg) 5%, transparent);
+  --ss-ink-2: color-mix(in srgb, var(--fg) 7%, transparent);
+  --ss-ink-3: color-mix(in srgb, var(--fg) 10%, transparent);
+  --ss-ink-4: color-mix(in srgb, var(--fg) 13%, transparent);
+  --ss-ink-5: color-mix(in srgb, var(--fg) 20%, transparent);
+}
+.cv .ss-thread {
+  --ss-me: var(--primary);
+  --ss-me-text: var(--primary-fg);
+  --ss-them: var(--accent);
+  --ss-them-text: var(--fg);
+}
+
 .cv .cv-window {
   position: absolute;
   top: 24px;
@@ -10,7 +32,7 @@
   height: 512px;
   box-shadow: var(--ss-shadow-hero);
 }
-.cv .ss-stage[data-layout='compact'] .cv-window { left: 16px; top: 16px; width: 368px; height: 438px; }
+.cv .ss-stage[data-layout='compact'] .cv-window { left: 16px; top: 16px; width: 388px; height: 438px; }
 
 .cv-grow { flex: 1; }
 
@@ -18,7 +40,7 @@
 .cv-side__search {
   display: flex; align-items: center; gap: 8px;
   height: 28px; margin: 4px 4px 10px; padding: 0 10px;
-  border-radius: var(--ss-radius-md); background: var(--ss-well); color: var(--ss-text-3);
+  border-radius: var(--ss-radius-md); background: var(--ss-well); color: var(--ss-text);
   font-size: 12.5px;
 }
 
@@ -29,7 +51,7 @@
 }
 .cv-head__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cv-head__name { font-size: 14px; font-weight: 600; color: var(--ss-text-strong); }
-.cv-head__sub { font-size: 12px; color: var(--ss-text-3); }
+.cv-head__sub { font-size: 12px; color: var(--ss-text); }
 
 .cv-thread { flex: 1; padding: 16px 28px 16px 16px; }
 .cv-older { display: flex; flex-direction: column; gap: 6px; }

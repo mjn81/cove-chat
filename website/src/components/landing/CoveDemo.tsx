@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Phone as PhoneIcon } from 'lucide-react';
-import { Avatar, Badge, Bar, Button, Facepile, Field, Icon, LockScreen, Notification, Phone, Row, Stamp, Stage, Text, Thread, Bubble, Window, WALLPAPER, type Act } from '../stageshow/kit';
+import { Avatar, Badge, Bar, Button, Facepile, Field, Icon, LockScreen, Notification, Phone, Row, Stamp, Stage, Text, Thread, Bubble, Window, type Act } from '../stageshow/kit';
 import '../stageshow/kit/stageshow.css';
 import './cove-demo.css';
 import { dict, type Lang } from '@/i18n';
@@ -21,6 +21,9 @@ interface S {
 const initial: S = { draft: '', focus: false, sent: false, call: false };
 /** What reduced motion and thumbnails show: the whole story, result on screen. */
 const poster: S = { draft: '', focus: false, sent: true, call: true };
+
+/** The kit's default lock screen is a cool blue-lilac; this one is Cove's terracotta on warm dark. */
+const WARM_WALLPAPER = 'linear-gradient(165deg, #f0b49c 0%, #d9826a 38%, #8a4a40 72%, #3b2a27 100%)';
 
 const REST = { wide: { x: 700, y: 460 }, compact: { x: 280, y: 400 } };
 
@@ -72,7 +75,7 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
       <Stage
         width={980}
         height={560}
-        compact={{ below: 640, width: 400, height: 470 }}
+        compact={{ below: 760, width: 420, height: 470 }}
         initial={initial}
         poster={poster}
         script={script}
@@ -125,7 +128,7 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
                 <Thread app="imessage" className="cv-thread">
                   <Stamp>10:02</Stamp>
                   <Bubble from="them" avatar={<Avatar name="Jo" size={24} />}><Bar w={150} h={6} tone={3} /></Bubble>
-                  <Bubble from="me"><Bar w={110} h={6} tone={1} /></Bubble>
+                  <Bubble from="me">{d.ui.typed}</Bubble>
                   <Bubble from="them" avatar={<Avatar name="Sara" size={24} />}>{sara}</Bubble>
                   <Bubble from="them" avatar={<Avatar name="Amir" size={24} />}>{amir}</Bubble>
                   {s.sent && <Bubble from="me" source="compose">{mine}</Bubble>}
@@ -143,7 +146,7 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
             </Window>
 
             {layout !== 'compact' && (
-              <Phone width={248} frame="pro" dark wallpaper={WALLPAPER} className="cv-phone">
+              <Phone width={248} frame="pro" dark wallpaper={WARM_WALLPAPER} className="cv-phone">
                 <LockScreen size="satellite" stack="top">
                   <Notification icon={<Icon name="lock" filled size={20} />} title={d.lockTitle} body={d.lockSub} />
                 </LockScreen>
