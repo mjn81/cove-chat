@@ -310,7 +310,7 @@ fun VoiceBubble(channelId: String, meta: FileMeta, keyVersion: Int, author: Stri
             Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(mmss(shownSeconds), color = c.textMuted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 Icon(
-                    Icons.Outlined.FileDownload, "Download Voice Note", tint = c.textMuted,
+                    Icons.Outlined.FileDownload, com.cove.chat.ui.components.t("Download Voice Note"), tint = c.textMuted,
                     modifier = Modifier.size(14.dp).clickable { scope.launch { openAttachment(context, channelId, meta) } }
                 )
             }

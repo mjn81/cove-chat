@@ -124,6 +124,11 @@ internal val CoreRu: Map<String, String> = mapOf(
 
 /** Russian counterpart of [ExtraFa] / [ExtraAr]. */
 internal val ExtraRu: Map<String, String> = mapOf(
+    "Profile photos" to "Фото профиля",
+    "Description (optional)" to "Описание (необязательно)",
+    "Add photo" to "Добавить фото",
+    "Download Voice Note" to "Скачать голосовое сообщение",
+    "made with ❤️ by " to "сделано с ❤️, автор: ",
     "Update available" to "Доступно обновление",
     "App updates" to "Обновления приложения",
     "Updates for this build come from the app store." to "Обновления этой сборки приходят из магазина приложений.",

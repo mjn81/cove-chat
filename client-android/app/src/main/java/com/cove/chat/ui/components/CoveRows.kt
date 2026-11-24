@@ -225,7 +225,7 @@ fun EmptyState(
 fun SectionHeader(text: String, modifier: Modifier = Modifier, loading: Boolean = false) {
     Row(modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text.uppercase(), color = CoveTheme.extendedColors.textMuted, fontSize = 11.sp,
+            AppLanguage.translate(text).uppercase(), color = CoveTheme.extendedColors.textMuted, fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp, modifier = Modifier.weight(1f)
         )
         if (loading) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 1.5.dp, modifier = Modifier.size(12.dp))

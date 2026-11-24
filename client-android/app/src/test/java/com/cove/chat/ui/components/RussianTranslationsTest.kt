@@ -54,6 +54,15 @@ class RussianTranslationsTest {
         assertTrue(!AppLanguage.isRtl)
     }
 
+    @Test fun stringsFoundEnglishOnADeviceAreTranslated() {
+        assertEquals("Написать в #Команда", ru("Message #Команда"))
+        assertEquals("Написать @bob", ru("Message @bob"))
+        assertEquals("Скачать 4,7 MB", ru("Download 4,7 MB"))
+        for (key in listOf("Profile photos", "Description (optional)", "Add photo", "Download Voice Note", "made with ❤️ by ")) {
+            assertTrue(key, cyrillic.containsMatchIn(ru(key)))
+        }
+    }
+
     @Test fun countsUsePluralForms() {
         assertEquals("1 участник", ru("1 members"))
         assertEquals("3 участника", ru("3 members"))
@@ -74,7 +83,7 @@ class RussianTranslationsTest {
 
     @Test fun everyPatternRendersRussian() {
         val samples = listOf(
-            "Created Jan 5", "Add 5 members", "Couldn't add bob: nope", "5 min ago", "5 h ago", "5 d ago",
+            "Created Jan 5", "Message #general", "Download 4,7 MB", "Add 5 members", "Couldn't add bob: nope", "5 min ago", "5 h ago", "5 d ago",
             "Too many attempts. Try again in 5 s", "Sign bob out of your account?", "5 members", "5 in call",
             "Public · 5 members", "ADMIN — 5", "Pending (5)", "Replying to bob", "Welcome to #general!",
             "This is the start of the #general channel.", "This is the beginning of your direct message history with bob.",

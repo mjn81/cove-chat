@@ -213,7 +213,7 @@ fun AccountSettings(onLogout: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     if (avatarBusy) androidx.compose.material3.CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
-                    else androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Add, "Add photo", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    else androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Add, com.cove.chat.ui.components.t("Add photo"), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                 }
             }
         }

@@ -132,7 +132,7 @@ fun DevicesPage() {
                 others.forEach { s ->
                     CoveListRow(
                         title = s.deviceName.ifBlank { "Unknown device" },
-                        subtitle = listOf(details(s), activeAgo(s.lastActiveAt)).filter { it.isNotBlank() }.joinToString(" · "),
+                        subtitle = listOf(details(s), com.cove.chat.ui.components.t(activeAgo(s.lastActiveAt))).filter { it.isNotBlank() }.joinToString(" · "),
                         leading = { Icon(deviceIcon(s), null, tint = c.textMuted, modifier = Modifier.size(22.dp)) },
                         trailing = { CoveIconButton(Icons.Outlined.Close, "Terminate session", { pending = s }) },
                         contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md)

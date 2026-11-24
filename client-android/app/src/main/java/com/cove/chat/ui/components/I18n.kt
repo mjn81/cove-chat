@@ -134,6 +134,10 @@ object Translations {
     private fun word(s: String, lang: String) = table(lang)?.get(s) ?: s
 
     val patterns = listOf(
+        p("Message ([#@].*)", { "پیام به ${it.groupValues[1]}" }, { "رسالة إلى ${it.groupValues[1]}" },
+            { "Написать ${if (it.groupValues[1].startsWith("#")) "в " else ""}${it.groupValues[1]}" }),
+        p("Download (\\d+(?:[.,]\\d+)?\\s?(?:B|KB|MB|GB))", { "دانلود ${it.groupValues[1]}" }, { "تنزيل ${it.groupValues[1]}" },
+            { "Скачать ${it.groupValues[1]}" }),
         p("Created (.+)", { "ایجاد شده در ${it.groupValues[1]}" }, { "أُنشئت في ${it.groupValues[1]}" },
             { "Дата создания: ${it.groupValues[1]}" }),
         p("Add (\\d+) (?:member|members)", { "افزودن ${it.groupValues[1]} عضو" }, { "إضافة ${it.groupValues[1]} أعضاء" },
