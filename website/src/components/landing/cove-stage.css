@@ -6,9 +6,6 @@
 /* The kit's dark and light neutrals are cool grays. Map them to the site's own (warm) tokens so the window,
    its sidebar and the bubbles match the page in both themes and follow the theme switch. */
 .cove-ss .ss-stage {
-  /* The kit's dark shadows are near-black and spread 60px, which paints a dark smear on the warm page. Keep them tight and faint. */
-  --ss-shadow-hero: 0 0 0 1px var(--border), 0 18px 36px -22px color-mix(in srgb, #000 38%, transparent);
-  --ss-shadow-satellite: 0 0 0 1px var(--border), 0 12px 24px -14px color-mix(in srgb, #000 40%, transparent);
   --ss-accent: var(--primary);
   --ss-accent-2: var(--primary);
   --ss-accent-soft: color-mix(in srgb, var(--primary) 14%, transparent);

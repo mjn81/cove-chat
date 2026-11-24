@@ -38,4 +38,4 @@
 .cv-compose { padding: 0 28px 16px 16px; }
 
 /* The phone straddles the window's right edge over its margin, never over the thread's words. */
-.cv .cv-phone { position: absolute; top: 120px; left: 716px; box-shadow: var(--ss-shadow-satellite); }
+.cv .cv-phone { position: absolute; top: 120px; left: 700px; box-shadow: var(--ss-shadow-satellite); }
