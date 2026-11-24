@@ -44,7 +44,13 @@
     "register_link": "إنشاء حساب",
     "create_account": "إنشاء حساب",
     "connecting_to": "الاتصال بـ: {{url}}",
-    "change_server": "تغيير"
+    "change_server": "تغيير",
+    "welcome_back": "مرحبًا بعودتك!",
+    "welcome_back_subtitle": "يسعدنا جدًا رؤيتك مجددًا!",
+    "show_password": "إظهار كلمة المرور",
+    "hide_password": "إخفاء كلمة المرور",
+    "join_subtitle": "انضم إلى {{app}} وابدأ المحادثة.",
+    "continue": "متابعة"
   },
   "sidebar": {
     "groups": "المجموعات",
@@ -180,7 +186,27 @@
     "play_video": "انقر للتشغيل في مشغّل الفيديو",
     "playback_speed": "سرعة التشغيل",
     "play": "تشغيل",
-    "close_player": "إغلاق المشغّل"
+    "close_player": "إغلاق المشغّل",
+    "welcome_channel": "مرحبًا بك في #{{name}}!",
+    "start_channel": "هذه بداية قناة #{{name}}.",
+    "start_dm": "هذه بداية محادثتك المباشرة مع {{name}}.",
+    "scroll_latest": "الانتقال إلى أحدث الرسائل",
+    "encrypted_file": "ملف مشفّر",
+    "delete_confirm": "هل تريد حذف هذه الرسالة؟ لا يمكن التراجع عن ذلك.",
+    "edit_escape": "Esc لأجل",
+    "edit_cancel": "الإلغاء",
+    "edit_enter": "Enter لأجل",
+    "edit_save": "الحفظ",
+    "decrypting_metadata": "جارٍ فك تشفير البيانات الوصفية…",
+    "converting": "جارٍ التحويل…",
+    "video_load_failed": "تعذّر تحميل الفيديو",
+    "mute_preview": "كتم صوت المعاينة",
+    "unmute_preview": "تشغيل صوت المعاينة",
+    "repeat_once": "التكرار: مرة واحدة",
+    "repeat_loop": "التكرار: مستمر",
+    "repeat_off": "التكرار: متوقف",
+    "avatar_of": "صورة {{id}}",
+    "someone": "أحدهم"
   },
   "channel": {
     "new_conversation": "محادثة جديدة",
@@ -315,7 +341,9 @@
     "notification_denied": "تم رفض إذن الإشعارات",
     "boundary_title": "حدث خطأ ما",
     "boundary_in": "حدث خطأ في {{label}}",
-    "try_again": "حاول مرة أخرى"
+    "try_again": "حاول مرة أخرى",
+    "boundary_app": "التطبيق",
+    "boundary_voice": "الدردشة الصوتية"
   },
   "common": {
     "load_more": "تحميل المزيد",
@@ -329,7 +357,14 @@
     "minute": "الدقيقة",
     "done": "تم",
     "clear": "مسح",
-    "switch_language": "التبديل إلى {{language}}"
+    "switch_language": "التبديل إلى {{language}}",
+    "loading": "جارٍ التحميل",
+    "slow_loading": "هل يستغرق الأمر أطول من المتوقع؟",
+    "go_to_login": "الذهاب إلى تسجيل الدخول",
+    "reload_page": "إعادة تحميل الصفحة",
+    "drag_to_resize": "اسحب لتغيير الحجم",
+    "connecting_to_app": "جارٍ الاتصال بـ {{app}}",
+    "establishing_session": "جارٍ إنشاء جلسة مشفّرة…"
   },
   "settings": {
     "title": "إعدادات المستخدم",
@@ -543,7 +578,8 @@
       "session_ended": "انتهت جلسة الهمس.",
       "remove_attachment": "إزالة المرفق",
       "send": "إرسال همس"
-    }
+    },
+    "invited_you": "دعاك إلى محادثة Whisper"
   },
   "media_viewer": {
     "previous": "السابق",
@@ -1576,7 +1612,8 @@
       "author_dropped": "كان اسم المؤلف غير صالح وتم تجاهله.",
       "license_dropped": "كان نص الترخيص غير صالح وتم تجاهله.",
       "bubble_tint_dropped": "كانت صبغة الفقاعات غير صالحة وتم تجاهلها."
-    }
+    },
+    "sample_channel": "عام"
   },
   "emoji": {
     "big": {
@@ -1623,7 +1660,8 @@
     },
     "styles": {
       "native": "إيموجي الجهاز"
-    }
+    },
+    "dock_label": "الرموز التعبيرية"
   },
   "stickers": {
     "credits": {
@@ -1758,11 +1796,24 @@
     "saving": "جارٍ الحفظ…",
     "who_add": "من يمكنه إضافتي إلى القنوات",
     "who_dm": "من يمكنه مراسلتي مباشرة",
-    "who_friend": "من يمكنه إرسال طلبات صداقة إليّ"
+    "who_friend": "من يمكنه إرسال طلبات صداقة إليّ",
+    "subtitle": "تحكّم فيمن يمكنه التفاعل معك وإضافتك إلى المجموعات",
+    "add_hint": "حدّد من يمكنه إضافتك مباشرة إلى القنوات. عند التقييد، على الآخرين إرسال رابط دعوة.",
+    "dm_hint": "صفِّ المحادثات المباشرة الواردة. لا يمكن للمحظورين مراسلتك مهما كان هذا الإعداد.",
+    "friend_hint": "تحكّم في طلبات الصداقة الواردة من المستخدمين الآخرين.",
+    "add_everyone": "الجميع (يمكن لأي شخص إضافتك مباشرة)",
+    "add_friends": "الأصدقاء فقط (الأصدقاء وحدهم يمكنهم إضافتك)",
+    "add_nobody": "لا أحد (يجب إرسال رابط دعوة)",
+    "dm_everyone": "الجميع (يمكن لأي شخص مراسلتك)",
+    "dm_friends": "الأصدقاء فقط (الأصدقاء وحدهم يبدؤون المحادثة)",
+    "dm_nobody": "لا أحد (تعطيل الرسائل المباشرة)",
+    "friend_everyone": "الجميع (يمكن لأي شخص إرسال طلب صداقة)",
+    "friend_nobody": "لا أحد (تعطيل طلبات الصداقة الواردة)"
   },
   "voice_settings": {
     "silent": "صامت",
-    "loud": "عالٍ"
+    "loud": "عالٍ",
+    "processing_note": "يتولى نظام التشغيل حاليًا إلغاء الصدى وكتم الضوضاء والتحكم التلقائي في الكسب. ستتوفر خيارات متقدمة في الإصدار القادم."
   },
   "whisper_toast": {
     "incoming": "طلب همس وارد",
@@ -1773,7 +1824,8 @@
     "title": "لقد تهتَ في الفراغ.",
     "body": "هذه الصفحة غير موجودة أو نُقلت. لا تقلق، حتى أفضل المستكشفين يضيعون أحيانًا.",
     "home": "خذني إلى الرئيسية",
-    "report": "الإبلاغ عن خطأ"
+    "report": "الإبلاغ عن خطأ",
+    "footer": "خطأ 404"
   },
   "storage_stats": {
     "images": "الصور: {{size}}",
@@ -1781,7 +1833,18 @@
     "voices": "الرسائل الصوتية: {{size}}",
     "files": "الملفات: {{size}}",
     "messages": "الرسائل: {{size}}",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "calculating": "جارٍ الحساب…",
+    "clear_all_confirm": "هل تريد مسح كل الوسائط والرسائل المخزنة محليًا؟ ستُنزَّل الملفات من الخادم من جديد عند فتحها.",
+    "files_count": "{{count}} ملفات",
+    "files_count_one": "{{count}} ملف",
+    "files_count_other": "{{count}} ملفات",
+    "voice_notes_count": "{{count}} رسائل صوتية",
+    "voice_notes_count_one": "{{count}} رسالة صوتية",
+    "voice_notes_count_other": "{{count}} رسائل صوتية",
+    "messages_count": "{{count}} رسائل",
+    "messages_count_one": "{{count}} رسالة",
+    "messages_count_other": "{{count}} رسائل"
   },
   "settings_nav": {
     "friends": "الأصدقاء",

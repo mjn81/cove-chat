@@ -50,7 +50,7 @@ export default function NotFoundPage() {
 			{/* Minimalist footer */}
 			<div className="absolute bottom-10 flex flex-col items-center gap-1 opacity-20">
 				<p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground select-none">
-					{APP_NAME} / 404 Error
+					{APP_NAME} / {t('notfound.footer')}
 				</p>
 			</div>
 		</div>

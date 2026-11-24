@@ -44,7 +44,13 @@
     "register_link": "ثبت‌نام",
     "create_account": "ایجاد حساب",
     "connecting_to": "اتصال به: {{url}}",
-    "change_server": "تغییر"
+    "change_server": "تغییر",
+    "welcome_back": "خوش برگشتید!",
+    "welcome_back_subtitle": "از دیدن دوبارهٔ شما بسیار خوشحالیم!",
+    "show_password": "نمایش گذرواژه",
+    "hide_password": "پنهان کردن گذرواژه",
+    "join_subtitle": "به {{app}} بپیوندید و گفتگو را شروع کنید.",
+    "continue": "ادامه"
   },
   "sidebar": {
     "groups": "گروه‌ها",
@@ -180,7 +186,27 @@
     "play_video": "برای پخش در پخش‌کننده ویدیو کلیک کنید",
     "playback_speed": "سرعت پخش",
     "play": "پخش",
-    "close_player": "بستن پخش‌کننده"
+    "close_player": "بستن پخش‌کننده",
+    "welcome_channel": "به #{{name}} خوش آمدید!",
+    "start_channel": "این آغاز کانال #{{name}} است.",
+    "start_dm": "این آغاز گفتگوی مستقیم شما با {{name}} است.",
+    "scroll_latest": "رفتن به تازه‌ترین پیام‌ها",
+    "encrypted_file": "پروندهٔ رمزنگاری‌شده",
+    "delete_confirm": "این پیام حذف شود؟ این کار قابل بازگشت نیست.",
+    "edit_escape": "Esc برای",
+    "edit_cancel": "لغو",
+    "edit_enter": "Enter برای",
+    "edit_save": "ذخیره",
+    "decrypting_metadata": "در حال رمزگشایی مشخصات…",
+    "converting": "در حال تبدیل…",
+    "video_load_failed": "بارگذاری ویدیو ممکن نشد",
+    "mute_preview": "بی‌صدا کردن پیش‌نمایش",
+    "unmute_preview": "صدادار کردن پیش‌نمایش",
+    "repeat_once": "تکرار: یک بار",
+    "repeat_loop": "تکرار: پیوسته",
+    "repeat_off": "تکرار: خاموش",
+    "avatar_of": "تصویر نمایهٔ {{id}}",
+    "someone": "کسی"
   },
   "channel": {
     "new_conversation": "مکالمه جدید",
@@ -315,7 +341,9 @@
     "notification_denied": "دسترسی اعلان‌ها رد شد",
     "boundary_title": "مشکلی پیش آمد",
     "boundary_in": "در {{label}} مشکلی پیش آمد",
-    "try_again": "تلاش دوباره"
+    "try_again": "تلاش دوباره",
+    "boundary_app": "برنامه",
+    "boundary_voice": "گفتگوی صوتی"
   },
   "common": {
     "load_more": "بارگذاری بیشتر",
@@ -329,7 +357,14 @@
     "minute": "دقیقه",
     "done": "تأیید",
     "clear": "پاک کردن",
-    "switch_language": "تغییر به {{language}}"
+    "switch_language": "تغییر به {{language}}",
+    "loading": "در حال بارگذاری",
+    "slow_loading": "بیش از حد انتظار طول کشیده؟",
+    "go_to_login": "رفتن به ورود",
+    "reload_page": "بارگذاری دوبارهٔ صفحه",
+    "drag_to_resize": "برای تغییر اندازه بکشید",
+    "connecting_to_app": "در حال اتصال به {{app}}",
+    "establishing_session": "در حال برقراری نشست رمزنگاری‌شده…"
   },
   "settings": {
     "title": "تنظیمات کاربر",
@@ -543,7 +578,8 @@
       "session_ended": "نشست ویسپر پایان یافت.",
       "remove_attachment": "حذف پیوست",
       "send": "ارسال ویسپر"
-    }
+    },
+    "invited_you": "شما را به گفتگوی Whisper دعوت کرد"
   },
   "media_viewer": {
     "previous": "قبلی",
@@ -1576,7 +1612,8 @@
       "author_dropped": "نام سازنده نامعتبر بود و نادیده گرفته شد.",
       "license_dropped": "متن مجوز نامعتبر بود و نادیده گرفته شد.",
       "bubble_tint_dropped": "رنگ‌مایهٔ حباب نامعتبر بود و نادیده گرفته شد."
-    }
+    },
+    "sample_channel": "عمومی"
   },
   "emoji": {
     "big": {
@@ -1623,7 +1660,8 @@
     },
     "styles": {
       "native": "ایموجی دستگاه"
-    }
+    },
+    "dock_label": "ایموجی"
   },
   "stickers": {
     "credits": {
@@ -1758,11 +1796,24 @@
     "saving": "در حال ذخیره…",
     "who_add": "چه کسی می‌تواند مرا به کانال‌ها اضافه کند",
     "who_dm": "چه کسی می‌تواند به من پیام مستقیم بفرستد",
-    "who_friend": "چه کسی می‌تواند به من درخواست دوستی بفرستد"
+    "who_friend": "چه کسی می‌تواند به من درخواست دوستی بفرستد",
+    "subtitle": "تعیین کنید چه کسی با شما ارتباط بگیرد و شما را به گروه‌ها اضافه کند",
+    "add_hint": "تعیین کنید چه کسی می‌تواند شما را مستقیم به کانال‌ها اضافه کند. در صورت محدودیت، دیگران باید پیوند دعوت بفرستند.",
+    "dm_hint": "گفتگوهای مستقیم ورودی را محدود کنید. کاربران مسدود در هر حال نمی‌توانند پیام بدهند.",
+    "friend_hint": "درخواست‌های دوستی ورودی از دیگر کاربران را مدیریت کنید.",
+    "add_everyone": "همه (هر کسی می‌تواند شما را مستقیم اضافه کند)",
+    "add_friends": "فقط دوستان (تنها دوستان می‌توانند شما را اضافه کنند)",
+    "add_nobody": "هیچ‌کس (باید پیوند دعوت بفرستند)",
+    "dm_everyone": "همه (هر کسی می‌تواند به شما پیام بدهد)",
+    "dm_friends": "فقط دوستان (تنها دوستان می‌توانند گفتگو را شروع کنند)",
+    "dm_nobody": "هیچ‌کس (پیام مستقیم غیرفعال)",
+    "friend_everyone": "همه (هر کسی می‌تواند درخواست دوستی بفرستد)",
+    "friend_nobody": "هیچ‌کس (درخواست دوستی غیرفعال)"
   },
   "voice_settings": {
     "silent": "بی‌صدا",
-    "loud": "بلند"
+    "loud": "بلند",
+    "processing_note": "حذف اکو، کاهش نویز و تنظیم خودکار بلندی صدا فعلاً با سیستم‌عامل شماست. تنظیمات پیشرفته در نسخهٔ بعد می‌آید."
   },
   "whisper_toast": {
     "incoming": "درخواست ویسپر ورودی",
@@ -1773,7 +1824,8 @@
     "title": "در خلأ گم شده‌اید.",
     "body": "این صفحه وجود ندارد یا جابه‌جا شده است. نگران نباشید، بهترین کاشفان هم گاهی گم می‌شوند.",
     "home": "مرا به خانه ببر",
-    "report": "گزارش خطا"
+    "report": "گزارش خطا",
+    "footer": "خطای ۴۰۴"
   },
   "storage_stats": {
     "images": "تصاویر: {{size}}",
@@ -1781,7 +1833,18 @@
     "voices": "پیام‌های صوتی: {{size}}",
     "files": "فایل‌ها: {{size}}",
     "messages": "پیام‌ها: {{size}}",
-    "refresh": "بازآوری"
+    "refresh": "بازآوری",
+    "calculating": "در حال محاسبه…",
+    "clear_all_confirm": "همهٔ رسانه‌ها و پیام‌های ذخیره‌شده روی این دستگاه پاک شود؟ پرونده‌ها هنگام باز کردن دوباره از سرور دریافت می‌شوند.",
+    "files_count": "{{count}} پرونده",
+    "files_count_one": "{{count}} پرونده",
+    "files_count_other": "{{count}} پرونده",
+    "voice_notes_count": "{{count}} پیام صوتی",
+    "voice_notes_count_one": "{{count}} پیام صوتی",
+    "voice_notes_count_other": "{{count}} پیام صوتی",
+    "messages_count": "{{count}} پیام",
+    "messages_count_one": "{{count}} پیام",
+    "messages_count_other": "{{count}} پیام"
   },
   "settings_nav": {
     "friends": "دوستان",

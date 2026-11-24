@@ -113,7 +113,7 @@ export const StorageTab = () => {
 							</div>
 							<div className="text-xs text-muted-foreground">
 								{isLoading
-									? 'Calculating...'
+									? t('storage_stats.calculating')
 									: `${stats?.totalCount || 0} ${t('settings.cached_items')}`}
 							</div>
 						</div>
@@ -189,7 +189,7 @@ export const StorageTab = () => {
 								{t('settings.cached_images')}
 							</div>
 							<div className="text-xs text-muted-foreground tabular-nums">
-								{stats?.images.count || 0} files •{' '}
+								{t('storage_stats.files_count', { count: stats?.images.count || 0 })} •{' '}
 								{formatBytes(stats?.images.bytes || 0)}
 							</div>
 						</div>
@@ -220,7 +220,7 @@ export const StorageTab = () => {
 								{t('settings.cached_videos')}
 							</div>
 							<div className="text-xs text-muted-foreground tabular-nums">
-								{stats?.videos.count || 0} files •{' '}
+								{t('storage_stats.files_count', { count: stats?.videos.count || 0 })} •{' '}
 								{formatBytes(stats?.videos.bytes || 0)}
 							</div>
 						</div>
@@ -251,7 +251,7 @@ export const StorageTab = () => {
 								{t('settings.cached_voices')}
 							</div>
 							<div className="text-xs text-muted-foreground tabular-nums">
-								{stats?.voices.count || 0} voice notes •{' '}
+								{t('storage_stats.voice_notes_count', { count: stats?.voices.count || 0 })} •{' '}
 								{formatBytes(stats?.voices.bytes || 0)}
 							</div>
 						</div>
@@ -282,7 +282,7 @@ export const StorageTab = () => {
 								{t('settings.cached_files')}
 							</div>
 							<div className="text-xs text-muted-foreground tabular-nums">
-								{stats?.otherFiles.count || 0} files •{' '}
+								{t('storage_stats.files_count', { count: stats?.otherFiles.count || 0 })} •{' '}
 								{formatBytes(stats?.otherFiles.bytes || 0)}
 							</div>
 						</div>
@@ -313,7 +313,7 @@ export const StorageTab = () => {
 								{t('settings.cached_messages')}
 							</div>
 							<div className="text-xs text-muted-foreground tabular-nums">
-								{stats?.messages.count || 0} messages • ~
+								{t('storage_stats.messages_count', { count: stats?.messages.count || 0 })} • ~
 								{formatBytes(stats?.messages.bytes || 0)}
 							</div>
 						</div>
@@ -339,7 +339,7 @@ export const StorageTab = () => {
 				onClose={() => setShowClearAllModal(false)}
 				onConfirm={handleClearAll}
 				title={t('settings.clear_all_cache')}
-				message="Are you sure you want to clear all locally cached media and messages? Files will be re-downloaded from the server when opened."
+				message={t('storage_stats.clear_all_confirm')}
 				confirmText={t('settings.clear_all_cache')}
 				variant="danger"
 			/>

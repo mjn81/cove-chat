@@ -157,12 +157,12 @@ export const ChatMessageFeed = memo(
 									</div>
 								)}
 								<h1 className="text-3xl font-bold mb-2">
-									{isDM ? displayName : `Welcome to #${displayName}!`}
+									{isDM ? displayName : t('chat.welcome_channel', { name: displayName })}
 								</h1>
 								<p className="text-muted-foreground">
 									{isDM 
-										? `This is the beginning of your direct message history with ${displayName}.`
-										: `This is the start of the #${displayName} channel.`
+										? t('chat.start_dm', { name: displayName })
+										: t('chat.start_channel', { name: displayName })
 									}
 								</p>
 							</div>
@@ -229,7 +229,7 @@ export const ChatMessageFeed = memo(
 			<button
 				type="button"
 				onClick={scrollToBottom}
-				aria-label="Scroll to latest messages"
+				aria-label={t('chat.scroll_latest')}
 				className={`absolute bottom-4 end-4 z-20 w-9 h-9 rounded-full bg-secondary border border-border shadow-md flex items-center justify-center text-foreground transition-all duration-200 hover:bg-accent ${
 					isAtBottom
 						? 'opacity-0 scale-90 pointer-events-none'

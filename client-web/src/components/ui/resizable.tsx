@@ -1,6 +1,7 @@
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
 import { cn } from '@/lib/utils';
+import i18n from '@/i18n';
 
 const ResizablePanelGroup = ({
 	className,
@@ -49,7 +50,7 @@ const ResizableHandle = ({
 				/>
 				{/* Simple hover tooltip */}
 				<span className="pointer-events-none absolute left-1/2 top-1/2 translate-x-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md opacity-0 transition-opacity duration-150 delay-300 group-hover:opacity-100 z-50">
-					Drag to resize
+					{i18n.t('common.drag_to_resize')}
 				</span>
 			</>
 		)}

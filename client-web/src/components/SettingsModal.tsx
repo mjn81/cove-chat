@@ -58,7 +58,7 @@ export default function SettingsModal({ onClose, initialTab = 'account' }: Setti
 
 				<div className="flex h-full relative">
 					{(!isMobile || !isViewingContent) && (
-						<div className={`relative ${isMobile ? 'w-full' : 'w-[220px]'}`}>
+						<div className={`relative ${isMobile ? 'w-full' : 'w-[260px] shrink-0'}`}>
 							<Sidebar
 								activeTab={activeTab}
 								setActiveTab={handleTabChange}

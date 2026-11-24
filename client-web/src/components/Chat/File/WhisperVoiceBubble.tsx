@@ -85,7 +85,7 @@ export const WhisperVoiceBubble: React.FC<WhisperVoiceBubbleProps> = ({ file }) 
 					onClick={togglePlay}
 					disabled={!file.blobUrl}
 					className="w-10 h-10 flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:scale-105 transition active:scale-95 shrink-0 cursor-pointer disabled:opacity-50"
-					title={isPlaying ? 'Pause' : 'Play'}
+					title={isPlaying ? t('voice.pause') : t('chat.play')}
 				>
 					{isPlaying ? (
 						<Pause size={20} fill="currentColor" />

@@ -282,7 +282,7 @@ export const FileBubble = memo(({ msg }: FileBubbleProps) => {
 	if (!meta) {
 		return (
 			<div className="mt-2 flex items-center gap-2 text-muted-foreground text-sm animate-pulse italic">
-				<Loader2 size={14} className="animate-spin" /> Decrypting metadata...
+				<Loader2 size={14} className="animate-spin" /> {t('chat.decrypting_metadata')}
 			</div>
 		);
 	}

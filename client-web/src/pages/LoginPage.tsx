@@ -49,10 +49,10 @@ export default function LoginPage() {
 			<Card className="w-full max-w-[480px] bg-background border-0 sm:border sm:border-border sm:bg-secondary/50 sm:backdrop-blur-md sm:shadow-lg sm:p-4 text-foreground z-10">
 				<CardHeader className="text-center space-y-2 pb-6">
 					<CardTitle className="text-2xl font-bold text-foreground tracking-wide">
-						Welcome back!
+						{t('auth.welcome_back')}
 					</CardTitle>
 					<CardDescription className="text-muted-foreground text-base">
-						We're so excited to see you again!
+						{t('auth.welcome_back_subtitle')}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -108,7 +108,7 @@ export default function LoginPage() {
 									type="button"
 									onClick={() => setShowPassword((prev) => !prev)}
 									className="absolute end-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground focus:outline-none flex items-center justify-center transition-colors"
-									aria-label={showPassword ? 'Hide password' : 'Show password'}
+									aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
 									tabIndex={-1}
 								>
 									{showPassword ? (
@@ -124,7 +124,7 @@ export default function LoginPage() {
 							className="w-full h-11 bg-primary hover:opacity-90 text-primary-foreground font-medium text-base mt-2 transition-colors"
 							disabled={loading}
 						>
-							{loading ? <span className="spinner" /> : 'Log In'}
+							{loading ? <span className="spinner" /> : t('auth.login')}
 						</Button>
 					</form>
 
@@ -156,10 +156,10 @@ export default function LoginPage() {
 
 			<div className="absolute bottom-8 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity duration-300">
 				<p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground select-none">
-					{APP_NAME} is open source
+					{t('serverSelect.openSource', { app: APP_NAME })}
 				</p>
 				<p className="text-[10px] font-medium text-muted-foreground select-none">
-					made with ❤️ by <span className="text-foreground">mjn</span>
+					{t('serverSelect.madeBy')} <span className="text-foreground">mjn</span>
 				</p>
 			</div>
 		</div>

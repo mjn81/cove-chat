@@ -367,8 +367,8 @@ export const MessageItem = memo(
 					onClose={() => setShowDeleteConfirm(false)}
 					onConfirm={handleDelete}
 					title={t('chat.action_delete')}
-					message="Are you sure you want to delete this message? This action cannot be undone."
-					confirmText="Delete"
+					message={t('chat.delete_confirm')}
+					confirmText={t('chat.selection.delete')}
 					variant="danger"
 				/>
 
@@ -466,22 +466,22 @@ export const MessageItem = memo(
 									</div>
 									<div className="flex gap-2 mt-1.5 text-[11px]">
 										<span className="text-muted-foreground">
-											escape to{' '}
+											{t('chat.edit_escape')}{' '}
 											<span
 												className="text-primary hover:underline cursor-pointer"
 												onClick={cancelEditing}
 											>
-												cancel
+												{t('chat.edit_cancel')}
 											</span>
 										</span>
 										<span className="text-muted-foreground">•</span>
 										<span className="text-muted-foreground">
-											enter to{' '}
+											{t('chat.edit_enter')}{' '}
 											<span
 												className="text-primary hover:underline cursor-pointer"
 												onClick={handleEdit}
 											>
-												save
+												{t('chat.edit_save')}
 											</span>
 										</span>
 									</div>

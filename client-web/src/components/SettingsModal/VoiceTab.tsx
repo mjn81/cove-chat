@@ -200,7 +200,7 @@ export const VoiceTab = () => {
 								{t('settings.wip_title')}
 							</h4>
 							<p className="text-xs text-muted-foreground leading-relaxed">
-								Echo cancellation, noise suppression, and automatic gain control settings are currently managed by your operating system. Advanced controls will be available in the next version.
+								{t('voice_settings.processing_note')}
 							</p>
 						</div>
 					</div>
