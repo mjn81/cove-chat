@@ -26,3 +26,43 @@
 .cs-plat__chat { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--ss-surface); height: 100%; }
 .cs-plat .cs-plat__phone { position: absolute; top: 40px; left: 306px; box-shadow: var(--ss-shadow-satellite); }
 .cs-plat__phone-body { padding: 54px 6px 0; }
+
+/* How it works: the message's journey. Cards are placed by the scene, so only their insides are styled here. */
+.cs-flow .cs-flow__card { position: absolute; display: flex; flex-direction: column; gap: 14px; transition: box-shadow .4s, border-color .4s; }
+.cs-flow .cs-flow__card[data-active] { box-shadow: 0 0 0 2px var(--primary), 0 20px 50px -22px var(--glow); }
+.cs-flow__head { display: flex; align-items: center; gap: 10px; }
+.cs-flow__icon {
+  display: grid; place-items: center; width: 36px; height: 36px; flex: none;
+  border-radius: var(--ss-radius-md); color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, var(--ss-surface));
+}
+.cs-flow__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cs-flow__title { font-size: 14px; font-weight: 600; color: var(--ss-text-strong); }
+.cs-flow__sub { font-size: 11.5px; color: var(--ss-text); }
+.cs-flow__msg {
+  display: flex; align-items: center; justify-content: center; flex: 1;
+  padding: 0 12px; border-radius: var(--ss-radius-md);
+  background: var(--ss-canvas); box-shadow: inset 0 0 0 1px var(--ss-line);
+  font-size: 15px; font-weight: 600; color: var(--ss-text-strong); text-align: center;
+}
+.cs-flow__msg[data-mono] { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--primary); }
+.cs-flow__msg[data-empty] { color: var(--ss-text); font-family: var(--font-sans); letter-spacing: .3em; box-shadow: inset 0 0 0 1px var(--ss-line); background: transparent; }
+.cs-flow__foot { display: flex; }
+
+/* "Encrypted by default" card */
+.cs-enc .cs-enc__card { position: absolute; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.cs-enc__label { font-size: 11px; color: var(--ss-text); text-transform: none; }
+.cs-enc__plain { font-size: 13px; font-weight: 600; color: var(--ss-text-strong); line-height: 1.35; }
+.cs-enc__cipher { font-family: var(--font-mono); font-size: 11.5px; color: var(--primary); word-break: break-all; line-height: 1.35; }
+.cs-enc__key {
+  position: absolute; left: 222px; top: 36px; display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 50%; color: var(--ss-text); background: var(--ss-canvas); box-shadow: inset 0 0 0 1px var(--ss-line);
+  transition: color .4s, box-shadow .4s, background .4s;
+}
+.cs-enc__key[data-on] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--ss-canvas)); box-shadow: inset 0 0 0 1.5px var(--primary); }
+.cs-enc__chips { position: absolute; left: 16px; top: 126px; width: 448px; display: flex; flex-wrap: wrap; gap: 8px; }
+.cs-enc__chip { opacity: 0; transform: translateY(6px); transition: opacity .4s, transform .4s; }
+.cs-enc__chip[data-on] { opacity: 1; transform: none; }
+
+/* How it works: the scene replaces the old grid, so the box just frames it. */
+.hiw .hiw-stage--scene { display: block; padding: 20px 12px; }

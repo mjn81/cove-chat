@@ -14,7 +14,7 @@ export default function CovePlatforms({ lang }: { lang: Lang }) {
   const theme = useSiteTheme();
   return (
     <div className="cs-wrap" dir="ltr">
-      <Stage width={480} height={250} theme={theme} className="cove-ss cs-plat">
+      <Stage width={480} height={250} fill theme={theme} className="cove-ss cs-plat">
         {() => (
           <>
             <Window url="chat.example.org" className="cs-plat__window" sidebar={

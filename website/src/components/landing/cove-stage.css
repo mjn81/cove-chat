@@ -5,6 +5,9 @@
 /* The kit's dark and light neutrals are cool grays. Map them to the site's own (warm) tokens so the window,
    its sidebar and the bubbles match the page in both themes and follow the theme switch. */
 .cove-ss .ss-stage {
+  --ss-accent: var(--primary);
+  --ss-accent-2: var(--primary);
+  --ss-accent-soft: color-mix(in srgb, var(--primary) 14%, transparent);
   --ss-surface: var(--card);
   --ss-canvas: color-mix(in srgb, var(--bg) 55%, var(--card));
   --ss-well: var(--accent);

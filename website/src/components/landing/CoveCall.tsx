@@ -28,7 +28,7 @@ export default function CoveCall({ lang }: { lang: Lang }) {
   const theme = useSiteTheme();
   return (
     <div className="cs-wrap" dir="ltr">
-      <Stage width={480} height={250} initial={initial} poster={poster} script={script} play="loop" theme={theme} className="cove-ss cs-call">
+      <Stage width={480} height={250} initial={initial} poster={poster} script={script} play="loop" fill theme={theme} className="cove-ss cs-call">
         {(s) => (
           <Window title={d.hero.callTitle} className="cs-call__window">
             <div className="cs-call__body">
