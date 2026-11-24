@@ -76,18 +76,17 @@ object CoveThemeParser {
     private fun parseName(v: JsonElement?, ctx: Ctx): LocalizedName? {
         val o = v as? JsonObject
         if (o == null) { ctx.errors += ThemeIssue("invalid_name"); return null }
-        warnUnknown(o, listOf("en", "fa", "ar"), "name.", ctx.warnings)
+        warnUnknown(o, listOf("en", "fa", "ar", "ru"), "name.", ctx.warnings)
         val en = cleanText(o["en"], 40)
         if (en == null) { ctx.errors += ThemeIssue("invalid_name", "en"); return null }
-        var fa: String? = null
-        var ar: String? = null
-        for (lang in listOf("fa", "ar")) {
+        val translated = mutableMapOf<String, String>()
+        for (lang in listOf("fa", "ar", "ru")) {
             if (o[lang] == null) continue
             val text = cleanText(o[lang], 40)
             if (text == null) ctx.warnings += ThemeIssue("invalid_name_dropped", lang)
-            else if (lang == "fa") fa = text else ar = text
+            else translated[lang] = text
         }
-        return LocalizedName(en, fa, ar)
+        return LocalizedName(en, translated["fa"], translated["ar"], translated["ru"])
     }
 
     private fun colorField(v: JsonElement?, field: String, ctx: Ctx): String? {
@@ -286,7 +285,7 @@ object CoveThemeParser {
         put("format", "cove-theme")
         put("version", 1)
         put("id", theme.id)
-        put("name", buildJsonObject { put("en", theme.name.en); theme.name.fa?.let { put("fa", it) }; theme.name.ar?.let { put("ar", it) } })
+        put("name", buildJsonObject { put("en", theme.name.en); theme.name.fa?.let { put("fa", it) }; theme.name.ar?.let { put("ar", it) }; theme.name.ru?.let { put("ru", it) } })
         theme.author?.let { put("author", it) }
         theme.license?.let { put("license", it) }
         put("base", theme.base.wire)

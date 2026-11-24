@@ -124,7 +124,7 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("join_calls_muted", false)
         set(value) = prefs.edit().putBoolean("join_calls_muted", value).apply()
 
-    /** UI language: "en", "fa" or "ar". */
+    /** UI language: "en", "fa", "ar" or "ru". */
     var language: String
         get() = prefs.getString("language", "en") ?: "en"
         set(value) = prefs.edit().putString("language", value).apply()

@@ -20,18 +20,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 
 /**
- * App language. The source strings are English; fa/ar are looked up in [Translations]. Following the web client,
- * Arabic renders right-to-left while Farsi stays left-to-right (a product decision, see client-web `RTL_LANGUAGES`).
+ * App language. The source strings are English; fa/ar/ru are looked up in [Translations]. Following the web client,
+ * Arabic renders right-to-left while Farsi stays left-to-right (a product decision, see client-web `RTL_LANGUAGES`);
+ * Russian is left-to-right.
  */
 object AppLanguage {
-    /** "en", "fa" or "ar". Reading this inside a composable makes it recompose when the language changes. */
+    /** "en", "fa", "ar" or "ru". Reading this inside a composable makes it recompose when the language changes. */
     var code by mutableStateOf("en")
 
     val isRtl: Boolean get() = code == "ar"
 
     fun translate(text: String): String {
-        if (code == "en" || text.isBlank()) return text
-        val table = if (code == "fa") Translations.fa else Translations.ar
+        if (text.isBlank()) return text
+        val table = Translations.table(code) ?: return text
         table[text]?.let { return it }
         for (p in Translations.patterns) {
             val m = p.regex.matchEntire(text) ?: continue
@@ -104,53 +105,104 @@ fun Text(
 /** A translation rule for strings that embed a name or number. */
 class Pattern(val regex: Regex, val render: (MatchResult, String) -> String)
 
-object Translations {
-    private fun p(regex: String, fa: (MatchResult) -> String, ar: (MatchResult) -> String) =
-        Pattern(Regex(regex, RegexOption.DOT_MATCHES_ALL)) { m, lang -> if (lang == "fa") fa(m) else ar(m) }
+/** A [Pattern] with one renderer per translated language; it is only consulted when the app language is one of them. */
+internal fun localizedPattern(
+    regex: Regex,
+    fa: (MatchResult) -> String,
+    ar: (MatchResult) -> String,
+    ru: (MatchResult) -> String,
+) = Pattern(regex) { m, lang ->
+    when (lang) {
+        "fa" -> fa(m)
+        "ar" -> ar(m)
+        else -> ru(m)
+    }
+}
 
-    private fun word(s: String, lang: String) = (if (lang == "fa") fa else ar)[s] ?: s
+object Translations {
+    private fun p(regex: String, fa: (MatchResult) -> String, ar: (MatchResult) -> String, ru: (MatchResult) -> String) =
+        localizedPattern(Regex(regex, RegexOption.DOT_MATCHES_ALL), fa, ar, ru)
+
+    /** The string table of UI language [lang], or null for English and unknown codes (the source text is shown). */
+    fun table(lang: String): Map<String, String>? = when (lang) {
+        "fa" -> fa
+        "ar" -> ar
+        "ru" -> ru
+        else -> null
+    }
+
+    private fun word(s: String, lang: String) = table(lang)?.get(s) ?: s
 
     val patterns = listOf(
-        p("Created (.+)", { "ایجاد شده در ${it.groupValues[1]}" }, { "أُنشئت في ${it.groupValues[1]}" }),
-        p("Add (\\d+) (?:member|members)", { "افزودن ${it.groupValues[1]} عضو" }, { "إضافة ${it.groupValues[1]} أعضاء" }),
-        p("Couldn't add (.+): (.+)", { "افزودن ${it.groupValues[1]} ممکن نبود: ${it.groupValues[2]}" }, { "تعذّرت إضافة ${it.groupValues[1]}: ${it.groupValues[2]}" }),
-        p("(\\d+) min ago", { "${it.groupValues[1]} دقیقه پیش" }, { "منذ ${it.groupValues[1]} د" }),
-        p("(\\d+) h ago", { "${it.groupValues[1]} ساعت پیش" }, { "منذ ${it.groupValues[1]} س" }),
-        p("(\\d+) d ago", { "${it.groupValues[1]} روز پیش" }, { "منذ ${it.groupValues[1]} ي" }),
-        p("Too many attempts\\. Try again in (\\d+) s", { "تلاش‌های زیاد. ${it.groupValues[1]} ثانیه دیگر دوباره امتحان کنید" }, { "محاولات كثيرة. حاول مجددًا بعد ${it.groupValues[1]} ث" }),
-        p("Sign (.+) out of your account\\?", { "${it.groupValues[1]} از حساب شما خارج شود؟" }, { "هل تريد تسجيل خروج ${it.groupValues[1]} من حسابك؟" }),
-        p("(\\d+) members", { "${it.groupValues[1]} عضو" }, { "${it.groupValues[1]} أعضاء" }),
-        p("(\\d+) in call", { "${it.groupValues[1]} نفر در تماس" }, { "${it.groupValues[1]} في المكالمة" }),
+        p("Created (.+)", { "ایجاد شده در ${it.groupValues[1]}" }, { "أُنشئت في ${it.groupValues[1]}" },
+            { "Дата создания: ${it.groupValues[1]}" }),
+        p("Add (\\d+) (?:member|members)", { "افزودن ${it.groupValues[1]} عضو" }, { "إضافة ${it.groupValues[1]} أعضاء" },
+            { "Добавить ${it.groupValues[1]} ${ruPlural(it.groupValues[1], "участника", "участников", "участников")}" }),
+        p("Couldn't add (.+): (.+)", { "افزودن ${it.groupValues[1]} ممکن نبود: ${it.groupValues[2]}" }, { "تعذّرت إضافة ${it.groupValues[1]}: ${it.groupValues[2]}" },
+            { "Не удалось добавить ${it.groupValues[1]}: ${it.groupValues[2]}" }),
+        p("(\\d+) min ago", { "${it.groupValues[1]} دقیقه پیش" }, { "منذ ${it.groupValues[1]} د" },
+            { "${it.groupValues[1]} ${ruPlural(it.groupValues[1], "минуту", "минуты", "минут")} назад" }),
+        p("(\\d+) h ago", { "${it.groupValues[1]} ساعت پیش" }, { "منذ ${it.groupValues[1]} س" },
+            { "${it.groupValues[1]} ${ruPlural(it.groupValues[1], "час", "часа", "часов")} назад" }),
+        p("(\\d+) d ago", { "${it.groupValues[1]} روز پیش" }, { "منذ ${it.groupValues[1]} ي" },
+            { "${it.groupValues[1]} ${ruPlural(it.groupValues[1], "день", "дня", "дней")} назад" }),
+        p("Too many attempts\\. Try again in (\\d+) s", { "تلاش‌های زیاد. ${it.groupValues[1]} ثانیه دیگر دوباره امتحان کنید" }, { "محاولات كثيرة. حاول مجددًا بعد ${it.groupValues[1]} ث" },
+            { "Слишком много попыток. Повторите через ${it.groupValues[1]} с" }),
+        p("Sign (.+) out of your account\\?", { "${it.groupValues[1]} از حساب شما خارج شود؟" }, { "هل تريد تسجيل خروج ${it.groupValues[1]} من حسابك؟" },
+            { "Выполнить выход из вашего аккаунта на устройстве «${it.groupValues[1]}»?" }),
+        p("(\\d+) members", { "${it.groupValues[1]} عضو" }, { "${it.groupValues[1]} أعضاء" },
+            { "${it.groupValues[1]} ${ruPlural(it.groupValues[1], "участник", "участника", "участников")}" }),
+        p("(\\d+) in call", { "${it.groupValues[1]} نفر در تماس" }, { "${it.groupValues[1]} في المكالمة" },
+            { "В звонке: ${it.groupValues[1]}" }),
         p("(Private|Public) · (\\d+) members",
             { "${if (it.groupValues[1] == "Private") "خصوصی" else "عمومی"} · ${it.groupValues[2]} عضو" },
-            { "${if (it.groupValues[1] == "Private") "خاصة" else "عامة"} · ${it.groupValues[2]} أعضاء" }),
-        p("(OWNER|ADMIN|MEMBER) — (\\d+)", { "${word(it.groupValues[1], "fa")} — ${it.groupValues[2]}" }, { "${word(it.groupValues[1], "ar")} — ${it.groupValues[2]}" }),
-        p("Pending \\((\\d+)\\)", { "در انتظار (${it.groupValues[1]})" }, { "قيد الانتظار (${it.groupValues[1]})" }),
-        p("Replying to (.+)", { "پاسخ به ${it.groupValues[1]}" }, { "الرد على ${it.groupValues[1]}" }),
-        p("Welcome to #(.+)!", { "به #${it.groupValues[1]} خوش آمدید!" }, { "مرحبًا بك في #${it.groupValues[1]}!" }),
-        p("This is the start of the #(.+) channel\\.", { "این آغاز کانال #${it.groupValues[1]} است." }, { "هذه بداية قناة #${it.groupValues[1]}." }),
+            { "${if (it.groupValues[1] == "Private") "خاصة" else "عامة"} · ${it.groupValues[2]} أعضاء" },
+            { "${if (it.groupValues[1] == "Private") "Приватный" else "Публичный"} · ${it.groupValues[2]} ${ruPlural(it.groupValues[2], "участник", "участника", "участников")}" }),
+        p("(OWNER|ADMIN|MEMBER) — (\\d+)", { "${word(it.groupValues[1], "fa")} — ${it.groupValues[2]}" }, { "${word(it.groupValues[1], "ar")} — ${it.groupValues[2]}" },
+            { "${word(it.groupValues[1], "ru")} — ${it.groupValues[2]}" }),
+        p("Pending \\((\\d+)\\)", { "در انتظار (${it.groupValues[1]})" }, { "قيد الانتظار (${it.groupValues[1]})" },
+            { "Ожидают (${it.groupValues[1]})" }),
+        p("Replying to (.+)", { "پاسخ به ${it.groupValues[1]}" }, { "الرد على ${it.groupValues[1]}" },
+            { "Ответ для ${it.groupValues[1]}" }),
+        p("Welcome to #(.+)!", { "به #${it.groupValues[1]} خوش آمدید!" }, { "مرحبًا بك في #${it.groupValues[1]}!" },
+            { "Добро пожаловать в #${it.groupValues[1]}!" }),
+        p("This is the start of the #(.+) channel\\.", { "این آغاز کانال #${it.groupValues[1]} است." }, { "هذه بداية قناة #${it.groupValues[1]}." },
+            { "Это начало канала #${it.groupValues[1]}." }),
         p("This is the beginning of your direct message history with (.+)\\.",
-            { "این آغاز گفتگوی مستقیم شما با ${it.groupValues[1]} است." }, { "هذه بداية محادثتك المباشرة مع ${it.groupValues[1]}." }),
-        p("Connecting to: (.+)", { "اتصال به: ${it.groupValues[1]}" }, { "الاتصال بـ: ${it.groupValues[1]}" }),
-        p("Start a Whisper with (.+)", { "شروع نجوا با ${it.groupValues[1]}" }, { "بدء همسة مع ${it.groupValues[1]}" }),
+            { "این آغاز گفتگوی مستقیم شما با ${it.groupValues[1]} است." }, { "هذه بداية محادثتك المباشرة مع ${it.groupValues[1]}." },
+            { "Это начало вашей личной переписки с ${it.groupValues[1]}." }),
+        p("Connecting to: (.+)", { "اتصال به: ${it.groupValues[1]}" }, { "الاتصال بـ: ${it.groupValues[1]}" },
+            { "Подключение к: ${it.groupValues[1]}" }),
+        p("Start a Whisper with (.+)", { "شروع نجوا با ${it.groupValues[1]}" }, { "بدء همسة مع ${it.groupValues[1]}" },
+            { "Начать Whisper с ${it.groupValues[1]}" }),
         p("(.+) wants to start an end-to-end encrypted Whisper\\. Nothing is stored on the server\\.",
             { "${it.groupValues[1]} می‌خواهد یک نجوای رمزنگاری‌شدهٔ سرتاسری شروع کند. چیزی روی سرور ذخیره نمی‌شود." },
-            { "${it.groupValues[1]} يريد بدء همسة مشفرة من طرف إلى طرف. لا يتم تخزين أي شيء على الخادم." }),
-        p("Waiting for (.+) to accept…", { "در انتظار پذیرش ${it.groupValues[1]}…" }, { "في انتظار قبول ${it.groupValues[1]}…" }),
+            { "${it.groupValues[1]} يريد بدء همسة مشفرة من طرف إلى طرف. لا يتم تخزين أي شيء على الخادم." },
+            { "${it.groupValues[1]} хочет начать чат Whisper со сквозным шифрованием. На сервере ничего не сохраняется." }),
+        p("Waiting for (.+) to accept…", { "در انتظار پذیرش ${it.groupValues[1]}…" }, { "في انتظار قبول ${it.groupValues[1]}…" },
+            { "Ожидаем, пока ${it.groupValues[1]} примет запрос…" }),
         p("If this matches the number on (.+)'s device, nobody is intercepting your Whisper\\.",
             { "اگر با عدد دستگاه ${it.groupValues[1]} یکسان است، کسی نجوای شما را شنود نمی‌کند." },
-            { "إذا تطابق هذا مع الرقم على جهاز ${it.groupValues[1]}، فلا أحد يتنصت على همستك." }),
-        p("Friend request sent to (.+)\\.", { "درخواست دوستی برای ${it.groupValues[1]} ارسال شد." }, { "تم إرسال طلب الصداقة إلى ${it.groupValues[1]}." }),
-        p("Voice message · (.+)", { "پیام صوتی · ${it.groupValues[1]}" }, { "رسالة صوتية · ${it.groupValues[1]}" }),
-        p("Recording\\s+(.+)", { "در حال ضبط  ${it.groupValues[1]}" }, { "جارٍ التسجيل  ${it.groupValues[1]}" }),
-        p("Sent a file: (.+)", { "فایل فرستاد: ${it.groupValues[1]}" }, { "أرسل ملفًا: ${it.groupValues[1]}" }),
-        p("You: (.*)", { "شما: ${it.groupValues[1].let(::t)}" }, { "أنت: ${it.groupValues[1].let(::t)}" }),
+            { "إذا تطابق هذا مع الرقم على جهاز ${it.groupValues[1]}، فلا أحد يتنصت على همستك." },
+            { "Если это число совпадает с числом на устройстве ${it.groupValues[1]}, ваш Whisper никто не перехватывает." }),
+        p("Friend request sent to (.+)\\.", { "درخواست دوستی برای ${it.groupValues[1]} ارسال شد." }, { "تم إرسال طلب الصداقة إلى ${it.groupValues[1]}." },
+            { "Заявка в друзья отправлена пользователю ${it.groupValues[1]}." }),
+        p("Voice message · (.+)", { "پیام صوتی · ${it.groupValues[1]}" }, { "رسالة صوتية · ${it.groupValues[1]}" },
+            { "Голосовое сообщение · ${it.groupValues[1]}" }),
+        p("Recording\\s+(.+)", { "در حال ضبط  ${it.groupValues[1]}" }, { "جارٍ التسجيل  ${it.groupValues[1]}" },
+            { "Идет запись  ${it.groupValues[1]}" }),
+        p("Sent a file: (.+)", { "فایل فرستاد: ${it.groupValues[1]}" }, { "أرسل ملفًا: ${it.groupValues[1]}" },
+            { "Отправлен файл: ${it.groupValues[1]}" }),
+        p("You: (.*)", { "شما: ${it.groupValues[1].let(::t)}" }, { "أنت: ${it.groupValues[1].let(::t)}" },
+            { "Вы: ${it.groupValues[1].let(::t)}" }),
         p("Sent a (voice|video) message \\(play it on the web or desktop client\\)",
             { "پیام ${if (it.groupValues[1] == "voice") "صوتی" else "ویدیویی"} فرستاد (در نسخهٔ وب یا دسکتاپ پخش کنید)" },
-            { "أرسل رسالة ${if (it.groupValues[1] == "voice") "صوتية" else "فيديو"} (شغّلها على الويب أو سطح المكتب)" }),
+            { "أرسل رسالة ${if (it.groupValues[1] == "voice") "صوتية" else "فيديو"} (شغّلها على الويب أو سطح المكتب)" },
+            { "${if (it.groupValues[1] == "voice") "Голосовое сообщение" else "Видеосообщение"} (воспроизведите в веб-версии или на компьютере)" }),
         p("Sent a (photo|file|voice message|video message)",
             { "${mapOf("photo" to "عکس", "file" to "فایل", "voice message" to "پیام صوتی", "video message" to "پیام ویدیویی")[it.groupValues[1]]} فرستاد" },
-            { "أرسل ${mapOf("photo" to "صورة", "file" to "ملفًا", "voice message" to "رسالة صوتية", "video message" to "رسالة فيديو")[it.groupValues[1]]}" })
+            { "أرسل ${mapOf("photo" to "صورة", "file" to "ملفًا", "voice message" to "رسالة صوتية", "video message" to "رسالة فيديو")[it.groupValues[1]]}" },
+            { mapOf("photo" to "Отправлено фото", "file" to "Отправлен файл", "voice message" to "Отправлено голосовое сообщение", "video message" to "Отправлено видеосообщение").getValue(it.groupValues[1]) })
     ) + BotsPatterns
 
     val fa: Map<String, String> = mapOf(
@@ -158,7 +210,7 @@ object Translations {
         "Accept" to "پذیرفتن", "Action failed." to "عملیات ناموفق بود.", "Add a friend" to "افزودن دوست", "Add attachment" to "افزودن پیوست",
         "Add emoji" to "افزودن ایموجی", "Add members" to "افزودن اعضا", "Add" to "افزودن", "Added" to "اضافه شد",
         "Allow notifications" to "اجازهٔ اعلان‌ها", "Allow" to "اجازه", "Allowed" to "مجاز", "Already have an account?" to "حساب کاربری دارید؟",
-        "Android notification permission is off." to "مجوز اعلان‌های اندروید خاموش است.", "Appearance" to "ظاهر", "Arabic" to "عربی",
+        "Android notification permission is off." to "مجوز اعلان‌های اندروید خاموش است.", "Appearance" to "ظاهر", "Arabic" to "عربی", "Russian" to "روسی",
         "Authentication failed." to "احراز هویت ناموفق بود.", "Auto" to "خودکار", "Back" to "بازگشت", "Blocked" to "مسدود",
         "Cached data" to "داده‌های ذخیره‌شده", "Camera" to "دوربین", "Cancel recording" to "لغو ضبط", "Cancel" to "لغو",
         "Change photo" to "تغییر عکس", "Change" to "تغییر", "Channel Name" to "نام کانال", "Channel name" to "نام کانال", "Channel Settings" to "تنظیمات کانال",
@@ -238,7 +290,7 @@ object Translations {
         "Accept" to "قبول", "Action failed." to "فشلت العملية.", "Add a friend" to "إضافة صديق", "Add attachment" to "إضافة مرفق",
         "Add emoji" to "إضافة رمز تعبيري", "Add members" to "إضافة أعضاء", "Add" to "إضافة", "Added" to "تمت الإضافة",
         "Allow notifications" to "السماح بالإشعارات", "Allow" to "السماح", "Allowed" to "مسموح", "Already have an account?" to "لديك حساب بالفعل؟",
-        "Android notification permission is off." to "إذن إشعارات أندرويد معطل.", "Appearance" to "المظهر", "Arabic" to "العربية",
+        "Android notification permission is off." to "إذن إشعارات أندرويد معطل.", "Appearance" to "المظهر", "Arabic" to "العربية", "Russian" to "الروسية",
         "Authentication failed." to "فشلت المصادقة.", "Auto" to "تلقائي", "Back" to "رجوع", "Blocked" to "محظورون",
         "Cached data" to "البيانات المخزنة", "Camera" to "الكاميرا", "Cancel recording" to "إلغاء التسجيل", "Cancel" to "إلغاء",
         "Change photo" to "تغيير الصورة", "Change" to "تغيير", "Channel Name" to "اسم القناة", "Channel name" to "اسم القناة", "Channel Settings" to "إعدادات القناة",
@@ -312,4 +364,6 @@ object Translations {
         "Waiting…" to "في الانتظار…", "Your request was declined." to "تم رفض طلبك.", "The other person ended the session." to "أنهى الطرف الآخر الجلسة.",
         "Couldn't establish the encrypted session." to "تعذر إنشاء الجلسة المشفرة."
     ) + ExtraAr + ParityAr + ThemesEmojiAr + BotsAr + AdminAr + com.cove.chat.data.remote.ApiErrors.ar
+
+    val ru: Map<String, String> = CoreRu + ExtraRu + ParityRu + ThemesEmojiRu + BotsRu + AdminRu + com.cove.chat.data.remote.ApiErrors.ru
 }

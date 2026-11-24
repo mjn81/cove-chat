@@ -7,9 +7,9 @@ enum class ThemeMode { Dark, Light;
 }
 
 /** Display name per UI language; `en` is always present. */
-data class LocalizedName(val en: String, val fa: String? = null, val ar: String? = null) {
-    /** The name for UI language code [lang] ("en", "fa", "ar"), falling back to English. */
-    fun forLanguage(lang: String): String = when (lang) { "fa" -> fa; "ar" -> ar; else -> null } ?: en
+data class LocalizedName(val en: String, val fa: String? = null, val ar: String? = null, val ru: String? = null) {
+    /** The name for UI language code [lang] ("en", "fa", "ar", "ru"), falling back to English. */
+    fun forLanguage(lang: String): String = when (lang) { "fa" -> fa; "ar" -> ar; "ru" -> ru; else -> null } ?: en
 }
 
 /** The built-in chat doodle patterns; same ids as the web client and [com.cove.chat.ui.components.ChatBackgroundIds]. */

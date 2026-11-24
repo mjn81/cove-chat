@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cove</string>
+    <string name="server_url">Адрес сервера</string>
+    <string name="connect">Подключиться</string>
+    <string name="username">Имя пользователя</string>
+    <string name="password">Пароль</string>
+    <string name="login">Войти</string>
+    <string name="register">Зарегистрироваться</string>
+    <string name="channels">Каналы</string>
+    <string name="send">Отправить</string>
+    <string name="type_message">Введите зашифрованное сообщение…</string>
+    <string name="call">Присоединиться к звонку</string>
+    <string name="leave_call">Покинуть звонок</string>
+    <string name="mute">Выключить микрофон</string>
+    <string name="unmute">Включить микрофон</string>
+    <string name="video_on">Включить видео</string>
+    <string name="video_off">Выключить видео</string>
+</resources>

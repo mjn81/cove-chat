@@ -46,7 +46,7 @@ fun safeHref(raw: String): String? {
 }
 
 private fun isSpace(c: Char?) = c == null || c.isWhitespace()
-private fun isWord(c: Char?) = c != null && c.isLetterOrDigit()
+private fun isWord(c: Char?) = c != null && isWordChar(c)
 
 private fun findBracketEnd(s: String, open: Int): Int {
     var depth = 0
