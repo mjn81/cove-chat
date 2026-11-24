@@ -1,6 +1,7 @@
 /* Scoped to the Cove hero demo. The page is the ground, so the stage itself is transparent. */
 .cv-wrap { margin: 64px auto 0; max-width: 1000px; position: relative; }
-.cv .ss-stage { overflow: hidden; background: transparent; }
+/* Shadows may spill past the scene box; the hero section no longer clips its bottom. */
+.cv .ss-stage { overflow: visible; background: transparent; clip-path: inset(-90px); }
 
 
 .cv .cv-window {

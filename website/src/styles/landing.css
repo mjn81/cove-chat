@@ -39,7 +39,7 @@ section.block{padding:104px 0;position:relative}
 .gh-pill svg{width:15px;height:15px}
 @media(max-width:760px){.nav-links{display:none}}
 
-.hero{padding:152px 0 40px;position:relative;overflow:hidden}
+.hero{padding:152px 0 40px;position:relative;overflow-x:clip;overflow-y:visible}
 .hero-bg{position:absolute;inset:0;pointer-events:none}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:56px 56px;opacity:.32;mask-image:radial-gradient(ellipse 70% 55% at 50% 25%,#000 25%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 55% at 50% 25%,#000 25%,transparent 75%)}
 .hero-orb{position:absolute;width:720px;height:720px;left:50%;top:-300px;transform:translateX(-50%);background:radial-gradient(circle,var(--glow),transparent 62%)}

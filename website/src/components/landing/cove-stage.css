@@ -1,6 +1,7 @@
 /* Shared look for every Stageshow scene on the site: transparent ground (the page is the ground) and the
    site's own warm tokens in both themes. Put className="cove-ss" on the Stage. */
-.cove-ss .ss-stage { overflow: hidden; background: transparent; }
+/* Let window shadows fall onto the page instead of being cut at the stage edge. */
+.cove-ss .ss-stage { overflow: visible; background: transparent; clip-path: inset(-90px -90px -90px -90px); }
 
 /* The kit's dark and light neutrals are cool grays. Map them to the site's own (warm) tokens so the window,
    its sidebar and the bubbles match the page in both themes and follow the theme switch. */
