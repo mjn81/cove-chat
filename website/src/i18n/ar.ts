@@ -29,7 +29,7 @@ export const ar: Dict = {
     download: 'تنزيل',
     star: 'نجمة على GitHub',
     trust: ['مجاني للأفراد والفرق الصغيرة', 'استضافة ذاتية', 'AES-256-GCM', 'Go وReact', 'ويب وسطح المكتب وأندرويد', 'بلا تتبع'],
-    ui: { search: 'بحث...', composer: 'رسالة إلى #design-team', channelDesc: 'نقاشات التصميم', typed: 'ممتاز، سأنشره الآن!' },
+    ui: { search: 'بحث...', composer: 'رسالة إلى #design-team', channelDesc: 'نقاشات التصميم', typed: 'ممتاز، سأنشره الآن!', readyPreview: 'Sara: جاهز للإطلاق', online: 'متصل', ownPreview: 'أنت: أراكم الساعة 6', lockDate: 'الثلاثاء، 21 أكتوبر', now: 'الآن' },
     chat: [
       'الخادم يعمل على الجهاز الجديد. استغرق النقل أربع دقائق.',
       'ممتاز. سأنضم إلى المكالمة لمشاركة شاشتي.',

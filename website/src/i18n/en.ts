@@ -27,7 +27,7 @@ export const en = {
     download: 'Download',
     star: 'Star on GitHub',
     trust: ['Free for individuals and small teams', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
-    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!' },
+    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!', readyPreview: 'Sara: ready to ship', online: 'Online', ownPreview: 'You: see you at 6', lockDate: 'Tuesday, October 21', now: 'now' },
     chat: [
       'The server is up on the new box. Migration took four minutes.',
       'Nice. Joining the call to share my screen.',

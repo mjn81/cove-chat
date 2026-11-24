@@ -52,10 +52,10 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
   }
 
   const convos = [
-    { name: 'launch-crew', sub: 'Sara: ready to ship', unread: true },
+    { name: 'launch-crew', sub: d.ui.readyPreview, unread: true },
     { name: 'design-team', sub: amir, selected: true },
-    { name: 'Sara', sub: 'Online' },
-    { name: 'general', sub: 'You: see you at 6' },
+    { name: 'Sara', sub: d.ui.online },
+    { name: 'general', sub: d.ui.ownPreview },
   ];
 
   return (
@@ -135,8 +135,8 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
 
             {layout !== 'compact' && (
               <Phone width={248} frame="pro" dark wallpaper={WARM_WALLPAPER} className="cv-phone">
-                <LockScreen size="satellite" stack="top">
-                  <Notification icon={<Icon name="lock" filled size={20} />} title={d.lockTitle} body={d.lockSub} />
+                <LockScreen size="satellite" stack="top" date={d.ui.lockDate}>
+                  <Notification icon={<Icon name="lock" filled size={20} />} title={d.lockTitle} body={d.lockSub} time={d.ui.now} />
                 </LockScreen>
               </Phone>
             )}
