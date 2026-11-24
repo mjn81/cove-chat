@@ -326,6 +326,31 @@
   transform-origin: right;
 }
 
+/* Russian words run long: tighten the headline (its phrases never wrap), the nav pill and the mobile menu. */
+:root:lang(ru) .landing h1 {
+  font-size: clamp(30px, 6.4vw, 76px);
+  max-width: 16ch;
+}
+:root:lang(ru) .mnav-label {
+  min-width: 0;
+  font-size: clamp(26px, 8vw, 46px);
+  overflow-wrap: anywhere;
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  :root:lang(ru) .nav-links a {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+  :root:lang(ru) .nav .gh-pill span:not(.num) {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  :root:lang(ru) .landing h1 {
+    font-size: clamp(30px, 9vw, 48px);
+  }
+}
+
 /* Small screens */
 @media (max-width: 860px) {
   section.block {

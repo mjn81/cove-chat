@@ -37,7 +37,7 @@ Cove is a chat platform for communities that want to own their data. You run one
 - **Encrypted by design.** Messages are encrypted in the client with AES-256-GCM; the server only routes and stores ciphertext.
 - **Calls included.** Group audio, video and screen sharing through a built-in WebRTC SFU, with embedded STUN/TURN. No third-party services.
 - **Everywhere.** Web, desktop (Wails) and native Android clients.
-- **Multilingual.** English, Persian and Arabic, with RTL layout support.
+- **Multilingual.** English, Persian, Arabic and Russian on web, desktop, Android and the website, with RTL layout support. The docs are partly translated into Russian.
 
 ## Screenshots
 

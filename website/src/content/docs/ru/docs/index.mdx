@@ -1,0 +1,25 @@
+---
+title: Документация Cove
+description: Все, что нужно, чтобы запустить, настроить, защитить и расширить собственный сервер Cove.
+template: splash
+hero:
+  tagline: Запустите собственный сервер зашифрованного чата. Начните с быстрого старта, а затем переходите к настройке и безопасности.
+  actions:
+    - text: Быстрый старт
+      link: getting-started/quick-start/
+      icon: right-arrow
+    - text: Справочник по конфигурации
+      link: configuration/reference/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <LinkCard title="Быстрый старт" description="Docker за пять минут." href="getting-started/quick-start/" />
+  <LinkCard title="Свой сервер" description="Docker, бинарный файл, обратный прокси, TLS, резервные копии." href="self-hosting/docker/" />
+  <LinkCard title="Конфигурация" description="Объяснение каждого ключа config.toml." href="configuration/reference/" />
+  <LinkCard title="Модель безопасности" description="Что сервер видит и чего не видит." href="security/encryption-model/" />
+  <LinkCard title="Администрирование" description="Роли, приглашения и панель администратора." href="administration/admin-panel/" />
+  <LinkCard title="Справочник API" description="REST-методы и уровни доступа." href="api/rest/" />
+</CardGrid>

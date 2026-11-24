@@ -22,7 +22,7 @@ const d = dict(lang).nav;
 const abs = (p: string) => new URL(p, Astro.site).href;
 const canonical = abs(localUrl(lang, path));
 const ogImage = abs(url('/og.png'));
-const ogLocale: Record<Lang, string> = { en: 'en_US', fa: 'fa_IR', ar: 'ar_AR' };
+const ogLocale: Record<Lang, string> = { en: 'en_US', fa: 'fa_IR', ar: 'ar_AR', ru: 'ru_RU' };
 const links = [
   { label: d.features, href: localUrl(lang, '/#features') },
   { label: d.docs, href: localUrl(lang, '/docs/') },

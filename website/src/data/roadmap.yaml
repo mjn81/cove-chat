@@ -10,7 +10,7 @@
 # Override one item with `status: done | progress | planned` if needed.
 # `area` is one of: calls privacy admin clients chat i18n platform security files ops
 #
-# Translations are optional: roadmap.fa.yaml / roadmap.ar.yaml map an `id` to a translated
+# Translations are optional: roadmap.fa.yaml / roadmap.ar.yaml / roadmap.ru.yaml map an `id` to a translated
 # title/note. Missing ids fall back to the English text here.
 # ─────────────────────────────────────────────────────────────────────────────
 phases:
@@ -77,7 +77,7 @@ phases:
         note: "React app, installable via Docker."
       - id: languages
         area: i18n
-        title: "English, Persian and Arabic"
+        title: "English, Persian, Arabic and Russian"
         note: "Full right-to-left layout support."
       - id: docker
         area: ops

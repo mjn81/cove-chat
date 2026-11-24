@@ -20,7 +20,7 @@ items:
   android: { title: "تطبيق أندرويد أصلي", note: "عميل Compose مع المكالمات وWhisper وإيماءات السحب." }
   desktop: { title: "تطبيق سطح المكتب", note: "تطبيق Wails لأنظمة Windows وmacOS وLinux." }
   web-client: { title: "عميل ويب بمظهرين فاتح وداكن", note: "تطبيق React يُثبَّت عبر Docker." }
-  languages: { title: "الإنجليزية والفارسية والعربية", note: "دعم كامل لتخطيط اليمين إلى اليسار." }
+  languages: { title: "الإنجليزية والفارسية والعربية والروسية", note: "دعم كامل لتخطيط اليمين إلى اليسار." }
   docker: { title: "صور Docker وCompose", note: "صورتا الخادم وعميل الويب مع ملف إعداد واحد." }
   openapi: { title: "واجهة REST مع توثيق OpenAPI", note: "كل مسار موثّق مع مستوى الوصول." }
   auth-hardening: { title: "جلسات محصّنة", note: "كوكي httpOnly ورموز CSRF وArgon2id وحدود للمعدل." }

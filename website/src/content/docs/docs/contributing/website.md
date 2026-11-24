@@ -26,12 +26,12 @@ Commit the change. The deploy workflow rebuilds the site.
 
 ## Translating the site
 
-The landing, download and roadmap pages are available in English, Persian and Arabic.
+The landing, download and roadmap pages are available in English, Persian, Arabic and Russian.
 
 | File | Holds |
 |---|---|
 | `website/src/i18n/en.ts` | Every landing string. The source of truth |
-| `website/src/i18n/fa.ts`, `ar.ts` | Translations. TypeScript fails the build if a key is missing |
-| `website/src/data/roadmap.fa.yaml`, `roadmap.ar.yaml` | Roadmap translations keyed by item `id`. Missing ids fall back to English |
+| `website/src/i18n/fa.ts`, `ar.ts`, `ru.ts` | Translations. TypeScript fails the build if a key is missing |
+| `website/src/data/roadmap.fa.yaml`, `roadmap.ar.yaml`, `roadmap.ru.yaml` | Roadmap translations keyed by item `id`. Missing ids fall back to English |
 
-Documentation pages are English first. Persian and Arabic URLs (`/fa/docs/...`, `/ar/docs/...`) show the English page with a notice until a translation exists. To translate a page, copy it to `website/src/content/docs/fa/docs/<same path>` (or `ar/`) and translate the text.
+Documentation pages are English first. Russian has the docs landing, introduction and quick start translated. Persian, Arabic and Russian URLs (`/fa/docs/...`, `/ar/docs/...`, `/ru/docs/...`) show the English page with a notice until a translation exists. To translate a page, copy it to `website/src/content/docs/fa/docs/<same path>` (or `ar/`, `ru/`) and translate the text.

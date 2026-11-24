@@ -101,6 +101,7 @@ const HELLOS = [
   { t: 'Hello', l: 'EN', dir: 'ltr' },
   { t: 'سلام', l: 'FA', dir: 'rtl' },
   { t: 'مرحبا', l: 'AR', dir: 'rtl' },
+  { t: 'Привет', l: 'RU', dir: 'ltr' },
 ] as const;
 
 /** Greeting that cycles through the shipped languages. */

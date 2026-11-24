@@ -32,16 +32,19 @@ function translatedSlugs(lang) {
   return out;
 }
 /** @type {Record<string, Set<string>>} */
-const translated = { fa: translatedSlugs('fa'), ar: translatedSlugs('ar') };
+const translated = { fa: translatedSlugs('fa'), ar: translatedSlugs('ar'), ru: translatedSlugs('ru') };
 
 /**
- * Untranslated fa/ar docs pages are English fallbacks (noindex), so they stay out of the sitemap.
+ * Untranslated fa/ar/ru docs pages are English fallbacks (noindex), so they stay out of the sitemap.
  * @param {string} page
  */
 function inSitemap(page) {
-  const m = new URL(page).pathname.replace(base, '').match(/^\/(fa|ar)\/(docs(?:\/.*)?)$/);
+  // Strip the base (with or without a trailing slash) but keep the leading slash the pattern expects.
+  const path = new URL(page).pathname.slice(base.replace(/\/$/, '').length);
+  const m = path.match(/^\/(fa|ar|ru)\/(docs(?:\/.*)?)$/);
   if (!m) return true;
   const slug = m[2].replace(/\/$/, '');
+  // The docs landing is `<lang>/docs/index.mdx`, whose slug is already `docs`.
   return translated[m[1]].has(slug);
 }
 
@@ -69,24 +72,25 @@ export default defineConfig({
       components: {
         ThemeSelect: './src/components/docs/ThemeSelect.astro',
       },
-      // English lives at the root; fa and ar fall back to English pages (with a notice) until translated.
+      // English lives at the root; fa, ar and ru fall back to English pages (with a notice) until translated.
       defaultLocale: 'root',
       locales: {
         root: { label: 'English', lang: 'en' },
         fa: { label: 'فارسی', lang: 'fa', dir: 'rtl' },
         ar: { label: 'العربية', lang: 'ar', dir: 'rtl' },
+        ru: { label: 'Русский', lang: 'ru' },
       },
       lastUpdated: true,
       sidebar: [
-        { label: 'Getting started', translations: { fa: 'شروع کار', ar: 'البدء' }, items: [{ autogenerate: { directory: 'docs/getting-started' } }] },
-        { label: 'Self-hosting', translations: { fa: 'خودمیزبانی', ar: 'الاستضافة الذاتية' }, items: [{ autogenerate: { directory: 'docs/self-hosting' } }] },
-        { label: 'Configuration', translations: { fa: 'پیکربندی', ar: 'التهيئة' }, items: [{ autogenerate: { directory: 'docs/configuration' } }] },
-        { label: 'Administration', translations: { fa: 'مدیریت', ar: 'الإدارة' }, items: [{ autogenerate: { directory: 'docs/administration' } }] },
-        { label: 'Security', translations: { fa: 'امنیت', ar: 'الأمان' }, items: [{ autogenerate: { directory: 'docs/security' } }] },
-        { label: 'Clients', translations: { fa: 'کلاینت‌ها', ar: 'العملاء' }, items: [{ autogenerate: { directory: 'docs/clients' } }] },
-        { label: 'API', translations: { fa: 'API', ar: 'API' }, items: [{ autogenerate: { directory: 'docs/api' } }] },
-        { label: 'Contributing', translations: { fa: 'مشارکت', ar: 'المساهمة' }, items: [{ autogenerate: { directory: 'docs/contributing' } }] },
-        { label: 'Reference', translations: { fa: 'مرجع', ar: 'مرجع' }, items: [{ autogenerate: { directory: 'docs/reference' } }] },
+        { label: 'Getting started', translations: { fa: 'شروع کار', ar: 'البدء', ru: 'Начало работы' }, items: [{ autogenerate: { directory: 'docs/getting-started' } }] },
+        { label: 'Self-hosting', translations: { fa: 'خودمیزبانی', ar: 'الاستضافة الذاتية', ru: 'Свой сервер' }, items: [{ autogenerate: { directory: 'docs/self-hosting' } }] },
+        { label: 'Configuration', translations: { fa: 'پیکربندی', ar: 'التهيئة', ru: 'Конфигурация' }, items: [{ autogenerate: { directory: 'docs/configuration' } }] },
+        { label: 'Administration', translations: { fa: 'مدیریت', ar: 'الإدارة', ru: 'Администрирование' }, items: [{ autogenerate: { directory: 'docs/administration' } }] },
+        { label: 'Security', translations: { fa: 'امنیت', ar: 'الأمان', ru: 'Безопасность' }, items: [{ autogenerate: { directory: 'docs/security' } }] },
+        { label: 'Clients', translations: { fa: 'کلاینت‌ها', ar: 'العملاء', ru: 'Клиенты' }, items: [{ autogenerate: { directory: 'docs/clients' } }] },
+        { label: 'API', translations: { fa: 'API', ar: 'API', ru: 'API' }, items: [{ autogenerate: { directory: 'docs/api' } }] },
+        { label: 'Contributing', translations: { fa: 'مشارکت', ar: 'المساهمة', ru: 'Участие в разработке' }, items: [{ autogenerate: { directory: 'docs/contributing' } }] },
+        { label: 'Reference', translations: { fa: 'مرجع', ar: 'مرجع', ru: 'Справочник' }, items: [{ autogenerate: { directory: 'docs/reference' } }] },
       ],
     }),
   ],

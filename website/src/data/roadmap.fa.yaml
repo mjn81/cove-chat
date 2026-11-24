@@ -20,7 +20,7 @@ items:
   android: { title: "برنامه بومی اندروید", note: "کلاینت Compose با تماس، Whisper و حرکت‌های کشیدنی." }
   desktop: { title: "برنامه دسکتاپ", note: "برنامه Wails برای ویندوز، مک و لینوکس." }
   web-client: { title: "کلاینت وب با تم روشن و تیره", note: "برنامه React که با Docker نصب می‌شود." }
-  languages: { title: "انگلیسی، فارسی و عربی", note: "پشتیبانی کامل از چیدمان راست‌به‌چپ." }
+  languages: { title: "انگلیسی، فارسی، عربی و روسی", note: "پشتیبانی کامل از چیدمان راست‌به‌چپ." }
   docker: { title: "ایمیج‌های Docker و Compose", note: "ایمیج سرور و کلاینت وب با یک فایل پیکربندی." }
   openapi: { title: "API مبتنی بر REST با مستندات OpenAPI", note: "هر مسیر همراه با سطح دسترسی مستند شده است." }
   auth-hardening: { title: "نشست‌های مقاوم‌سازی‌شده", note: "کوکی httpOnly، توکن CSRF، Argon2id و محدودیت نرخ." }

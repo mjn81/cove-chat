@@ -1,7 +1,7 @@
 import { ArrowRight, BookOpen, CircleHelp, GitFork, Plus, Scale, Star } from 'lucide-react';
 import { BlurFade, BorderBeam, GithubIcon, NumberTicker } from './primitives';
 import { DISCUSSIONS_URL, GOOD_FIRST_ISSUES_URL, REPO_URL } from '@/lib/site';
-import { dict, localUrl, type Lang } from '@/i18n';
+import { LANGS, LANG_META, dict, localUrl, type Lang } from '@/i18n';
 
 interface Stat { value: number; label: string; suffix?: string }
 
@@ -11,7 +11,7 @@ export function OpenSource({ stars, lang }: { stars: number | null; lang: Lang }
   const stats: Stat[] = [
     ...(stars !== null && stars > 0 ? [{ value: stars, label: d.stats.stars }] : []),
     { value: 3, label: d.stats.clients },
-    { value: 3, label: d.stats.langs },
+    { value: LANGS.length, label: d.stats.langs },
     { value: 100, label: d.stats.open, suffix: '%' },
   ];
   return (
@@ -28,14 +28,14 @@ export function OpenSource({ stars, lang }: { stars: number | null; lang: Lang }
           </div>
           <a className="btn primary" href={REPO_URL} target="_blank" rel="noopener noreferrer">
             <GithubIcon />{d.starCta}
-            {stars !== null && stars > 0 ? <span className="star-count"><NumberTicker value={stars} /></span> : null}
+            {stars !== null && stars > 0 ? <span className="star-count"><NumberTicker value={stars} locale={LANG_META[lang].numberLocale} /></span> : null}
           </a>
         </div>
       </BlurFade>
       <div className="stats">
         {stats.map((s, i) => (
           <BlurFade key={s.label} delay={i * 0.06}>
-            <div className="stat"><strong><NumberTicker value={s.value} />{s.suffix}</strong><span>{s.label}</span></div>
+            <div className="stat"><strong><NumberTicker value={s.value} locale={LANG_META[lang].numberLocale} />{s.suffix}</strong><span>{s.label}</span></div>
           </BlurFade>
         ))}
       </div>
