@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.5](https://github.com/mjn81/cove-chat/compare/v0.11.4...v0.11.5) (2026-11-24)
+
+
+### Features
+
+* **license:** relicense to the Cove Community License 1.0 ([d619da0](https://github.com/mjn81/cove-chat/commit/d619da05c70eda79d766795aa9e304e6a47ebffa))
+
 ## [0.11.4](https://github.com/mjn81/cove-chat/compare/v0.11.3...v0.11.4) (2026-11-12)
 
 
