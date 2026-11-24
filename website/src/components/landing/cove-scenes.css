@@ -1,0 +1,28 @@
+/* Stageshow scenes inside the Features bento. Each Stage scales to its card, so the design size is all that matters. */
+.cs-wrap { width: 100%; }
+
+.cs-call .cs-call__window {
+  position: absolute; inset: 14px 14px 0 14px;
+  box-shadow: var(--ss-shadow-hero);
+}
+.cs-call__body { display: grid; grid-template-columns: 1fr 120px; gap: 12px; height: 100%; padding: 12px; background: var(--ss-surface); }
+.cs-call__share {
+  display: flex; flex-direction: column; gap: 14px; padding: 12px;
+  border-radius: var(--ss-radius-md); background: var(--ss-canvas); border: 1px solid var(--ss-line);
+}
+.cs-call__lines { display: flex; flex-direction: column; gap: 9px; }
+.cs-call__people { display: flex; flex-direction: column; gap: 8px; }
+.cs-call__tile {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: var(--ss-radius-md); background: var(--ss-canvas);
+  box-shadow: inset 0 0 0 1px var(--ss-line);
+  transition: box-shadow .35s var(--ease, ease), background .35s var(--ease, ease);
+}
+.cs-call__tile[data-speaking] { box-shadow: inset 0 0 0 2px var(--success); background: color-mix(in srgb, var(--success) 10%, var(--ss-canvas)); }
+.cs-call__name { font-size: 12px; font-weight: 600; color: var(--ss-text-strong); }
+
+.cs-plat .cs-plat__window { position: absolute; top: 20px; left: 16px; width: 330px; height: 240px; box-shadow: var(--ss-shadow-hero); }
+.cs-plat__side { display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; }
+.cs-plat__chat { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--ss-surface); height: 100%; }
+.cs-plat .cs-plat__phone { position: absolute; top: 40px; left: 306px; box-shadow: var(--ss-shadow-satellite); }
+.cs-plat__phone-body { padding: 54px 6px 0; }

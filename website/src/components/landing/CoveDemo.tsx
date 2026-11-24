@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useSiteTheme } from './useSiteTheme';
 import { Phone as PhoneIcon } from 'lucide-react';
 import { Avatar, Badge, Bar, Button, Facepile, Field, Icon, LockScreen, Notification, Phone, Row, Stamp, Stage, Text, Thread, Bubble, Window, type Act } from '../stageshow/kit';
 import '../stageshow/kit/stageshow.css';
+import './cove-stage.css';
 import './cove-demo.css';
 import { dict, type Lang } from '@/i18n';
 
@@ -26,19 +27,6 @@ const poster: S = { draft: '', focus: false, sent: true, call: true };
 const WARM_WALLPAPER = 'linear-gradient(165deg, #f0b49c 0%, #d9826a 38%, #8a4a40 72%, #3b2a27 100%)';
 
 const REST = { wide: { x: 700, y: 460 }, compact: { x: 280, y: 400 } };
-
-/** Follows the site's light/dark switch (data-theme on <html>, dark by default and during SSR). */
-function useSiteTheme(): 'light' | 'dark' {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  useEffect(() => {
-    const read = () => setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => obs.disconnect();
-  }, []);
-  return theme;
-}
 
 export default function CoveDemo({ lang }: { lang: Lang }) {
   const d = dict(lang).hero;
@@ -83,7 +71,7 @@ export default function CoveDemo({ lang }: { lang: Lang }) {
         theme={theme}
         accent={theme === 'light' ? '#c4624a' : '#d9826a'}
         cursor={{ at: REST, style: 'real' }}
-        className="cv"
+        className="cv cove-ss"
       >
         {(s, _rect, layout) => (
           <>
