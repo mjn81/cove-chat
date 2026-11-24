@@ -155,6 +155,7 @@ export function draftToTheme(draft: ThemeDraft): ThemeDefinition {
 	const name: LocalizedName = { en: draft.name.en.trim() };
 	if (draft.name.fa?.trim()) name.fa = draft.name.fa.trim();
 	if (draft.name.ar?.trim()) name.ar = draft.name.ar.trim();
+	if (draft.name.ru?.trim()) name.ru = draft.name.ru.trim();
 	const bg = draft.background;
 	const background: ChatBackgroundConfig | undefined =
 		bg.type === 'none' || (bg.type === 'image' && !draft.image)

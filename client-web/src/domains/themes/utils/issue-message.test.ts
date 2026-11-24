@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en.json';
 import fa from '@/i18n/locales/fa.json';
 import ar from '@/i18n/locales/ar.json';
+import ru from '@/i18n/locales/ru.json';
 
 /** Files that produce `ThemeIssue` codes. */
 const SOURCES = ['utils/covetheme.ts', 'utils/tokens.ts', 'utils/zip-reader.ts', 'api/theme-library.ts'];
@@ -20,7 +21,7 @@ function emittedCodes(): string[] {
 	return [...found].sort();
 }
 
-describe('every issue code the validator can emit has a message in en, fa and ar', () => {
+describe('every issue code the validator can emit has a message in en, fa, ar and ru', () => {
 	const codes = emittedCodes();
 
 	it('finds the codes (guards the scan itself)', () => {
@@ -33,6 +34,7 @@ describe('every issue code the validator can emit has a message in en, fa and ar
 		['en', en],
 		['fa', fa],
 		['ar', ar],
+		['ru', ru],
 	])('%s', (_lang, locale) => {
 		const issues = (locale as { themes: { issues: Record<string, string> } }).themes.issues;
 		expect(codes.filter((c) => !(c in issues))).toEqual([]);

@@ -61,3 +61,17 @@ describe('tokenizeMessage', () => {
 		expect(tokens.every((t) => t.type === 'text')).toBe(true);
 	});
 });
+
+describe('mentions in other scripts', () => {
+	it('keeps a Cyrillic @mention as one token, including ё and digits', () => {
+		expect(tokenizeMessage('привет, @Алёна_2!')).toEqual([
+			{ type: 'text', value: 'привет, ' },
+			{ type: 'mention', value: '@Алёна_2' },
+			{ type: 'text', value: '!' },
+		]);
+	});
+
+	it('does not start a mention inside a Cyrillic word', () => {
+		expect(tokenizeMessage('почта@иван')).toEqual([{ type: 'text', value: 'почта@иван' }]);
+	});
+});

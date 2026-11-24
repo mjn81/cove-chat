@@ -15,7 +15,7 @@ guard). Android and a server-side validator (gallery uploads) must implement the
 | `format` | string | exactly `"cove-theme"` |
 | `version` | integer | `1`. Higher is refused (`unsupported_version`) |
 | `id` | string | 3-64 chars, `^[a-z0-9]+([._-][a-z0-9]+)*$`. Built-in ids (`cove`, `nord`, ...) are reserved |
-| `name` | object | `en` required, `fa` / `ar` optional; each 1-40 chars, no control or bidi-override characters |
+| `name` | object | `en` required, `fa` / `ar` / `ru` optional; each 1-40 chars, no control or bidi-override characters |
 | `author` | string, optional | up to 60 chars |
 | `license` | string, optional | up to 40 chars |
 | `base` | `"dark"` or `"light"` | the mode `tokens` is written for |

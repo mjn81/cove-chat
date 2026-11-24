@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import fa from './locales/fa.json';
 import ar from './locales/ar.json';
+import ru from './locales/ru.json';
 
 // RTL languages — used to set document direction dynamically.
 // Farsi is deliberately NOT included: per product decision, switching to
@@ -14,6 +15,7 @@ const resources = {
   en: { translation: en },
   fa: { translation: fa },
   ar: { translation: ar },
+  ru: { translation: ru },
 };
 
 // Detect saved language preference, fall back to browser language, then 'en'

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import './i18n/index'; // must be imported before the popup renders
 import './index.css';
+import './styles/cyrillic-font.css';
 import './styles/emoji-font.css';
 import { NotificationPopup } from './domains/desktop/components/notification-popup';
 

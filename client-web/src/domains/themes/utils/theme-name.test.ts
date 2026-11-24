@@ -10,6 +10,11 @@ describe('localizedThemeName', () => {
 		expect(localizedThemeName(name, 'en-US')).toBe('Nord');
 	});
 
+	it('picks Russian', () => {
+		expect(localizedThemeName({ ...name, ru: 'Норд' }, 'ru-RU')).toBe('Норд');
+		expect(localizedThemeName(name, 'ru')).toBe('Nord');
+	});
+
 	it('falls back to English', () => {
 		expect(localizedThemeName({ en: 'Only' }, 'fa')).toBe('Only');
 		expect(localizedThemeName(name, 'de')).toBe('Nord');
