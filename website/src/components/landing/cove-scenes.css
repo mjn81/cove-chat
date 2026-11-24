@@ -1,0 +1,77 @@
+/* Stageshow scenes inside the Features bento. Each Stage scales to its card, so the design size is all that matters. */
+.cs-wrap { width: 100%; }
+
+.cs-call .cs-call__window {
+  position: absolute; inset: 14px 14px 0 14px;
+  box-shadow: var(--ss-shadow-hero);
+}
+.cs-call__body { display: grid; grid-template-columns: 1fr 120px; gap: 12px; height: 100%; padding: 12px; background: var(--ss-surface); }
+.cs-call__share {
+  display: flex; flex-direction: column; gap: 14px; padding: 12px;
+  border-radius: var(--ss-radius-md); background: var(--ss-canvas); border: 1px solid var(--ss-line);
+}
+.cs-call__lines { display: flex; flex-direction: column; gap: 9px; }
+.cs-call__people { display: flex; flex-direction: column; gap: 8px; }
+.cs-call__tile {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: var(--ss-radius-md); background: var(--ss-canvas);
+  box-shadow: inset 0 0 0 1px var(--ss-line);
+  transition: box-shadow .35s var(--ease, ease), background .35s var(--ease, ease);
+}
+.cs-call__tile[data-speaking] { box-shadow: inset 0 0 0 2px var(--success); background: color-mix(in srgb, var(--success) 10%, var(--ss-canvas)); }
+.cs-call__name { font-size: 12px; font-weight: 600; color: var(--ss-text-strong); }
+
+.cs-plat .cs-plat__window { position: absolute; top: 20px; left: 16px; width: 330px; height: 240px; box-shadow: var(--ss-shadow-hero); }
+.cs-plat__side { display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; }
+.cs-plat__chat { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--ss-surface); height: 100%; }
+.cs-plat .cs-plat__phone { position: absolute; top: 40px; left: 306px; box-shadow: var(--ss-shadow-satellite); }
+.cs-plat__phone-body { padding: 54px 6px 0; }
+
+/* How it works: the message's journey. One surface per step (the card) with no boxes inside it. */
+.cs-flow .cs-flow__card { position: absolute; display: flex; flex-direction: column; gap: 16px; box-shadow: none; box-shadow: inset 0 0 0 1px var(--ss-line); transition: box-shadow .4s; }
+.cs-flow .cs-flow__card[data-active] { box-shadow: inset 0 0 0 2px var(--primary), 0 18px 44px -24px var(--glow); }
+.cs-flow__head { display: flex; align-items: center; gap: 10px; }
+.cs-flow__icon { display: grid; place-items: center; width: 22px; flex: none; color: var(--primary); }
+.cs-flow__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cs-flow__title { font-size: 15px; font-weight: 600; color: var(--ss-text-strong); }
+.cs-flow__sub { font-size: 12px; color: var(--ss-text); }
+.cs-flow__msg {
+  display: flex; align-items: center; flex: 1; min-width: 0;
+  font-size: 18px; font-weight: 600; color: var(--ss-text-strong);
+}
+.cs-flow__msg[data-mono] { font-family: var(--font-mono); font-size: 14px; font-weight: 500; letter-spacing: -.01em; color: var(--primary); white-space: nowrap; }
+.cs-flow__msg[data-empty] { color: var(--ss-text); font-family: var(--font-sans); font-size: 18px; letter-spacing: .3em; }
+.cs-flow__foot { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ss-text); transition: color .4s; }
+.cs-flow__foot[data-tone='accent'] { color: var(--primary); }
+.cs-flow__foot[data-tone='success'] { color: var(--success); }
+
+/* "Encrypted by default" card */
+.cs-enc .cs-enc__card { position: absolute; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.cs-enc__label { font-size: 11px; color: var(--ss-text); text-transform: none; }
+.cs-enc__plain { font-size: 13px; font-weight: 600; color: var(--ss-text-strong); line-height: 1.35; }
+.cs-enc__cipher { font-family: var(--font-mono); font-size: 12px; color: var(--primary); white-space: nowrap; line-height: 1.35; }
+.cs-enc__key {
+  position: absolute; left: 222px; top: 36px; display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 50%; color: var(--ss-text); background: var(--ss-canvas); box-shadow: inset 0 0 0 1px var(--ss-line);
+  transition: color .4s, box-shadow .4s, background .4s;
+}
+.cs-enc__key[data-on] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--ss-canvas)); box-shadow: inset 0 0 0 1.5px var(--primary); }
+.cs-enc__chips { position: absolute; left: 16px; top: 126px; width: 448px; display: flex; flex-wrap: wrap; gap: 8px; }
+.cs-enc__chip { opacity: 0; transform: translateY(6px); transition: opacity .4s, transform .4s; }
+.cs-enc__chip[data-on] { opacity: 1; transform: none; }
+
+/* How it works: the scene replaces the old grid, so the box just frames it. */
+.hiw .hiw-stage--scene { display: block; padding: 20px 12px; }
+
+/* Docs still */
+.cs-docs .cs-docs__window { position: absolute; inset: 12px 16px; box-shadow: var(--ss-shadow-hero); }
+.cs-docs__side { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; }
+.cs-docs__page { display: flex; height: 100%; background: var(--ss-surface); }
+.cs-docs__main { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px 26px; min-width: 0; }
+.cs-docs__h { font-size: 24px; font-weight: 600; color: var(--ss-text-strong); }
+.cs-docs__p { font-size: 14px; color: var(--ss-text); }
+.cs-docs__main .ss-code { align-self: stretch; }
+.cs-docs__toc { width: 170px; display: flex; flex-direction: column; gap: 8px; padding: 22px 18px; border-inline-start: 1px solid var(--ss-line); }
+.cs-docs__toc-h { font-size: 12px; font-weight: 600; color: var(--ss-text-strong); }
+.cs-docs__toc-i { font-size: 12px; color: var(--ss-text); }
+.cs-docs__toc-i[data-on] { color: var(--primary); }

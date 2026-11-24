@@ -23,7 +23,7 @@ const ITEMS: Item[] = [
 export default function Marquee() {
   return (
     <div className="marq" aria-label="Built with">
-      <div className="track">
+      <div className="marq-in"><div className="track">
         {[...ITEMS, ...ITEMS].map((it, i) => (
           <span key={`${it.name}-${i}`} aria-hidden={i >= ITEMS.length}>
             {it.path ? (
@@ -34,7 +34,7 @@ export default function Marquee() {
             {it.name}
           </span>
         ))}
-      </div>
+      </div></div>
     </div>
   );
 }

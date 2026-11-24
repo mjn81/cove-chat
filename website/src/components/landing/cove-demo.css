@@ -1,0 +1,41 @@
+/* Scoped to the Cove hero demo. The page is the ground, so the stage itself is transparent. */
+.cv-wrap { margin: 64px auto 0; max-width: 1000px; position: relative; }
+/* Shadows may spill past the scene box; the hero section no longer clips its bottom. */
+.cv .ss-stage { overflow: visible; background: transparent; clip-path: inset(-90px); }
+
+
+.cv .cv-window {
+  position: absolute;
+  top: 24px;
+  left: 40px;
+  width: 680px;
+  height: 512px;
+  box-shadow: var(--ss-shadow-hero);
+}
+.cv .ss-stage[data-layout='compact'] .cv-window { left: 16px; top: 16px; width: 388px; height: 438px; }
+
+.cv-grow { flex: 1; }
+
+.cv-side { display: flex; flex-direction: column; gap: 2px; padding: 8px 8px 0; }
+.cv-side__search {
+  display: flex; align-items: center; gap: 8px;
+  height: 28px; margin: 4px 4px 10px; padding: 0 10px;
+  border-radius: var(--ss-radius-md); background: var(--ss-well); color: var(--ss-text);
+  font-size: 12.5px;
+}
+
+.cv-main { display: flex; flex-direction: column; height: 100%; background: var(--ss-surface); }
+.cv-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--ss-line);
+}
+.cv-head__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cv-head__name { font-size: 14px; font-weight: 600; color: var(--ss-text-strong); }
+.cv-head__sub { font-size: 12px; color: var(--ss-text); }
+
+.cv-thread { flex: 1; padding: 16px 28px 16px 16px; }
+.cv-older { display: flex; flex-direction: column; gap: 6px; }
+.cv-compose { padding: 0 28px 16px 16px; }
+
+/* The phone straddles the window's right edge over its margin, never over the thread's words. */
+.cv .cv-phone { position: absolute; top: 120px; left: 700px; box-shadow: var(--ss-shadow-satellite); }

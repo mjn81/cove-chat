@@ -1,0 +1,29 @@
+/* Shared look for every Stageshow scene on the site: transparent ground (the page is the ground) and the
+   site's own warm tokens in both themes. Put className="cove-ss" on the Stage. */
+/* Let window shadows fall onto the page instead of being cut at the stage edge. */
+.cove-ss .ss-stage { overflow: visible; background: transparent; clip-path: inset(-90px -90px -90px -90px); }
+
+/* The kit's dark and light neutrals are cool grays. Map them to the site's own (warm) tokens so the window,
+   its sidebar and the bubbles match the page in both themes and follow the theme switch. */
+.cove-ss .ss-stage {
+  --ss-accent: var(--primary);
+  --ss-accent-2: var(--primary);
+  --ss-accent-soft: color-mix(in srgb, var(--primary) 14%, transparent);
+  --ss-surface: var(--card);
+  --ss-canvas: color-mix(in srgb, var(--bg) 55%, var(--card));
+  --ss-well: var(--accent);
+  --ss-line: var(--border);
+  --ss-text: var(--muted-fg);
+  --ss-text-strong: var(--fg);
+  --ss-ink-1: color-mix(in srgb, var(--fg) 5%, transparent);
+  --ss-ink-2: color-mix(in srgb, var(--fg) 7%, transparent);
+  --ss-ink-3: color-mix(in srgb, var(--fg) 10%, transparent);
+  --ss-ink-4: color-mix(in srgb, var(--fg) 13%, transparent);
+  --ss-ink-5: color-mix(in srgb, var(--fg) 20%, transparent);
+}
+.cove-ss .ss-thread {
+  --ss-me: var(--primary);
+  --ss-me-text: var(--primary-fg);
+  --ss-them: var(--accent);
+  --ss-them-text: var(--fg);
+}
