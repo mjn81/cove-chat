@@ -10,7 +10,7 @@ interface S { sealed: boolean; chips: number }
 const initial: S = { sealed: false, chips: 0 };
 const poster: S = { sealed: true, chips: 4 };
 
-const CIPHER = 'aes256gcm:9f3a41c7e0b25d18c1';
+const CIPHER = 'aes256gcm:9f3a…c1';
 
 async function script(a: Act<S>) {
   await a.wait(1000);

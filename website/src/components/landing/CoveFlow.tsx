@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { Laptop, Lock, LockOpen, Server, Users, type LucideIcon } from 'lucide-react';
-import { Badge, Card, Connector, Stage, Swap, Text, type Act } from '../stageshow/kit';
+import { Card, Connector, Stage, Swap, Text, type Act } from '../stageshow/kit';
 import '../stageshow/kit/stageshow.css';
 import './cove-stage.css';
 import './cove-scenes.css';
@@ -28,10 +28,10 @@ const CIPHER = '9f3a 41c7 e0b2 5d18';
 /** Card boxes and connector endpoints per layout, in stage pixels. Wide runs across, compact stacks down. */
 const GEO = {
   wide: {
-    size: { w: 980, h: 300 },
-    cards: [{ x: 30, y: 46 }, { x: 380, y: 46 }, { x: 730, y: 46 }],
-    card: { w: 220, h: 200 },
-    lines: [{ from: { x: 258, y: 146 }, to: { x: 372, y: 146 } }, { from: { x: 608, y: 146 }, to: { x: 722, y: 146 } }],
+    size: { w: 940, h: 260 },
+    cards: [{ x: 15, y: 30 }, { x: 355, y: 30 }, { x: 695, y: 30 }],
+    card: { w: 230, h: 200 },
+    lines: [{ from: { x: 253, y: 130 }, to: { x: 347, y: 130 } }, { from: { x: 593, y: 130 }, to: { x: 687, y: 130 } }],
   },
   compact: {
     size: { w: 400, h: 560 },
@@ -97,6 +97,11 @@ export default function CoveFlow({ lang, onStep }: { lang: Lang; onStep: (step: 
             { text: CIPHER, id: 'srv', chip: false, mono: true, empty: !s.atServer },
             { text: memberText, id: s.opened ? 'p' : 'c', chip: !s.opened && s.atMember, mono: !s.opened, empty: !s.atMember },
           ];
+          const status = [
+            { label: 'AES-256-GCM', tone: s.sealed ? 'accent' : 'muted', open: !s.sealed },
+            { label: 'KEK', tone: s.atServer ? 'accent' : 'muted', open: false },
+            { label: s.opened ? 'OK' : 'AES-256-GCM', tone: s.opened ? 'success' : 'muted', open: s.opened },
+          ];
           return (
             <>
               {g.cards.map((pos, i) => {
@@ -106,7 +111,7 @@ export default function CoveFlow({ lang, onStep }: { lang: Lang; onStep: (step: 
                 return (
                   <Card key={i} lift className="cs-flow__card" data-active={s.step === i || undefined} style={{ left: pos.x, top: pos.y, width: g.card.w, height: g.card.h }}>
                     <div className="cs-flow__head">
-                      <span className="cs-flow__icon"><Icon size={18} /></span>
+                      <span className="cs-flow__icon"><Icon size={20} /></span>
                       <span className="cs-flow__who">
                         <Text className="cs-flow__title">{node.title}</Text>
                         <Text className="cs-flow__sub">{node.sub}</Text>
@@ -115,10 +120,9 @@ export default function CoveFlow({ lang, onStep }: { lang: Lang; onStep: (step: 
                     <div className="cs-flow__msg" data-empty={b.empty || undefined} data-mono={b.mono || undefined}>
                       <Swap id={b.id + (b.empty ? 'e' : '')}>{b.empty ? '· · ·' : b.text}</Swap>
                     </div>
-                    <div className="cs-flow__foot">
-                      {i === 0 && <Badge tone={s.sealed ? 'accent' : 'neutral'} icon={s.sealed ? <Lock size={12} /> : undefined}>AES-256-GCM</Badge>}
-                      {i === 1 && <Badge tone={s.atServer ? 'accent' : 'neutral'} icon={<Lock size={12} />}>KEK</Badge>}
-                      {i === 2 && <Badge tone={s.opened ? 'success' : 'neutral'} icon={s.opened ? <LockOpen size={12} /> : <Lock size={12} />}>{s.opened ? 'OK' : 'AES-256-GCM'}</Badge>}
+                    <div className="cs-flow__foot" data-tone={status[i].tone}>
+                      {status[i].open ? <LockOpen size={14} /> : <Lock size={14} />}
+                      <span>{status[i].label}</span>
                     </div>
                   </Card>
                 );
