@@ -39,7 +39,7 @@ export function getReleaseInfo(): Promise<ReleaseInfo> {
 
 async function fetchReleaseInfo(): Promise<ReleaseInfo> {
   const [release, repo] = await Promise.all([
-    // /releases/latest skips pre-releases, and every 0.x release is a pre-release, so read the list instead.
+    // /releases/latest skips pre-releases, and older 0.x releases were published as such, so read the list instead.
     getJson<{ tag_name: string; draft: boolean; assets: { name: string; size: number; browser_download_url: string }[] }[]>('/releases?per_page=10'),
     getJson<{ stargazers_count: number }>(''),
   ]);

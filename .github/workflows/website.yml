@@ -6,9 +6,8 @@ on:
     paths: ['website/**', 'backend/config.toml.example', 'backend/docs/swagger.json', '.github/workflows/website.yml']
   pull_request:
     paths: ['website/**', 'backend/config.toml.example', 'backend/docs/swagger.json']
-  # Rebuild so the download page picks up new release assets.
-  release:
-    types: [published]
+  # release.yml starts this by hand so the download page picks up new release assets. A `release` trigger
+  # would run on the tag, which the github-pages environment refuses to deploy.
   workflow_dispatch:
 
 permissions:

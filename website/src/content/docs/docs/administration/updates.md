@@ -30,7 +30,7 @@ Cove checks, in order:
 1. **The release manifest**, `https://covechat.dev/releases/manifest.json` by default.
 2. **The GitHub releases API** (`mjn81/cove-chat`), if the manifest cannot be reached or is invalid.
 
-The highest version newer than the running one wins. Pre-releases are offered while the server itself runs a 0.x or pre-release build, because every 0.x release is published as a pre-release. A release is only considered once it carries the file for your platform and its checksum. If your running version is older than the release's `min_version`, the panel tells you to install an intermediate release first.
+The highest version newer than the running one wins. Pre-releases are offered while the server itself runs a 0.x or pre-release build. A release is only considered once it carries the file for your platform and its checksum. If your running version is older than the release's `min_version`, the panel tells you to install an intermediate release first.
 
 ### Where the button does not work
 

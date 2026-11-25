@@ -54,7 +54,7 @@ type State struct {
 type Settings struct {
 	// Enabled turns the background checks on. Manual "Check now" works regardless.
 	Enabled bool `json:"enabled"`
-	// IncludePrerelease offers pre-releases. Every 0.x release is a GitHub pre-release, so this defaults to on
+	// IncludePrerelease offers pre-releases. This defaults to on
 	// while the app itself is 0.x (see DefaultIncludePrerelease).
 	IncludePrerelease bool `json:"include_prerelease"`
 	// AutoDownload lets background checks also download the update (default off: checking is cheap, downloading
