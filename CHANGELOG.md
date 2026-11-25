@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.11.6](https://github.com/mjn81/cove-chat/compare/v0.11.5...v0.11.6) (2026-11-25)
+
+
+### Features
+
+* **android:** add Russian (ru) language ([d7f28d0](https://github.com/mjn81/cove-chat/commit/d7f28d0161e49013e3e5f1e1fce63c081233ea07))
+* **i18n:** add Russian across web, desktop, Android, website and docs ([5e4ab6c](https://github.com/mjn81/cove-chat/commit/5e4ab6c25a657331c6d4a0e024b78040f2c03650))
+* **web:** add Russian (ru) language with a self-hosted Cyrillic font ([1b299f6](https://github.com/mjn81/cove-chat/commit/1b299f6b1b6a7fe8bae3f0a104e31aabecfe74a9))
+* **website:** add Russian landing pages and docs ([ffa34d5](https://github.com/mjn81/cove-chat/commit/ffa34d5537acea41408e11fda90f61b488fdec5c))
+* **website:** rebuild the hero product shot with Stageshow ([e508d54](https://github.com/mjn81/cove-chat/commit/e508d548348966e25665df995c3e29c1ba5255d9))
+* **website:** Stageshow redesign of the landing page ([af2e040](https://github.com/mjn81/cove-chat/commit/af2e0404eb9344f5793a50980714d619f2a228aa))
+* **website:** Stageshow scene for the docs preview ([15067d1](https://github.com/mjn81/cove-chat/commit/15067d1ff9adf1843361c2bdefcf56f4544c8d6e))
+* **website:** Stageshow scenes for How it works and Encrypted by default ([2052403](https://github.com/mjn81/cove-chat/commit/205240349ade79801651e73034cbec55dbd51940))
+* **website:** Stageshow scenes for the Calls and Platforms feature cards ([ab0a69e](https://github.com/mjn81/cove-chat/commit/ab0a69e8337e40bac2ed30adbf8adc901681ae10))
+
+
+### Bug Fixes
+
+* **android:** translate strings found in English on a device ([e108113](https://github.com/mjn81/cove-chat/commit/e108113b67b24939ba13e152a2ae20ebcbf7869f))
+* **web:** keep reloaded, new and restored tabs in step with the shared socket ([a726510](https://github.com/mjn81/cove-chat/commit/a726510135add23b0cab58ead77efcf3f358a996))
+* **website:** faint warm scene shadows so they no longer smear the page background ([d9eefe3](https://github.com/mjn81/cove-chat/commit/d9eefe3efea706894ca6aba87f00196f0a2ca88b))
+* **website:** flat, crisp How it works diagram; keep encrypted card text inside its box ([f4f5cc2](https://github.com/mjn81/cove-chat/commit/f4f5cc2cdd3f2119b2557359a50122239e355d73))
+* **website:** hero phone sits above the moving stack badges ([62f5dff](https://github.com/mjn81/cove-chat/commit/62f5dffbe2ced959b9d9ee5395cd72f4265f6c0d))
+* **website:** skip linting the vendored Stageshow kit ([44c0035](https://github.com/mjn81/cove-chat/commit/44c0035074ffd5233dd1d4132e0e5070c538745b))
+* **website:** stack badge strip gets a solid background and sits over the hero phone ([9e5bb96](https://github.com/mjn81/cove-chat/commit/9e5bb96b2f52977f0d84290155309ade5048af23))
+* **website:** stop clipping scene shadows at the stage and hero edges ([80448da](https://github.com/mjn81/cove-chat/commit/80448da7ec840866de580295936d915af294f3b6))
+* **website:** stop the landing page scrolling sideways on small screens ([86aa817](https://github.com/mjn81/cove-chat/commit/86aa8179395e4aae9d7a0cdcec9c18f1c8aba9e6))
+* **website:** translate hero mock strings and widen the docs language picker ([a61f422](https://github.com/mjn81/cove-chat/commit/a61f422d2888f24d469b139b3c676d128d9720c9))
+* **website:** warm theme tokens, brand bubbles and wallpaper, compact layout under 760px ([5a97525](https://github.com/mjn81/cove-chat/commit/5a9752577ddafb49d5a6572a25edb4934502da35))
+* **web:** translate remaining hard-coded strings, keep the chosen language, fit long Russian labels ([b9b6895](https://github.com/mjn81/cove-chat/commit/b9b68959de2edb29a5828d3a34556679462c8e9b))
+
 ## [0.11.5](https://github.com/mjn81/cove-chat/compare/v0.11.4...v0.11.5) (2026-11-24)
 
 
