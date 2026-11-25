@@ -62,7 +62,7 @@ internal val CoreRu: Map<String, String> = mapOf(
     "Message..." to "Сообщение...", "Message" to "Сообщение",
     "Messages here exist only in memory on both devices. Compare the safety number to verify who you're talking to." to "Сообщения здесь существуют только в памяти обоих устройств. Сравните код безопасности, чтобы убедиться, с кем вы общаетесь.",
     "Microphone" to "Микрофон", "More languages are coming to mobile soon." to "Скоро на телефоне появятся и другие языки.",
-    "Mute" to "Выкл. звук", "My Account" to "Мой аккаунт", "COVE IS OPEN SOURCE" to "COVE — ОТКРЫТЫЙ ПРОЕКТ",
+    "Mute" to "Выкл. звук", "My Account" to "Мой аккаунт", "COVE IS SOURCE-AVAILABLE" to "ИСХОДНЫЙ КОД COVE ДОСТУПЕН",
     "Need an account? " to "Нет аккаунта? ", "New Conversation" to "Новая беседа", "New conversation" to "Новая беседа",
     "New password (min 8 characters)" to "Новый пароль (не менее 8 символов)",
     "No app can open this file." to "Нет приложения, которое может открыть этот файл.",

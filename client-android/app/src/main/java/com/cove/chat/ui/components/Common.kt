@@ -207,7 +207,7 @@ fun ErrorBanner(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** "Cove is open source / made with ❤️ by mjn" footer shown on every pre-login page. */
+/** "Cove is source-available / made with ❤️ by mjn" footer shown on every pre-login page. */
 @Composable
 fun OpenSourceFooter(modifier: Modifier = Modifier) {
     val muted = CoveTheme.extendedColors.textMuted.copy(alpha = 0.4f)
@@ -216,7 +216,7 @@ fun OpenSourceFooter(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text("COVE IS OPEN SOURCE", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+        Text("COVE IS SOURCE-AVAILABLE", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
         Text(
             text = buildAnnotatedString {
                 append(t("made with ❤️ by "))
