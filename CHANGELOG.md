@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.8](https://github.com/mjn81/cove-chat/compare/v0.11.7...v0.11.8) (2026-11-25)
+
+
+### Bug Fixes
+
+* **release:** publish 0.x versions as full releases ([1bffef9](https://github.com/mjn81/cove-chat/commit/1bffef9c1296254c6f37ef9bc47cf0261ee9508e))
+* **release:** publish 0.x versions as full releases ([c6c5b62](https://github.com/mjn81/cove-chat/commit/c6c5b62ba548e56e33770bdbfcc7c05c56ffd2c4))
+
 ## [0.11.7](https://github.com/mjn81/cove-chat/compare/v0.11.6...v0.11.7) (2026-11-25)
 
 
