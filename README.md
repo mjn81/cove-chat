@@ -227,7 +227,7 @@ Cove is **source-available and share-alike**, released under the [Cove Community
 
 - **Allowed, free:** individuals, families, communities, clubs and small teams. Run it, study it, modify it and share it.
 - **Share-alike:** if you fork or change it and distribute it, or run your modified version for other people, you must publish your full source under this same license. No closed-source forks.
-- **Not allowed without the creator's written permission:** reselling it or charging for access or hosting; use by large organizations (more than 50 people or USD 1M revenue/funding); use by governments, public agencies, military or state-owned entities.
+- **Not allowed without the creator's written permission:** reselling it or charging for access or hosting; use by large organizations (more than 200 people or USD 1M revenue/funding); use by governments, public agencies, military or state-owned entities.
 
 Versions up to and including v0.11.4 were published under the MIT License and stay available under it. Third-party assets (emoji, fonts, libraries) keep their own licenses. To ask for permission, open a request through the [repository](https://github.com/mjn81/cove-chat).
 
