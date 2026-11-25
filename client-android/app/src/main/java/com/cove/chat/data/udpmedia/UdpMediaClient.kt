@@ -40,7 +40,11 @@ class UdpMediaClient(
     // Deliberately NOT connect()ed: on Android a connected UDP socket keeps the route it had at connect time, so after a
     // Wi-Fi/cellular hand-over it would keep sending into the dead interface. An unconnected socket routes every send
     // afresh; replies are filtered by source address in the read loop instead.
-    private val socket: DatagramSocket = socketFactory()
+    private val socket: DatagramSocket = socketFactory().apply {
+        // Best effort: the OS may cap the size.
+        receiveBufferSize = Wire.SOCKET_BUFFER
+        sendBufferSize = Wire.SOCKET_BUFFER
+    }
     private val acked = CompletableDeferred<Unit>()
     private val frameIds = Array(4) { AtomicLong(0) }
     private val streams = HashMap<Pair<Int, Kind>, Reassembler>()

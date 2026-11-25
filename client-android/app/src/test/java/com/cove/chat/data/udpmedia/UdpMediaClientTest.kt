@@ -118,7 +118,7 @@ class UdpMediaClientTest {
     }
 
     @Test fun oversizedFrameIsRefused() {
-        assertEquals(false, client.sendFrame(Kind.VIDEO, Codec.H264, 0, 0, ByteArray(64 * 1100 + 1)))
+        assertEquals(false, client.sendFrame(Kind.VIDEO, Codec.H264, 0, 0, ByteArray(1024 * 1100 + 1)))
     }
 
     @Test fun incomingFramesAreReassembledWithTheServerStampedSource() = runBlocking {

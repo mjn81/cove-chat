@@ -24,7 +24,7 @@ class WireTest {
         assertThrows(UdpMediaException::class.java) { MediaCodec.decode(ByteArray(17)) }
         assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok).also { it[2] = 9 }) }
         assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok.copy(fragCnt = 0))) }
-        assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok.copy(fragCnt = 65))) }
+        assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok.copy(fragCnt = 1025))) }
         assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok.copy(fragIdx = 1, fragCnt = 1))) }
         assertThrows(UdpMediaException::class.java) { MediaCodec.decode(enc(ok, 1101)) }
         MediaCodec.decode(enc(ok, 1100))

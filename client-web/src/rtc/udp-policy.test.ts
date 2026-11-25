@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { allowKeyframe, detectCodecSupport, fitEven, schedulePlayout, screenLimit } from './udp-policy';
+import {
+	H264_DECODER_CONFIG,
+	MAX_FRAME_BYTES,
+	allowKeyframe,
+	detectCodecSupport,
+	fitEven,
+	h264EncoderConfig,
+	schedulePlayout,
+	screenLimit,
+} from './udp-policy';
 
 describe('schedulePlayout', () => {
 	it('starts a lead ahead of now on the first chunk', () => {
@@ -57,5 +66,30 @@ describe('detectCodecSupport', () => {
 		const bad = { isConfigSupported: async () => { throw new Error('x'); } };
 		const r = await detectCodecSupport({ MediaStreamTrackProcessor: class {}, AudioEncoder: bad, AudioDecoder: bad } as never);
 		expect(r.audio).toBe(false);
+	});
+});
+
+describe('h264EncoderConfig', () => {
+	const codec = (w: number, h: number, fps: number) => h264EncoderConfig(w, h, fps, 1_000_000).codec;
+	it('keeps level 3.1 up to 720p30', () => {
+		expect(codec(640, 480, 30)).toBe('avc1.42E01f');
+		expect(codec(1280, 720, 30)).toBe('avc1.42E01f');
+	});
+	it('raises the level with the picture size and rate', () => {
+		expect(codec(1280, 720, 60)).toBe('avc1.42E020');
+		expect(codec(1920, 1080, 30)).toBe('avc1.42E028');
+		expect(codec(1920, 1080, 60)).toBe('avc1.42E02a');
+		expect(codec(2560, 1440, 30)).toBe('avc1.42E032');
+		expect(codec(3840, 2160, 30)).toBe('avc1.42E033');
+		expect(codec(3840, 2160, 60)).toBe('avc1.42E034');
+	});
+	it('decodes any of those levels', () => {
+		expect(H264_DECODER_CONFIG.codec).toBe('avc1.42E034');
+	});
+});
+
+describe('MAX_FRAME_BYTES', () => {
+	it('fits a text-heavy screen keyframe', () => {
+		expect(MAX_FRAME_BYTES).toBe(1024 * 1100);
 	});
 });

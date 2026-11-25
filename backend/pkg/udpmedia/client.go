@@ -55,6 +55,9 @@ func Dial(serverAddr string, ring *Keyring) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Best effort: the OS may cap the size.
+	_ = conn.SetReadBuffer(SocketBuffer)
+	_ = conn.SetWriteBuffer(SocketBuffer)
 	c := &Client{
 		conn:    conn,
 		ring:    ring,

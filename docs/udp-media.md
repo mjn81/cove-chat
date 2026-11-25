@@ -1,6 +1,6 @@
 # Encrypted UDP media (air-gapped call mode)
 
-Status: **v1, backend + Go client library implemented; desktop client code written and unit tested, not yet verified with real devices** (see
+Status: **v1, implemented in the server, the desktop app and the Android app, and verified end to end between them** (see
 [Implementation status](#implementation-status)).
 
 This document specifies the call media path used when the server runs with `voice.mode = "raw_udp"`
@@ -118,8 +118,10 @@ src(2)  kind(1)  codec(1)  flags(1)  rsv(1)  frame_id(4)  frag_idx(2)  frag_cnt(
   Android and desktops).
 * `flags`: bit0 keyframe, bit1 discardable (non-reference frame).
 * `frame_id`: increments by one per encoded frame per `(sender, kind)` and wraps. A frame is fragmented into at most
-  `frag_cnt <= 64` packets of at most 1100 payload bytes (so the largest frame is 70 400 B; screen share keyframes
-  larger than that must be encoded smaller).
+  `frag_cnt <= 1024` packets of at most 1100 payload bytes (so the largest frame is 1 126 400 B; a 1080p screen
+  share keyframe full of text reaches several hundred kilobytes). Server and clients ask for 4 MiB socket buffers to
+  absorb that burst. Builds from before this limit stop at 64 packets and drop larger frames, so screen sharing needs
+  the server and both clients updated.
 * `ts`: sender clock in 1/1000 s (video) or sample count / 48 (audio); only differences matter.
 
 ## 5. Replay, ordering, rotation
@@ -152,7 +154,7 @@ Hardening (all enforced and tested):
 | Unauthenticated floods | Unknown session id: dropped with no reply and no crypto. Failing tags: dropped with no reply. Per-source-IP budget for packets from non-session addresses. |
 | Reflection or amplification | Server only ever answers an authenticated `HELLO`, with a reply no larger than the request. |
 | CPU exhaustion | Per-session token bucket charged before decryption (3000 pkt/s sustained, burst 6000); datagrams over 1200 B dropped before parsing; fragment and NACK counts bounded. |
-| Memory exhaustion | Max sessions per user (1), per room (`voice.max_participants_per_call`), total sessions; bounded reassembly and NACK caches (512 packets per publisher stream). |
+| Memory exhaustion | Max sessions per user (1), per room (`voice.max_participants_per_call`), total sessions; bounded reassembly and NACK caches (2048 packets per publisher). |
 | Spoofing / injection | AES-GCM tag over header + payload; session id is 64 random bits and only resolves to the one user/room it was issued for; `src` is overwritten by the server. |
 | Replay | Sliding window per direction and epoch. |
 | Eavesdropping / tampering | AES-256-GCM, fresh keys per session via ephemeral ECDH. |
@@ -208,5 +210,10 @@ Not defended:
 | Removal of the old unencrypted audio-only router (`internal/voice`) | Done. Nothing listens on `server.udp_port` in `webrtc` mode, and legacy-format datagrams get no reply in `raw_udp` mode. The old desktop (`voice.go`) and Android (`RawUdpVoiceManager`) clients were deleted with it. |
 | Capability advertisement, Swagger/docs | Implemented |
 | Web client gating | Implemented (buttons disabled with explanation) |
-| Desktop (Wails) | **Implemented, untested on real devices.** Go side: `client-desktop/media_bridge.go` (Wails binding `MediaBridge`, batched frame events) on top of `media_call.go`. Web side: `client-web/src/rtc/UdpMediaManager.ts` (WebCodecs Opus + H.264 Annex-B capture/encode/decode, canvas rendering into the existing tiles), selected only inside Wails on a `raw_udp_media` server. Covered by unit tests with a fake bridge and a loopback echo test; mic, camera, screen share and playback have **not** been run against a real server and devices. Screen-share audio is not sent. Needs a webview with WebCodecs encoders: WebView2 (Windows) is expected to work; WebKitGTK and WKWebView likely lack them (a Go-side codec would be the fallback, not built). |
-| Android | **Implemented, untested on real devices.** Protocol layer in `client-android/.../data/udpmedia` (wire format, X25519 in plain Kotlin because the platform only has it from API 33, HKDF/AES-GCM keyring with epoch ratchet and replay window, fragmenter/reassembler with NACK and keyframe rules, UDP client), verified byte for byte against the vectors in `backend/tests/udpmedia_vectors_test.go` plus loss, reorder, replay, tamper and loopback tests. Engine in `rtc/udp` (`UdpCallManager`): Opus through Concentus (pure Java, with in-band FEC and DTX) with `AudioRecord`/`AudioTrack` and a jitter buffer; H.264 through libwebrtc's MediaCodec encoder and decoder wrappers fed by Camera2 and MediaProjection, decoded frames shown in the existing call tiles. `CallRouter` picks this engine per call when the server advertises `raw_udp_media` and not `webrtc_sfu`; otherwise the WebRTC engine runs unchanged. Not run against a real server and phone yet. |
+| Desktop (Wails) | **Implemented and verified** on Windows. Go side: `client-desktop/media_bridge.go` (Wails binding `MediaBridge`, batched frame events) on top of `media_call.go`. Web side: `client-web/src/rtc/UdpMediaManager.ts` (WebCodecs Opus + H.264 Annex-B capture/encode/decode, canvas rendering into the existing tiles), selected only inside Wails on a `raw_udp_media` server. Covered by unit tests with a fake bridge and a loopback echo test, and run against a real server (see below). Screen-share audio is not sent. Needs a webview with WebCodecs encoders: WebView2 (Windows) is expected to work; WebKitGTK and WKWebView likely lack them (a Go-side codec would be the fallback, not built). |
+| Android | **Implemented and verified** on the emulator. Protocol layer in `client-android/.../data/udpmedia` (wire format, X25519 in plain Kotlin because the platform only has it from API 33, HKDF/AES-GCM keyring with epoch ratchet and replay window, fragmenter/reassembler with NACK and keyframe rules, UDP client), verified byte for byte against the vectors in `backend/tests/udpmedia_vectors_test.go` plus loss, reorder, replay, tamper and loopback tests. Engine in `rtc/udp` (`UdpCallManager`): Opus through Concentus (pure Java, with in-band FEC and DTX) with `AudioRecord`/`AudioTrack` and a jitter buffer; H.264 through libwebrtc's MediaCodec encoder and decoder wrappers fed by Camera2 and MediaProjection, decoded frames shown in the existing call tiles. `CallRouter` picks this engine per call when the server advertises `raw_udp_media` and not `webrtc_sfu`; otherwise the WebRTC engine runs unchanged. Run against a real server (see below). |
+
+Verification (2026-11-25): the Windows desktop app and the Android app (emulator) in one call through a `raw_udp`
+server on the same PC, with generated camera and microphone input. Camera video and screen sharing displayed in both
+directions, including a text-filled 1080p share (628 kB keyframe), and audio frames arrived in both directions. Not yet
+covered: a physical phone, a physical network with packet loss, listening quality, Linux and macOS desktops.

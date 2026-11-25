@@ -25,8 +25,12 @@ const (
 	MediaHeaderLen = 18
 	// MaxFragmentPayload is the largest media payload in one packet.
 	MaxFragmentPayload = 1100
-	// MaxFragments is the largest number of packets one frame may be split into.
-	MaxFragments = 64
+	// MaxFragments is the largest number of packets one frame may be split into. Screen share keyframes of a
+	// text-heavy desktop reach several hundred kilobytes, so the limit allows 1.1 MB frames.
+	MaxFragments = 1024
+	// SocketBuffer is the kernel send and receive buffer both ends ask for, so that the packet burst of one large
+	// keyframe is not dropped before it is read.
+	SocketBuffer = 4 << 20
 	// HelloPlaintextLen is the minimum HELLO plaintext, so a HELLO_ACK of the same size is never an amplification.
 	HelloPlaintextLen = 64
 	// SessionIDLen is the length of the random session identifier.

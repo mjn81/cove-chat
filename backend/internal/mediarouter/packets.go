@@ -9,7 +9,7 @@ import (
 )
 
 // cacheCapacity is how many forwarded packets per publisher are kept for NACK retransmission (docs/udp-media.md section 7).
-const cacheCapacity = 512
+const cacheCapacity = 2048 // holds the largest frame (udpmedia.MaxFragments) and what follows it
 
 type cacheKey struct {
 	kind  udpmedia.Kind

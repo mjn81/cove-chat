@@ -38,7 +38,7 @@ func seq(n int) []int {
 }
 
 func TestUDPMedia_FragmentReassembleInOrderShuffledAndDuplicated(t *testing.T) {
-	for _, size := range []int{0, 1, 1100, 1101, 5000, 64 * 1100} {
+	for _, size := range []int{0, 1, 1100, 1101, 5000, 64 * 1100, 500_000, 1024 * 1100} {
 		data := mkFrame(size, int64(size))
 		parts := udpmedia.Fragment(udpmedia.MediaHeader{Kind: udpmedia.KindVideo, Codec: udpmedia.CodecH264, Flags: udpmedia.FlagKeyframe, FrameID: 9, TS: 77}, data)
 		if parts == nil {
@@ -60,8 +60,8 @@ func TestUDPMedia_FragmentReassembleInOrderShuffledAndDuplicated(t *testing.T) {
 			}
 		}
 	}
-	if udpmedia.Fragment(udpmedia.MediaHeader{Kind: udpmedia.KindVideo}, make([]byte, 64*1100+1)) != nil {
-		t.Fatal("a frame needing more than 64 fragments was accepted")
+	if udpmedia.Fragment(udpmedia.MediaHeader{Kind: udpmedia.KindVideo}, make([]byte, 1024*1100+1)) != nil {
+		t.Fatal("a frame needing more than 1024 fragments was accepted")
 	}
 }
 
@@ -75,7 +75,7 @@ func TestUDPMedia_ParseMediaRejectsMalformed(t *testing.T) {
 		"kind 0":        func(b []byte) []byte { b[2] = 0; return b },
 		"kind 9":        func(b []byte) []byte { b[2] = 9; return b },
 		"frag_cnt 0":    func(b []byte) []byte { b[12], b[13] = 0, 0; return b },
-		"frag_cnt 65":   func(b []byte) []byte { b[12], b[13] = 0, 65; return b },
+		"frag_cnt 1025": func(b []byte) []byte { b[12], b[13] = 4, 1; return b },
 		"idx >= cnt":    func(b []byte) []byte { b[10], b[11] = 0, 1; return b },
 		"payload large": func(b []byte) []byte { return append(b, make([]byte, udpmedia.MaxFragmentPayload)...) },
 	}
