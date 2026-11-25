@@ -6,13 +6,31 @@ export const SCREEN_BITRATE = 3_000_000;
 /** Opus at 48 kHz mono, 20 ms packets. */
 export const AUDIO_SAMPLE_RATE = 48_000;
 export const AUDIO_FRAME_MS = 20;
-/** A frame must fit 64 fragments of 1100 bytes. */
-export const MAX_FRAME_BYTES = 64 * 1100;
+/** A frame must fit 1024 fragments of 1100 bytes. */
+export const MAX_FRAME_BYTES = 1024 * 1100;
+
+/** H.264 levels from 3.1 up: [hex id, macroblocks per frame, macroblocks per second]. */
+const H264_LEVELS: [string, number, number][] = [
+	['1f', 3600, 108_000],
+	['20', 5120, 216_000],
+	['28', 8192, 245_760],
+	['2a', 8704, 522_240],
+	['32', 22_080, 589_824],
+	['33', 36_864, 983_040],
+	['34', 36_864, 2_073_600],
+];
+
+/** The lowest level that can encode this size and rate. An encoder refuses a picture too large for its level. */
+function h264Codec(width: number, height: number, framerate: number): string {
+	const blocks = Math.ceil(width / 16) * Math.ceil(height / 16);
+	const level = H264_LEVELS.find(([, frame, second]) => blocks <= frame && blocks * framerate <= second);
+	return `avc1.42E0${(level ?? H264_LEVELS[H264_LEVELS.length - 1])[0]}`;
+}
 
 /** WebCodecs configuration for Constrained Baseline H.264 in Annex-B, the protocol's mandatory video codec. */
 export function h264EncoderConfig(width: number, height: number, framerate: number, bitrate: number): VideoEncoderConfig {
 	return {
-		codec: 'avc1.42001f',
+		codec: h264Codec(width, height, framerate),
 		width,
 		height,
 		framerate,
@@ -22,8 +40,8 @@ export function h264EncoderConfig(width: number, height: number, framerate: numb
 	};
 }
 
-/** Decoder configuration matching {@link h264EncoderConfig}. */
-export const H264_DECODER_CONFIG: VideoDecoderConfig = { codec: 'avc1.42001f' };
+/** Decoder configuration for any level {@link h264EncoderConfig} picks; the stream's own SPS governs. */
+export const H264_DECODER_CONFIG: VideoDecoderConfig = { codec: 'avc1.42E034' };
 
 /** Opus encoder configuration with in-band FEC and DTX as the protocol recommends. */
 export const OPUS_ENCODER_CONFIG: AudioEncoderConfig = {

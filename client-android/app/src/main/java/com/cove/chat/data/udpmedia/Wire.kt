@@ -12,7 +12,9 @@ object Wire {
     const val MAX_PLAINTEXT = MAX_PACKET - HEADER_LEN - TAG_LEN
     const val MEDIA_HEADER_LEN = 18
     const val MAX_FRAGMENT_PAYLOAD = 1100
-    const val MAX_FRAGMENTS = 64
+    const val MAX_FRAGMENTS = 1024
+    /** Socket buffer asked for, so the packet burst of one large keyframe is not dropped. */
+    const val SOCKET_BUFFER = 4 shl 20
     const val HELLO_PLAINTEXT_LEN = 64
     const val SESSION_ID_LEN = 8
     const val MAX_NACK_ITEMS = 32

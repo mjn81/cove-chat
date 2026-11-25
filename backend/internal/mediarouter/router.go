@@ -186,6 +186,9 @@ func (r *Router) Stats() Stats {
 
 // Serve reads packets from conn until it is closed or Stop is called. It also runs the timeout and membership sweeper.
 func (r *Router) Serve(conn *net.UDPConn) {
+	// Best effort: the OS may cap the size. Large keyframes arrive and leave as bursts of hundreds of packets.
+	_ = conn.SetReadBuffer(udpmedia.SocketBuffer)
+	_ = conn.SetWriteBuffer(udpmedia.SocketBuffer)
 	r.conn.Store(conn)
 	// Add under the same lock Stop takes, so a Stop that races a just-starting Serve never Waits while we Add.
 	r.mu.Lock()

@@ -284,6 +284,23 @@ func TestMediaRouter_ThreeParticipantsForwarding(t *testing.T) {
 	}
 }
 
+// A screen share keyframe of a text-heavy desktop is several hundred kilobytes (about 500 kB measured at 1080p). It
+// has to cross the router in one piece, or the viewer never sees the share.
+func TestMediaRouter_ForwardsAScreenSizedKeyframe(t *testing.T) {
+	e := newCallEnv(t, mediarouter.Config{})
+	e.addMember("alice", "room")
+	e.addMember("bob", "room")
+	a, b := e.join("alice", "room"), e.join("bob", "room")
+	frame := mkFrame(500_000, 7)
+	if err := a.client.SendFrame(udpmedia.KindScreen, udpmedia.CodecH264, udpmedia.FlagKeyframe, 1, frame); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := b.recv(3 * time.Second)
+	if !ok || !bytes.Equal(got.Data, frame) {
+		t.Fatalf("keyframe not delivered: ok=%v bytes=%d", ok, len(got.Data))
+	}
+}
+
 func TestMediaRouter_ServerStampsSourceAndIgnoresSpoofedSrc(t *testing.T) {
 	e := newCallEnv(t, mediarouter.Config{})
 	for _, u := range []string{"a", "b", "c"} {

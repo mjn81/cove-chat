@@ -29,8 +29,8 @@ class FramesTest {
         assertEquals(3, parts.size)
         assertEquals(listOf(1100, 1100, 300), parts.map { it.size - Wire.MEDIA_HEADER_LEN })
         assertEquals(1, Fragmenter.split(MediaHeader(kind = Kind.AUDIO, codec = 1, frameId = 0), ByteArray(0))!!.size)
-        assertEquals(64, Fragmenter.split(MediaHeader(kind = Kind.VIDEO, codec = 3, frameId = 0), ByteArray(64 * 1100))!!.size)
-        assertNull(Fragmenter.split(MediaHeader(kind = Kind.VIDEO, codec = 3, frameId = 0), ByteArray(64 * 1100 + 1)))
+        assertEquals(1024, Fragmenter.split(MediaHeader(kind = Kind.VIDEO, codec = 3, frameId = 0), ByteArray(1024 * 1100))!!.size)
+        assertNull(Fragmenter.split(MediaHeader(kind = Kind.VIDEO, codec = 3, frameId = 0), ByteArray(1024 * 1100 + 1)))
     }
 
     @Test fun reassemblesInOrderAndReordered() {
