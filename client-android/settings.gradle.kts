@@ -13,7 +13,7 @@ pluginManagement {
 }
 plugins {
     // Lets Gradle download the JDK named in gradle/gradle-daemon-jvm.properties when none is installed.
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {
