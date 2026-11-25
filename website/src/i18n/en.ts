@@ -1,4 +1,4 @@
-/** English strings: the source of truth for the `Dict` shape. fa.ts and ar.ts must provide every key. */
+/** English strings: the source of truth for the `Dict` shape. fa.ts, ar.ts and ru.ts must provide every key. */
 export const en = {
   meta: {
     homeTitle: 'Cove - self-hosted encrypted chat',
@@ -27,7 +27,7 @@ export const en = {
     download: 'Download',
     star: 'Star on GitHub',
     trust: ['Free for individuals and small teams', 'Self-hosted', 'AES-256-GCM', 'Go + React', 'Web, desktop, Android', 'No tracking'],
-    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!' },
+    ui: { search: 'Search...', composer: 'Message #design-team', channelDesc: 'Design discussions', typed: 'Sounds good, shipping it!', readyPreview: 'Sara: ready to ship', online: 'Online', ownPreview: 'You: see you at 6', lockDate: 'Tuesday, October 21', now: 'now' },
     chat: [
       'The server is up on the new box. Migration took four minutes.',
       'Nice. Joining the call to share my screen.',
@@ -60,7 +60,7 @@ export const en = {
       text: 'Owner, admin and member roles. Invites, registration modes and an audit trail.',
       roles: [{ name: 'Owner', sub: 'everything' }, { name: 'Admin', sub: 'invites, config' }, { name: 'Member', sub: 'chat and calls' }],
     },
-    i18n: { title: 'English, Persian, Arabic', text: 'Real translations with full right-to-left support.' },
+    i18n: { title: 'English, Persian, Arabic, Russian', text: 'Real translations with full right-to-left support.' },
     platforms: { title: 'Every platform', text: 'Web, Windows, macOS, Linux and native Android clients.', devices: ['Web', 'Desktop', 'Android'] },
   },
   how: {
@@ -148,7 +148,7 @@ export const en = {
     eyebrow: 'Source available',
     title: 'Built in the open, for its users.',
     lead: 'Read the code, audit the crypto, send a pull request.',
-    stats: { stars: 'GitHub stars', clients: 'Clients: web, desktop, Android', langs: 'Languages: EN, FA, AR', open: 'Percent of the code you can read' },
+    stats: { stars: 'GitHub stars', clients: 'Clients: web, desktop, Android', langs: 'Languages: EN, FA, AR, RU', open: 'Percent of the code you can read' },
     repo: 'GitHub repository',
     issues: 'Good first issues',
     discussions: 'Discussions',

@@ -23,7 +23,7 @@ description: How to test changes and the coding standards Cove follows.
 ## Web client
 
 - Shadcn components first, theme tokens only (no raw colors), lucide icons.
-- Every user-facing string goes through i18n and exists in `en.json`, `fa.json` and `ar.json`.
+- Every user-facing string goes through i18n and exists in `en.json`, `fa.json`, `ar.json` and `ru.json`.
 - Use logical Tailwind classes (`ms-*`, `ps-*`, `start-*`) so right-to-left works.
 - Server state lives in React Query, UI state in Zustand.
 - No `any`. Use `unknown` and narrow it.

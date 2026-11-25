@@ -59,7 +59,7 @@ export function ThemeEditorSample({ tokens, mode, background, image }: ThemeEdit
 				<div className="flex min-w-0 flex-1 flex-col">
 					<div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-xs font-semibold">
 						<Hash size={12} className="text-muted-foreground" />
-						general
+						{t('themes.sample_channel')}
 					</div>
 					<div className="relative flex-1 overflow-hidden">
 						{bgStyle && <div className="pointer-events-none absolute inset-0" style={bgStyle} />}

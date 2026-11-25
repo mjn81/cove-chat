@@ -92,7 +92,7 @@ export default function RegisterPage() {
 						{t('auth.create_account')}
 					</CardTitle>
 					<CardDescription className="text-muted-foreground text-base">
-						Join {APP_NAME} and start chatting.
+						{t('auth.join_subtitle', { app: APP_NAME })}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -156,7 +156,7 @@ export default function RegisterPage() {
 									type="button"
 									onClick={() => setShowPassword((prev) => !prev)}
 									className="absolute end-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground focus:outline-none flex items-center justify-center transition-colors"
-									aria-label={showPassword ? 'Hide password' : 'Show password'}
+									aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
 									tabIndex={-1}
 								>
 									{showPassword ? (
@@ -197,7 +197,7 @@ export default function RegisterPage() {
 							className="w-full h-11 bg-primary hover:opacity-90 text-primary-foreground font-medium text-base mt-2 transition-colors"
 							disabled={loading || (needsCaptcha && !captchaToken)}
 						>
-							{loading ? <span className="spinner" /> : 'Continue'}
+							{loading ? <span className="spinner" /> : t('auth.continue')}
 						</Button>
 					</form>
 					)}
@@ -207,7 +207,7 @@ export default function RegisterPage() {
 							to="/login"
 							className="text-primary hover:underline font-medium"
 						>
-							Already have an account?
+							{t('auth.have_account')}
 						</Link>
 					</div>
 				</CardContent>
@@ -229,10 +229,10 @@ export default function RegisterPage() {
 
 			<div className="absolute bottom-8 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity duration-300">
 				<p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground select-none">
-					{APP_NAME} is open source
+					{t('serverSelect.openSource', { app: APP_NAME })}
 				</p>
 				<p className="text-[10px] font-medium text-muted-foreground select-none">
-					made with ❤️ by <span className="text-foreground">mjn</span>
+					{t('serverSelect.madeBy')} <span className="text-foreground">mjn</span>
 				</p>
 			</div>
 		</div>

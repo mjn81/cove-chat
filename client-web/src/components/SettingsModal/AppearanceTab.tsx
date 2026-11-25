@@ -38,6 +38,7 @@ export const AppearanceTab = () => {
 							{ id: 'en', name: 'English', local: 'English' },
 							{ id: 'fa', name: 'Persian', local: 'فارسی' },
 							{ id: 'ar', name: 'Arabic', local: 'العربية' },
+							{ id: 'ru', name: 'Russian', local: 'Русский' },
 						].map((lang) => (
 							<button
 								key={lang.id}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildMessagePreview } from './messagePreview';
+import i18n from '@/i18n';
 import type { Channel } from '@/types/api';
 
 vi.mock('@/ws', () => ({
@@ -124,5 +125,15 @@ describe('buildMessagePreview', () => {
 			currentUserId,
 		);
 		expect(preview).toBe('user-other: decrypted:mystery');
+	});
+
+	it('uses the app language for the "You" prefix', async () => {
+		await i18n.changeLanguage('ru');
+		try {
+			const preview = await buildMessagePreview(dmChannel, currentUserId, 'voice', '', '', currentUserId);
+			expect(preview).toBe('Вы: [voice]');
+		} finally {
+			await i18n.changeLanguage('en');
+		}
 	});
 });

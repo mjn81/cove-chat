@@ -6,6 +6,7 @@ import { useCachedAvatar } from '@/lib/avatarCache';
 import { getFileUrl } from '@/api/client';
 
 import { SYSTEM_AVATAR_ID } from '@/domains/desktop/utils/sender-avatar';
+import i18n from '@/i18n';
 
 /** Sentinel avatar id the server gives its built-in Cove account; rendered from the bundled icon. */
 export { SYSTEM_AVATAR_ID };
@@ -46,7 +47,7 @@ export const Avatar = memo(({ userId, avatarId, size = 36, className }: AvatarPr
       <AvatarFallback className="bg-transparent border-none">
         <img
           src={dataUrl}
-          alt={`Avatar for ${userId}`}
+          alt={i18n.t('chat.avatar_of', { id: userId })}
           width={size}
           height={size}
           draggable={false}

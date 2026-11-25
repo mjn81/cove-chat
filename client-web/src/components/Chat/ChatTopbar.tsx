@@ -188,7 +188,7 @@ export const ChatTopbar: React.FC<ChatTopbarProps> = ({
 									>
 										{liveChannel.description
 											? liveChannel.description
-											: `${liveChannel.members?.length ?? 0} members`}
+											: t('chat.members', { count: liveChannel.members?.length ?? 0 })}
 									</div>
 								</div>
 							</button>

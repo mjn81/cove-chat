@@ -15,7 +15,7 @@ Cove is a self-hosted chat platform for communities that want to own their data.
 - Group audio and video calls plus screen sharing, built into the server
 - Voice notes, file sharing and video messages
 - **Whisper** chats that are end-to-end encrypted and never stored
-- English, Persian and Arabic interfaces, including right-to-left layout
+- English, Persian, Arabic and Russian interfaces, including right-to-left layout
 - A single Go binary with an embedded database, configured by one `config.toml`
 
 ## The trust model in one paragraph

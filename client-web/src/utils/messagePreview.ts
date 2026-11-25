@@ -1,6 +1,7 @@
 import type { Channel } from '@/types/api';
 import { decryptText } from '@/ws';
 import { isDirectMessage, getChannelDisplayName } from '@/utils/channel';
+import i18n from '@/i18n';
 
 const MAX_PREVIEW_LENGTH = 60;
 
@@ -43,10 +44,10 @@ export async function buildMessagePreview(
 
 	const prefix =
 		senderId === currentUserId
-			? 'You'
+			? i18n.t('call.you')
 			: channel.member_names?.[senderId] ||
 			  (isDirectMessage(channel)
 					? getChannelDisplayName(channel, currentUserId)
-					: 'Someone');
+					: i18n.t('chat.someone'));
 	return `${prefix}: ${body}`;
 }

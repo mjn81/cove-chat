@@ -2,7 +2,7 @@ import { defineRouteMiddleware } from '@astrojs/starlight/route-data';
 
 /**
  * Per-page SEO for the docs:
- * - pages that are only an untranslated fallback (English text served under /fa or /ar) are kept out of
+ * - pages that are only an untranslated fallback (English text served under /fa, /ar or /ru) are kept out of
  *   the index and canonicalised to the English original, so they never compete with it as duplicate content;
  * - every page gets TechArticle structured data and a social image.
  */
@@ -27,7 +27,7 @@ export const onRequest = defineRouteMiddleware((context) => {
 
   if (isFallback) {
     const pathname = context.url.pathname;
-    const english = pathname.replace(/^(.*?)\/(fa|ar)\/docs\//, '$1/docs/');
+    const english = pathname.replace(/^(.*?)\/(fa|ar|ru)\/docs\//, '$1/docs/');
     for (const tag of head) {
       if (tag.tag === 'link' && tag.attrs?.rel === 'canonical') tag.attrs.href = abs(english);
     }

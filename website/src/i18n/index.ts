@@ -1,26 +1,29 @@
 import { en, type Dict } from './en';
 import { fa } from './fa';
 import { ar } from './ar';
+import { ru } from './ru';
 import { url } from '@/lib/site';
 
 export type { Dict };
-export const LANGS = ['en', 'fa', 'ar'] as const;
+export const LANGS = ['en', 'fa', 'ar', 'ru'] as const;
 export type Lang = (typeof LANGS)[number];
 
-export const LANG_META: Record<Lang, { label: string; short: string; dir: 'ltr' | 'rtl' }> = {
-  en: { label: 'English', short: 'EN', dir: 'ltr' },
-  fa: { label: 'فارسی', short: 'FA', dir: 'rtl' },
-  ar: { label: 'العربية', short: 'AR', dir: 'rtl' },
+export const LANG_META: Record<Lang, { label: string; short: string; dir: 'ltr' | 'rtl'; numberLocale: string }> = {
+  en: { label: 'English', short: 'EN', dir: 'ltr', numberLocale: 'en-US' },
+  // fa and ar deliberately keep Latin digits in counters.
+  fa: { label: 'فارسی', short: 'FA', dir: 'rtl', numberLocale: 'en-US' },
+  ar: { label: 'العربية', short: 'AR', dir: 'rtl', numberLocale: 'en-US' },
+  ru: { label: 'Русский', short: 'RU', dir: 'ltr', numberLocale: 'ru-RU' },
 };
 
-const DICTS: Record<Lang, Dict> = { en, fa, ar };
+const DICTS: Record<Lang, Dict> = { en, fa, ar, ru };
 
 /** @returns the string dictionary for `lang`. */
 export function dict(lang: Lang): Dict {
   return DICTS[lang];
 }
 
-/** English lives at the site root; other languages get a `/fa` or `/ar` prefix. */
+/** English lives at the site root; other languages get a `/fa`, `/ar` or `/ru` prefix. */
 export function langPrefix(lang: Lang): string {
   return lang === 'en' ? '' : `/${lang}`;
 }

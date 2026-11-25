@@ -410,7 +410,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 								type="button"
 								onClick={togglePlay}
 								className="text-white/90 hover:text-white hover:scale-110 active:scale-95 transition cursor-pointer p-1"
-								title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+								title={`${isPlaying ? t('voice.pause') : t('chat.play')} (Space)`}
 							>
 								{isPlaying ? (
 									<Pause size={20} fill="currentColor" />
@@ -429,7 +429,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 									type="button"
 									onClick={toggleMute}
 									className="text-white/90 hover:text-white hover:scale-110 active:scale-95 transition cursor-pointer p-1 shrink-0"
-									title={isMuted || volume === 0 ? 'Unmute (m)' : 'Mute (m)'}
+									title={`${isMuted || volume === 0 ? t('call.unmute') : t('call.mute')} (m)`}
 								>
 									{isMuted || volume === 0 ? (
 										<VolumeX size={20} className="text-destructive" />
@@ -523,7 +523,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 								type="button"
 								onClick={toggleFullscreen}
 								className="text-white/80 hover:text-white hover:scale-110 active:scale-95 transition cursor-pointer p-1"
-								title={isFullscreen ? 'Exit Fullscreen (f)' : 'Fullscreen (f)'}
+								title={`${isFullscreen ? t('call.exitFullscreen') : t('call.fullscreen')} (f)`}
 							>
 								{isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
 							</button>

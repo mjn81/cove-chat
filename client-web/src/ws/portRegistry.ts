@@ -15,6 +15,9 @@ export function createPortRegistry<T extends PortLike>() {
 		add(port: T): void {
 			ports.push(port);
 		},
+		has(port: T): boolean {
+			return ports.includes(port);
+		},
 		// Removes a specific port, e.g. when its tab is closing. Without this,
 		// every tab ever opened leaves a permanent entry for the life of the
 		// SharedWorker (which outlives any single tab), and broadcasts keep

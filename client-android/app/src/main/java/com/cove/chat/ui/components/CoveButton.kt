@@ -139,5 +139,5 @@ fun CoveIconButton(
             .let { if (variant == IconButtonVariant.Filled) it.border(1.dp, c.border, shape) else it }
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = glyph, modifier = Modifier.size(iconSize).let { if (mirrorInRtl) it.mirrorInRtl() else it }) }
+    ) { Icon(icon, t(desc), tint = glyph, modifier = Modifier.size(iconSize).let { if (mirrorInRtl) it.mirrorInRtl() else it }) }
 }

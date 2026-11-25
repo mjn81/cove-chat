@@ -1,9 +1,9 @@
 package com.cove.chat.data.remote
 
 /*
- * Generated from the `apiErrors` object of client-web/src/i18n/locales/{en,fa,ar}.json: the backend sends these keys
+ * Generated from the `apiErrors` object of client-web/src/i18n/locales/{en,fa,ar,ru}.json: the backend sends these keys
  * as error messages for its user-facing handlers. [ApiErrors.en] maps a key to its English text ("{detail}" marks the
- * value after ": " in the message); [ApiErrors.fa] and [ApiErrors.ar] map that English text to the translation, like
+ * value after ": " in the message); [ApiErrors.fa], [ApiErrors.ar] and [ApiErrors.ru] map that English text to the translation, like
  * the rest of `Translations`.
  */
 
@@ -216,5 +216,71 @@ object ApiErrors {
         "Username is too short." to "اسم المستخدم قصير جداً.",
         "The video exceeds the maximum size of {detail} MB." to "الفيديو يتجاوز الحد الأقصى للحجم وهو {detail} ميغابايت.",
         "Video messages can't exceed {detail} seconds." to "لا يمكن أن تتجاوز رسائل الفيديو {detail} ثانية.",
+    )
+
+    val ru: Map<String, String> = mapOf(
+        "Couldn't delete the account." to "Не удалось удалить аккаунт.",
+        "This account can't be added to chats." to "Этот аккаунт нельзя добавить в чаты.",
+        "You don't have permission to add members." to "У вас нет права добавлять участников.",
+        "The owner's role can't be changed." to "Роль владельца изменить нельзя.",
+        "You can't remove someone with an equal or higher role." to "Нельзя удалить участника с равной или более высокой ролью.",
+        "You don't have permission to remove members." to "У вас нет права удалять участников.",
+        "Couldn't clear the channel." to "Не удалось очистить канал.",
+        "Couldn't create the channel." to "Не удалось создать канал.",
+        "Couldn't delete the channel." to "Не удалось удалить канал.",
+        "Channel description is too long." to "Описание канала слишком длинное.",
+        "Channel ID is required." to "Требуется ID канала.",
+        "Couldn't join the channel." to "Не удалось вступить в канал.",
+        "Couldn't leave the channel." to "Не удалось покинуть канал.",
+        "Couldn't load the channel." to "Не удалось загрузить канал.",
+        "Channel name can't be empty." to "Название канала не может быть пустым.",
+        "Channel name is too long." to "Название канала слишком длинное.",
+        "Channel not found." to "Канал не найден.",
+        "Couldn't update the channel." to "Не удалось обновить канал.",
+        "Couldn't load channels." to "Не удалось загрузить каналы.",
+        "The current password is incorrect." to "Неверный текущий пароль.",
+        "You don't have access to this file." to "У вас нет доступа к этому файлу.",
+        "No file was included in the upload." to "В загрузке нет файла.",
+        "File not found." to "Файл не найден.",
+        "Couldn't open the file." to "Не удалось открыть файл.",
+        "File is too large (max {detail} MB)." to "Файл слишком большой (не более {detail} МБ).",
+        "You don't have permission to do that." to "У вас нет права на это действие.",
+        "The request was not understood." to "Запрос не распознан.",
+        "Role must be member or admin." to "Роль должна быть «участник» или «администратор».",
+        "The upload request is malformed." to "Неверный формат запроса загрузки.",
+        "Couldn't create a new invite link." to "Не удалось создать новую ссылку-приглашение.",
+        "You were removed from this channel and can't rejoin with its link." to "Вас удалили из этого канала, вернуться по ссылке нельзя.",
+        "Member not found." to "Участник не найден.",
+        "Couldn't remove the member." to "Не удалось удалить участника.",
+        "Couldn't load the members." to "Не удалось загрузить участников.",
+        "Couldn't load messages." to "Не удалось загрузить сообщения.",
+        "You're not a member of this channel." to "Вы не участник этого канала.",
+        "Only the owner can delete the channel." to "Удалить канал может только владелец.",
+        "Only the owner can manage roles." to "Управлять ролями может только владелец.",
+        "Enter your password to continue." to "Введите пароль, чтобы продолжить.",
+        "Password is too short." to "Пароль слишком короткий.",
+        "Couldn't load the status." to "Не удалось загрузить статус.",
+        "Status not found." to "Статус не найден.",
+        "Couldn't update the profile." to "Не удалось обновить профиль.",
+        "Unknown action." to "Неизвестное действие.",
+        "Couldn't load the relationship." to "Не удалось загрузить связь.",
+        "You can't do that with yourself." to "Это нельзя сделать с самим собой.",
+        "Couldn't update the relationship." to "Не удалось обновить связь.",
+        "Couldn't load your contacts." to "Не удалось загрузить контакты.",
+        "Couldn't update the role." to "Не удалось изменить роль.",
+        "Search failed." to "Ошибка поиска.",
+        "Choose a user." to "Выберите пользователя.",
+        "Too many members." to "Слишком много участников.",
+        "Too many users selected." to "Выбрано слишком много пользователей.",
+        "Couldn't read the uploaded file." to "Не удалось прочитать загруженный файл.",
+        "Couldn't save the file." to "Не удалось сохранить файл.",
+        "Choose at least one user." to "Выберите хотя бы одного пользователя.",
+        "Couldn't load the user." to "Не удалось загрузить пользователя.",
+        "User not found." to "Пользователь не найден.",
+        "That username is reserved." to "Это имя пользователя зарезервировано.",
+        "That username is already taken." to "Это имя пользователя уже занято.",
+        "Username is too short." to "Имя пользователя слишком короткое.",
+        "The video exceeds the maximum size of {detail} MB." to "Видео превышает максимальный размер {detail} МБ.",
+        "Video messages can't exceed {detail} seconds." to "Видеосообщения не могут быть длиннее {detail} с.",
     )
 }

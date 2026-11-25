@@ -1,7 +1,7 @@
 package com.cove.chat.themes
 
 /**
- * User-facing text for [ThemeIssue] codes (English, Persian, Arabic), copied from the web locales (`themes.issues.*`).
+ * User-facing text for [ThemeIssue] codes (English, Persian, Arabic, Russian), copied from the web locales (`themes.issues.*`).
  * `{{detail}}` is replaced by the issue's detail. Generated once from client-web/src/i18n/locales; keep in sync by hand.
  */
 object ThemeIssueText {
@@ -164,9 +164,67 @@ object ThemeIssueText {
         "bubble_tint_dropped" to "كانت صبغة الفقاعات غير صالحة وتم تجاهلها.",
     )
 
-    /** The message for [issue] in UI language [lang] ("en", "fa", "ar"), falling back to English, then to a generic line. */
+    private val RU: Map<String, String> = mapOf(
+        "unknown" to "Неизвестная проблема.",
+        "zip_invalid" to "Это не файл темы.",
+        "zip_too_large" to "Файл слишком большой (не более 10 МБ).",
+        "download_failed" to "Не удалось скачать файл.",
+        "zip_too_many_entries" to "В файле слишком много элементов (не более 20).",
+        "zip_unsafe_path" to "В файле есть небезопасное имя.",
+        "zip_symlink" to "В файле есть ссылка, это не допускается.",
+        "zip_encrypted" to "Файлы, защищенные паролем, не поддерживаются.",
+        "zip_unsupported" to "Этот формат архива не поддерживается.",
+        "zip_duplicate" to "В файле дважды встречается одно и то же имя.",
+        "zip_overlap" to "Файл поврежден.",
+        "zip_bomb" to "Файл распаковывается до неразумно большого размера.",
+        "zip_corrupt" to "Файл поврежден.",
+        "missing_theme_json" to "Отсутствует theme.json.",
+        "json_too_large" to "theme.json слишком большой.",
+        "invalid_json" to "theme.json некорректен.",
+        "not_a_theme" to "Это не файл темы Cove.",
+        "invalid_version" to "Неверная версия темы.",
+        "unsupported_version" to "Эта тема создана для более новой версии Cove.",
+        "invalid_id" to "Неверный идентификатор темы.",
+        "invalid_name" to "Теме нужно корректное название.",
+        "invalid_base" to "Тема должна быть темной или светлой.",
+        "invalid_tokens" to "Цвета темы отсутствуют или заданы неверно.",
+        "invalid_token_value" to "Цвет «{{detail}}» недопустим.",
+        "missing_token" to "Отсутствует обязательный цвет «{{detail}}».",
+        "low_contrast" to "Низкий контраст между текстом и фоном ({{detail}}).",
+        "invalid_color" to "Цвет «{{detail}}» недопустим.",
+        "invalid_chat" to "Настройки чата недопустимы.",
+        "invalid_chat_background" to "Настройки фона чата недопустимы.",
+        "missing_asset" to "В файле нет изображения для фона чата.",
+        "invalid_asset_name" to "У изображения неподдерживаемое имя или тип ({{detail}}). Разрешены только PNG, JPEG и WebP.",
+        "image_too_large" to "Изображение больше 2 МБ.",
+        "invalid_image" to "Файл не является настоящим изображением PNG, JPEG или WebP.",
+        "image_type_mismatch" to "Содержимое изображения не соответствует типу файла.",
+        "image_dimensions" to "Изображение больше 4096 × 4096 пикселей.",
+        "assets_too_large" to "Суммарный размер изображений больше 8 МБ.",
+        "reserved_id" to "Этот идентификатор принадлежит встроенной теме.",
+        "image_undecodable" to "Браузер не смог прочитать одно из изображений.",
+        "too_many_themes" to "Достигнут лимит установленных тем. Сначала удалите одну.",
+        "unknown_key" to "Неизвестный параметр пропущен ({{detail}}).",
+        "unknown_token" to "Неизвестное имя цвета пропущено ({{detail}}).",
+        "token_clamped" to "Цвет «{{detail}}» выходил за допустимые пределы и был скорректирован.",
+        "ignored_entry" to "Лишний файл пропущен ({{detail}}).",
+        "unused_asset" to "Неиспользуемое изображение пропущено ({{detail}}).",
+        "missing_preview" to "Изображение предпросмотра отсутствует и пропущено.",
+        "light_ignored" to "Светлые цвета пропущены, потому что тема и так светлая.",
+        "invalid_name_dropped" to "Переведенное название было недопустимым и пропущено.",
+        "author_dropped" to "Имя автора было недопустимым и пропущено.",
+        "license_dropped" to "Текст лицензии был недопустимым и пропущен.",
+        "bubble_tint_dropped" to "Оттенок сообщений был недопустимым и пропущен.",
+    )
+
+    private fun table(lang: String): Map<String, String> = when (lang) { "fa" -> FA; "ar" -> AR; "ru" -> RU; else -> EN }
+
+    /** The issue codes that have text in UI language [lang]. */
+    internal fun codes(lang: String): Set<String> = table(lang).keys
+
+    /** The message for [issue] in UI language [lang] ("en", "fa", "ar", "ru"), falling back to English, then to a generic line. */
     fun message(issue: ThemeIssue, lang: String = "en"): String {
-        val table = when (lang) { "fa" -> FA; "ar" -> AR; else -> EN }
+        val table = table(lang)
         val raw = table[issue.code] ?: EN[issue.code] ?: EN.getValue("unknown")
         return raw.replace("{{detail}}", issue.detail.orEmpty())
     }

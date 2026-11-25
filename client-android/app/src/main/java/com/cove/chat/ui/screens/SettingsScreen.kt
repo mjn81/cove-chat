@@ -234,7 +234,7 @@ private fun AppearancePage() {
     Text("LANGUAGE", color = c.textMuted, fontSize = CoveType.caption.fontSize, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(12.dp))
     Column(Modifier.fillMaxWidth().clip(CoveShapes.md).border(1.dp, c.border, CoveShapes.md).padding(4.dp)) {
-        listOf(Triple("en", "English", "English"), Triple("fa", "Persian", "فارسی"), Triple("ar", "Arabic", "العربية")).forEach { (code, name, native) ->
+        listOf(Triple("en", "English", "English"), Triple("fa", "Persian", "فارسی"), Triple("ar", "Arabic", "العربية"), Triple("ru", "Russian", "Русский")).forEach { (code, name, native) ->
             val on = AppLanguage.code == code
             CoveListRow(
                 title = name, subtitle = native, selected = on,

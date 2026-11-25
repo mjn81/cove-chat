@@ -254,7 +254,7 @@ export default function AppPage() {
 					</ResizablePanelGroup>
 				</div>
 			)}
-			<ErrorBoundary label="voice chat">
+			<ErrorBoundary label={t('errors.boundary_voice')}>
 				<VoiceChatController />
 			</ErrorBoundary>
 			<IncomingCallModal />

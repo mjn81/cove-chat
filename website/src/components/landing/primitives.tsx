@@ -75,8 +75,11 @@ export function BorderBeam({ size = 160, duration = 9 }: { size?: number; durati
   return <span className="border-beam" style={{ ['--beam-size' as string]: `${size}px`, ['--beam-dur' as string]: `${duration}s` }} />;
 }
 
-/** Counts up to `value` once visible, with an ease-out curve. */
-export function NumberTicker({ value, className }: { value: number; className?: string }) {
+/**
+ * Counts up to `value` once visible, with an ease-out curve.
+ * @param props.locale BCP 47 tag used to group digits.
+ */
+export function NumberTicker({ value, className, locale = 'en-US' }: { value: number; className?: string; locale?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const reduce = useReducedMotion();
@@ -93,8 +96,8 @@ export function NumberTicker({ value, className }: { value: number; className?: 
   }, [inView, value, reduce, mv]);
 
   useEffect(() => mv.on('change', (v) => {
-    if (ref.current) ref.current.textContent = Math.round(v).toLocaleString('en-US');
-  }), [mv]);
+    if (ref.current) ref.current.textContent = Math.round(v).toLocaleString(locale);
+  }), [mv, locale]);
 
   return (
     <span ref={ref} className={className}>

@@ -33,7 +33,7 @@ export const TabButton = ({
 					activeTab === id ? 'text-accent-foreground' : 'text-muted-foreground'
 				}`}
 			/>
-			<span className="pointer-events-none truncate">{label}</span>
+			<span className="pointer-events-none min-w-0 hyphens-auto text-start leading-snug break-words">{label}</span>
 		</div>
 		{badge !== undefined && (
 			<span className="text-[10px] px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground font-bold font-mono">

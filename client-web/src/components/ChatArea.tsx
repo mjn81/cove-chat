@@ -287,7 +287,7 @@ const ChatArea = memo(({ channel }: ChatAreaProps) => {
 						<div className="flex items-center gap-2.5 min-w-0">
 							<Lock className="w-4 h-4 text-muted-foreground shrink-0" />
 							<span className="text-muted-foreground truncate">
-								<strong className="text-foreground font-medium">{incomingInvite.initiatorUsername}</strong> invited you to a Whisper chat
+								<strong className="text-foreground font-medium">{incomingInvite.initiatorUsername}</strong> {t('whisper.invited_you')}
 							</span>
 						</div>
 						<div className="flex items-center gap-2 shrink-0">

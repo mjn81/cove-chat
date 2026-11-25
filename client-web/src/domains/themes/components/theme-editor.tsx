@@ -200,7 +200,7 @@ export function ThemeEditor({ source, onClose }: ThemeEditorProps) {
 									/>
 								)}
 							</FormField>
-							<div className="grid gap-3 sm:grid-cols-2">
+							<div className="grid gap-3 sm:grid-cols-3">
 								<FormField label={t('themes.editor.name_fa')}>
 									{(c) => (
 										<Input
@@ -222,6 +222,17 @@ export function ThemeEditor({ source, onClose }: ThemeEditorProps) {
 											maxLength={40}
 											autoComplete="off"
 											onChange={(e) => setDraft((d) => ({ ...d, name: { ...d.name, ar: e.target.value } }))}
+										/>
+									)}
+								</FormField>
+								<FormField label={t('themes.editor.name_ru')}>
+									{(c) => (
+										<Input
+											{...c}
+											value={draft.name.ru ?? ''}
+											maxLength={40}
+											autoComplete="off"
+											onChange={(e) => setDraft((d) => ({ ...d, name: { ...d.name, ru: e.target.value } }))}
 										/>
 									)}
 								</FormField>

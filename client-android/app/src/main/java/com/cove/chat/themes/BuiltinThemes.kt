@@ -70,38 +70,38 @@ object BuiltinThemes {
     fun cove(mode: ThemeMode): Map<String, String> = if (mode == ThemeMode.Dark) COVE_DARK else COVE_LIGHT
 
     private fun theme(
-        id: String, en: String, fa: String, ar: String, base: ThemeMode, tokens: Map<String, String>, light: Map<String, String>? = null,
-    ) = ThemeDefinition(id, LocalizedName(en, fa, ar), base, tokens, light, author = "Cove", license = "MIT")
+        id: String, en: String, fa: String, ar: String, ru: String, base: ThemeMode, tokens: Map<String, String>, light: Map<String, String>? = null,
+    ) = ThemeDefinition(id, LocalizedName(en, fa, ar, ru), base, tokens, light, author = "Cove", license = "MIT")
 
     /** All built-in themes, default first. */
     val ALL: List<ThemeDefinition> = listOf(
-        theme("cove", "Cove", "کاو", "كوف", ThemeMode.Dark, COVE_DARK, COVE_LIGHT),
-        theme("violet-night", "Violet Night", "شب بنفش", "ليل بنفسجي", ThemeMode.Dark,
+        theme("cove", "Cove", "کاو", "كوف", "Cove", ThemeMode.Dark, COVE_DARK, COVE_LIGHT),
+        theme("violet-night", "Violet Night", "شب بنفش", "ليل بنفسجي", "Фиолетовая ночь", ThemeMode.Dark,
             pal("#313338", "#2b2d31", "#1e1f22", "#dbdee1", "#9da1a8", "#5865f2", "#3f4147", "#3f4147", "#f23f43", "#3ba55d", "#f0b232"),
             pal("#ffffff", "#f2f3f5", "#ffffff", "#313338", "#5c5f66", "#4752c4", "#e3e5e8", "#d7d9dc", "#c9302c", "#1f7a3f", "#8a5a00")),
-        theme("skyline", "Skyline", "افق آبی", "أفق أزرق", ThemeMode.Dark,
+        theme("skyline", "Skyline", "افق آبی", "أفق أزرق", "Горизонт", ThemeMode.Dark,
             pal("#17212b", "#1e2c3a", "#0e1621", "#f5f5f5", "#8a9aa8", "#5eb5f7", "#2b3f52", "#2b3a49", "#ec7676", "#6cc07a", "#f0b25c"),
             pal("#ffffff", "#f1f3f4", "#ffffff", "#1b1f23", "#5a6670", "#1d72b8", "#e4e8ec", "#d8dde2", "#c0392b", "#1e7a3c", "#8a5a00")),
-        theme("crimson", "Crimson", "ارغوانی سرخ", "قرمزي", ThemeMode.Dark,
+        theme("crimson", "Crimson", "ارغوانی سرخ", "قرمزي", "Багрянец", ThemeMode.Dark,
             pal("#0f0f0f", "#181818", "#212121", "#f1f1f1", "#aaaaaa", "#ff4e45", "#272727", "#303030", "#ff6b6b", "#4cc38a", "#f5c04a"),
             pal("#ffffff", "#f2f2f2", "#ffffff", "#0f0f0f", "#5f5f5f", "#cc0000", "#e8e8e8", "#dcdcdc", "#a61b1b", "#1e7a3c", "#8a5a00")),
-        theme("nord", "Nord", "نُرد", "نورد", ThemeMode.Dark,
+        theme("nord", "Nord", "نُرد", "نورد", "Nord", ThemeMode.Dark,
             pal("#2e3440", "#3b4252", "#272c36", "#eceff4", "#a9b3c4", "#88c0d0", "#434c5e", "#4c566a", "#e07b85", "#a3be8c", "#ebcb8b"),
             pal("#eceff4", "#e5e9f0", "#ffffff", "#2e3440", "#4c566a", "#3f6a93", "#d8dee9", "#cdd4e0", "#b0303d", "#4f7a3a", "#8a5f00")),
-        theme("catppuccin", "Catppuccin", "کاپوچینو", "كابتشينو", ThemeMode.Dark,
+        theme("catppuccin", "Catppuccin", "کاپوچینو", "كابتشينو", "Catppuccin", ThemeMode.Dark,
             pal("#1e1e2e", "#313244", "#181825", "#cdd6f4", "#a6adc8", "#cba6f7", "#45475a", "#45475a", "#f38ba8", "#a6e3a1", "#f9e2af"),
             pal("#eff1f5", "#e6e9ef", "#ffffff", "#4c4f69", "#5c5f77", "#8839ef", "#ccd0da", "#bcc0cc", "#d20f39", "#2f7d1f", "#8a5a00")),
-        theme("dracula", "Dracula", "دراکولا", "دراكولا", ThemeMode.Dark,
+        theme("dracula", "Dracula", "دراکولا", "دراكولا", "Dracula", ThemeMode.Dark,
             pal("#282a36", "#21222c", "#191a21", "#f8f8f2", "#9aa5ce", "#bd93f9", "#44475a", "#44475a", "#ff6e6e", "#50fa7b", "#f1fa8c")),
-        theme("solarized", "Solarized", "سولاریزد", "سولارايزد", ThemeMode.Dark,
+        theme("solarized", "Solarized", "سولاریزد", "سولارايزد", "Solarized", ThemeMode.Dark,
             pal("#002b36", "#073642", "#00212b", "#a3b0b0", "#93a1a1", "#2aa5f0", "#0d4351", "#134a58", "#e8605d", "#85b900", "#d9a521"),
             pal("#fdf6e3", "#eee8d5", "#fffbee", "#3f565e", "#4d646b", "#1b6aa5", "#e4ddc6", "#d9d2bb", "#b52a27", "#5f7a00", "#8a5f00")),
-        theme("gruvbox", "Gruvbox", "گراوباکس", "غروفبوكس", ThemeMode.Dark,
+        theme("gruvbox", "Gruvbox", "گراوباکس", "غروفبوكس", "Gruvbox", ThemeMode.Dark,
             pal("#282828", "#3c3836", "#1d2021", "#ebdbb2", "#b5a58e", "#fabd2f", "#504945", "#504945", "#fb6a55", "#b8bb26", "#fe8019"),
             pal("#fbf1c7", "#ebdbb2", "#f9f5d7", "#3c3836", "#665c54", "#af3a03", "#d5c4a1", "#d5c4a1", "#9d0006", "#5f6800", "#8a4a00")),
-        theme("amoled-black", "AMOLED Black", "مشکی آمولد", "أسود أمولد", ThemeMode.Dark,
+        theme("amoled-black", "AMOLED Black", "مشکی آمولد", "أسود أمولد", "Черный AMOLED", ThemeMode.Dark,
             pal("#000000", "#0b0b0b", "#000000", "#f2f2f2", "#9a9a9a", "#d9826a", "#1a1a1a", "#262626", "#f0616d", "#58c48a", "#f5c265")),
-        theme("paper", "Paper", "کاغذ", "ورق", ThemeMode.Light,
+        theme("paper", "Paper", "کاغذ", "ورق", "Бумага", ThemeMode.Light,
             pal("#faf6ee", "#f1ebdd", "#fffdf8", "#2b2620", "#665d51", "#8a5a2b", "#e8dfcb", "#ddd2bb", "#b3261e", "#2f7d4a", "#8a5a00")),
     )
 

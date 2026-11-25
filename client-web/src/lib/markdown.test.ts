@@ -182,3 +182,10 @@ describe('stripMarkdown', () => {
 		expect(stripMarkdown('> quoted\n```\nblock\n```')).toBe('quoted block');
 	});
 });
+
+describe('mentions next to Cyrillic text', () => {
+	it('detects a Cyrillic mention and ignores one glued to a Cyrillic word', () => {
+		expect(JSON.stringify(parseMarkdown('привет @Иван', 'chat'))).toContain('{"type":"mention","value":"@Иван"}');
+		expect(JSON.stringify(parseMarkdown('почта@иван', 'chat'))).not.toContain('"mention"');
+	});
+});

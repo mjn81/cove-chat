@@ -80,7 +80,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 			setVideoUrl(URL.createObjectURL(blob));
 		} catch (err: any) {
 			console.error('Failed to download/decrypt video message:', err);
-			setError(err.message || 'Failed to load video');
+			setError(err.message || t('chat.video_load_failed'));
 		} finally {
 			setIsLoading(false);
 		}
@@ -287,7 +287,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 							type="button"
 							onClick={toggleMute}
 							className="pointer-events-auto w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white/90 hover:text-white flex items-center justify-center transition hover:scale-110 active:scale-95 border border-white/10"
-							title={isMuted ? 'Unmute preview' : 'Mute preview'}
+							title={isMuted ? t('chat.unmute_preview') : t('chat.mute_preview')}
 						>
 							{isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
 						</button>
@@ -297,7 +297,7 @@ export const VideoMessageBubble: React.FC<VideoMessageBubbleProps> = ({ msg }) =
 				{/* Processing badge overlay */}
 				{isProcessing && !videoUrl && (
 					<div className="absolute top-3 left-1/2 -translate-x-1/2 bg-warning/80 backdrop-blur-sm text-warning-foreground font-semibold text-[10px] px-2.5 py-0.5 rounded-full shadow">
-						Converting...
+						{t('chat.converting')}
 					</div>
 				)}
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileIcon, Loader2, Download } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface GenericFileBubbleProps {
 	meta: any;
@@ -14,6 +15,7 @@ export const GenericFileBubble: React.FC<GenericFileBubbleProps> = ({
 	progress,
 	handleDownload,
 }) => {
+	const { t } = useTranslation();
 	return (
 		<div
 			className="relative flex items-center gap-4 bg-secondary border border-border rounded-md p-3 w-full hover:bg-accent transition cursor-pointer group overflow-hidden"
@@ -28,11 +30,11 @@ export const GenericFileBubble: React.FC<GenericFileBubbleProps> = ({
 			</div>
 			<div className="flex flex-col min-w-0 flex-1">
 				<span className="text-[14px] text-foreground font-medium truncate">
-					{meta.name || 'Encrypted File'}
+					{meta.name || t('chat.encrypted_file')}
 				</span>
 				<span className="text-xs text-muted-foreground">
 					{(meta.size / 1024).toFixed(1)} KB •{' '}
-					{meta.mime.split('/')[1]?.toUpperCase() || 'FILE'}
+					{meta.mime.split('/')[1]?.toUpperCase() || t('chat.media.file').toUpperCase()}
 				</span>
 			</div>
 			<button className="text-muted-foreground hover:text-foreground transition p-1 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-200">

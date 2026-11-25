@@ -177,7 +177,7 @@ func Sanitize(r Request) Item {
 	}
 	it.Tokens = sanitizeTokens(r.Tokens)
 	switch r.Lang {
-	case "fa", "ar":
+	case "fa", "ar", "ru":
 		it.Lang = r.Lang
 	}
 	if it.Lang == "ar" {

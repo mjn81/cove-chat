@@ -77,7 +77,7 @@ export const VoicePlayer: React.FC = () => {
 				onClick={togglePlay}
 				disabled={isLoading}
 				className="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition shrink-0"
-				title={isPlaying ? 'Pause' : 'Play'}
+				title={isPlaying ? t('voice.pause') : t('chat.play')}
 			>
 				{isLoading ? (
 					<Loader2 size={16} className="animate-spin" />
@@ -189,7 +189,7 @@ export const VoicePlayer: React.FC = () => {
 					type="button"
 					onClick={() => setVolume(volume > 0 ? 0 : 1)}
 					className="flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted transition-colors cursor-pointer"
-					title={volume === 0 ? 'Unmute' : 'Mute'}
+					title={volume === 0 ? t('call.unmute') : t('call.mute')}
 				>
 					{volume === 0 ? (
 						<VolumeX size={16} className="text-muted-foreground" />
@@ -243,10 +243,10 @@ export const VoicePlayer: React.FC = () => {
 				}`}
 				title={
 					repeatMode === 'once'
-						? 'Repeat: Once'
+						? t('chat.repeat_once')
 						: repeatMode === 'all'
-						? 'Repeat: Loop'
-						: 'Repeat: Off'
+						? t('chat.repeat_loop')
+						: t('chat.repeat_off')
 				}
 			>
 				{repeatMode === 'once' ? <Repeat1 size={15} /> : <Repeat size={15} />}

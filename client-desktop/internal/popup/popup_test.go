@@ -329,3 +329,11 @@ func TestSanitizeKeepsOnlyWellFormedThemeTokens(t *testing.T) {
 		t.Fatal("no tokens in, none out")
 	}
 }
+
+// Russian is a left-to-right UI language: it must reach the popup and not be treated as RTL.
+func TestSanitizeKeepsRussian(t *testing.T) {
+	it := Sanitize(Request{Title: "Привет", Lang: "ru"})
+	if it.Lang != "ru" || it.Dir != "ltr" {
+		t.Fatalf("lang %q dir %q, want ru ltr", it.Lang, it.Dir)
+	}
+}

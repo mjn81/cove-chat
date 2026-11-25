@@ -2,6 +2,7 @@ import { parse } from 'yaml';
 import baseYaml from '@/data/roadmap.yaml?raw';
 import faYaml from '@/data/roadmap.fa.yaml?raw';
 import arYaml from '@/data/roadmap.ar.yaml?raw';
+import ruYaml from '@/data/roadmap.ru.yaml?raw';
 import type { Lang } from '@/i18n';
 
 export type RoadmapStatus = 'done' | 'progress' | 'planned';
@@ -37,6 +38,7 @@ const base = parse(baseYaml) as { phases: RawPhase[] };
 const translations: Partial<Record<Lang, Translation>> = {
   fa: parse(faYaml) as Translation,
   ar: parse(arYaml) as Translation,
+  ru: parse(ruYaml) as Translation,
 };
 
 /**

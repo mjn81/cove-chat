@@ -4,9 +4,10 @@ export type MessageToken =
 	| { type: 'mention'; value: string }
 	| { type: 'url' | 'email'; value: string; href: string };
 
+// Usernames may use any script (Cyrillic, Persian, …), so mentions match Unicode letters; `\w` is ASCII-only.
 // Order matters: emails first so `me@example.com` is not split into a mention; URLs before mentions for `@` inside paths.
 const TOKEN_RE =
-	/([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?:\/\/|www\.)[^\s<>"']+)|(@\w+)/g;
+	/([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?:\/\/|www\.)[^\s<>"']+)|(@[\p{L}\p{M}\p{N}_]+)/gu;
 
 // `*_~` are included so `**https://x.com**` keeps the emphasis markers out of the link.
 const TRAILING_PUNCT = /[.,!?;:'"\]}*_~]$/;
@@ -31,7 +32,8 @@ function trimUrl(raw: string): { url: string; rest: string } {
 	return { url, rest: raw.slice(url.length) };
 }
 
-const STICKY_RE = new RegExp(TOKEN_RE.source, 'y');
+const STICKY_RE = new RegExp(TOKEN_RE.source, 'yu');
+const WORD_CHAR = /[\p{L}\p{M}\p{N}_]/u;
 
 /**
  * Matches a link, email or @mention that starts exactly at [index] (callers ensure it is at a word start).
@@ -75,7 +77,7 @@ export function tokenizeMessage(text: string): MessageToken[] {
 
 	for (const m of text.matchAll(TOKEN_RE)) {
 		const start = m.index ?? 0;
-		if (m[3] && start > 0 && /\w/.test(text[start - 1])) continue; // `foo@bar` inside a word
+		if (m[3] && start > 0 && WORD_CHAR.test(text[start - 1])) continue; // `foo@bar` inside a word
 		push(text.slice(last, start));
 		if (m[1]) {
 			tokens.push({ type: 'email', value: m[1], href: `mailto:${m[1]}` });

@@ -103,14 +103,14 @@ function parseName(value: unknown, ctx: Ctx): LocalizedName | null {
 		ctx.errors.push({ code: 'invalid_name' });
 		return null;
 	}
-	warnUnknownKeys(value, ['en', 'fa', 'ar'], 'name.', ctx.warnings);
+	warnUnknownKeys(value, ['en', 'fa', 'ar', 'ru'], 'name.', ctx.warnings);
 	const en = cleanText(value.en, 40);
 	if (!en) {
 		ctx.errors.push({ code: 'invalid_name', detail: 'en' });
 		return null;
 	}
 	const name: LocalizedName = { en };
-	for (const lang of ['fa', 'ar'] as const) {
+	for (const lang of ['fa', 'ar', 'ru'] as const) {
 		if (value[lang] === undefined) continue;
 		const text = cleanText(value[lang], 40);
 		if (text) name[lang] = text;

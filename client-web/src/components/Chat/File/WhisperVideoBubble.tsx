@@ -176,7 +176,7 @@ export const WhisperVideoBubble: React.FC<WhisperVideoBubbleProps> = ({ file }) 
 						type="button"
 						onClick={toggleMute}
 						className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 text-white transition pointer-events-auto cursor-pointer"
-						title={isMuted ? 'Unmute' : 'Mute'}
+						title={isMuted ? t('call.unmute') : t('call.mute')}
 					>
 						{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
 					</button>

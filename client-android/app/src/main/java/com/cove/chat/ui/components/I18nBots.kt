@@ -1,6 +1,6 @@
 package com.cove.chat.ui.components
 
-/** Persian and Arabic text for the Bot API screens (English source text maps to the translation). */
+/** Persian and Arabic text (Russian is in I18nRu.kt) for the Bot API screens (English source text maps to the translation). */
 internal val BotsFa: Map<String, String> = mapOf(
     "BOT" to "ربات", "Bots" to "ربات‌ها",
     "Bots are programs that read and write chat messages for you. Create one, copy its token and run it anywhere." to "ربات‌ها برنامه‌هایی هستند که به‌جای شما پیام می‌خوانند و می‌نویسند. یکی بسازید، توکن آن را کپی کنید و در هر جایی اجرا کنید.",
@@ -79,35 +79,106 @@ internal val BotsAr: Map<String, String> = mapOf(
 
 /** Strings that carry a name or a number. */
 internal val BotsPatterns: List<Pattern> = listOf(
-    Pattern(Regex("Clear your messages with (.+)\\? This only affects your side; (.+) keeps its own copy\\. The chat stays in your list\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
-        if (l == "fa") "پیام‌های شما با ${m.groupValues[1]} پاک شود؟ این فقط روی سمت شما اثر دارد و ${m.groupValues[2]} نسخهٔ خودش را نگه می‌دارد. گفتگو در فهرست شما می‌ماند."
-        else "هل تريد مسح رسائلك مع ${m.groupValues[1]}؟ يؤثر هذا على جانبك فقط ويحتفظ ${m.groupValues[2]} بنسخته. تبقى المحادثة في قائمتك."
-    },
-    Pattern(Regex("Remove the chat with (.+) from your list\\? You can start it again from Explore > Bots; the old messages stay hidden\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
-        if (l == "fa") "گفتگو با ${m.groupValues[1]} از فهرست شما حذف شود؟ می‌توانید دوباره از کاوش > ربات‌ها آن را شروع کنید؛ پیام‌های قبلی پنهان می‌مانند."
-        else "هل تريد إزالة المحادثة مع ${m.groupValues[1]} من قائمتك؟ يمكنك بدءها مجددًا من استكشاف > الروبوتات؛ تبقى الرسائل القديمة مخفية."
-    },
-    Pattern(Regex("Block (.+)\\? It can no longer message you or be started until you unblock it\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
-        if (l == "fa") "${m.groupValues[1]} مسدود شود؟ تا زمانی که رفع انسداد نکنید نمی‌تواند به شما پیام بدهد یا شروع شود."
-        else "هل تريد حظر ${m.groupValues[1]}؟ لن يتمكن من مراسلتك ولا يمكن بدؤه حتى تلغي الحظر."
-    },
-    Pattern(Regex("(.+) blocked")) { m, l -> if (l == "fa") "${m.groupValues[1]} مسدود شد" else "تم حظر ${m.groupValues[1]}" },
-    Pattern(Regex("(\\d+) commands")) { m, l -> if (l == "fa") "${m.groupValues[1]} دستور" else "${m.groupValues[1]} أوامر" },
-    Pattern(Regex("(.+) is offline right now\\. It will answer when it is back\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
-        if (l == "fa") "${m.groupValues[1]} اکنون آفلاین است و پس از بازگشت پاسخ می‌دهد." else "${m.groupValues[1]} غير متصل حاليًا وسيرد عند عودته."
-    },
-    Pattern(Regex("Manage (.+)", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "مدیریت ${m.groupValues[1]}" else "إدارة ${m.groupValues[1]}" },
-    Pattern(Regex("Remove (.+) from this channel\\?", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "${m.groupValues[1]} از این کانال حذف شود؟" else "هل تريد إزالة ${m.groupValues[1]} من هذه القناة؟" },
-    Pattern(Regex("Remove (.+)", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "حذف ${m.groupValues[1]}" else "إزالة ${m.groupValues[1]}" },
-    Pattern(Regex("Delete (.+)\\? It is removed from every channel and its token stops working\\. Its past messages stay\\.", RegexOption.DOT_MATCHES_ALL)) { m, l ->
-        if (l == "fa") "${m.groupValues[1]} حذف شود؟ از همهٔ کانال‌ها برداشته می‌شود و توکن آن از کار می‌افتد. پیام‌های گذشتهٔ آن می‌مانند."
-        else "هل تريد حذف ${m.groupValues[1]}؟ تتم إزالته من كل القنوات ويتوقف رمزه عن العمل. تبقى رسائله السابقة."
-    },
-    Pattern(Regex("(.+) is offline and cannot answer right now\\.", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "${m.groupValues[1]} آفلاین است و اکنون نمی‌تواند پاسخ دهد." else "${m.groupValues[1]} غير متصل ولا يمكنه الرد الآن." },
-    Pattern(Regex("In (\\d+) channels")) { m, l -> if (l == "fa") "در ${m.groupValues[1]} کانال" else "في ${m.groupValues[1]} قنوات" },
-    Pattern(Regex("You have reached the limit of (\\d+) bots\\.")) { m, l -> if (l == "fa") "به سقف ${m.groupValues[1]} ربات رسیده‌اید." else "لقد بلغت الحد الأقصى وهو ${m.groupValues[1]} روبوتات." },
-    Pattern(Regex("Missing value for \"(.+)\"\\.", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "مقدار «${m.groupValues[1]}» وارد نشده است." else "قيمة «${m.groupValues[1]}» مفقودة." },
-    Pattern(Regex("\"(.+)\" has an invalid value\\.", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "مقدار «${m.groupValues[1]}» معتبر نیست." else "قيمة «${m.groupValues[1]}» غير صالحة." },
-    Pattern(Regex("Unexpected value \"(.+)\"\\.", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "مقدار «${m.groupValues[1]}» غیرمنتظره است." else "قيمة غير متوقعة «${m.groupValues[1]}»." },
-    Pattern(Regex("\"(.+)\" must be one of its listed choices\\.", RegexOption.DOT_MATCHES_ALL)) { m, l -> if (l == "fa") "«${m.groupValues[1]}» باید یکی از گزینه‌های فهرست‌شده باشد." else "يجب أن تكون «${m.groupValues[1]}» أحد الخيارات المدرجة." }
+    localizedPattern(
+        Regex("Clear your messages with (.+)\\? This only affects your side; (.+) keeps its own copy\\. The chat stays in your list\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "پیام‌های شما با ${m.groupValues[1]} پاک شود؟ این فقط روی سمت شما اثر دارد و ${m.groupValues[2]} نسخهٔ خودش را نگه می‌دارد. گفتگو در فهرست شما می‌ماند." },
+        { m -> "هل تريد مسح رسائلك مع ${m.groupValues[1]}؟ يؤثر هذا على جانبك فقط ويحتفظ ${m.groupValues[2]} بنسخته. تبقى المحادثة في قائمتك." },
+        { m -> "Очистить вашу переписку с ${m.groupValues[1]}? Это затронет только вашу сторону; ${m.groupValues[2]} сохранит свою копию. Чат останется в вашем списке." },
+    ),
+    localizedPattern(
+        Regex("Remove the chat with (.+) from your list\\? You can start it again from Explore > Bots; the old messages stay hidden\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "گفتگو با ${m.groupValues[1]} از فهرست شما حذف شود؟ می‌توانید دوباره از کاوش > ربات‌ها آن را شروع کنید؛ پیام‌های قبلی پنهان می‌مانند." },
+        { m -> "هل تريد إزالة المحادثة مع ${m.groupValues[1]} من قائمتك؟ يمكنك بدءها مجددًا من استكشاف > الروبوتات؛ تبقى الرسائل القديمة مخفية." },
+        { m -> "Убрать чат с ${m.groupValues[1]} из вашего списка? Его можно начать снова через Обзор > Боты; старые сообщения останутся скрытыми." },
+    ),
+    localizedPattern(
+        Regex("Block (.+)\\? It can no longer message you or be started until you unblock it\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "${m.groupValues[1]} مسدود شود؟ تا زمانی که رفع انسداد نکنید نمی‌تواند به شما پیام بدهد یا شروع شود." },
+        { m -> "هل تريد حظر ${m.groupValues[1]}؟ لن يتمكن من مراسلتك ولا يمكن بدؤه حتى تلغي الحظر." },
+        { m -> "Заблокировать ${m.groupValues[1]}? Бот не сможет писать вам и его нельзя будет запустить, пока вы его не разблокируете." },
+    ),
+    localizedPattern(
+        Regex("(.+) blocked"),
+        { m -> "${m.groupValues[1]} مسدود شد" },
+        { m -> "تم حظر ${m.groupValues[1]}" },
+        { m -> "Бот ${m.groupValues[1]} заблокирован" },
+    ),
+    localizedPattern(
+        Regex("(\\d+) commands"),
+        { m -> "${m.groupValues[1]} دستور" },
+        { m -> "${m.groupValues[1]} أوامر" },
+        { m -> "${m.groupValues[1]} ${ruPlural(m.groupValues[1], "команда", "команды", "команд")}" },
+    ),
+    localizedPattern(
+        Regex("(.+) is offline right now\\. It will answer when it is back\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "${m.groupValues[1]} اکنون آفلاین است و پس از بازگشت پاسخ می‌دهد." },
+        { m -> "${m.groupValues[1]} غير متصل حاليًا وسيرد عند عودته." },
+        { m -> "${m.groupValues[1]} сейчас не в сети. Ответ придет, когда бот вернется." },
+    ),
+    localizedPattern(
+        Regex("Manage (.+)", RegexOption.DOT_MATCHES_ALL),
+        { m -> "مدیریت ${m.groupValues[1]}" },
+        { m -> "إدارة ${m.groupValues[1]}" },
+        { m -> "Управление: ${m.groupValues[1]}" },
+    ),
+    localizedPattern(
+        Regex("Remove (.+) from this channel\\?", RegexOption.DOT_MATCHES_ALL),
+        { m -> "${m.groupValues[1]} از این کانال حذف شود؟" },
+        { m -> "هل تريد إزالة ${m.groupValues[1]} من هذه القناة؟" },
+        { m -> "Удалить ${m.groupValues[1]} из этого канала?" },
+    ),
+    localizedPattern(
+        Regex("Remove (.+)", RegexOption.DOT_MATCHES_ALL),
+        { m -> "حذف ${m.groupValues[1]}" },
+        { m -> "إزالة ${m.groupValues[1]}" },
+        { m -> "Удалить ${m.groupValues[1]}" },
+    ),
+    localizedPattern(
+        Regex("Delete (.+)\\? It is removed from every channel and its token stops working\\. Its past messages stay\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "${m.groupValues[1]} حذف شود؟ از همهٔ کانال‌ها برداشته می‌شود و توکن آن از کار می‌افتد. پیام‌های گذشتهٔ آن می‌مانند." },
+        { m -> "هل تريد حذف ${m.groupValues[1]}؟ تتم إزالته من كل القنوات ويتوقف رمزه عن العمل. تبقى رسائله السابقة." },
+        { m -> "Удалить ${m.groupValues[1]}? Бот будет убран из всех каналов, а его токен перестанет работать. Прошлые сообщения останутся." },
+    ),
+    localizedPattern(
+        Regex("(.+) is offline and cannot answer right now\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "${m.groupValues[1]} آفلاین است و اکنون نمی‌تواند پاسخ دهد." },
+        { m -> "${m.groupValues[1]} غير متصل ولا يمكنه الرد الآن." },
+        { m -> "${m.groupValues[1]} не в сети и сейчас не может ответить." },
+    ),
+    localizedPattern(
+        Regex("In (\\d+) channels"),
+        { m -> "در ${m.groupValues[1]} کانال" },
+        { m -> "في ${m.groupValues[1]} قنوات" },
+        { m -> "В ${m.groupValues[1]} ${ruPlural(m.groupValues[1], "канале", "каналах", "каналах")}" },
+    ),
+    localizedPattern(
+        Regex("You have reached the limit of (\\d+) bots\\."),
+        { m -> "به سقف ${m.groupValues[1]} ربات رسیده‌اید." },
+        { m -> "لقد بلغت الحد الأقصى وهو ${m.groupValues[1]} روبوتات." },
+        { m -> "Достигнут лимит: ${m.groupValues[1]} ${ruPlural(m.groupValues[1], "бот", "бота", "ботов")}." },
+    ),
+    localizedPattern(
+        Regex("Missing value for \"(.+)\"\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "مقدار «${m.groupValues[1]}» وارد نشده است." },
+        { m -> "قيمة «${m.groupValues[1]}» مفقودة." },
+        { m -> "Не указано значение для «${m.groupValues[1]}»." },
+    ),
+    localizedPattern(
+        Regex("\"(.+)\" has an invalid value\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "مقدار «${m.groupValues[1]}» معتبر نیست." },
+        { m -> "قيمة «${m.groupValues[1]}» غير صالحة." },
+        { m -> "Недопустимое значение «${m.groupValues[1]}»." },
+    ),
+    localizedPattern(
+        Regex("Unexpected value \"(.+)\"\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "مقدار «${m.groupValues[1]}» غیرمنتظره است." },
+        { m -> "قيمة غير متوقعة «${m.groupValues[1]}»." },
+        { m -> "Неожиданное значение «${m.groupValues[1]}»." },
+    ),
+    localizedPattern(
+        Regex("\"(.+)\" must be one of its listed choices\\.", RegexOption.DOT_MATCHES_ALL),
+        { m -> "«${m.groupValues[1]}» باید یکی از گزینه‌های فهرست‌شده باشد." },
+        { m -> "يجب أن تكون «${m.groupValues[1]}» أحد الخيارات المدرجة." },
+        { m -> "Значение «${m.groupValues[1]}» должно быть одним из перечисленных вариантов." },
+    ),
 )

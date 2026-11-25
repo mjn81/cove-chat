@@ -48,20 +48,20 @@ export const PrivacyTab = () => {
 	};
 
 	const channelAddLabels: Record<'everyone' | 'friends' | 'nobody', string> = {
-		everyone: 'Everyone (Anyone can add you directly)',
-		friends: 'Friends Only (Only friended users can add you)',
-		nobody: 'Nobody (Must send you an invite link)',
+		everyone: t('privacy.add_everyone'),
+		friends: t('privacy.add_friends'),
+		nobody: t('privacy.add_nobody'),
 	};
 
 	const dmPermissionLabels: Record<'everyone' | 'friends' | 'nobody', string> = {
-		everyone: 'Everyone (Anyone can message you)',
-		friends: 'Friends Only (Only friends can initiate DMs)',
-		nobody: 'Nobody (Disable direct messages)',
+		everyone: t('privacy.dm_everyone'),
+		friends: t('privacy.dm_friends'),
+		nobody: t('privacy.dm_nobody'),
 	};
 
 	const friendRequestLabels: Record<'everyone' | 'nobody', string> = {
-		everyone: 'Everyone (Anyone can send friend requests)',
-		nobody: 'Nobody (Disable incoming friend requests)',
+		everyone: t('privacy.friend_everyone'),
+		nobody: t('privacy.friend_nobody'),
 	};
 
 	return (
@@ -76,7 +76,7 @@ export const PrivacyTab = () => {
 							{t('settings.privacy')}
 						</h2>
 						<p className="text-xs text-muted-foreground">
-							Control who can interact with you and add you to groups
+							{t('privacy.subtitle')}
 						</p>
 					</div>
 				</div>
@@ -107,7 +107,7 @@ export const PrivacyTab = () => {
 								{t('privacy.who_add')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-								Decide who can add you directly to channels. If restricted, others must send you an invite link.
+								{t('privacy.add_hint')}
 							</p>
 						</div>
 					</div>
@@ -133,13 +133,13 @@ export const PrivacyTab = () => {
 									}}
 								>
 									<DropdownMenuRadioItem value="everyone" className="rounded-lg py-2 cursor-pointer text-sm">
-										Everyone (Anyone can add you directly)
+										{t('privacy.add_everyone')}
 									</DropdownMenuRadioItem>
 									<DropdownMenuRadioItem value="friends" className="rounded-lg py-2 cursor-pointer text-sm">
-										Friends Only (Only friended users can add you)
+										{t('privacy.add_friends')}
 									</DropdownMenuRadioItem>
 									<DropdownMenuRadioItem value="nobody" className="rounded-lg py-2 cursor-pointer text-sm">
-										Nobody (Must send you an invite link)
+										{t('privacy.add_nobody')}
 									</DropdownMenuRadioItem>
 								</DropdownMenuRadioGroup>
 							</DropdownMenuContent>
@@ -158,7 +158,7 @@ export const PrivacyTab = () => {
 								{t('privacy.who_dm')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-								Filter incoming direct conversations. Blocked users can never message you regardless of this setting.
+								{t('privacy.dm_hint')}
 							</p>
 						</div>
 					</div>
@@ -184,13 +184,13 @@ export const PrivacyTab = () => {
 									}}
 								>
 									<DropdownMenuRadioItem value="everyone" className="rounded-lg py-2 cursor-pointer text-sm">
-										Everyone (Anyone can message you)
+										{t('privacy.dm_everyone')}
 									</DropdownMenuRadioItem>
 									<DropdownMenuRadioItem value="friends" className="rounded-lg py-2 cursor-pointer text-sm">
-										Friends Only (Only friends can initiate DMs)
+										{t('privacy.dm_friends')}
 									</DropdownMenuRadioItem>
 									<DropdownMenuRadioItem value="nobody" className="rounded-lg py-2 cursor-pointer text-sm">
-										Nobody (Disable direct messages)
+										{t('privacy.dm_nobody')}
 									</DropdownMenuRadioItem>
 								</DropdownMenuRadioGroup>
 							</DropdownMenuContent>
@@ -209,7 +209,7 @@ export const PrivacyTab = () => {
 								{t('privacy.who_friend')}
 							</span>
 							<p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-								Control incoming friend invitations from other users on the platform.
+								{t('privacy.friend_hint')}
 							</p>
 						</div>
 					</div>
@@ -235,10 +235,10 @@ export const PrivacyTab = () => {
 									}}
 								>
 									<DropdownMenuRadioItem value="everyone" className="rounded-lg py-2 cursor-pointer text-sm">
-										Everyone (Anyone can send friend requests)
+										{t('privacy.friend_everyone')}
 									</DropdownMenuRadioItem>
 									<DropdownMenuRadioItem value="nobody" className="rounded-lg py-2 cursor-pointer text-sm">
-										Nobody (Disable incoming friend requests)
+										{t('privacy.friend_nobody')}
 									</DropdownMenuRadioItem>
 								</DropdownMenuRadioGroup>
 							</DropdownMenuContent>

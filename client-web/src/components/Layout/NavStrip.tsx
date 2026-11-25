@@ -21,9 +21,9 @@ interface NavStripProps {
 }
 
 const TABS: { id: SidebarTab; icon: React.ElementType; label: string }[] = [
-	{ id: 'all', icon: LayoutList, label: 'All' },
-	{ id: 'dms', icon: MessageCircle, label: 'Direct Messages' },
-	{ id: 'channels', icon: Hash, label: 'Channels' },
+	{ id: 'all', icon: LayoutList, label: 'search.filter_all' },
+	{ id: 'dms', icon: MessageCircle, label: 'sidebar.direct_messages' },
+	{ id: 'channels', icon: Hash, label: 'search.section_channels' },
 ];
 
 export function NavStrip({ activeTab, onChange, orientation = 'vertical' }: NavStripProps) {

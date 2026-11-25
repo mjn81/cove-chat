@@ -3,6 +3,7 @@ package com.cove.chat.ui.screens
 import com.cove.chat.ui.theme.CoveShapes
 import com.cove.chat.ui.theme.CoveType
 import androidx.compose.material3.MaterialTheme
+import com.cove.chat.ui.components.AppLanguage
 import com.cove.chat.ui.components.CoveIconButton
 import com.cove.chat.ui.components.I18nToast
 import android.widget.Toast
@@ -122,20 +123,32 @@ import java.util.Locale
 private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy", Locale.ENGLISH)
 private val DateFormatThisYear: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH)
+// Russian uses its own day/month names, day-before-month order and a 24-hour clock.
+private val Russian: Locale = Locale.forLanguageTag("ru")
+private val RuTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Russian)
+private val RuDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMMM yyyy 'г.'", Russian)
+private val RuDateFormatThisYear: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMMM", Russian)
 
 private fun parseInstant(s: String): Instant? = runCatching { Instant.parse(s) }.getOrNull()
 
 private fun Message.localDate(): LocalDate? = parseInstant(sentAt)?.atZone(ZoneId.systemDefault())?.toLocalDate()
 
 private fun Message.timeLabel(): String =
-    parseInstant(sentAt)?.atZone(ZoneId.systemDefault())?.format(TimeFormat) ?: ""
+    parseInstant(sentAt)?.atZone(ZoneId.systemDefault())?.format(if (AppLanguage.code == "ru") RuTimeFormat else TimeFormat) ?: ""
 
-internal fun dayLabel(d: LocalDate): String {
-    val today = LocalDate.now()
+/**
+ * Day separator text for [d]: "Today" / "Yesterday" (source strings, translated on display) or a date formatted for the
+ * UI language [lang].
+ */
+internal fun dayLabel(d: LocalDate, lang: String = AppLanguage.code, today: LocalDate = LocalDate.now()): String {
+    val ru = lang == "ru"
     return when (d) {
         today -> "Today"
         today.minusDays(1) -> "Yesterday"
-        else -> d.format(if (d.year == today.year) DateFormatThisYear else DateFormat)
+        else -> d.format(
+            if (d.year == today.year) (if (ru) RuDateFormatThisYear else DateFormatThisYear)
+            else (if (ru) RuDateFormat else DateFormat)
+        )
     }
 }
 

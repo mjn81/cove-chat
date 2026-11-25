@@ -43,6 +43,7 @@ export interface LocalizedName {
 	en: string;
 	fa?: string;
 	ar?: string;
+	ru?: string;
 }
 
 /** The built-in chat doodle patterns (see `utils/chat-backgrounds.ts`). */

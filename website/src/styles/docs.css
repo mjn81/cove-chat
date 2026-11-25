@@ -33,3 +33,7 @@
 header.header {
   backdrop-filter: blur(12px);
 }
+/* Starlight fixes the language picker at 7em, which cuts "Русский" short. The width is set inline, hence !important. */
+:root:lang(ru) starlight-lang-select label {
+  --sl-select-width: 8.5em !important;
+}

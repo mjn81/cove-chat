@@ -5,6 +5,7 @@ import GooLoaderDark from './GooLoaderDark';
 import GooLoaderLight from './GooLoaderLight';
 import { RefreshCw, LogIn, RotateCcw } from 'lucide-react';
 import { APP_NAME } from '@/lib/brand';
+import { useTranslation } from 'react-i18next';
 
 interface LoadingScreenProps {
   message?: string;
@@ -12,9 +13,12 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
-  message = `Connecting to ${APP_NAME}`,
-  subtext = 'Establishing encrypted session...',
+  message,
+  subtext,
 }) => {
+  const { t } = useTranslation();
+  const title = message ?? t('common.connecting_to_app', { app: APP_NAME });
+  const detail = subtext ?? t('common.establishing_session');
   const theme = useAppStore((s) => s.theme);
   const [showTroubleshoot, setShowTroubleshoot] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -47,16 +51,16 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       </div>
 
       <div className="flex flex-col items-center text-center space-y-1.5 px-4">
-        <span className="text-base font-semibold text-foreground">{message}</span>
-        {subtext && (
-          <p className="text-xs text-muted-foreground">{subtext}</p>
+        <span className="text-base font-semibold text-foreground">{title}</span>
+        {detail && (
+          <p className="text-xs text-muted-foreground">{detail}</p>
         )}
       </div>
 
       {showTroubleshoot && (
         <div className="mt-8 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <p className="text-xs text-muted-foreground mb-1">
-            Taking longer than expected?
+            {t('common.slow_loading')}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -66,7 +70,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-secondary hover:bg-accent text-foreground transition-colors cursor-pointer border border-border"
             >
               <RefreshCw size={12} className={isRetrying ? 'animate-spin' : ''} />
-              Retry
+              {t('chat.retry')}
             </button>
             <button
               type="button"
@@ -74,13 +78,13 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
             >
               <LogIn size={12} />
-              Go to Login
+              {t('common.go_to_login')}
             </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors cursor-pointer"
-              title="Reload Page"
+              title={t('common.reload_page')}
             >
               <RotateCcw size={12} />
             </button>

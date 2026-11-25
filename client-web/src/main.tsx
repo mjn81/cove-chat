@@ -9,8 +9,9 @@ if (typeof window !== 'undefined' && import.meta.env.DEV && isPerfEnabled()) {
 }
 
 import { createRoot } from 'react-dom/client';
-import './i18n/index'; // must be imported before App
+import i18n from '@/i18n'; // must be imported before App
 import './index.css';
+import './styles/cyrillic-font.css';
 import './styles/emoji-font.css';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -35,7 +36,7 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
-		<ErrorBoundary label="the app">
+		<ErrorBoundary label={i18n.t('errors.boundary_app')}>
 			<QueryClientProvider client={queryClient}>
 				<App />
 				<Toaster dir="auto" />

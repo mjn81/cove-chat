@@ -151,11 +151,11 @@ function theme(
 
 /** All built-in themes, default first. */
 export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
-	theme('cove', { en: 'Cove', fa: 'کاو', ar: 'كوف' }, 'dark', COVE_DARK, COVE_LIGHT),
+	theme('cove', { en: 'Cove', fa: 'کاو', ar: 'كوف', ru: 'Cove' }, 'dark', COVE_DARK, COVE_LIGHT),
 
 	theme(
 		'violet-night',
-		{ en: 'Violet Night', fa: 'شب بنفش', ar: 'ليل بنفسجي' },
+		{ en: 'Violet Night', fa: 'شب بنفش', ar: 'ليل بنفسجي', ru: 'Фиолетовая ночь' },
 		'dark',
 		tokensFrom({
 			background: '#313338', card: '#2b2d31', popover: '#1e1f22', foreground: '#dbdee1', mutedForeground: '#9da1a8',
@@ -169,7 +169,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'skyline',
-		{ en: 'Skyline', fa: 'افق آبی', ar: 'أفق أزرق' },
+		{ en: 'Skyline', fa: 'افق آبی', ar: 'أفق أزرق', ru: 'Горизонт' },
 		'dark',
 		tokensFrom({
 			background: '#17212b', card: '#1e2c3a', popover: '#0e1621', foreground: '#f5f5f5', mutedForeground: '#8a9aa8',
@@ -183,7 +183,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'crimson',
-		{ en: 'Crimson', fa: 'ارغوانی سرخ', ar: 'قرمزي' },
+		{ en: 'Crimson', fa: 'ارغوانی سرخ', ar: 'قرمزي', ru: 'Багрянец' },
 		'dark',
 		tokensFrom({
 			background: '#0f0f0f', card: '#181818', popover: '#212121', foreground: '#f1f1f1', mutedForeground: '#aaaaaa',
@@ -197,7 +197,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'nord',
-		{ en: 'Nord', fa: 'نُرد', ar: 'نورد' },
+		{ en: 'Nord', fa: 'نُرد', ar: 'نورد', ru: 'Nord' },
 		'dark',
 		tokensFrom({
 			background: '#2e3440', card: '#3b4252', popover: '#272c36', foreground: '#eceff4', mutedForeground: '#a9b3c4',
@@ -211,7 +211,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'catppuccin',
-		{ en: 'Catppuccin', fa: 'کاپوچینو', ar: 'كابتشينو' },
+		{ en: 'Catppuccin', fa: 'کاپوچینو', ar: 'كابتشينو', ru: 'Catppuccin' },
 		'dark',
 		tokensFrom({
 			background: '#1e1e2e', card: '#313244', popover: '#181825', foreground: '#cdd6f4', mutedForeground: '#a6adc8',
@@ -226,7 +226,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'dracula',
-		{ en: 'Dracula', fa: 'دراکولا', ar: 'دراكولا' },
+		{ en: 'Dracula', fa: 'دراکولا', ar: 'دراكولا', ru: 'Dracula' },
 		'dark',
 		tokensFrom({
 			background: '#282a36', card: '#21222c', popover: '#191a21', foreground: '#f8f8f2', mutedForeground: '#9aa5ce',
@@ -236,7 +236,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'solarized',
-		{ en: 'Solarized', fa: 'سولاریزد', ar: 'سولارايزد' },
+		{ en: 'Solarized', fa: 'سولاریزد', ar: 'سولارايزد', ru: 'Solarized' },
 		'dark',
 		tokensFrom({
 			background: '#002b36', card: '#073642', popover: '#00212b', foreground: '#a3b0b0', mutedForeground: '#93a1a1',
@@ -250,7 +250,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'gruvbox',
-		{ en: 'Gruvbox', fa: 'گراوباکس', ar: 'غروفبوكس' },
+		{ en: 'Gruvbox', fa: 'گراوباکس', ar: 'غروفبوكس', ru: 'Gruvbox' },
 		'dark',
 		tokensFrom({
 			background: '#282828', card: '#3c3836', popover: '#1d2021', foreground: '#ebdbb2', mutedForeground: '#b5a58e',
@@ -264,7 +264,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'amoled-black',
-		{ en: 'AMOLED Black', fa: 'مشکی آمولد', ar: 'أسود أمولد' },
+		{ en: 'AMOLED Black', fa: 'مشکی آمولد', ar: 'أسود أمولد', ru: 'Черный AMOLED' },
 		'dark',
 		tokensFrom({
 			background: '#000000', card: '#0b0b0b', popover: '#000000', foreground: '#f2f2f2', mutedForeground: '#9a9a9a',
@@ -274,7 +274,7 @@ export const BUILTIN_THEMES: readonly ThemeDefinition[] = [
 
 	theme(
 		'paper',
-		{ en: 'Paper', fa: 'کاغذ', ar: 'ورق' },
+		{ en: 'Paper', fa: 'کاغذ', ar: 'ورق', ru: 'Бумага' },
 		'light',
 		tokensFrom({
 			background: '#faf6ee', card: '#f1ebdd', popover: '#fffdf8', foreground: '#2b2620', mutedForeground: '#665d51',

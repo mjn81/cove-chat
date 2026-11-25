@@ -1,7 +1,8 @@
 import React from 'react';
+import i18n from '@/i18n';
 
 export const GooLoaderDark: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="goo" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
+  <svg xmlns="http://www.w3.org/2000/svg" className="goo" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label={i18n.t('common.loading')}>
     <style>{`
       /* Two knobs: color is the ink, --rate multiplies every duration. */
       svg { color: hsl(var(--foreground)); --rate: 1; }

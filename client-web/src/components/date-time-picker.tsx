@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { enUS, faIR, arSA } from 'date-fns/locale';
+import { enUS, faIR, arSA, ru } from 'date-fns/locale';
 import { CalendarIcon, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,7 +17,7 @@ import { isBeforeDay, minuteOptions, pickDay, withTime } from '@/lib/date-time';
 import { cn } from '@/lib/utils';
 
 /** react-day-picker locales for the languages the app ships. */
-const CALENDAR_LOCALES = { en: enUS, fa: faIR, ar: arSA } as const;
+const CALENDAR_LOCALES = { en: enUS, fa: faIR, ar: arSA, ru } as const;
 
 export interface DateTimePickerProps {
 	/** Selected moment, or `undefined` for none. */

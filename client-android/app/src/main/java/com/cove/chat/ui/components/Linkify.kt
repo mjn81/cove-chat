@@ -19,7 +19,12 @@ sealed interface MessageToken {
 }
 
 // Emails first so `me@example.com` is not split into a mention; only http(s)/www/email forms ever become links.
-private val TOKEN_RE = Regex("""([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?://|www\.)[^\s<>"']+)|(@\w+)""")
+private val TOKEN_RE = Regex("""([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)|((?:https?://|www\.)[^\s<>"']+)|(@[\p{L}\p{M}\p{N}_]+)""")
+
+/** A letter, digit or combining mark in any script: an `@` right after one is inside a word, not a mention. */
+internal fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c.category in COMBINING_MARKS
+
+private val COMBINING_MARKS = setOf(CharCategory.NON_SPACING_MARK, CharCategory.COMBINING_SPACING_MARK, CharCategory.ENCLOSING_MARK)
 // `*_~` are included so `**https://x.com**` keeps the emphasis markers out of the link.
 private val TRAILING_PUNCT = Regex("""[.,!?;:'"\]}*_~]$""")
 private val STICKY_TOKEN = java.util.regex.Pattern.compile(TOKEN_RE.pattern)
@@ -64,7 +69,7 @@ fun tokenizeMessage(text: String): List<MessageToken> {
     }
     for (m in TOKEN_RE.findAll(text)) {
         val start = m.range.first
-        if (m.groups[3] != null && start > 0 && text[start - 1].isLetterOrDigit()) continue // `foo@bar` inside a word
+        if (m.groups[3] != null && start > 0 && isWordChar(text[start - 1])) continue // `foo@bar` inside a word
         plain(text.substring(last, start))
         when {
             m.groups[1] != null -> tokens.add(MessageToken.Link(m.value, "mailto:${m.value}"))

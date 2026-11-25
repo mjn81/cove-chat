@@ -5,6 +5,10 @@ html.lenis,html.lenis body{height:auto}
 .lenis:not(.lenis-autoToggle).lenis-stopped{overflow:clip}
 .lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
 body.landing{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+/* Nothing may widen the page: product mocks are server-rendered at design width until their island hydrates, and
+   the border beam travels past its card. body's overflow-x alone does not stop either on phones. `clip`, not
+   `hidden`, so main never becomes a scroll container (sticky keeps working). */
+.landing main{overflow-x:clip}
 .landing a{color:inherit;text-decoration:none}
 .landing h1,.landing h2,.landing h3,.landing p{margin:0}
 .wrap{max-width:1160px;margin:0 auto;padding:0 24px}

@@ -2,6 +2,11 @@ package com.cove.chat.ui.components
 
 /** Persian strings added after the main table in [Translations] (chat input, backgrounds, calls, Whisper); merged into it. */
 internal val ExtraFa: Map<String, String> = mapOf(
+    "Profile photos" to "عکس‌های نمایه",
+    "Description (optional)" to "توضیحات (اختیاری)",
+    "Add photo" to "افزودن عکس",
+    "Download Voice Note" to "دانلود پیام صوتی",
+    "made with ❤️ by " to "ساخته‌شده با ❤️ توسط ",
     "Update available" to "به‌روزرسانی در دسترس است",
     "App updates" to "به‌روزرسانی برنامه",
     "Updates for this build come from the app store." to "به‌روزرسانی این نسخه از فروشگاه برنامه انجام می‌شود.",
@@ -125,6 +130,11 @@ internal val ExtraFa: Map<String, String> = mapOf(
 
 /** Arabic strings added after the main table in [Translations] (chat input, backgrounds, calls, Whisper); merged into it. */
 internal val ExtraAr: Map<String, String> = mapOf(
+    "Profile photos" to "صور الملف الشخصي",
+    "Description (optional)" to "الوصف (اختياري)",
+    "Add photo" to "إضافة صورة",
+    "Download Voice Note" to "تنزيل الرسالة الصوتية",
+    "made with ❤️ by " to "صُنع بكل ❤️ بواسطة ",
     "Update available" to "تحديث متاح",
     "App updates" to "تحديثات التطبيق",
     "Updates for this build come from the app store." to "تأتي تحديثات هذه النسخة من متجر التطبيقات.",

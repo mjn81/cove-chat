@@ -6,6 +6,7 @@ import { insertIntoComposer, sendStickerFromPanel } from '@/domains/emoji/utils/
 import { useServerCapabilities } from '@/domains/system/api/use-server-capabilities';
 import { loadPanel } from '../utils/emoji-panel-loader';
 import { DOCK_MIN_WIDTH_QUERY, DOCK_WIDTH } from '../utils/emoji-dock';
+import i18n from '@/i18n';
 
 const EmojiStickerPanel = lazy(loadPanel);
 
@@ -25,7 +26,7 @@ export function EmojiDock() {
 
 	if (mode !== 'dock' || !open || !wide) return null;
 	return (
-		<aside className="relative z-10 h-full shrink-0 border-s border-border bg-popover" style={{ width: DOCK_WIDTH }} aria-label="Emoji">
+		<aside className="relative z-10 h-full shrink-0 border-s border-border bg-popover" style={{ width: DOCK_WIDTH }} aria-label={i18n.t('emoji.dock_label')}>
 			<Suspense fallback={null}>
 				<EmojiStickerPanel
 					fill

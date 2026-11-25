@@ -219,7 +219,7 @@ fun OpenSourceFooter(modifier: Modifier = Modifier) {
         Text("COVE IS OPEN SOURCE", color = muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
         Text(
             text = buildAnnotatedString {
-                append("made with ❤️ by ")
+                append(t("made with ❤️ by "))
                 withStyle(SpanStyle(color = CoveTheme.extendedColors.textPrimary.copy(alpha = 0.4f))) { append("mjn") }
             },
             color = muted,
