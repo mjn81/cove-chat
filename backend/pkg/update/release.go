@@ -165,7 +165,7 @@ type SelectOptions struct {
 }
 
 // AllowPrerelease decides whether pre-releases should be offered: when the user opted in, or while the running
-// build is itself a 0.x or pre-release build (every 0.x release is published as a GitHub pre-release).
+// build is itself a 0.x or pre-release build.
 func AllowPrerelease(current string, optIn bool) bool {
 	if optIn {
 		return true
@@ -178,7 +178,7 @@ func AllowPrerelease(current string, optIn bool) bool {
 }
 
 // Select returns the highest-semver release that is newer than opts.Current. The releases list is used rather
-// than /releases/latest because that endpoint ignores pre-releases and every current Cove build is one.
+// than /releases/latest because that endpoint ignores pre-releases, which some users are offered.
 //
 // Returns ErrNoRelease if nothing newer qualifies; an unparseable current version is an error.
 func Select(releases []Release, opts SelectOptions) (Release, error) {

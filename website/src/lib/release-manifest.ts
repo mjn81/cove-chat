@@ -91,7 +91,7 @@ export function compareSemver(a: string, b: string): number {
   return px.length === py.length ? 0 : px.length < py.length ? -1 : 1;
 }
 
-/** The highest-semver published release (pre-releases included: every 0.x release is one). */
+/** The highest-semver published release (pre-releases included). */
 export function newestRelease(releases: GhRelease[]): GhRelease | null {
   let best: GhRelease | null = null;
   for (const r of releases) {

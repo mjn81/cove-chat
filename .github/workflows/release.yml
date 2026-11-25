@@ -26,7 +26,6 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       publish: ${{ steps.v.outputs.publish }}
       rc: ${{ steps.v.outputs.rc }}
-      prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
       - id: v
@@ -42,8 +41,6 @@ jobs:
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
           case "$version" in *-*) echo "rc=true" >> "$GITHUB_OUTPUT" ;; *) echo "rc=false" >> "$GITHUB_OUTPUT" ;; esac
-          # Every 0.x build and every -rc build is a GitHub pre-release: the website labels those Beta.
-          case "$version" in 0.*|*-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;; *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;; esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   server:
@@ -271,7 +268,7 @@ jobs:
       - name: Attach to the release (created by release-please, or here for a hand-pushed tag)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          PRERELEASE: ${{ needs.prepare.outputs.rc }}
         run: |
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" --clobber
@@ -279,6 +276,7 @@ jobs:
             gh release create "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" \
               --title "Cove ${GITHUB_REF_NAME#v}" --generate-notes
           fi
+          # Only -rc builds are pre-releases; every other version, 0.x included, is a full release.
           gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --prerelease="$PRERELEASE"
       - name: Rebuild the website so its download links point at this release
         env:

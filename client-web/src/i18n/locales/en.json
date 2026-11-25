@@ -1245,7 +1245,7 @@
 		"auto": "Check for updates automatically",
 		"autoHint": "Cove looks for new versions in the background and downloads them, ready to install when you choose.",
 		"prerelease": "Include pre-releases",
-		"prereleaseHint": "Also offer early builds. Every 0.x version is published as a pre-release.",
+		"prereleaseHint": "Also offer early builds, such as release candidates.",
 		"version": "Version {{version}}",
 		"checkNow": "Check now",
 		"status": {

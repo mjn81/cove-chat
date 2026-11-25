@@ -65,7 +65,7 @@ the manifest follows every release. If GitHub is unreachable during the site bui
 ## How versions are chosen
 
 * The **highest semver** newer than the running version wins; never a downgrade or the same version.
-* The releases list is read, not `/releases/latest` (it ignores pre-releases and every 0.x release is one).
+* The releases list is read, not `/releases/latest` (it ignores pre-releases).
 * Pre-releases are offered when the running build is 0.x or itself a pre-release, or when the user opted in. A user
   who switches it off keeps it off.
 * A release is only considered when it already carries the platform file and a checksum.
