@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.7](https://github.com/mjn81/cove-chat/compare/v0.11.6...v0.11.7) (2026-11-25)
+
+
+### Bug Fixes
+
+* **calls:** deliver screen shares over encrypted UDP ([878fd57](https://github.com/mjn81/cove-chat/commit/878fd5767ceaa3568d39e24e008cd6a96a8d8755))
+* **calls:** deliver screen shares over encrypted UDP ([0ef8abe](https://github.com/mjn81/cove-chat/commit/0ef8abebd6950e918ad21b5762c72d5f8bb1c567))
+* **i18n:** call Cove source-available instead of open source ([4ca4447](https://github.com/mjn81/cove-chat/commit/4ca4447e54ce9a34307c8b7be1a80d1ac1e1a5df))
+* translate the docs preview, correct license wording, update the roadmap ([bcf6bc5](https://github.com/mjn81/cove-chat/commit/bcf6bc5c507f19e381388824182d238e0899336f))
+* **website:** translate the docs preview, wrap diagram subtitles, correct the license wording ([c9d8ae4](https://github.com/mjn81/cove-chat/commit/c9d8ae4aa6f7db1b3931f3e5036a2e078d2add75))
+
 ## [0.11.6](https://github.com/mjn81/cove-chat/compare/v0.11.5...v0.11.6) (2026-11-25)
 
 
