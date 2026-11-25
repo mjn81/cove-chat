@@ -28,7 +28,7 @@ const svg = `
   <text x="96" y="390" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="108" font-weight="800" fill="#e8e5e3" letter-spacing="-3">Cove</text>
   <text x="96" y="458" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="40" font-weight="500" fill="#d9826a">Self-hosted encrypted chat</text>
   <text x="96" y="520" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="28" fill="#a39e9b">Messages, group calls and screen sharing on your own server.</text>
-  <text x="96" y="580" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="24" fill="#a39e9b">Open source  ·  MIT  ·  Web, desktop, Android</text>
+  <text x="96" y="580" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="24" fill="#a39e9b">Source-available  ·  Web, desktop, Android</text>
 </svg>`;
 
 await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(resolve(root, 'public/og.png'));

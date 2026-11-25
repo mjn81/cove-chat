@@ -14,7 +14,7 @@ const LINKS: { icon: LucideIcon; href: string }[] = [
   { icon: BookOpen, href: '/docs/contributing/development/' },
 ];
 
-/** Docs entry points plus a static preview of the docs layout (the preview mimics the English docs). */
+/** Docs entry points plus a static preview of the docs layout. */
 export default function DocsPreview({ lang }: { lang: Lang }) {
   const d = dict(lang).docs;
   return (
@@ -32,7 +32,7 @@ export default function DocsPreview({ lang }: { lang: Lang }) {
         ))}
       </div>
       <BlurFade>
-        <CoveDocs />
+        <CoveDocs lang={lang} />
       </BlurFade>
     </>
   );

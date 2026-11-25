@@ -6,7 +6,7 @@ export const GET: APIRoute = () => {
   const manifest = {
     name: `${APP_NAME} - self-hosted encrypted chat`,
     short_name: APP_NAME,
-    description: 'Self-hosted, open-source encrypted chat with group calls and screen sharing.',
+    description: 'Self-hosted, source-available encrypted chat with group calls and screen sharing.',
     start_url: url('/'),
     scope: url('/'),
     display: 'browser',

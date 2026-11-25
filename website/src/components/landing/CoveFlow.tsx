@@ -114,7 +114,7 @@ export default function CoveFlow({ lang, onStep }: { lang: Lang; onStep: (step: 
                       <span className="cs-flow__icon"><Icon size={20} /></span>
                       <span className="cs-flow__who">
                         <Text className="cs-flow__title">{node.title}</Text>
-                        <Text className="cs-flow__sub">{node.sub}</Text>
+                        <Text className="cs-flow__sub" wrap>{node.sub}</Text>
                       </span>
                     </div>
                     <div className="cs-flow__msg" data-empty={b.empty || undefined} data-mono={b.mono || undefined}>
