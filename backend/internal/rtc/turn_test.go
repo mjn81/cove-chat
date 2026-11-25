@@ -11,17 +11,29 @@ import (
 	"github.com/pion/stun/v4"
 )
 
-// findFreeUDPPort picks an OS-assigned free port by briefly binding to
-// port 0, so this test doesn't collide with a real TURN server (or another
-// test run) on the default 3478.
-func findFreeUDPPort(t *testing.T) int {
+// findFreePort picks a port that is free for both UDP and TCP, because the
+// TURN server listens on the same number for both. It avoids colliding with a
+// real TURN server (or another test run) on the default 3478. The addresses
+// match the server's own, so a port busy on any interface is rejected.
+func findFreePort(t *testing.T) int {
 	t.Helper()
-	conn, err := net.ListenPacket("udp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("find free port: %v", err)
+	// TCP picks the number: some systems reserve whole ranges for one
+	// protocol, and UDP's sequential picks can stay inside such a range.
+	for range 100 {
+		l, err := net.Listen("tcp4", "0.0.0.0:0")
+		if err != nil {
+			t.Fatalf("find free port: %v", err)
+		}
+		port := l.Addr().(*net.TCPAddr).Port
+		conn, udpErr := net.ListenPacket("udp4", "0.0.0.0:"+strconv.Itoa(port))
+		_ = l.Close()
+		if udpErr == nil {
+			_ = conn.Close()
+			return port
+		}
 	}
-	defer conn.Close()
-	return conn.LocalAddr().(*net.UDPAddr).Port
+	t.Fatal("find free port: no port free for both UDP and TCP")
+	return 0
 }
 
 // TestTURNServer_UDPAndTCPBothRespondToSTUNBinding proves the TCP fallback
@@ -32,7 +44,7 @@ func findFreeUDPPort(t *testing.T) int {
 // requests on both transports is exactly what lets a client whose network
 // blocks outbound UDP still traverse NAT via TURN-over-TCP.
 func TestTURNServer_UDPAndTCPBothRespondToSTUNBinding(t *testing.T) {
-	port := findFreeUDPPort(t)
+	port := findFreePort(t)
 	cfg := Config{
 		PublicIP:         "127.0.0.1", // stand-in "public" IP for a same-host test
 		TURNPort:         port,
