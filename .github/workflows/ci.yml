@@ -104,7 +104,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - run: chmod +x client-android/gradlew
       - run: make android/compile ANDROID_JDK="$JAVA_HOME"
 
