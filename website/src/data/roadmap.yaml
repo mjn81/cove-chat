@@ -202,27 +202,27 @@ phases:
         title: "Bot API"
         note: "Bot accounts with tokens, slash commands, buttons, an action menu, a gateway and signed webhooks, with bot support on web, desktop and Android."
         date: "2026-11-11"
+      - id: ui-perf
+        area: chat
+        title: "UI performance"
+        note: "Cold start from cache on web and Android, memoised message rows and virtualised message lists, checked by scrolling a 2,000-message channel."
+        date: "2026-11-25"
+      - id: udp-media
+        area: calls
+        title: "UDP video and screen sharing"
+        note: "Audio, camera and screen sharing over UDP between the desktop and Android apps. Browsers cannot open raw UDP, so the web client keeps its call buttons off in this mode."
+        date: "2026-11-25"
+      - id: secure-udp
+        area: calls
+        title: "Encrypted UDP for closed networks"
+        note: "AES-256-GCM sessions with replay protection and key rotation for calls on networks without internet access."
+        date: "2026-11-25"
 
   - id: now
     title: In progress
     subtitle: Being worked on right now
     status: progress
-    items:
-      - id: ui-perf
-        area: chat
-        title: "UI performance"
-        note: "Cold start from cache on web and Android and memoised message rows are in; smoother long message lists are still being worked on."
-        date: "2026-12-15"
-      - id: udp-media
-        area: calls
-        title: "UDP video and screen sharing"
-        note: "The server router and the desktop and Android clients are built and unit tested. Still to do: a run on real devices. Browsers cannot open raw UDP, so the web client keeps its call buttons off in this mode."
-        date: "2026-12-31"
-      - id: secure-udp
-        area: calls
-        title: "Encrypted UDP for closed networks"
-        note: "AES-256-GCM sessions with replay protection and key rotation are built and tested on the server, desktop and Android. Still to do: verification on real devices and networks."
-        date: "2026-12-31"
+    items: []
 
   - id: next
     title: Next

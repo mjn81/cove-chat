@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { CheckCircle2, Circle, Loader } from 'lucide-react';
 import { BlurFade } from './primitives';
-import { getRoadmap, type RoadmapItem, type RoadmapStatus } from '@/lib/roadmap';
+import { getRoadmap, previewPhases, type RoadmapItem, type RoadmapStatus } from '@/lib/roadmap';
 import { dict, localUrl, type Lang } from '@/i18n';
 
 const PHASE_COLOR: Record<string, string> = {
@@ -21,13 +21,12 @@ function StatusIcon({ status, label }: { status: RoadmapStatus; label: string })
   );
 }
 
-const PREVIEW_PHASES = ['shipped', 'now', 'next'];
 const PREVIEW_COUNT = 6;
 
-/** Shipped / In progress / Next preview for the landing page. Same height columns, "+N more" when truncated. */
+/** Preview of the first three non-empty phases (Shipped / In progress / Next) for the landing page. Same height columns, "+N more" when truncated. */
 export function RoadmapPreview({ lang }: { lang: Lang }) {
   const d = dict(lang).roadmap;
-  const phases = useMemo(() => getRoadmap(lang).filter((p) => PREVIEW_PHASES.includes(p.id)), [lang]);
+  const phases = useMemo(() => previewPhases(getRoadmap(lang)), [lang]);
   return (
     <div className="road">
       {phases.map((p, i) => {

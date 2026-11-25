@@ -68,3 +68,8 @@ export function getRoadmap(lang: Lang): RoadmapPhase[] {
     };
   });
 }
+
+/** The three phases the landing page previews. A phase with nothing in it gives its column to the next one. */
+export function previewPhases(phases: RoadmapPhase[]): RoadmapPhase[] {
+  return phases.filter((p) => p.items.length > 0).slice(0, 3);
+}
