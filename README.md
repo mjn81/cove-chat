@@ -16,6 +16,7 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](DOCKER.md)
 
 [Website](https://covechat.dev) ·
+[Live demo](https://demo.covechat.dev) ·
 [Documentation](https://covechat.dev/docs/) ·
 [Quick start](#quick-start) ·
 [Releases](https://github.com/mjn81/cove-chat/releases) ·
@@ -23,7 +24,7 @@
 
 <br />
 
-<img src="docs/screenshots/hero.png" alt="Cove web client showing the #general channel" width="900" />
+<img src="docs/screenshots/demo.webp" alt="Cove demo: chat, stickers, a group video call, themes and a right-to-left layout" width="900" />
 
 </div>
 
@@ -40,6 +41,10 @@ Cove is a chat platform for communities that want to own their data. You run one
 - **Multilingual.** English, Persian, Arabic and Russian on web, desktop, Android and the website, with RTL layout support. The docs are partly translated into Russian.
 
 ## Screenshots
+
+<img src="docs/screenshots/calls.png" alt="Group video call with three participants" width="900" />
+
+<img src="docs/screenshots/rtl.png" alt="Cove in Arabic with a right-to-left layout" width="900" />
 
 <table>
   <tr>
