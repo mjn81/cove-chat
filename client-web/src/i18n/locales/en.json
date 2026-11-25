@@ -1216,7 +1216,7 @@
 		"useDemo": "Use the public demo server",
 		"demoNote": "The demo resets every night. Do not enter anything private.",
 		"trustNote": "{{app}} stores your messages securely, but relies on the server for key management. Ensure you trust the host before sending sensitive data.",
-		"openSource": "{{app}} is open source",
+		"openSource": "{{app}} is source-available",
 		"madeBy": "made with ❤️ by"
 	},
 	"demo": {

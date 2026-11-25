@@ -129,6 +129,14 @@ export const en = {
     filterLabel: 'Filter by area',
   },
   docs: {
+    preview: {
+      nav: ['Introduction', 'Quick start', 'Architecture', 'Requirements', 'Docker', 'Backups'],
+      title: 'Quick start',
+      lead: 'Run your own Cove server with Docker in about five minutes.',
+      tip: 'Back up your master password',
+      onThisPage: 'On this page',
+      toc: ['Requirements', 'Run the server', 'Create the owner'],
+    },
     eyebrow: 'Documentation',
     title: 'Docs that take you from zero to running.',
     lead: 'Setup, configuration, security, API reference and contributing guides.',
