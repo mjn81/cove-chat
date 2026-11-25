@@ -163,9 +163,26 @@ let worker: {
 		onmessage?: (e: any) => void;
 		start: () => void;
 	};
+	/** SharedWorker only: detaches this tab's port for good. */
+	release?: () => void;
 } | null = null;
 
-let unloadListenerRegistered = false;
+let pageListenersRegistered = false;
+
+// The SharedWorker outlives the page, so the page says when it stops listening. Registered once and aimed at the
+// current connection, because signing out and in again replaces the port.
+function registerPageListeners() {
+	if (pageListenersRegistered || typeof window === 'undefined') return;
+	pageListenersRegistered = true;
+
+	window.addEventListener('pagehide', () => {
+		if (worker?.release) sendToWorker('LEAVE', null);
+	});
+	// A page restored from the back/forward cache keeps its port but already left: CONNECT makes it join again.
+	window.addEventListener('pageshow', (event) => {
+		if (event.persisted && worker?.release) sendToWorker('CONNECT', getFullWsUrl());
+	});
+}
 
 // Prefix for the WebSocket subprotocol used to carry the session token
 // during the handshake (desktop/Wails client only — see getFullWsUrl).
@@ -196,19 +213,17 @@ export function wsConnect(token?: string): void {
 						postMessage: (msg) => sw.port.postMessage(msg),
 						start: () => sw.port.start(),
 					},
+					release: () => {
+						sw.port.postMessage({ cmd: 'LEAVE', payload: null });
+						sw.port.close();
+					},
 				};
 				console.info('[ws] using SharedWorker');
 
-				// Tell the worker to stop tracking this tab's port when it closes
-				// or navigates away — without this the worker (which outlives any
-				// single tab) keeps a permanent, never-removed reference to every
-				// tab ever opened, and keeps trying to message the dead ones.
-				if (!unloadListenerRegistered && typeof window !== 'undefined') {
-					unloadListenerRegistered = true;
-					window.addEventListener('pagehide', () => {
-						sw.port.postMessage({ cmd: 'LEAVE', payload: null });
-					});
-				}
+				// Without LEAVE the worker (which outlives any single tab) keeps a
+				// permanent reference to every tab ever opened, and keeps trying to
+				// message the dead ones.
+				registerPageListeners();
 			} catch (err) {
 				console.warn(
 					'[ws] SharedWorker failed, falling back to direct connection',
@@ -315,6 +330,8 @@ function sendToWorker(cmd: string, payload: any) {
 
 export function wsDisconnect(): void {
 	sendToWorker('DISCONNECT', null);
+	// The next sign-in opens a new port: an old one left registered would deliver every event a second time.
+	worker?.release?.();
 	worker = null;
 	useCryptoStore.getState().clearKeys();
 }
